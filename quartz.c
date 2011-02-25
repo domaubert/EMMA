@@ -13,6 +13,7 @@
 #include "tools.h"
 #include "segment.h"
 #include "communication.h"
+#include <time.h>
 
 // TO COMPILE
 
@@ -763,6 +764,23 @@ int main(int argc, char *argv[])
 
 #if 1
 // ==================================== POISSON Testing the jacobi iteration
+
+#ifdef TIME_JAC
+  FILE *ft;
+  sprintf(filename,"data/timejac.%05d.p%05d",nsteps+1,cpu.rank);
+  ft=fopen(filename,"w");
+  
+  double tg1,tg2;
+  double tl1,tl2;
+  double ta1,ta2;
+  double ts1,ts2;
+  double tm1,tm2;
+  double t1,t2;
+
+#endif
+
+  
+
   printf("==> Poisson Start \n");
   int icomp,iter,niter=NITER;
   float norm_d;
@@ -777,12 +795,18 @@ int main(int argc, char *argv[])
 
 	  if((iter%64==0)&&(cpu.rank==0)) printf("iter=%d ",iter);
 
+#ifdef WMPI
+	  t1=MPI_Wtime();
+#endif 
 	  nextoct=firstoct[level-1];
 	  if(nextoct!=NULL){
 	    dx=pow(0.5,level);
 	    do{ 
 	      curoct=nextoct;
 	    
+#ifdef WMPI
+	  tg1=MPI_Wtime();
+#endif 
 	      // First we gather the potential in all neighbors
 	      for(icomp=0;icomp<=6;icomp++){
 		memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
@@ -792,19 +816,43 @@ int main(int argc, char *argv[])
 	      // Second we gather the local density
 	      memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp;
 	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
+#ifdef WMPI
+	  tg2=MPI_Wtime();
+#endif 
+
+#ifdef WMPI
+	  ta1=MPI_Wtime();
+#endif 
 
 	      // 2.5 we contrast the density by removing the average density value
 	      remove_avg(vcomp[7],stride,1.);
 
 	      // we compute the square of the norm of the density (first iteration only)
 	      if(iter==0) norm_d+=square(vcomp[7],nread);
+#ifdef WMPI
+	  ta2=MPI_Wtime();
+#endif 
 	  
+#ifdef WMPI
+	  tl1=MPI_Wtime();
+#endif 
+
 	      // Third we perform the calculation (eventually on GPU)
 	      laplacian(vcomp,stride,dx);
-	  
 
+#ifdef WMPI
+	  tl2=MPI_Wtime();
+#endif 
+
+
+#ifdef WMPI
+	  ts1=MPI_Wtime();
+#endif 
 	      // Fourth we scatter back the potential estimation to the temp position
 	      nextoct=scattercomp(curoct, vcomp[6], 6, 2, stride,&cpu);
+#ifdef WMPI
+	  ts2=MPI_Wtime();
+#endif 
 
 	    }while(nextoct!=NULL);
 	  }
@@ -824,9 +872,16 @@ int main(int argc, char *argv[])
 	  }
 
 #ifdef WMPI
+	  tm1=MPI_Wtime();
 	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+	  tm2=MPI_Wtime();
+
 #endif
+
+#ifdef WMPI
+	  t2=MPI_Wtime();
+#endif 
 
 	    // Fifth we compute the residuals
 
@@ -866,6 +921,10 @@ int main(int argc, char *argv[])
 #endif
 	    if((iter%64==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
 	    if(sqrt(res/norm_d)<acc) break;
+#ifdef WMPI
+	    fprintf(ft,"%d %e %e %e %e %e\n",level,tg2-tg1,ta2-ta1,tl2-tl1,ts2-ts1,tm2-tm1);
+#endif
+
 	}
 	
       }
@@ -977,7 +1036,9 @@ int main(int argc, char *argv[])
     }
 #endif
 
-
+#ifdef TIME_JAC
+  fclose(ft);
+#endif
 
   sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
   printf("%s\n",filename);
