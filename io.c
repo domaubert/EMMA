@@ -241,3 +241,27 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
   //------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
+
+void GetParameters(char *fparam, struct RUNPARAMS *param)
+{
+  FILE *buf; 
+  char stream[256];
+  buf=fopen(fparam,"r");
+  if(buf==NULL)
+    {
+      printf("ERROR : cannot open %s, please check\n",fparam);
+      abort();
+    }
+  else
+    {
+      fscanf(buf,"%s %d",stream,&param->nbuff);
+      fscanf(buf,"%s %d",stream,&param->ndumps);
+      fscanf(buf,"%s %d",stream,&param->nsteps);
+      fscanf(buf,"%s %d",stream,&param->lcoarse);
+      fscanf(buf,"%s %d",stream,&param->lmax);
+      fscanf(buf,"%s %d",stream,&param->niter);
+      fscanf(buf,"%s %d",stream,&param->stride);
+      fscanf(buf,"%s %f",stream,&param->dt);
+      fclose(buf);
+    }
+}

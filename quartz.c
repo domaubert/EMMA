@@ -24,35 +24,6 @@
 //mpicc -lm -DWMPI -DNEWASSIGN -DPART2 -DNDUMP=1 -DNSTEP=10 -DLCOARSE=6 -DLMAX=6  -DCIC2 -DNITER=4096 -DALLCELL -DSTRIDE=128 -DDT=1e-4 hilbert.c gilgamesh.c
 
 
-
-
-
-
-
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
-//==================================================================
-
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
-
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
-
-  //------------------------------------------------------------------------
-  //------------------------------------------------------------------------
-
-
-
-
-//------------------------------------------------------------------------
-
- //------------------------------------------------------------------------
- //------------------------------------------------------------------------
- //------------------------------------------------------------------------
-
-
  //------------------------------------------------------------------------
  // the MAIN CODE
  //------------------------------------------------------------------------
@@ -139,7 +110,11 @@ int main(int argc, char *argv[])
   struct PART_MPI **psendbuffer; 
   struct PART_MPI **precvbuffer; 
 
+  struct RUNPARAMS param;
   //=========== some initial calls =============
+  GetParameters(argv[1],&param); // reading the parameters file
+    
+
 #ifdef WMPI
   MPI_Status stat;
 
@@ -203,8 +178,8 @@ int main(int argc, char *argv[])
 #endif
 
   //=========== assigning values =============
-  levelcoarse=LCOARSE;
-  levelmax=LMAX;
+  levelcoarse=param.lcoarse;
+  levelmax=param.lmax;
 
   ngridmax=1000000;
   npartmax=64*64*64*2;
@@ -215,11 +190,11 @@ int main(int argc, char *argv[])
 #endif
 
   threshold=50;
-  lmap=LMAX;
-  stride=fmax(8,STRIDE);//pow(2,levelcoarse);
+  lmap=levelmax;
+  stride=fmax(8,param.stride);//pow(2,levelcoarse);
   ncomp=8;
   acc=1e-2;
-  dt=DT;
+  dt=param.dt;
 
   //breakmpi();
   //========== allocations ===================
@@ -245,7 +220,7 @@ int main(int argc, char *argv[])
 
   // We segment the oct distributions at levelcoarse 
     cpu.bndoct=NULL;
-    cpu.nbuff=NBUFF;
+    cpu.nbuff=param.nbuff;
     cpu.allkmin=(int*)calloc(cpu.nproc,sizeof(int));
     cpu.allkmax=(int*)calloc(cpu.nproc,sizeof(int));
 
@@ -652,7 +627,7 @@ int main(int argc, char *argv[])
   int ismooth,nsmooth=2;
   int marker;
 
-  for(nsteps=0;nsteps<=NSTEP;nsteps++){
+  for(nsteps=0;nsteps<=param.nsteps;nsteps++){
     
     if(cpu.rank==0) printf("============== STEP %d ================\n",nsteps);
     //printf("endoct=%p\n",endoct);
@@ -782,7 +757,7 @@ int main(int argc, char *argv[])
   
 
   printf("==> Poisson Start \n");
-  int icomp,iter,niter=NITER;
+  int icomp,iter,niter=param.niter;
   float norm_d;
   int nread;
   for(level=levelcoarse;level<=levelmax;level++)
@@ -1054,7 +1029,7 @@ int main(int argc, char *argv[])
 
   // ==================================== DUMP AFTER SYNCHRONIZATION
 #if 1
-  if(nsteps%NDUMP==0){
+  if(nsteps%(param.ndumps)==0){
     // ===== Casting rays to fill a map
 
   /*   sprintf(filename,"data/level.%05d",nsteps); */
@@ -1117,18 +1092,18 @@ int main(int argc, char *argv[])
 #endif	 
 
   //==================================== timestep completed, looping
+  }
 
 #ifdef WMPI
-  if(nsteps==1){
-    printf("ABORTING !!\n");
-    MPI_Barrier(cpu.comm);
-    MPI_Abort(cpu.comm,42);
-  }
-#else
-    abort();
+  MPI_Barrier(cpu.comm);
 #endif
-
+  if(cpu.rank==0){
+    printf("Done .....\n");
   }
+#ifdef WMPI
+  MPI_Barrier(cpu.comm);
+  MPI_Finalize();
+#endif
   return 0;
 }
       

@@ -5,6 +5,25 @@
 
 //=======================================
 
+struct RUNPARAMS{
+  int nbuff; // the mpi buffer size
+  int ndumps; // the frequency of outputs
+  int nsteps; // the maximal number of timesteps
+  
+  int lcoarse; // the coarse level
+  int lmax; // the max level of refinement
+  
+  int niter; // the maximal number of iterations for the Poisson solver
+  
+  int stride; // the size of the stencil for vector based computations
+
+  float dt; // the timsestep
+};
+
+
+
+//=======================================
+
 // this structure exists for MPI communication protocol
 
 struct PACKET{
