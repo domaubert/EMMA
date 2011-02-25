@@ -1,7 +1,7 @@
 ##########################################
 C_LIBS = -lm 
 CUDA_LIBS =
-C_OBJS= gilgamesh.o hilbert.o
+C_OBJS= quartz.o hilbert.o
 CUDA_OBJS= 
 DEFINES  = -g -DNBUFF=4096 -DNEWASSIGN -DTESTPLUM -DNDUMP=1 -DNSTEP=10 -DLCOARSE=5 -DLMAX=6 -DCIC2 -DNITER=4096 -DALLCELL -DSTRIDE=512 -DDT=1e-4  -DWMPI
 NVCC= nvcc #--device-emulation
