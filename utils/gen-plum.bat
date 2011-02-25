@@ -1,0 +1,1 @@
+gcc -O3 -Wall gen-plum.c -o gen-plum.exe -lm
