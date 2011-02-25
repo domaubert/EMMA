@@ -582,7 +582,6 @@ int main(int argc, char *argv[])
   dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
 #endif	
-
 #if 1
   // ==================================== performing the CIC assignement
 
@@ -847,16 +846,16 @@ int main(int argc, char *argv[])
 	  }
 
 #ifdef WMPI
+	  t2=MPI_Wtime();
+#endif 
+
+#ifdef WMPI
 	  tm1=MPI_Wtime();
 	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 	  tm2=MPI_Wtime();
-
 #endif
 
-#ifdef WMPI
-	  t2=MPI_Wtime();
-#endif 
 
 	    // Fifth we compute the residuals
 
@@ -897,7 +896,7 @@ int main(int argc, char *argv[])
 	    if((iter%64==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
 	    if(sqrt(res/norm_d)<acc) break;
 #ifdef WMPI
-	    fprintf(ft,"%d %e %e %e %e %e\n",level,tg2-tg1,ta2-ta1,tl2-tl1,ts2-ts1,tm2-tm1);
+	    fprintf(ft,"%d %e %e\n",level,t2-t1,tm2-tm1);
 #endif
 
 	}

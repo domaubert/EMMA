@@ -118,7 +118,7 @@ struct CELL
 {
   struct OCT *child;
   float marked; // float for consistency with physical quantities during communications
-  char idx; //index of the cell within the oct
+  int idx; //index of the cell within the oct
 
   // the head particle
   struct PART * phead;

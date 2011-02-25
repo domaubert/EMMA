@@ -526,14 +526,17 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   MPI_Request *req;
   int mpitag=1;
   
-
-  stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
+  double t[10];
+  double tot;
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
   // ----------- 0  / we clean the mpi buffers
+  t[0]=MPI_Wtime();
   clean_mpibuff(cpu,sendbuffer,recvbuffer);
+  t[1]=MPI_Wtime();
   // ----------- I  / we compute the boundary keys and store them in recvbuffer
   compute_bndkeys(cpu,recvbuffer);
+  t[2]=MPI_Wtime();
   // ----------- II / we send the keys to the server
   /* for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors */
   /*   MPI_Sendrecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat); */
@@ -545,10 +548,13 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
     MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );
     MPI_Irecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i+1);
   }
-  MPI_Waitall(2*cpu->nnei,req,stat);
+
+  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
+  t[3]=MPI_Wtime();
   // ----------- III/ the server gather the data
   gather_mpi(cpu, sendbuffer, field);
   MPI_Barrier(cpu->comm);
+  t[4]=MPI_Wtime();
 
   // ----------- IV / the server send the data back to the client
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
@@ -557,15 +563,19 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
     MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );
     MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i+1);
   }
-  MPI_Waitall(2*cpu->nnei,req,stat);
+  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
+  t[5]=MPI_Wtime();
 
   // ----------- V  / the client scatter the data back in the oct tree
   scatter_mpi(cpu,recvbuffer,field);
   MPI_Barrier(cpu->comm);
+  t[6]=MPI_Wtime();
 
   //
-  free(stat);
   free(req);
+  t[7]=MPI_Wtime();
+  tot=t[7]-t[0];
+  if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
 
