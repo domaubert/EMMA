@@ -3861,6 +3861,28 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 
 
 //------------------------------------------------------------------------
+int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer, struct PART **lastpart){
+
+  int nrem,nadd;
+  int mpitag=1;
+  int i;
+
+  clean_mpibuff_part(cpu,psendbuffer,precvbuffer);
+  nrem=gather_ex_part(cpu,psendbuffer,lastpart);
+  MPI_Barrier(cpu->comm);
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
+    mpitag=cpu->rank+cpu->mpinei[i];
+    MPI_Sendrecv(psendbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
+  }
+
+  nadd=scatter_mpi_part(cpu,precvbuffer,lastpart);
+  MPI_Barrier(cpu->comm);
+
+  // Return delta part
+
+  return nadd-nrem;
+}
 
  //------------------------------------------------------------------------
  // the MAIN CODE
@@ -4846,25 +4868,13 @@ int main(int argc, char *argv[])
   partcellreorg(levelcoarse,levelmax,firstoct);
 
 #ifdef WMPI
-  clean_mpibuff_part(&cpu,psendbuffer,precvbuffer);
-  int nrem,nadd;
-  nrem=gather_ex_part(&cpu,psendbuffer,&lastpart);
-  MPI_Barrier(cpu.comm);
-  int mpitag=1;
 
-  for(i=0;i<cpu.nnei;i++){ // we scan all the neighbors
-    mpitag=cpu.rank+cpu.mpinei[i];
-    MPI_Sendrecv(psendbuffer[i],cpu.nbuff,*cpu.MPI_PART,cpu.mpinei[i],mpitag,precvbuffer[i],cpu.nbuff,*cpu.MPI_PART,cpu.mpinei[i],mpitag,cpu.comm,&stat);
-  }
-
-  //if(nsteps==1) breakmpi();
-  nadd=scatter_mpi_part(&cpu,precvbuffer,&lastpart);
-  MPI_Barrier(cpu.comm);
+  // Communication of particles
+  int deltan;
+  deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
 
   // Recounting particles
-  npart=npart-nrem+nadd;
-  //  printf("nrem=%d nadd=%d on %d lp=%p\n",nrem,nadd,cpu.rank,lastpart);
-
+  npart=npart+deltan;
 #endif
 
   //==== Gathering particles for dump
