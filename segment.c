@@ -225,8 +225,10 @@ int segment_part(float xc,float yc,float zc, struct CPUINFO *cpu, int levelcoars
  //------------------------------------------------------------------------
 
  // the hash function
-int hfun(unsigned key){
-  return key>>6;
+int hfun(unsigned key, unsigned maxval){
+  // warnign maxval must be a power of two
+  //return key>>6;
+  return key&(maxval-1);
 }
 
 

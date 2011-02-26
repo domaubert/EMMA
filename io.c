@@ -264,4 +264,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       fscanf(buf,"%s %f",stream,&param->dt);
       fclose(buf);
     }
+
+  // computing the maxhash
+  int val=pow(2,3*(param->lmax-1));
+  param->maxhash=(val<=pow(64,3)?val:pow(64,3)); // limit to 262144 octs in hash table i.e. 2e6 cells
+  printf("maxhash=%d\n",param->maxhash);
 }

@@ -18,6 +18,8 @@ struct RUNPARAMS{
   int stride; // the size of the stencil for vector based computations
 
   float dt; // the timsestep
+
+  int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
 };
 
 
@@ -67,7 +69,9 @@ struct CPUINFO{
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
   MPI_Comm comm;
 #endif
-  
+
+  int maxhash; // the size of the hashtable between hilbert keys and oct adresses
+
 };
 
 //=======================================

@@ -64,7 +64,7 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 	      }
 
 	      //filling the hash table for levelcoarse octs
-	      hidx=hfun(key); // getting the hash index from the key
+	      hidx=hfun(key,cpu->maxhash); // getting the hash index from the key
 	      
 	      if(cpu->htable[hidx]==NULL){ //this bucket is empty
 		cpu->htable[hidx]=curoct;
@@ -273,6 +273,10 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
   int icell;
   int *countpacket;
 
+/*   double t[10]; */
+/*   double th=0,tg=0,tt=0,tc=0; */
+/*   int nt=0; */
+
   // we create a counter of values for each neighbor
   countpacket=(int*)calloc(cpu->nnei,sizeof(int));
 
@@ -280,11 +284,13 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
       for(i=0;i<cpu->nbuff;i++){
 	pack=sendbuffer[j]+i; // we assume that the sendbuffer already contains the keys
 	if(pack->level!=0){ // we do something
+	  //t[0]=MPI_Wtime();
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key);
+	  hidx=hfun(pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
+	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
@@ -292,6 +298,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
+	    //t[1]=MPI_Wtime();
 	    if(found){ // the reception oct has been found
 	      for(icell=0;icell<8;icell++){
 		switch(field){
@@ -317,17 +324,25 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	      printf("error no reception oct found !");
 	      abort();
 	    }
+	    //t[2]=MPI_Wtime();
+
 	    
 	  }else{
 	    printf("error no hash key obtained !!\n");
 	    abort();
 	  }
+/* 	  nt++; */
+/* 	  tt+=t[2]-t[0]; */
+/* 	  th+=t[1]-t[0]; */
+/* 	  tg+=t[2]-t[1]; */
+/* 	  tc+=t[1]-t[3]; */
 	}
       }
     }
     
+
     free(countpacket);
-      
+    //    printf("total=%e tg=%e th=%e tc=%e\n",tt,tg,th,tc);
 }
 
  //------------------------------------------------------------------------
@@ -348,7 +363,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	  
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key);
+	hidx=hfun(pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
@@ -413,7 +428,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
       part=precvbuffer[j]+i;
       if(part->level!=0){ // we do something
 	// first we compute the adress from the hashfunction
-	hidx=hfun(part->key);
+	hidx=hfun(part->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
@@ -575,7 +590,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   free(req);
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-  if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
 

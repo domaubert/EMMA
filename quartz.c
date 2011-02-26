@@ -195,9 +195,11 @@ int main(int argc, char *argv[])
   ncomp=8;
   acc=1e-2;
   dt=param.dt;
-
+  cpu.maxhash=param.maxhash;
   //breakmpi();
   //========== allocations ===================
+
+
 
   if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart)/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.));
 
@@ -205,7 +207,7 @@ int main(int argc, char *argv[])
   firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
   lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
   part=(struct PART*)calloc(npartmax,sizeof(struct PART));
-  cpu.htable=(struct OCT**) calloc(pow(2,3*levelmax-3)/64,sizeof(struct OCT *)); //hashtable assunming a hash function >>6
+  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); //hashtable assunming a hash function >>6
 
 
   vcomp=(float **)calloc(ncomp,sizeof(float*));
@@ -582,6 +584,7 @@ int main(int argc, char *argv[])
   dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
 #endif	
+
 #if 1
   // ==================================== performing the CIC assignement
 
@@ -896,7 +899,7 @@ int main(int argc, char *argv[])
 	    if((iter%64==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
 	    if(sqrt(res/norm_d)<acc) break;
 #ifdef WMPI
-	    fprintf(ft,"%d %e %e\n",level,t2-t1,tm2-tm1);
+	    fprintf(ft,"%d %e %e \n",level,t2-t1,tm2-tm1);
 #endif
 
 	}
