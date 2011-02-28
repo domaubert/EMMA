@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank){
+void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank, int *vnoct){
 
   int ntot;
   float ntotd;
@@ -74,9 +74,10 @@ void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank){
 	  noct++;
 	}while(nextoct!=NULL);
       if(rank==0) printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
+      vnoct[level-1]=noct;
     }
   
-  printf("CHECK==> RANK # %d total   npart=%d/%d npartd=%f\n",rank,ntot,npart,ntotd);
+  if(rank==0) printf("CHECK==> RANK # %d total   npart=%d/%d npartd=%f\n",rank,ntot,npart,ntotd);
   if(ntot!=npart) {
     printf("particles number discrepancy ntot=%d npart=%d\n",ntot,npart);
     abort();

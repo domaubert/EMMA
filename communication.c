@@ -557,7 +557,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   /*   MPI_Sendrecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat); */
   /* } */
 
-  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
     mpitag=cpu->rank+cpu->mpinei[i];
     //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
     MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );

@@ -39,7 +39,7 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 
   newoct=endoct+1; // the new oct will be the next to the last one
 
-  printf("==> start refining on cpu %d lcoarse=%d lmax=%d\n",cpu->rank,levelcoarse,levelmax);
+  if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d\n",cpu->rank,levelcoarse,levelmax);
   //breakmpi();
   //  for(level=levelcoarse;level<levelmax;level++) // looping over levels
   for(level=1;level<levelmax;level++) // looping over levels
