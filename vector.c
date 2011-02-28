@@ -209,12 +209,11 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
   int nread=0;
   int icell;
   int vnei[6],vcell[6];
-  int ioct=0;
 
   nextoct=octstart;
   if(nextoct!=NULL){
     do{// sweeping level
-	ioct++;
+      
 	curoct=nextoct;
 	nextoct=curoct->next;
 
@@ -285,7 +284,7 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
 	  }
 	  nread++;
 	}
-      }while((nextoct!=NULL)&&(nread<stride));
+    }while((nextoct!=NULL)&&(nread<stride));
   }
   return nextoct;
 }
@@ -296,14 +295,19 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
 //------------------------------------------------------------------------
  
 
-void laplacian(float **vcomp, int stride, float dx){
+float laplacian(float **vcomp, int stride, float dx){
 
   int i;
   float temp;
+  float res,res2=0.;
+  float tt;
   for(i=0;i<stride;i++){
     temp=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i])/6.-dx*dx*vcomp[7][i]/6.*4*M_PI;
+    res=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i]-6.*vcomp[6][i])/(dx*dx)-4.*M_PI*vcomp[7][i];
+    res2+=res*res;
     vcomp[8][i]=temp;
   }
+  return res2;
 }
 
 void grad(float **vcomp, int stride, float dx, int dir){
