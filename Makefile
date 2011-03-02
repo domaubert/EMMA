@@ -1,5 +1,5 @@
 ##########################################
-C_LIBS = -lm -O
+C_LIBS = -lm 
 CUDA_LIBS =
 C_OBJS= quartz.o hilbert.o vector.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o
 CUDA_OBJS= 

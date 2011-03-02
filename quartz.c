@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
 
 
-  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart)/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.));
+  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024.*1024.*1024.));
 
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); // the oct grid
   firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); // the firstoct of each level

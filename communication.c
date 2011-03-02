@@ -558,10 +558,10 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   /* } */
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    mpitag=cpu->rank+cpu->mpinei[i];
+    //mpitag=cpu->rank+cpu->mpinei[i];
     //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
-    MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );
-    MPI_Irecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i+1);
+    MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
+    MPI_Irecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
   }
 
   MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
@@ -570,17 +570,25 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   gather_mpi(cpu, sendbuffer, field);
   MPI_Barrier(cpu->comm);
   t[4]=MPI_Wtime();
-
   // ----------- IV / the server send the data back to the client
-  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
-    mpitag=cpu->rank+cpu->mpinei[i];
-    //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
-    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );
-    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i+1);
-  }
-  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
-  t[5]=MPI_Wtime();
 
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
+    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
+    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
+  }
+  
+  for(i=0;i<cpu->nnei;i++){
+    int flag;
+    MPI_Test(req+2*i+1,&flag,MPI_STATUS_IGNORE);
+    while(!flag){
+    MPI_Test(req+2*i+1,&flag,MPI_STATUS_IGNORE);
+    }
+    printf("cpu %d receive from %d ok\n",cpu->rank,cpu->mpinei[i]);
+  }
+  
+  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
+  printf("cpu %d done\n",cpu->rank);
+  t[5]=MPI_Wtime();
   // ----------- V  / the client scatter the data back in the oct tree
   scatter_mpi(cpu,recvbuffer,field);
   MPI_Barrier(cpu->comm);
@@ -619,15 +627,13 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   /*   mpitag=cpu->rank+cpu->mpinei[i]; */
   /*   MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat); */
   /* } */
-
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
-    mpitag=cpu->rank+cpu->mpinei[i];
+    //mpitag=cpu->rank+cpu->mpinei[i];
     //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
-    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i  );
-    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,req+2*i+1);
+    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
+    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
   }
   MPI_Waitall(2*cpu->nnei,req,stat);
-
 
   // ---------  third we scatter the data back to the INTERNAL boundary octs
   if(field==1) field=3; // fix for an offset of marked scatter
@@ -638,7 +644,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   free(stat);
   free(req);
 
-
+  
 }
 
 

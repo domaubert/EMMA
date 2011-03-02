@@ -414,11 +414,14 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 		  }while(nextoct!=NULL);
 		//printf("pass=%d nmark=%d\n",pass,nmark);
 #ifdef WMPI
+
+		//breakmpi();
 		// first we correct from the marker diffusion
 		mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 		
 		// second exchange boundaries
 		mpi_exchange(cpu,sendbuffer,recvbuffer,3);
+		//breakmpi();
 #endif
 	      }
 	    //printf("\n");
