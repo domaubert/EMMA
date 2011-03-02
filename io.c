@@ -249,7 +249,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   buf=fopen(fparam,"r");
   if(buf==NULL)
     {
-      printf("ERROR : cannot open %s, please check\n",fparam);
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fparam);
       abort();
     }
   else

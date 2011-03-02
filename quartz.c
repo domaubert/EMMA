@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
   float xc,yc,zc;
   int stride;
   float **vcomp;
+  float *vcomp2;
   int ncomp;
   float acc;
   float dt;
@@ -111,6 +112,15 @@ int main(int argc, char *argv[])
   struct PART_MPI **precvbuffer; 
 
   struct RUNPARAMS param;
+
+
+  //========== TEST ZONE (IF REQUIRED)==========
+
+/*   printf("size =%d\n",sizeof(struct CELL)); */
+/*   printf("size =%d\n",sizeof(struct OCT)); */
+/*   abort(); */
+
+
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
     
@@ -203,20 +213,23 @@ int main(int argc, char *argv[])
 
   if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart)/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.));
 
-  grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT));
-  firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
-  lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
-  part=(struct PART*)calloc(npartmax,sizeof(struct PART));
-  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); //hashtable assunming a hash function >>6
-  cpu.noct=(int *)calloc(levelmax,sizeof(int));
+  grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); // the oct grid
+  firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); // the firstoct of each level
+  lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); // the last oct of each level
+  part=(struct PART*)calloc(npartmax,sizeof(struct PART)); // the particle array
+  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); // the htable keys->oct address
+  cpu.noct=(int *)calloc(levelmax,sizeof(int)); // the number of octs per level
 
   vcomp=(float **)calloc(ncomp,sizeof(float*));
   for(i=0;i<ncomp;i++)
     {
       vcomp[i]=(float *)calloc(stride,sizeof(float));
     }
-    if(cpu.rank==0) printf("Allocations ok\n");
 
+  vcomp2=(float*)calloc(stride*ncomp,sizeof(float)); // for vector based calculations
+
+  if(cpu.rank==0) printf("Allocations ok\n");
+    
 
   //========== setting up the parallel topology ===
 
@@ -753,8 +766,8 @@ int main(int argc, char *argv[])
   double ts1,ts2;
   double tm1,tm2;
   double t1,t2;
-
-  double tg,tl,ts;
+  double tc1;
+  double tg,tl,ts,ta;
 #endif
 
   if(cpu.rank==0){
@@ -778,7 +791,7 @@ int main(int argc, char *argv[])
 	// looping over iterations
 	for(iter=0;iter<niter;iter++){
 	  
-	  if((iter%1==64)&&(cpu.rank==0)) printf("iter=%d ",iter);
+	  if((iter%64==0)&&(cpu.rank==0)) printf("iter=%d ",iter);
 	  int vpass=0;
 	  
 #ifdef WMPI
@@ -786,41 +799,43 @@ int main(int argc, char *argv[])
 	  ts=0.;
 	  tl=0.;
 	  tg=0.;
+	  ta=0.;
 #endif 
 	  nextoct=firstoct[level-1];
 	  float res=0.; // the square of the residual
+
+/* 	  // preparing the gathering */
+/* 	  for(icomp=0;icomp<8;icomp++){ */
+/* 	    compnei[icomp]=(icomp==7?6:icomp); */
+/* 	    compvar[icomp]=(icomp==7?0:1); */
+/* 	  } */
+
+	  //start
 	  if(nextoct!=NULL){
 	    dx=pow(0.5,level);
 	    do{ 
 	      curoct=nextoct;
 	      vpass++;
 	      
-#ifdef WMPI
-	      tg1=MPI_Wtime();
-#endif 
 	  
 	      // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
-
-	      /* if((stride<8*cpu.noct[level-1])||(iter==0)){ */
-	      /* 	//First we gather the potential in all neighbors */
-	      /* 	for(icomp=0;icomp<=6;icomp++){ */
-	      /* 	  memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
-	      /* 	  nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
-	      /* 	} */
-	      /* 	// Second we gather the local density */
-	      /* 	memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp; */
-	      /* 	nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread); */
-	      /* } */
-
-
-	      for(icomp=0;icomp<8;icomp++){
-		compnei[icomp]=(icomp==7?6:icomp);
-		compvar[icomp]=(icomp==7?0:1);
+#ifdef WMPI
+	      MPI_Barrier(cpu.comm);
+	      tg1=MPI_Wtime();
+#endif 
+	      //First we gather the potential in all neighbors
+	      for(icomp=0;icomp<6;icomp++){
+		nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
 	      }
 	      
-	      nextoct=gathercompnew(curoct,vcomp,compnei,compvar,stride,&cpu,&nread,8);
-	      
+	      if((stride<8*cpu.noct[level-1])||(iter==0)){
+		// Second we gather the local density and the local potential
+		nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
+		nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
+	      }
+
 #ifdef WMPI
+	      MPI_Barrier(cpu.comm);
 	      tg2=MPI_Wtime();
 	      tg+=(tg2-tg1);
 #endif 
@@ -828,27 +843,29 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	      ta1=MPI_Wtime();
 #endif 
-
-	  
 	      // 2.5 ==== we contrast the density by removing the average density value 
-	      //if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
-	      remove_avg(vcomp[7],nread,1.);
+	      if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
 
 	      // we compute the square of the norm of the density (first iteration only)
 	      if(iter==0) norm_d+=square(vcomp[7],nread);
 #ifdef WMPI
 	      ta2=MPI_Wtime();
+	      ta+=ta2-ta1;
 #endif 
 	  
 #ifdef WMPI
 	      tl1=MPI_Wtime();
 #endif 
-	  
 	      // Third we perform the calculation (eventually on GPU) also returns the residual
 	      float dummy;
-	      dummy=laplacian(vcomp,nread,dx);
-	      //if((cpu.rank==0)) printf("dummy=%e\n",dummy);
+	      if(stride<8*cpu.noct[level-1]){
+		dummy=laplacian(vcomp,nread,dx,8);
+	      }
+	      else{
+		dummy=laplacian(vcomp,nread,dx,6);
+	      }
 	      res+=dummy;
+
 #ifdef WMPI
 	      tl2=MPI_Wtime();
 	      tl+=(tl2-tl1);
@@ -858,36 +875,53 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	      ts1=MPI_Wtime();
 #endif 
+	      if(stride<8*cpu.noct[level-1]){
 	      // Fourth we scatter back the potential estimation to the temp position 
-	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
-	      //if(cpu.rank==0) printf("nread=%d nextoct=%p\n",nread,nextoct);
-
+		nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
+	      }
+	      
 #ifdef WMPI
 	      ts2=MPI_Wtime();
 	      ts+=(ts2-ts1);
 #endif 
-
+	      
 	    }while(nextoct!=NULL);
 	  }
-
+	  
 	  //if((iter%1==0)&&(cpu.rank==0)) printf("performed %d vector pass on level=%d with nread=%d\n",vpass,level,nread);
 	  
+	  
+#ifdef WMPI
+	  tc1=MPI_Wtime();
+#endif 	  
 	  // ===============  we copy the result in the temp position to the potential 
-	  nextoct=firstoct[level-1];
-	  if(nextoct!=NULL){
-	    do{ 
-	      curoct=nextoct;
-	      
-	      //memset(vcomp[0],0,stride*sizeof(float)); // reset the vcomp;
-	      
-	      nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
-	      nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
-	      
-	    }while(nextoct!=NULL);
+	  
+	  if(stride<8*cpu.noct[level-1]){
+	    nextoct=firstoct[level-1];
+	    if(nextoct!=NULL){
+	      do{ 
+		curoct=nextoct;
+		nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
+		nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
+		
+	      }while(nextoct!=NULL);
+	    }
 	  }
+	  else{
+	    nextoct=firstoct[level-1];
+	    if(nextoct!=NULL){
+	      do{ 
+		curoct=nextoct;
+		nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu);
+	      }while(nextoct!=NULL);
+	    }
+	  }
+	  
 #ifdef WMPI
 	  t2=MPI_Wtime();
-	  fprintf(ft,"%d %d %e %e %e %e\n",level,stride,(t2-t1),tg,tl,ts);
+
+	  // dumping timings 
+	  fprintf(ft,"%d %d %e %e %e %e %e\n",level,stride,(t2-t1),tg,tl,ts,t2-tc1);
 #endif 
 	    
 #ifdef WMPI
@@ -896,42 +930,7 @@ int main(int argc, char *argv[])
 	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 	  tm2=MPI_Wtime();
-#endif
 
-
-	  // ==============================   Fifth we compute the residuals
-/* 	  nextoct=firstoct[level-1]; */
-/* 	  res=0.; */
-/* 	  if(nextoct!=NULL){ */
-/* 	    dx=pow(0.5,level); */
-/* 	    do{ */
-/* 	      curoct=nextoct; */
-	      
-/* 	      // First we gather the potential in all neighbors + local (only if the stride is too small) */
-/* 	      // small stride */
-/* 	      for(icomp=0;icomp<=6;icomp++){ */
-/* 		//memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
-/* 		nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
-/* 	      } */
-	
-/* 	      // Second we gather the local density */
-/* 	      //memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp; */
-/* 	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread); */
-
-/* 	      // 2.5 we contrast the density by removing the average value */
-/* 	      remove_avg(vcomp[7],stride,1.); */
-	      
-/* 	      // Third we perform the square of the residual */
-/* 	      //if((cpu.rank==0)&&(iter%64==0)) printf("nread=%d\n",nread); */
-/* 	      float dummy; */
-/* 	      dummy=square_res(vcomp,nread,dx); */
-/* 	      //if((cpu.rank==0)&&(res==0.)) printf("dummy2=%e\n",dummy); */
-/* 	      res+=dummy; */
-	      
-/* 	    }while((nextoct!=NULL)); */
-/* 	  } */
-	    
-#ifdef WMPI
 	  // reducing the residuals
 	  MPI_Barrier(cpu.comm);
 	  float restot;
@@ -939,12 +938,11 @@ int main(int argc, char *argv[])
 	  MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 	  res=restot;
 #endif
-	  if((iter%1==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
+	  if((iter%64==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
 	  if(sqrt(res/norm_d)<acc) {
 	    break;
 	  }
 	}
-	
       }
       // FINE LEVEL TREATMENT ============================================
       else{
@@ -969,73 +967,113 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 #endif
-	printf("guess ok\n");
+
 #if 1
 	// fine level relaxation
 	for(iter=0;iter<niter;iter++){
 	  nextoct=firstoct[level-1];
 	  if((iter%16==0)&&(cpu.rank==0)) printf("level=%d iter=%d ",level,iter);
 	  int ncell=0;
+	  float res=0.;
 	  if(nextoct!=NULL){
 	    dx=pow(0.5,level);
 	    do{ 
 	      ncell++;
 	      curoct=nextoct;
-	      // First we gather the potential in all neighbors
-	      for(icomp=0;icomp<=6;icomp++){
-		memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
-		nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
-	      }
 
-	      // Second we gather the local density
-	      memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp;
-	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
+	      for(icomp=0;icomp<8;icomp++){
+		compnei[icomp]=(icomp==7?6:icomp);
+		compvar[icomp]=(icomp==7?0:1);
+	      }
 	      
-	      // 2.5 we contrast the density by removing the average value
-	      remove_avg(vcomp[7],stride,1.);
+	      nextoct=gathercompnew(curoct,vcomp,compnei,compvar,stride,&cpu,&nread,8);
+	  
+	      // 2.5 ==== we contrast the density by removing the average density value 
 	      
+	      remove_avg(vcomp[7],nread,1.);
+
 	      // we compute the square of the norm of the density (first iteration only)
 	      if(iter==0) norm_d+=square(vcomp[7],nread);
+	  
+	  
+	      // Third we perform the calculation (eventually on GPU) also returns the residual
+	      float dummy;
+	      dummy=laplacian(vcomp,nread,dx,8);
+	      res+=dummy;
+
+	      // Fourth we scatter back the potential estimation to the temp position 
+	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
 	      
-	      // Third we perform the calculation (eventually on GPU)
-	      laplacian(vcomp,stride,dx);
+
+/* 	      // First we gather the potential in all neighbors */
+/* 	      for(icomp=0;icomp<=6;icomp++){ */
+/* 		memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 		nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
+/* 	      } */
+
+/* 	      // Second we gather the local density */
+/* 	      memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp; */
+/* 	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread); */
 	      
-	      // Fourth we scatter back the potential estimation
-	      nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu);
+/* 	      // 2.5 we contrast the density by removing the average value */
+/* 	      remove_avg(vcomp[7],stride,1.); */
+	      
+/* 	      // we compute the square of the norm of the density (first iteration only) */
+/* 	      if(iter==0) norm_d+=square(vcomp[7],nread); */
+	      
+/* 	      // Third we perform the calculation (eventually on GPU) */
+/* 	      laplacian(vcomp,stride,dx); */
+	      
+/* 	      // Fourth we scatter back the potential estimation */
+/* 	      nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu); */
 
 	      
 	    }while(nextoct!=NULL);
 
+	    // ===============  we copy the result in the temp position to the potential 
+	    nextoct=firstoct[level-1];
+	    if(nextoct!=NULL){
+	    do{ 
+	      curoct=nextoct;
+	      
+	      //memset(vcomp[0],0,stride*sizeof(float)); // reset the vcomp;
+	      
+	      nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
+	      nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
+	      
+	    }while(nextoct!=NULL);
+	    }
+	    
 #ifdef WMPI
 	    mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 	    if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
-	    // Fifth we compute the residuals
-	    nextoct=firstoct[level-1];
-	    float res=0.;
-	    if(nextoct!=NULL){
-	      dx=pow(0.5,level);
-	      do{ 
-		curoct=nextoct;
+/* 	    // Fifth we compute the residuals */
+/* 	    nextoct=firstoct[level-1]; */
+/* 	    float res=0.; */
+/* 	    if(nextoct!=NULL){ */
+/* 	      dx=pow(0.5,level); */
+/* 	      do{  */
+/* 		curoct=nextoct; */
 	      
-		// First we gather the potential in all neighbors + local
-		for(icomp=0;icomp<=6;icomp++){
-		  memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
-		  nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
-		}
+/* 		// First we gather the potential in all neighbors + local */
+/* 		for(icomp=0;icomp<=6;icomp++){ */
+/* 		  memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 		  nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
+/* 		} */
 
-		// Second we gather the local density
-		memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp;
-		nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
+/* 		// Second we gather the local density */
+/* 		memset(vcomp[7],0,stride*sizeof(float)); // reset the vcomp; */
+/* 		nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread); */
 
-		// 2.5 we contrast the density by removing the average value
-		remove_avg(vcomp[7],nread,1.);
+/* 		// 2.5 we contrast the density by removing the average value */
+/* 		remove_avg(vcomp[7],nread,1.); */
 	      
-		// Third we perform the square of the residual
-		res+=square_res(vcomp,nread,dx);
+/* 		// Third we perform the square of the residual */
+/* 		res+=square_res(vcomp,nread,dx); */
 	      
-	      }while(nextoct!=NULL);
-	    }
+/* 	      }while(nextoct!=NULL); */
+/* 	    } */
 
 #ifdef WMPI
 	    // reducing the residuals

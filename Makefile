@@ -1,5 +1,5 @@
 ##########################################
-C_LIBS = -lm 
+C_LIBS = -lm -O
 CUDA_LIBS =
 C_OBJS= quartz.o hilbert.o vector.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o
 CUDA_OBJS= 
@@ -10,7 +10,7 @@ CC = mpicc
 OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 EXECUTABLE = quartz
 .c.o:
-	$(CC) $(DEFINES) -c $<
+	$(CC) $(DEFINES) $(C_LIBS) -c $<
 %.o:%.cu
 	$(NVCC) $(DEFINES) $(C_LIBS) $(CUDA_LIBS) -c $*.cu	
 

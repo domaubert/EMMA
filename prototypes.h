@@ -141,15 +141,15 @@ struct CELL
 struct OCT
 {
   // the cell properties
-  struct CELL cell[8];
+  struct CELL cell[8]; // MUSTN'T BE MOVED !!
 
-  int level;// level of the cells in the oct
   struct CELL *parent; // parent cell 
   struct CELL *nei[6];// neighbor cells at level - 1
   
   // the next two pointers are required for sweeps through a single level
   struct OCT *next; // next oct on the same level
   struct OCT *prev; // previous oct on the same level
+  struct OCT *nexthash; // next oct in the hash list
 
   // the oct position (lowest left corner)
   float x;
@@ -158,7 +158,7 @@ struct OCT
 
   // parallel data
   int cpu; 
-  struct OCT *nexthash;
+  int level;// level of the cells in the oct
 
 
   
