@@ -544,58 +544,112 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   double t[10];
   double tot;
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
+  stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
 
   // ----------- 0  / we clean the mpi buffers
-  t[0]=MPI_Wtime();
   clean_mpibuff(cpu,sendbuffer,recvbuffer);
-  t[1]=MPI_Wtime();
   // ----------- I  / we compute the boundary keys and store them in recvbuffer
   compute_bndkeys(cpu,recvbuffer);
-  t[2]=MPI_Wtime();
   // ----------- II / we send the keys to the server
-  /* for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors */
-  /*   MPI_Sendrecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat); */
-  /* } */
+
+  //breakmpi();
+  if(cpu->rank==0) printf("==== X ====\n");
+  MPI_Barrier(MPI_COMM_WORLD);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    //mpitag=cpu->rank+cpu->mpinei[i];
-    //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
-    MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
-    MPI_Irecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
+    MPI_Isend(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,MPI_COMM_WORLD,&req[2*i]);
+    MPI_Irecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,MPI_COMM_WORLD,&req[2*i+1]);
   }
 
-  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
-  t[3]=MPI_Wtime();
+  int flag;
+  int count;
+  MPI_Testall(2*cpu->nnei,req,&flag,stat);
+  if(cpu->rank==0) printf("X--");
+  for(i=0;i<2*cpu->nnei;i++){
+    MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+    if(cpu->rank==0) printf(" %d ",count);
+  }
+  if(cpu->rank==0) printf("\n");
+  while(!flag){
+    MPI_Testall(2*cpu->nnei,req,&flag,stat);
+    if(cpu->rank==0) printf("X--");
+    for(i=0;i<2*cpu->nnei;i++){
+      MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+      if(cpu->rank==0) printf(" %d ",count);
+    }
+    if(cpu->rank==0) printf("\n");
+  }
+
+  MPI_Waitall(2*cpu->nnei,req,stat);
+
+  /* if(cpu->rank==0) { */
+  /*   char st[256]; */
+  /*   int len; */
+  /*   for(i=0;i<cpu->nnei*2;i++) { */
+
+  /*     MPI_Error_string(stat[i].MPI_ERROR,st,&len);  */
+  /*     printf("%s ",st); */
+  /*   } */
+  /*   printf("\n"); */
+  /* } */
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
   // ----------- III/ the server gather the data
   gather_mpi(cpu, sendbuffer, field);
-  MPI_Barrier(cpu->comm);
-  t[4]=MPI_Wtime();
+
+  if(cpu->rank==0) printf("--- X ---\n");
+  memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
+  memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
+  MPI_Barrier(MPI_COMM_WORLD);
   // ----------- IV / the server send the data back to the client
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
-    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
-    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
+    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,MPI_COMM_WORLD,&req[2*i]  );
+    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,MPI_COMM_WORLD,&req[2*i+1]);
   }
-  
-  for(i=0;i<cpu->nnei;i++){
-    int flag;
-    MPI_Test(req+2*i+1,&flag,MPI_STATUS_IGNORE);
-    while(!flag){
-    MPI_Test(req+2*i+1,&flag,MPI_STATUS_IGNORE);
+
+  MPI_Testall(2*cpu->nnei,req,&flag,stat);
+  if(cpu->rank==0) printf("X--");
+  for(i=0;i<2*cpu->nnei;i++){
+    MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+    if(cpu->rank==0) printf(" %d ",count);
+  }
+  if(cpu->rank==0) printf("\n");
+  while(!flag){
+    MPI_Testall(2*cpu->nnei,req,&flag,stat);
+    if(cpu->rank==0) printf("X--");
+    for(i=0;i<2*cpu->nnei;i++){
+      MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+      if(cpu->rank==0) printf(" %d ",count);
     }
-    printf("cpu %d receive from %d ok\n",cpu->rank,cpu->mpinei[i]);
+    if(cpu->rank==0) printf("\n");
   }
-  
-  MPI_Waitall(2*cpu->nnei,req,MPI_STATUS_IGNORE);
-  printf("cpu %d done\n",cpu->rank);
+
+  MPI_Waitall(2*cpu->nnei,req,stat);
+  /* if(cpu->rank==0) { */
+  /*   char st[256]; */
+  /*   int len; */
+  /*   for(i=0;i<cpu->nnei*2;i++) { */
+
+  /*     MPI_Error_string(stat[i].MPI_ERROR,st,&len);  */
+  /*     printf("%s ",st); */
+  /*   } */
+  /*   printf("\n"); */
+  /* } */
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
   t[5]=MPI_Wtime();
   // ----------- V  / the client scatter the data back in the oct tree
   scatter_mpi(cpu,recvbuffer,field);
-  MPI_Barrier(cpu->comm);
+  
+  MPI_Barrier(MPI_COMM_WORLD);
   t[6]=MPI_Wtime();
 
   //
   free(req);
+  free(stat);
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
   //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
@@ -610,7 +664,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   int mpitag=1;
   MPI_Status *stat;
   MPI_Request *req;
-
+ 
 
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
@@ -620,25 +674,54 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
 
   // ---------  first we collect the data from EXTERNAL boundaries (keys are computed by remote)
   gather_ex(cpu,sendbuffer,field);
-  MPI_Barrier(cpu->comm);
 
+  if(cpu->rank==0) printf("=== C ===\n");
+  MPI_Barrier(MPI_COMM_WORLD);
   // ---------  second we transmit the data through the network
-  /* for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors */
-  /*   mpitag=cpu->rank+cpu->mpinei[i]; */
-  /*   MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat); */
-  /* } */
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
-    //mpitag=cpu->rank+cpu->mpinei[i];
-    //MPI_Sendrecv(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],mpitag,cpu->comm,&stat);
-    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,cpu->comm,req+2*i  );
-    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,cpu->comm,req+2*i+1);
+    MPI_Isend(sendbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],1,MPI_COMM_WORLD,&req[2*i]  );
+    MPI_Irecv(recvbuffer[i],cpu->nbuff,*cpu->MPI_PACKET,cpu->mpinei[i],MPI_ANY_TAG,MPI_COMM_WORLD,&req[2*i+1]);
+  }
+
+  
+  int flag;
+  int count;
+  MPI_Testall(2*cpu->nnei,req,&flag,stat);
+  if(cpu->rank==0) printf("X--");
+  for(i=0;i<2*cpu->nnei;i++){
+    MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+    if(cpu->rank==0) printf(" %d ",count);
+  }
+  if(cpu->rank==0) printf("\n");
+  while(!flag){
+    MPI_Testall(2*cpu->nnei,req,&flag,stat);
+    if(cpu->rank==0) printf("X--");
+    for(i=0;i<2*cpu->nnei;i++){
+      MPI_Get_count(stat+i,*cpu->MPI_PACKET,&count);
+      if(cpu->rank==0) printf(" %d ",count);
+    }
+    if(cpu->rank==0) printf("\n");
   }
   MPI_Waitall(2*cpu->nnei,req,stat);
+
+  /* if(cpu->rank==0) { */
+  /*   char st[256]; */
+  /*   int len; */
+  /*   for(i=0;i<cpu->nnei*2;i++) { */
+
+  /*     MPI_Error_string(stat[i].MPI_ERROR,st,&len);  */
+  /*     printf("%s ",st); */
+  /*   } */
+  /*   printf("\n"); */
+  /* } */
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
 
   // ---------  third we scatter the data back to the INTERNAL boundary octs
   if(field==1) field=3; // fix for an offset of marked scatter
   scatter_mpi(cpu,recvbuffer,field);
-  MPI_Barrier(cpu->comm);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   //
   free(stat);
@@ -657,15 +740,15 @@ int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct
 
   clean_mpibuff_part(cpu,psendbuffer,precvbuffer);
   nrem=gather_ex_part(cpu,psendbuffer,lastpart);
-  MPI_Barrier(cpu->comm);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
     mpitag=cpu->rank+cpu->mpinei[i];
-    MPI_Sendrecv(psendbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
+    MPI_Sendrecv(psendbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
   }
 
   nadd=scatter_mpi_part(cpu,precvbuffer,lastpart);
-  MPI_Barrier(cpu->comm);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // Return delta part
 

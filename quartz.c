@@ -820,6 +820,7 @@ int main(int argc, char *argv[])
 	  
 	      // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
 #ifdef WMPI
+
 	      MPI_Barrier(cpu.comm);
 	      tg1=MPI_Wtime();
 #endif 
@@ -932,6 +933,9 @@ int main(int argc, char *argv[])
 	  tm2=MPI_Wtime();
 
 	  // reducing the residuals
+	  if(cpu.comm!=MPI_COMM_WORLD){
+	    printf("ouhle\n");
+	  }
 	  MPI_Barrier(cpu.comm);
 	  float restot;
 	  //if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
