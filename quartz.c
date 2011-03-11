@@ -366,6 +366,8 @@ int main(int argc, char *argv[])
 
   // allocating the communication buffers
 
+ 
+
   sendbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
   recvbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
   for(i=0;i<cpu.nnei;i++) {

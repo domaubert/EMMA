@@ -281,7 +281,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
   struct CELL *newcell3;
   int ichild;
 
-    printf("==> start marking\n");
+  if(cpu->rank==0) printf("==> start marking\n");
     //    for(level=levelmax;level>=levelcoarse;level--) // looping over octs
     for(level=levelmax;level>=1;level--) // looping over octs
       {
