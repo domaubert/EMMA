@@ -296,126 +296,129 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 	      {
 		marker++;
 		nextoct=firstoct[level-1];
-		if(nextoct==NULL) continue;
-		
-		do
-		  {
-		    curoct=nextoct;
-		    nextoct=curoct->next;
+		if(nextoct==NULL){
+		  //printf("Mark on level %d skipped by proc %d\n",level,cpu->rank);
+		}
+		else{
+		  do
+		    {
+		      curoct=nextoct;
+		      nextoct=curoct->next;
 		    
-		    for(icell=0;icell<8;icell++) // looping over cells in oct
-		      {
-			switch(pass){
-			  //=========================================================
-			case 0: // marking cell already refined or marked marker=1/4
-			  smark=0;
-			  if(curoct->cell[icell].child!=NULL){ // CHECK IF ACTING ON ORIGINAL OR COPY
-			    newoct=curoct->cell[icell].child;
-			    for(ichild=0;ichild<8;ichild++){
-			      smark+=((newoct->cell[ichild].marked!=0)||(newoct->cell[ichild].child!=NULL));
-			    }
-			  }
-			  if(smark!=0){
-			    curoct->cell[icell].marked=marker;
-			    nmark++;
-			  }
-			  break;
-			  //=========================================================
-			case 1: //marking neighbors marker=2/5
-			  if((curoct->cell[icell].marked<marker)&&(curoct->cell[icell].marked>0)){
-			    getcellnei(icell, vnei, vcell);
-			    for(ii=0;ii<6;ii++){ // marking the 6 cardinal neighbors
-			      if(vnei[ii]==6){
-				newcell=&(curoct->cell[vcell[ii]]);
-				if(curoct->cell[vcell[ii]].marked==0){
-				  curoct->cell[vcell[ii]].marked=marker;
-				  nmark++;
-				}
+		      for(icell=0;icell<8;icell++) // looping over cells in oct
+			{
+			  switch(pass){
+			    //=========================================================
+			  case 0: // marking cell already refined or marked marker=1/4
+			    smark=0;
+			    if(curoct->cell[icell].child!=NULL){ // CHECK IF ACTING ON ORIGINAL OR COPY
+			      newoct=curoct->cell[icell].child;
+			      for(ichild=0;ichild<8;ichild++){
+				smark+=((newoct->cell[ichild].marked!=0)||(newoct->cell[ichild].child!=NULL));
 			      }
-			      else{
-				// Note that the neibourgh cell may not exist therefore we have to check
-				if(curoct->nei[vnei[ii]]->child!=NULL){
-				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
-				  if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
-				    curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
+			    }
+			    if(smark!=0){
+			      curoct->cell[icell].marked=marker;
+			      nmark++;
+			    }
+			    break;
+			    //=========================================================
+			  case 1: //marking neighbors marker=2/5
+			    if((curoct->cell[icell].marked<marker)&&(curoct->cell[icell].marked>0)){
+			      getcellnei(icell, vnei, vcell);
+			      for(ii=0;ii<6;ii++){ // marking the 6 cardinal neighbors
+				if(vnei[ii]==6){
+				  newcell=&(curoct->cell[vcell[ii]]);
+				  if(curoct->cell[vcell[ii]].marked==0){
+				    curoct->cell[vcell[ii]].marked=marker;
 				    nmark++;
 				  }
 				}
 				else{
-				  newcell=NULL;
-				}
-			      }
-
-			      // each of the 6 cardinal neighbors will mark 4 side neighbors
-			      if(newcell!=NULL){
-				newoct=cell2oct(newcell); // we get the parent oct
-				getcellnei(newcell->idx, vnei2, vcell2); //we get the neighbors
-				for(il=0;il<6;il++){
-				  if((il/2)==(ii/2)) continue;
-				  if(vnei2[il]==6){
-				    newcell2=&(newoct->cell[vcell2[il]]);
-				    if(newoct->cell[vcell2[il]].marked==0){
-				      newoct->cell[vcell2[il]].marked=marker;
+				  // Note that the neibourgh cell may not exist therefore we have to check
+				  if(curoct->nei[vnei[ii]]->child!=NULL){
+				    newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
+				    if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
+				      curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
 				      nmark++;
 				    }
 				  }
 				  else{
-				    if(newoct->nei[vnei2[il]]->child!=NULL){
-				      newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
-				      if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
-					newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
+				    newcell=NULL;
+				  }
+				}
+
+				// each of the 6 cardinal neighbors will mark 4 side neighbors
+				if(newcell!=NULL){
+				  newoct=cell2oct(newcell); // we get the parent oct
+				  getcellnei(newcell->idx, vnei2, vcell2); //we get the neighbors
+				  for(il=0;il<6;il++){
+				    if((il/2)==(ii/2)) continue;
+				    if(vnei2[il]==6){
+				      newcell2=&(newoct->cell[vcell2[il]]);
+				      if(newoct->cell[vcell2[il]].marked==0){
+					newoct->cell[vcell2[il]].marked=marker;
 					nmark++;
 				      }
 				    }
 				    else{
-				      newcell2=NULL;
-				    }
-				  }
-				  
-				  // ecah of the 4 side neighbors will mark 2 corners
-				  if(newcell2!=NULL){
-				    desoct=cell2oct(newcell2);
-				    getcellnei(newcell2->idx, vnei3, vcell3);
-				    for(ip=0;ip<6;ip++){
-				      if(((ip/2)==(il/2))||((ip/2)==(ii/2))) continue;
-				      if(vnei3[ip]==6){
-					if(desoct->cell[vcell3[ip]].marked==0){
-					  desoct->cell[vcell3[ip]].marked=marker;
+				      if(newoct->nei[vnei2[il]]->child!=NULL){
+					newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
+					if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
+					  newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
 					  nmark++;
 					}
 				      }
 				      else{
-				  	if(desoct->nei[vnei3[ip]]->child!=NULL){
-					  if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
-					    desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
+					newcell2=NULL;
+				      }
+				    }
+				  
+				    // ecah of the 4 side neighbors will mark 2 corners
+				    if(newcell2!=NULL){
+				      desoct=cell2oct(newcell2);
+				      getcellnei(newcell2->idx, vnei3, vcell3);
+				      for(ip=0;ip<6;ip++){
+					if(((ip/2)==(il/2))||((ip/2)==(ii/2))) continue;
+					if(vnei3[ip]==6){
+					  if(desoct->cell[vcell3[ip]].marked==0){
+					    desoct->cell[vcell3[ip]].marked=marker;
 					    nmark++;
 					  }
-				  	}
+					}
+					else{
+					  if(desoct->nei[vnei3[ip]]->child!=NULL){
+					    if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
+					      desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
+					      nmark++;
+					    }
+					  }
+					}
 				      }
 				    }
 				  }
 				}
 			      }
 			    }
+			    break;
+			    //=========================================================
+			  case 2: // marking cells satisfying user defined criterion marker=3/6
+			    //if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
+			    //if(curoct->npart>threshold) curoct->cell[icell].marked=marker;
+			    if((curoct->cell[icell].density>threshold)&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;
+			    }
+			    break;
 			  }
-			  break;
-			//=========================================================
-			case 2: // marking cells satisfying user defined criterion marker=3/6
-			  //if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
-			  //if(curoct->npart>threshold) curoct->cell[icell].marked=marker;
-			  if((curoct->cell[icell].density>threshold)&&(curoct->cell[icell].marked==0)) {
-			    curoct->cell[icell].marked=marker;
-			    nmark++;
-			  }
-			  break;
 			}
-		      }
 	      
-		  }while(nextoct!=NULL);
-		//printf("pass=%d nmark=%d\n",pass,nmark);
+		    }while(nextoct!=NULL);
+		  //printf("pass=%d nmark=%d\n",pass,nmark);
+		}
 #ifdef WMPI
 
-		//breakmpi();
+		MPI_Barrier(cpu->comm);
 		// first we correct from the marker diffusion
 		mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 		
