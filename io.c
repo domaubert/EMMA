@@ -262,6 +262,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       fscanf(buf,"%s %d",stream,&param->niter);
       fscanf(buf,"%s %d",stream,&param->stride);
       fscanf(buf,"%s %f",stream,&param->dt);
+      fscanf(buf,"%s %f",stream,&param->amrthresh);
       fclose(buf);
     }
 

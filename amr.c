@@ -280,6 +280,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
   struct CELL *newcell2;
   struct CELL *newcell3;
   int ichild;
+  float mcell;
 
   if(cpu->rank==0) printf("==> start marking\n");
     //    for(level=levelmax;level>=levelcoarse;level--) // looping over octs
@@ -405,7 +406,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
 			    //if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
 			    //if(curoct->npart>threshold) curoct->cell[icell].marked=marker;
-			    if((curoct->cell[icell].density>threshold)&&(curoct->cell[icell].marked==0)) {
+			    mcell=curoct->cell[icell].density*dx*dx*dx;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;
 			    }

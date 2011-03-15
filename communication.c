@@ -38,6 +38,9 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   if(cpu->bndoct!=NULL) free(cpu->bndoct);
   cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
 
+  // we clean the hash table
+  memset(cpu->htable,0,cpu->maxhash*sizeof(struct OCT*));
+
   // looking for neighbors
 
   for(level=1;level<=levelmax;level++)
@@ -127,6 +130,11 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]);
   printf("\n");
   
+  if(cpu->nebnd>cpu->nbuff){
+    int err=777;
+    printf("ERROR: mpi buffer size should be increased nbnd=%d nbuff=%d\n",cpu->nebnd,cpu->nbuff);
+    MPI_Abort(cpu->comm,err);
+  }
   
   // creating a cpu dictionnary to translate from cpu number to inei
   
@@ -394,7 +402,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found !");
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%d\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    

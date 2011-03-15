@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
   npart=64*64*64;
 #endif
 
-  threshold=50;
+  threshold=param.amrthresh;
   lmap=levelmax;
   stride=fmax(8,param.stride);//pow(2,levelcoarse);
   ncomp=10;
@@ -787,182 +787,16 @@ int main(int argc, char *argv[])
 
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      // COARSE LEVEL TREATMENT ============================================
-      if(level==levelcoarse){
-	norm_d=0.;
+      norm_d=0.;
 	
-	// looping over iterations
-	for(iter=0;iter<niter;iter++){
-	  
-	  if((iter%64==0)&&(cpu.rank==0)) printf("iter=%d ",iter);
-	  int vpass=0;
-	  
-#ifdef WMPI
-	  t1=MPI_Wtime();
-	  ts=0.;
-	  tl=0.;
-	  tg=0.;
-	  ta=0.;
-#endif 
-	  nextoct=firstoct[level-1];
-	  float res=0.; // the square of the residual
-
-/* 	  // preparing the gathering */
-/* 	  for(icomp=0;icomp<8;icomp++){ */
-/* 	    compnei[icomp]=(icomp==7?6:icomp); */
-/* 	    compvar[icomp]=(icomp==7?0:1); */
-/* 	  } */
-
-	  //start
-	  if(nextoct!=NULL){
-	    dx=pow(0.5,level);
-	    do{ 
-	      curoct=nextoct;
-	      vpass++;
-	      
-	  
-	      // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
-#ifdef WMPI
-	      MPI_Barrier(cpu.comm);
-	      tg1=MPI_Wtime();
-#endif 
-	      //First we gather the potential in all neighbors
-	      for(icomp=0;icomp<6;icomp++){
-		nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
-	      }
-	      
-	      if((stride<8*cpu.noct[level-1])||(iter==0)){
-		// Second we gather the local density and the local potential
-		nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
-		nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
-	      }
-
-#ifdef WMPI
-	      MPI_Barrier(cpu.comm);
-	      tg2=MPI_Wtime();
-	      tg+=(tg2-tg1);
-#endif 
-	  
-#ifdef WMPI
-	      ta1=MPI_Wtime();
-#endif 
-	      // 2.5 ==== we contrast the density by removing the average density value 
-	      if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
-
-	      // we compute the square of the norm of the density (first iteration only)
-	      if(iter==0) norm_d+=square(vcomp[7],nread);
-#ifdef WMPI
-	      ta2=MPI_Wtime();
-	      ta+=ta2-ta1;
-#endif 
-	  
-#ifdef WMPI
-	      tl1=MPI_Wtime();
-#endif 
-	      // Third we perform the calculation (eventually on GPU) also returns the residual
-	      float dummy;
-	      if(stride<8*cpu.noct[level-1]){
-		dummy=laplacian(vcomp,nread,dx,8);
-	      }
-	      else{
-		dummy=laplacian(vcomp,nread,dx,6);
-	      }
-	      res+=dummy;
-
-#ifdef WMPI
-	      tl2=MPI_Wtime();
-	      tl+=(tl2-tl1);
-#endif 
-
-
-#ifdef WMPI
-	      ts1=MPI_Wtime();
-#endif 
-	      if(stride<8*cpu.noct[level-1]){
-	      // Fourth we scatter back the potential estimation to the temp position 
-		nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
-	      }
-	      
-#ifdef WMPI
-	      ts2=MPI_Wtime();
-	      ts+=(ts2-ts1);
-#endif 
-	      
-	    }while(nextoct!=NULL);
-	  }
-	  
-	  //if((iter%1==0)&&(cpu.rank==0)) printf("performed %d vector pass on level=%d with nread=%d\n",vpass,level,nread);
-	  
-	  
-#ifdef WMPI
-	  tc1=MPI_Wtime();
-#endif 	  
-	  // ===============  we copy the result in the temp position to the potential 
-	  
-	  if(stride<8*cpu.noct[level-1]){
-	    nextoct=firstoct[level-1];
-	    if(nextoct!=NULL){
-	      do{ 
-		curoct=nextoct;
-		nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
-		nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
-		
-	      }while(nextoct!=NULL);
-	    }
-	  }
-	  else{
-	    nextoct=firstoct[level-1];
-	    if(nextoct!=NULL){
-	      do{ 
-		curoct=nextoct;
-		nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu);
-	      }while(nextoct!=NULL);
-	    }
-	  }
-	  
-#ifdef WMPI
-	  t2=MPI_Wtime();
-
-	  // dumping timings 
-	  fprintf(ft,"%d %d %e %e %e %e %e\n",level,stride,(t2-t1),tg,tl,ts,t2-tc1);
-#endif 
-	    
-#ifdef WMPI
-	  // ====We communicate the buffer
-	  tm1=MPI_Wtime();
-	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
-	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	  tm2=MPI_Wtime();
-
-	  // reducing the residuals
-	  if(cpu.comm!=MPI_COMM_WORLD){
-	    printf("ouhle\n");
-	  }
-	  MPI_Barrier(cpu.comm);
-	  float restot;
-	  //if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
-	  MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	  res=restot;
-#endif
-	  if((iter%64==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
-	  if(sqrt(res/norm_d)<acc) {
-	    break;
-	  }
-	}
-      }
-      // FINE LEVEL TREATMENT ============================================
-      else{
-	norm_d=0.;
-	
-	//initial guess from parent cell
+      /* 	// FINE LEVEL ONLY initial guess from parent cell */
+      if(level>levelcoarse){
 	nextoct=firstoct[level-1];
-	//printf("first=%p next=%p\n",nextoct,nextoct->next);
 	if(nextoct==NULL){
 	  printf("Proc %d skipping\n",cpu.rank);
-	  //continue; // we skip to next level if the firstoct is empty
 	}
 	else{
-	  do{ 
+	  do{
 	    curoct=nextoct;
 	    nextoct=curoct->next;
 	    if(curoct->cpu!=cpu.rank) continue;
@@ -975,91 +809,236 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 #endif
+      }
 
-#if 1
-	// fine level relaxation
-	for(iter=0;iter<niter;iter++){
-	  nextoct=firstoct[level-1];
-	  if((iter%16==0)&&(cpu.rank==0)) printf("level=%d iter=%d ",level,iter);
-	  int ncell=0;
-	  float res=0.;
-	  if(nextoct!=NULL){
-	    dx=pow(0.5,level);
-	    do{ 
-	      ncell++;
-	      curoct=nextoct;
-	      
-	      for(icomp=0;icomp<8;icomp++){
-		compnei[icomp]=(icomp==7?6:icomp);
-		compvar[icomp]=(icomp==7?0:1);
-	      }
-	      
-	      nextoct=gathercompnew(curoct,vcomp,compnei,compvar,stride,&cpu,&nread,8);
+      // looping over iterations
+      for(iter=0;iter<niter;iter++){
 	  
-	      // 2.5 ==== we contrast the density by removing the average density value 
-	      
-	      remove_avg(vcomp[7],nread,1.);
+	int vpass=0;
+	  
+#ifdef WMPI
+	t1=MPI_Wtime();
+	ts=0.;
+	tl=0.;
+	tg=0.;
+	ta=0.;
+#endif 
+	nextoct=firstoct[level-1];
+	float res=0.; // the square of the residual
 
-	      // we compute the square of the norm of the density (first iteration only)
-	      if(iter==0) norm_d+=square(vcomp[7],nread);
+	//start
+	if(nextoct!=NULL){
+	  dx=pow(0.5,level);
+	  do{ 
+	    curoct=nextoct;
+	      
 	  
+	    // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
+	    //First we gather the potential in all neighbors
+	    for(icomp=0;icomp<6;icomp++){
+	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
+	    }
+	      
+	    if((stride<8*cpu.noct[level-1])||(iter==0)){
+	      // Second we gather the local density and the local potential
+	      nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
+	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
+	    }
+
 	  
-	      // Third we perform the calculation (eventually on GPU) also returns the residual
-	      float dummy;
+	    // 2.5 ==== we contrast the density by removing the average density value 
+	    if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
+
+	    // we compute the square of the norm of the density (first iteration only)
+	    if(iter==0) norm_d+=square(vcomp[7],nread);
+
+	    // Third we perform the calculation (eventually on GPU) also returns the residual
+	    float dummy;
+	    if(stride<8*cpu.noct[level-1]){
 	      dummy=laplacian(vcomp,nread,dx,8);
-	      res+=dummy;
+	    }
+	    else{
+	      dummy=laplacian(vcomp,nread,dx,6);
+	    }
+	    res+=dummy;
 
+	    if(stride<8*cpu.noct[level-1]){
 	      // Fourth we scatter back the potential estimation to the temp position 
 	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
-
-	      
-	    }while(nextoct!=NULL);
-
-	    // ===============  we copy the result in the temp position to the potential 
-	    nextoct=firstoct[level-1];
-	    if(nextoct!=NULL){
-	      do{ 
-		curoct=nextoct;
-		
-		//memset(vcomp[0],0,stride*sizeof(float)); // reset the vcomp;
-		
-		nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
-		nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
-		
-	      }while(nextoct!=NULL);
 	    }
-	  }
+	  }while(nextoct!=NULL);
+	}
 
-#ifdef WMPI
-	  MPI_Barrier(cpu.comm);
-	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
-	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-#endif
-
-#ifdef WMPI
-	  // reducing the residuals
-	  float restot;
-	  //if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
-	  MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	  res=restot;
+	// ===============  we copy the result in the temp position to the potential 
 	  
-	  // if the level is absent on all processors we skip
-	  if((res==0.)&&(norm_d==0.)){
+	if(stride<8*cpu.noct[level-1]){
+	  nextoct=firstoct[level-1];
+	  if(nextoct!=NULL){
+	    do{ 
+	      curoct=nextoct;
+	      nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
+	      nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
+		
+	    }while(nextoct!=NULL);
+	  }
+	}
+	else{
+	  nextoct=firstoct[level-1];
+	  if(nextoct!=NULL){
+	    do{ 
+	      curoct=nextoct;
+	      nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu);
+	    }while(nextoct!=NULL);
+	  }
+	}
+	  
+#ifdef WMPI
+	t2=MPI_Wtime();
+	// dumping timings 
+	fprintf(ft,"%d %d %e %e %e %e %e\n",level,stride,(t2-t1),tg,tl,ts,t2-tc1);
+#endif 
+	    
+#ifdef WMPI
+	// ====We communicate the buffer
+	tm1=MPI_Wtime();
+	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
+	if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+	tm2=MPI_Wtime();
+
+	// reducing the residuals
+	if(cpu.comm!=MPI_COMM_WORLD){
+	  printf("ouhle\n");
+	}
+	MPI_Barrier(cpu.comm);
+	float restot;
+	//if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
+	MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+	res=restot;
+#endif
+	if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d dens=%e res=%e relative residual=%e\n ",level,iter,sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
+
+	// if the level is absent on all processors we skip */
+	if((res==0.)&&(norm_d==0.)){
 	    if(cpu.rank==0) printf("Level %d skipped\n",level);
 	    break;
-	  }
-
-
-#endif
-	  if((iter%16==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
-	  MPI_Barrier(cpu.comm);
-	  if(sqrt(res/norm_d)<acc) break;
 	}
-#endif
+
+	// convergence achieved
+	if(sqrt(res/norm_d)<acc) {
+	  break;
+	}
+
+
       }
     }
-#endif
+      // FINE LEVEL TREATMENT ============================================
+    /*   else{ */
+/* 	norm_d=0.; */
+	
+/* 	//initial guess from parent cell */
+/* 	nextoct=firstoct[level-1]; */
+/* 	if(nextoct==NULL){ */
+/* 	  printf("Proc %d skipping\n",cpu.rank); */
+/* 	} */
+/* 	else{ */
+/* 	  do{  */
+/* 	    curoct=nextoct; */
+/* 	    nextoct=curoct->next; */
+/* 	    if(curoct->cpu!=cpu.rank) continue; */
+/* 	    for(icell=0;icell<8;icell++){ */
+/* 	      curoct->cell[icell].pot=curoct->parent->pot; */
+/* 	    } */
+/* 	  }while(nextoct!=NULL); */
+/* 	} */
 
+/* #ifdef WMPI */
+/* 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2); */
+/* #endif */
+
+/* #if 1 */
+/* 	// fine level relaxation */
+/* 	for(iter=0;iter<niter;iter++){ */
+/* 	  nextoct=firstoct[level-1]; */
+/* 	  if((iter%16==0)&&(cpu.rank==0)) printf("level=%d iter=%d ",level,iter); */
+/* 	  int ncell=0; */
+/* 	  float res=0.; */
+/* 	  if(nextoct!=NULL){ */
+/* 	    dx=pow(0.5,level); */
+/* 	    do{  */
+/* 	      ncell++; */
+/* 	      curoct=nextoct; */
+	      
+/* 	      for(icomp=0;icomp<8;icomp++){ */
+/* 		compnei[icomp]=(icomp==7?6:icomp); */
+/* 		compvar[icomp]=(icomp==7?0:1); */
+/* 	      } */
+	      
+/* 	      nextoct=gathercompnew(curoct,vcomp,compnei,compvar,stride,&cpu,&nread,8); */
+	  
+/* 	      // 2.5 ==== we contrast the density by removing the average density value  */
+	      
+/* 	      remove_avg(vcomp[7],nread,1.); */
+
+/* 	      // we compute the square of the norm of the density (first iteration only) */
+/* 	      if(iter==0) norm_d+=square(vcomp[7],nread); */
+	  
+	  
+/* 	      // Third we perform the calculation (eventually on GPU) also returns the residual */
+/* 	      float dummy; */
+/* 	      dummy=laplacian(vcomp,nread,dx,8); */
+/* 	      res+=dummy; */
+
+/* 	      // Fourth we scatter back the potential estimation to the temp position  */
+/* 	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu); */
+
+	      
+/* 	    }while(nextoct!=NULL); */
+
+/* 	    // ===============  we copy the result in the temp position to the potential  */
+/* 	    nextoct=firstoct[level-1]; */
+/* 	    if(nextoct!=NULL){ */
+/* 	      do{  */
+/* 		curoct=nextoct; */
+		
+/* 		//memset(vcomp[0],0,stride*sizeof(float)); // reset the vcomp; */
+		
+/* 		nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field */
+/* 		nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu); */
+		
+/* 	      }while(nextoct!=NULL); */
+/* 	    } */
+/* 	  } */
+
+/* #ifdef WMPI */
+/* 	  MPI_Barrier(cpu.comm); */
+/* 	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2); */
+/* 	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm); */
+/* #endif */
+
+/* #ifdef WMPI */
+/* 	  // reducing the residuals */
+/* 	  float restot; */
+/* 	  //if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank); */
+/* 	  MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm); */
+/* 	  res=restot; */
+	  
+/* 	  // if the level is absent on all processors we skip */
+/* 	  if((res==0.)&&(norm_d==0.)){ */
+/* 	    if(cpu.rank==0) printf("Level %d skipped\n",level); */
+/* 	    break; */
+/* 	  } */
+
+
+/* #endif */
+/* 	  if((iter%16==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d)); */
+/* 	  MPI_Barrier(cpu.comm); */
+/* 	  if(sqrt(res/norm_d)<acc) break; */
+/* 	} */
+/* #endif */
+/*       } */
+  
+#endif
+  
 #ifdef TIME_JAC
   fclose(ft);
 #endif
