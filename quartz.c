@@ -653,15 +653,15 @@ int main(int argc, char *argv[])
     // ==================================== marking the cells
     //if(nsteps==1)  breakmpi();
     
-    sprintf(filename,"data/dmstart.%05d.p%05d",nsteps+1,cpu.rank);
-    printf("%s\n",filename);
-    dumpcube(lmap,firstoct,1,filename);
+    /* sprintf(filename,"data/dmstart.%05d.p%05d",nsteps+1,cpu.rank); */
+    /* printf("%s\n",filename); */
+    /* dumpcube(lmap,firstoct,1,filename); */
 
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
 
-    sprintf(filename,"data/markstart.%05d.p%05d",nsteps+1,cpu.rank);
-    printf("%s\n",filename);
-    dumpcube(lmap,firstoct,4,filename);
+    /* sprintf(filename,"data/markstart.%05d.p%05d",nsteps+1,cpu.rank); */
+    /* printf("%s\n",filename); */
+    /* dumpcube(lmap,firstoct,4,filename); */
     
     
   
@@ -931,111 +931,6 @@ int main(int argc, char *argv[])
 
       }
     }
-      // FINE LEVEL TREATMENT ============================================
-    /*   else{ */
-/* 	norm_d=0.; */
-	
-/* 	//initial guess from parent cell */
-/* 	nextoct=firstoct[level-1]; */
-/* 	if(nextoct==NULL){ */
-/* 	  printf("Proc %d skipping\n",cpu.rank); */
-/* 	} */
-/* 	else{ */
-/* 	  do{  */
-/* 	    curoct=nextoct; */
-/* 	    nextoct=curoct->next; */
-/* 	    if(curoct->cpu!=cpu.rank) continue; */
-/* 	    for(icell=0;icell<8;icell++){ */
-/* 	      curoct->cell[icell].pot=curoct->parent->pot; */
-/* 	    } */
-/* 	  }while(nextoct!=NULL); */
-/* 	} */
-
-/* #ifdef WMPI */
-/* 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2); */
-/* #endif */
-
-/* #if 1 */
-/* 	// fine level relaxation */
-/* 	for(iter=0;iter<niter;iter++){ */
-/* 	  nextoct=firstoct[level-1]; */
-/* 	  if((iter%16==0)&&(cpu.rank==0)) printf("level=%d iter=%d ",level,iter); */
-/* 	  int ncell=0; */
-/* 	  float res=0.; */
-/* 	  if(nextoct!=NULL){ */
-/* 	    dx=pow(0.5,level); */
-/* 	    do{  */
-/* 	      ncell++; */
-/* 	      curoct=nextoct; */
-	      
-/* 	      for(icomp=0;icomp<8;icomp++){ */
-/* 		compnei[icomp]=(icomp==7?6:icomp); */
-/* 		compvar[icomp]=(icomp==7?0:1); */
-/* 	      } */
-	      
-/* 	      nextoct=gathercompnew(curoct,vcomp,compnei,compvar,stride,&cpu,&nread,8); */
-	  
-/* 	      // 2.5 ==== we contrast the density by removing the average density value  */
-	      
-/* 	      remove_avg(vcomp[7],nread,1.); */
-
-/* 	      // we compute the square of the norm of the density (first iteration only) */
-/* 	      if(iter==0) norm_d+=square(vcomp[7],nread); */
-	  
-	  
-/* 	      // Third we perform the calculation (eventually on GPU) also returns the residual */
-/* 	      float dummy; */
-/* 	      dummy=laplacian(vcomp,nread,dx,8); */
-/* 	      res+=dummy; */
-
-/* 	      // Fourth we scatter back the potential estimation to the temp position  */
-/* 	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu); */
-
-	      
-/* 	    }while(nextoct!=NULL); */
-
-/* 	    // ===============  we copy the result in the temp position to the potential  */
-/* 	    nextoct=firstoct[level-1]; */
-/* 	    if(nextoct!=NULL){ */
-/* 	      do{  */
-/* 		curoct=nextoct; */
-		
-/* 		//memset(vcomp[0],0,stride*sizeof(float)); // reset the vcomp; */
-		
-/* 		nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field */
-/* 		nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu); */
-		
-/* 	      }while(nextoct!=NULL); */
-/* 	    } */
-/* 	  } */
-
-/* #ifdef WMPI */
-/* 	  MPI_Barrier(cpu.comm); */
-/* 	  mpi_exchange(&cpu,sendbuffer,recvbuffer,2); */
-/* 	  if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm); */
-/* #endif */
-
-/* #ifdef WMPI */
-/* 	  // reducing the residuals */
-/* 	  float restot; */
-/* 	  //if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank); */
-/* 	  MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm); */
-/* 	  res=restot; */
-	  
-/* 	  // if the level is absent on all processors we skip */
-/* 	  if((res==0.)&&(norm_d==0.)){ */
-/* 	    if(cpu.rank==0) printf("Level %d skipped\n",level); */
-/* 	    break; */
-/* 	  } */
-
-
-/* #endif */
-/* 	  if((iter%16==0)&&(cpu.rank==0)) printf("dens=%e res=%e relative residual=%e\n ",sqrt(norm_d),sqrt(res),sqrt(res/norm_d)); */
-/* 	  MPI_Barrier(cpu.comm); */
-/* 	  if(sqrt(res/norm_d)<acc) break; */
-/* 	} */
-/* #endif */
-/*       } */
   
 #endif
   

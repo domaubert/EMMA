@@ -63,3 +63,30 @@ func mergefield(fname,cname,ncpu,level){
     return field;
 
 }
+
+func plotamr(levmap,color=,width=)
+{
+  nx=dimsof(levmap)(2);
+  ny=dimsof(levmap)(3);
+
+  lcur=max(levmap);
+  dx=1;
+  imod=1;
+  while(lcur>=1){
+    lcur;
+    www=where2(levmap==lcur);
+    if(numberof(www)!=0){
+      for(i=1;i<dimsof(www)(0);i++){
+        xmin=www(1,i)-1;
+        ymin=www(2,i)-1;
+        if((xmin%dx==0)*(ymin%dx==0)){
+          plbox,xmin,xmin+dx,ymin,ymin+dx,color=color,width=width;
+        }
+      }
+    }
+    lcur=lcur-1;
+    dx*=2;
+  }
+  
+}
+
