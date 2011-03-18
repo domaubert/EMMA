@@ -69,8 +69,9 @@ func plotamr(levmap,color=,width=)
   nx=dimsof(levmap)(2);
   ny=dimsof(levmap)(3);
 
+  lmap=int(log(nx)/log(2));
   lcur=max(levmap);
-  dx=1;
+  dx=2^(lmap-lcur);
   imod=1;
   while(lcur>=1){
     lcur;

@@ -406,7 +406,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
 			    //if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
 			    //if(curoct->npart>threshold) curoct->cell[icell].marked=marker;
-			    mcell=curoct->cell[icell].density*dx*dx*dx;
+			    mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->cpu==cpu->rank);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;
