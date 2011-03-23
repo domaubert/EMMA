@@ -389,9 +389,9 @@ int main(int argc, char *argv[])
   // ==== some initial dump
 
   sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank);
-  dumpcube(lmap,firstoct,0,filename);
+  //dumpcube(lmap,firstoct,0,filename);
   sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank);
-  dumpcube(lmap,firstoct,3,filename);
+  //dumpcube(lmap,firstoct,3,filename);
 
   // =====  computing the memory location of the last oct 
 
@@ -597,7 +597,7 @@ int main(int argc, char *argv[])
   multicheck(firstoct,npart,levelmax,cpu.rank,cpu.noct);
 
   sprintf(filename,"data/parstart.%05d.p%05d",0,cpu.rank);
-  dumppart(firstoct,filename,npart,levelcoarse,levelmax);
+  //dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
 #endif	
 
@@ -621,8 +621,8 @@ int main(int argc, char *argv[])
 
 
   sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
-  printf("%s\n",filename);
-  dumpcube(lmap,firstoct,1,filename);
+  //printf("%s\n",filename);
+  //dumpcube(lmap,firstoct,1,filename);
 
 
 
@@ -714,7 +714,7 @@ int main(int argc, char *argv[])
 #endif
 
   sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank);
-  dumpcube(lmap,firstoct,0,filename);
+  //dumpcube(lmap,firstoct,0,filename);
 
 
 
@@ -724,7 +724,7 @@ int main(int argc, char *argv[])
 #endif
 
   sprintf(filename,"data/cpustart.%05d.p%05d",nsteps+1,cpu.rank);
-  dumpcube(lmap,firstoct,3,filename);
+  //dumpcube(lmap,firstoct,3,filename);
 
 
 #if 1
@@ -747,7 +747,7 @@ int main(int argc, char *argv[])
 
   sprintf(filename,"data/denstart.%05d.p%05d",nsteps+1,cpu.rank);
   printf("%s\n",filename);
-  dumpcube(lmap,firstoct,1,filename);
+  //dumpcube(lmap,firstoct,1,filename);
 
 
 #if 1
@@ -958,7 +958,7 @@ int main(int argc, char *argv[])
 
   sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
   printf("%s\n",filename);
-  dumpcube(lmap,firstoct,2,filename);
+  //dumpcube(lmap,firstoct,2,filename);
 	    
 
   // ==================================== Force calculation and velocity update   // corrector step
@@ -973,20 +973,18 @@ int main(int argc, char *argv[])
   if(nsteps%(param.ndumps)==0){
     // ===== Casting rays to fill a map
 
-  /*   sprintf(filename,"data/level.%05d",nsteps); */
-  /*   dumpmap(lmap,firstoct,0,filename,0.,1.); */
-  /*   sprintf(filename,"data/dens.%05d",nsteps); */
-  /*   dumpmap(lmap,firstoct,1,filename,0.,1.); */
-  /*   sprintf(filename,"data/pot3d.%05d",nsteps); */
-  /*   dumpcube(lmap,firstoct,2,filename); */
-  /*   sprintf(filename,"data/lev3d.%05d",nsteps); */
-  /*   dumpcube(lmap,firstoct,0,filename); */
+    sprintf(filename,"data/pot3d.%05d",nsteps);
+    dumpcube(lmap,firstoct,2,filename);
+    sprintf(filename,"data/lev3d.%05d",nsteps);
+    dumpcube(lmap,firstoct,0,filename);
+    sprintf(filename,"data/cpu3d.%05d",nsteps);
+    dumpcube(lmap,firstoct,3,filename);
 
   
-  /* //==== Gathering particles for dump */
+  //==== Gathering particles for dump
 
-  /*   sprintf(filename,"data/part.%05d",nsteps); */
-  /*   dumppart(firstoct,filename,npart,levelcoarse,levelmax); */
+    sprintf(filename,"data/part.%05d",nsteps);
+    dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
   }
 #endif
