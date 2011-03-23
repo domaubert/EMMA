@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   struct PART *lastpart;
 
   int curc;
-
+  float dtnew;
   int nbnd;
 
   float x,y,z;
@@ -826,6 +826,8 @@ int main(int argc, char *argv[])
 	nextoct=firstoct[level-1];
 	float res=0.; // the square of the residual
 
+	double tt[10];
+
 	//start
 	if(nextoct!=NULL){
 	  dx=pow(0.5,level);
@@ -835,15 +837,25 @@ int main(int argc, char *argv[])
 	  
 	    // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
 	    //First we gather the potential in all neighbors
+	    tt[0]=MPI_Wtime();
+	    /* for(icomp=0;icomp<6;icomp++){ */
+	    /*   nextoct=gathercompempty(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
+	    /* } */
+	      
+	    tt[1]=MPI_Wtime();
+
 	    for(icomp=0;icomp<6;icomp++){
 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
 	    }
-	      
+	    
+	    tt[2]=MPI_Wtime();
+
 	    if((stride<8*cpu.noct[level-1])||(iter==0)){
 	      // Second we gather the local density and the local potential
 	      nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
 	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
 	    }
+	    tt[3]=MPI_Wtime();
 
 	  
 	    // 2.5 ==== we contrast the density by removing the average density value 
@@ -852,6 +864,7 @@ int main(int argc, char *argv[])
 	    // we compute the square of the norm of the density (first iteration only)
 	    if(iter==0) norm_d+=square(vcomp[7],nread);
 
+	    tt[4]=MPI_Wtime();
 	    // Third we perform the calculation (eventually on GPU) also returns the residual
 	    float dummy;
 	    if(stride<8*cpu.noct[level-1]){
@@ -861,11 +874,17 @@ int main(int argc, char *argv[])
 	      dummy=laplacian(vcomp,nread,dx,6);
 	    }
 	    res+=dummy;
+	    tt[5]=MPI_Wtime();
 
 	    if(stride<8*cpu.noct[level-1]){
 	      // Fourth we scatter back the potential estimation to the temp position 
 	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
 	    }
+
+	    tt[6]=MPI_Wtime();
+	    
+	    fprintf(ft,"%d %d %e %e %e %e %e %e %e\n",level,stride,tt[6]-tt[0],tt[1]-tt[0],tt[2]-tt[1],tt[3]-tt[2],tt[4]-tt[3],tt[5]-tt[4],tt[6]-tt[5]);
+
 	  }while(nextoct!=NULL);
 	}
 
@@ -895,7 +914,6 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	t2=MPI_Wtime();
 	// dumping timings 
-	fprintf(ft,"%d %d %e %e %e %e %e\n",level,stride,(t2-t1),tg,tl,ts,t2-tc1);
 #endif 
 	    
 #ifdef WMPI
@@ -987,8 +1005,8 @@ int main(int argc, char *argv[])
 
   // Computing displacement (predictor)
 
-  movepart(levelcoarse,levelmax,firstoct,dt);
-
+  dtnew=movepart(levelcoarse,levelmax,firstoct,dt);
+  dt=dtnew;
 
   // Moving particles through cells (3 passes)
 

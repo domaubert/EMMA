@@ -77,10 +77,10 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
 }
 //------------------------------------------------------------------------
 
-void movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
+float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
   
   int level;
-  float mdisp;
+  float mdisp,lmdisp;
   struct OCT *nextoct;
   struct OCT oct;
   float dxcur;
@@ -89,11 +89,54 @@ void movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
   struct PART *curp;
   float disp;
 
+  // Computing new timestep
+  lmdisp=0.;
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
-      printf("level=%d\n",level);
       mdisp=0.;
 
+      // setting the first oct
+      
+      nextoct=firstoct[level-1];
+      
+      if(nextoct==NULL) continue; // in case the level is empty
+      do // sweeping through the octs of level
+	{
+	  oct=(*nextoct);
+	  dxcur=1./pow(2,oct.level);
+	  nextoct=oct.next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+
+	      if(nexp!=NULL){
+		do{ 
+		  curp=nexp; 
+		  nexp=curp->next; 
+
+		  // particle displacement
+		  disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
+		  if(disp>mdisp) mdisp=disp;
+
+		}while(nexp!=NULL);
+	      }
+	    }
+	}while(nextoct!=NULL);
+
+      if((mdisp/dxcur)>lmdisp) lmdisp=mdisp/dxcur;
+      //printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
+    }
+
+  // new tstep
+  dt=dt/lmdisp*0.5;
+  
+  
+
+
+  // === Moving particles
+
+  for(level=levelcoarse;level<=levelmax;level++) // looping over levels
+    {
       // setting the first oct
       
       nextoct=firstoct[level-1];
@@ -126,6 +169,8 @@ void movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
 	}while(nextoct!=NULL);
       printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
     }
+
+  return dt;
 }
 
 //------------------------------------------------------------------------

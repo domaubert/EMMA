@@ -1,6 +1,6 @@
 
 struct OCT* gathercomp(struct OCT *octstart, float *vec, char nei, char var, int stride, struct CPUINFO *cpu, int *nread);
-struct OCT* gathercompnew(struct OCT *octstart, float **vec, char *nei, char *var, int stride, struct CPUINFO *cpu, int *nread, int ncomp);
+struct OCT* gathercompempty(struct OCT *octstart, float *vec, char nei, char var, int stride, struct CPUINFO *cpu, int *nread);
 struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, int stride, struct CPUINFO *cpu);
 float laplacian(float **vcomp, int stride, float dx, int locres);
 void grad(float **vcomp, int stride, float dx, int dir);
