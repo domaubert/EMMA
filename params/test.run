@@ -1,4 +1,4 @@
-mpi_buffer_size 32768
+mpi_buffer_size 8192
 output_frequency 10
 max_number_of_steps 100
 level_coarse 6

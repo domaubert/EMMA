@@ -112,6 +112,7 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;
+  if(cpu->mpinei!=NULL) free(cpu->mpinei);
   cpu->mpinei=(int*)calloc(nnei,sizeof(int)); // we reallocate the array to free some memory
   for(i=0;i<cpu->nnei;i++) cpu->mpinei[i]=neicpu[i];
   free(neicpu);
@@ -130,14 +131,17 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]);
   printf("\n");
   
+#ifdef WMPI
   if(cpu->nebnd>cpu->nbuff){
     int err=777;
     printf("ERROR: mpi buffer size should be increased nbnd=%d nbuff=%d\n",cpu->nebnd,cpu->nbuff);
     MPI_Abort(cpu->comm,err);
   }
+#endif
   
   // creating a cpu dictionnary to translate from cpu number to inei
   
+  if(cpu->dict!=NULL) free(cpu->dict);
   cpu->dict=(int*)calloc(cpu->nproc,sizeof(int));
   for(i=0;i<cpu->nproc;i++) cpu->dict[i]=-1;
   for(i=0;i<cpu->nnei;i++){

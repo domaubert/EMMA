@@ -114,7 +114,6 @@ int main(int argc, char *argv[])
 
   struct RUNPARAMS param;
 
-
   //========== TEST ZONE (IF REQUIRED)==========
 
 /*   printf("size =%d\n",sizeof(struct CELL)); */
@@ -236,6 +235,9 @@ int main(int argc, char *argv[])
 
   // We segment the oct distributions at levelcoarse 
     cpu.bndoct=NULL;
+    cpu.mpinei=NULL;
+    cpu.dict=NULL;
+
     cpu.nbuff=param.nbuff;
     cpu.allkmin=(int*)calloc(cpu.nproc,sizeof(int));
     cpu.allkmax=(int*)calloc(cpu.nproc,sizeof(int));
@@ -250,7 +252,6 @@ int main(int argc, char *argv[])
     cpu.allkmin[0]=cpu.kmin;
     cpu.allkmax[0]=cpu.kmax;
 #endif    
-    
     
 
     
@@ -684,10 +685,6 @@ int main(int argc, char *argv[])
 	  nextoct=curoct->next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-/* 	      if(curoct->cell[icell].marked>50){ */
-/* 		printf("ouhl %f\n",curoct->cell[icell].marked); */
-/* 		//abort(); */
-/* 	      } */
 	      curoct->cell[icell].marked=0.;
 	      ncell++;
 	      avg+=curoct->cell[icell].density;
@@ -837,26 +834,29 @@ int main(int argc, char *argv[])
 	  
 	    // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
 	    //First we gather the potential in all neighbors
+#ifdef WMPI
 	    tt[0]=MPI_Wtime();
+#endif
 	    /* for(icomp=0;icomp<6;icomp++){ */
 	    /*   nextoct=gathercompempty(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
 	    /* } */
-	      
+#ifdef WMPI	      
 	    tt[1]=MPI_Wtime();
-
+#endif
 	    for(icomp=0;icomp<6;icomp++){
 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
 	    }
-	    
+#ifdef WMPI	    
 	    tt[2]=MPI_Wtime();
-
+#endif
 	    if((stride<8*cpu.noct[level-1])||(iter==0)){
 	      // Second we gather the local density and the local potential
 	      nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
 	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
 	    }
+#ifdef WMPI
 	    tt[3]=MPI_Wtime();
-
+#endif
 	  
 	    // 2.5 ==== we contrast the density by removing the average density value 
 	    if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
@@ -864,7 +864,9 @@ int main(int argc, char *argv[])
 	    // we compute the square of the norm of the density (first iteration only)
 	    if(iter==0) norm_d+=square(vcomp[7],nread);
 
+#ifdef WMPI
 	    tt[4]=MPI_Wtime();
+#endif
 	    // Third we perform the calculation (eventually on GPU) also returns the residual
 	    float dummy;
 	    if(stride<8*cpu.noct[level-1]){
@@ -874,17 +876,18 @@ int main(int argc, char *argv[])
 	      dummy=laplacian(vcomp,nread,dx,6);
 	    }
 	    res+=dummy;
+#ifdef WMPI
 	    tt[5]=MPI_Wtime();
-
+#endif
 	    if(stride<8*cpu.noct[level-1]){
 	      // Fourth we scatter back the potential estimation to the temp position 
 	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
 	    }
 
+#ifdef WMPI
 	    tt[6]=MPI_Wtime();
-	    
 	    fprintf(ft,"%d %d %e %e %e %e %e %e %e\n",level,stride,tt[6]-tt[0],tt[1]-tt[0],tt[2]-tt[1],tt[3]-tt[2],tt[4]-tt[3],tt[5]-tt[4],tt[6]-tt[5]);
-
+#endif
 	  }while(nextoct!=NULL);
 	}
 
@@ -933,7 +936,8 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 	res=restot;
 #endif
-	if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d dens=%e res=%e relative residual=%e\n ",level,iter,sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
+	//if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d dens=%e res=%e relative residual=%e\n ",level,iter,sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
+	if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e\n ",level,iter,sqrt(res/norm_d));
 
 	// if the level is absent on all processors we skip */
 	if((res==0.)&&(norm_d==0.)){
@@ -973,17 +977,17 @@ int main(int argc, char *argv[])
   if(nsteps%(param.ndumps)==0){
     // ===== Casting rays to fill a map
 
-    sprintf(filename,"data/pot3d.%05d",nsteps);
+    sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,2,filename);
-    sprintf(filename,"data/lev3d.%05d",nsteps);
+    sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,0,filename);
-    sprintf(filename,"data/cpu3d.%05d",nsteps);
+    sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,3,filename);
 
   
   //==== Gathering particles for dump
 
-    sprintf(filename,"data/part.%05d",nsteps);
+    sprintf(filename,"data/part.%05d.p%05d",nsteps,cpu.rank);
     dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
   }
@@ -1022,8 +1026,8 @@ int main(int argc, char *argv[])
 
   //==== Gathering particles for dump
 
-  sprintf(filename,"data/partstart.%05d.p%05d",nsteps+1,cpu.rank);
-  dumppart(firstoct,filename,npart,levelcoarse,levelmax);
+  //  sprintf(filename,"data/partstart.%05d.p%05d",nsteps+1,cpu.rank);
+  //dumppart(firstoct,filename,npart,levelcoarse,levelmax);
 
 #if 1
   // ==================================== Check the number of particles and octs

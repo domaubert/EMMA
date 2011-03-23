@@ -268,6 +268,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
     }
   printf("tot=%f\n",tot*pow(dxcur,3));
 #endif
+
+  free(cicoct);
 }
 
 
@@ -669,6 +671,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     break;
   }
 
+  free(cicoct);
 }
 
 
