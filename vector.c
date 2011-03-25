@@ -297,7 +297,6 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
  
 
 float laplacian(float **vcomp, int stride, float dx, int locres){
-
   int i;
   float temp;
   float res,res2=0.;
@@ -305,6 +304,21 @@ float laplacian(float **vcomp, int stride, float dx, int locres){
   for(i=0;i<stride;i++){
     temp=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i])/6.-dx*dx*vcomp[7][i]/6.*4*M_PI;
     res=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i]-6.*vcomp[6][i])/(dx*dx)-4.*M_PI*vcomp[7][i];
+    res2+=res*res;
+    vcomp[locres][i]=temp;
+  }
+  return res2;
+}
+
+float laplaciancosmo(float **vcomp, int stride, float dx, int locres, float omegam, float a){
+  int i;
+  float temp;
+  float res,res2=0.;
+  float tt;
+
+  for(i=0;i<stride;i++){
+    temp=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i])/6.-dx*dx*vcomp[7][i]/6.*1.5*omegam/a;
+    res=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i]-6.*vcomp[6][i])/(dx*dx)-1.5*omegam*vcomp[7][i]/a;
     res2+=res*res;
     vcomp[locres][i]=temp;
   }

@@ -46,14 +46,21 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   tx=fabs((curp->x-xc)/dxcur);
   ty=fabs((curp->y-yc)/dxcur);
   tz=fabs((curp->z-zc)/dxcur);
-  if(!full){fullok=(tx<1.)*(ty<1.)*(tz<1.);} // necessary for boundary cells
+  if(!full)
+    {
+      fullok=(tx<=1.)*(ty<=1.)*(tz<=1.);
+    } // necessary for boundary cells
 	  
   dx=1.-tx;
   dy=1.-ty;
   dz=1.-tz;
 
+  //  printf("id=%d %f %f %f %f %f %f \n",curp->idx,dx,dy,dz,tx,ty,tz);
+
   // contrib to current cell 000 =====
   contrib=dx*dy*dz;
+  //printf("000 id=%d contrib=%f\n",curp->idx,contrib);
+
   if((contrib<=1.)&&(contrib>=0.)){
     if(full||fullok){
       curoct->cell[icell].density+=contrib/pow(dxcur,3)*curp->mass;
@@ -67,6 +74,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       // contrib to 100 cell ===========================================================
   
       contrib=tx*dy*dz;
+      //printf("100 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 	if(vnei[neip[0]]==6){
 	  curoct->cell[vcell[neip[0]]].density+=contrib/pow(dxcur,3)*curp->mass;
@@ -79,6 +87,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       }
       // contrib to 010 cell ===========================================================
       contrib=dx*ty*dz;
+      //printf("010 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 	if(vnei[neip[1]]==6){
 	  curoct->cell[vcell[neip[1]]].density+=contrib/pow(dxcur,3)*curp->mass;
@@ -94,6 +103,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   
       // contrib to 001 cell ===========================================================
       contrib=dx*dy*tz;
+      //printf("001 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 	if(vnei[neip[2]]==6){
 	  curoct->cell[vcell[neip[2]]].density+=contrib/pow(dxcur,3)*curp->mass;
@@ -109,6 +119,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       //contrib to 110 cell 2 paths ======================================================
   
       contrib=tx*ty*dz;
+      //printf("110 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 	if(cicoct[1]!=NULL){
 	  getcellnei(ciccell[1], vnei2, vcell2);
@@ -141,6 +152,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   
       //contrib to 101 cell 2 paths ======================================================
       contrib=tx*dy*tz;
+      //printf("101 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 
 	if(cicoct[1]!=NULL){
@@ -174,6 +186,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 		  
       //contrib to 011 cell 2 paths ======================================================
       contrib=dx*ty*tz;
+      //printf("011 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 
 	if(cicoct[2]!=NULL){
@@ -206,6 +219,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       }		  
       // contrib to 111 ======================================================
       contrib=tx*ty*tz;
+      //printf("111 id=%d contrib=%f\n",curp->idx,contrib);
       if((contrib<=1.)&&(contrib>=0)){
 		  
 	if(cicoct[3]!=NULL){
@@ -693,6 +707,16 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
   int inei,inei2;
   float dxcur;
 
+  struct OCT *newoct;
+  struct OCT *newoct2;
+  
+  struct CELL *newcell;
+  struct CELL *newcell2;
+
+  int vnei[6],vcell[6];
+  int vnei2[6],vcell2[6];
+  int il,ip;
+
   if(cpu->rank==0) printf("==> start CIC\n");
 
   // First we clean the density
@@ -734,6 +758,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		}while(nexp!=NULL); 
 	      }
 
+#if 1
 	      //==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
 	      // first the cartesian neighbors (6)
 	      for(inei=0;inei<6;inei++){
@@ -745,9 +770,80 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		    part2cell_cic(curp, curoct, icell,0);
 		  }while(nexp!=NULL);
 		}
-	      }
+#ifdef NEWCIC
+		// second the fundamental plane (4)
+		// each of the 6 cardinal neighbors will probe 4 neighbors
+		
+		newcell=curoct->nei[inei];
+		newoct=cell2oct(newcell); // we get the parent oct;
+		getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
+		for(il=0;il<6;il++){
+		  if((il/2)==(inei/2)) continue;
+		  if(vnei[il]==6){
+		    nexp=newoct->cell[vcell[il]].phead;
+		    newcell2=&(newoct->cell[vcell[il]]);
+		    if(nexp!=NULL){
+		      do{ 
+			curp=nexp;
+			nexp=curp->next;
+			part2cell_cic(curp, curoct, icell,0);
+		      }while(nexp!=NULL);
+		    }
+		  }
+		  else{
+		    if(newoct->nei[vnei[il]]->child!=NULL){
+		      nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
+		      newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
+		      if(nexp!=NULL){
+			do{ 
+			  curp=nexp;
+			  nexp=curp->next;
+			  part2cell_cic(curp, curoct, icell,0);
+			}while(nexp!=NULL);
+		      }
+		    }
+		    else{
+		      newcell2=NULL;
+		    }
+		  }
 
+		  // ecah of the 4 side neighbors will mark 2 corners
+		   if(newcell2!=NULL){
+		     newoct2=cell2oct(newcell2);
+		     getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
+		     for(ip=0;ip<6;ip++){
+		       if(((ip/2)==(il/2))||((ip/2)==(inei/2))) continue;
+		       if(vnei2[ip]==6){
+			 nexp=newoct2->cell[vcell2[ip]].phead;
+			 if(nexp!=NULL){
+			   do{ 
+			     curp=nexp;
+			     nexp=curp->next;
+			     part2cell_cic(curp, curoct, icell,0);
+			   }while(nexp!=NULL);
+			 }
+		       }
+		       else{
+			 if(newoct2->nei[vnei2[ip]]->child!=NULL){
+			   nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
+			   if(nexp!=NULL){
+			     do{ 
+			       curp=nexp;
+			       nexp=curp->next;
+			       part2cell_cic(curp, curoct, icell,0);
+			     }while(nexp!=NULL);
+			   }
+			 }
+		       }
+		     }
+		   }
+		}
+#endif
+	      }
+#endif
+#ifndef NEWCIC
 	      // second the fundamental plane (4)
+
 	      char dir[4]={2,3,1,0};
 	      for(inei=0;inei<4;inei++){
 		if(curoct->nei[inei]->child!=NULL){
@@ -796,6 +892,8 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		  }
 		}
 	      }
+
+#endif
 	      // THIRD WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
 	      if(curoct->cell[icell].child!=NULL){
 		cic_child(curoct->cell[icell].child,curoct,icell);

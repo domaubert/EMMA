@@ -58,8 +58,9 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		abort();
 	      }
 
+#if 1
 	      // destroying octs with level>levelcoarse ==========================
-	      if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))&&(curoct->level>levelcoarse)){
+	      if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))&&(curoct->level>=levelcoarse)){
 	      	ndes++;
 		
 		desoct=curoct->cell[icell].child; // the oct to destroy
@@ -127,7 +128,7 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 	      	  abort();
 	      	}
 	      }
-	      
+#endif	      
 	      // creation of a new oct ==================
 	      if((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0)){
 		nref++;
@@ -165,7 +166,7 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		for(ii=0;ii<8;ii++){
 		  newoct->cell[ii].marked=0;
 		  newoct->cell[ii].child=NULL;
-		  newoct->cell[ii].density=0.;
+		  newoct->cell[ii].density=curoct->cell[icell].density;
 		  newoct->cell[ii].idx=ii;
 		  newoct->cell[ii].phead=NULL;
 		}
@@ -404,7 +405,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    break;
 			    //=========================================================
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
-			    //if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
+			    // if(countpart(curoct->cell[icell].phead)>threshold) curoct->cell[icell].marked=marker;
 			    //if(curoct->npart>threshold) curoct->cell[icell].marked=marker;
 			    mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->cpu==cpu->rank);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {

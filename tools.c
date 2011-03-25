@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank, int *vnoct){
+float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, int *vnoct){
 
   int ntot;
   float ntotd;
@@ -35,13 +35,14 @@ void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank, int *vn
   int icell;
   struct PART *nexp;
   struct PART *curp;
+  float mtot;
 
   if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;
 
-  for(level=1;level<=levelmax;level++)
+  for(level=levelcoarse;level<=levelmax;level++)
     {
       nextoct=firstoct[level-1];
       dx=1./pow(2,level);
@@ -73,7 +74,8 @@ void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank, int *vn
 	    }
 	  noct++;
 	}while(nextoct!=NULL);
-      //if(rank==0) printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
+      if(rank==0) printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
+      if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;
     }
   
@@ -82,6 +84,7 @@ void  multicheck(struct OCT **firstoct,int npart,int levelmax, int rank, int *vn
     printf("particles number discrepancy ntot=%d npart=%d\n",ntot,npart);
     abort();
   }
+  return mtot;
 }
  //------------------------------------------------------------------------
  //------------------------------------------------------------------------

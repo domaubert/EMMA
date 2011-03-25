@@ -29,6 +29,13 @@
  // the MAIN CODE
  //------------------------------------------------------------------------
 
+#ifdef TESTCOSMO
+float f_aexp(float aexp, float omegam, float omegav)
+{
+  return 1./sqrtf(omegam/aexp+omegav*aexp*aexp);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
   struct OCT *grid;
@@ -50,6 +57,7 @@ int main(int argc, char *argv[])
   int ci,cj,ck;
   int cinext,cjnext,cknext;
   float threshold;
+  float tsim;
   struct OCT oct;
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -99,9 +107,9 @@ int main(int argc, char *argv[])
 
   float x,y,z;
   float vx,vy,vz;
-  float mass;
+  float mass,mtot;
   float idx;
-  
+  float faexp, faexp2;
   unsigned key;
 
   struct CPUINFO cpu;
@@ -113,6 +121,8 @@ int main(int argc, char *argv[])
   struct PART_MPI **precvbuffer; 
 
   struct RUNPARAMS param;
+
+  size_t rstat;
 
   //========== TEST ZONE (IF REQUIRED)==========
 
@@ -191,7 +201,7 @@ int main(int argc, char *argv[])
   levelcoarse=param.lcoarse;
   levelmax=param.lmax;
 
-  ngridmax=1000000;
+  ngridmax=3000000;
   npartmax=64*64*64*2;
 #ifdef PART2
   npart=2;
@@ -419,7 +429,7 @@ int main(int argc, char *argv[])
     // first we read the position etc... (eventually from the file)
     if(ir==0){
       x=0.5;
-      y=0.5;
+      y=0.5+1./64*0.5;
       z=0.5;
       
       vx=0.;
@@ -458,6 +468,7 @@ int main(int argc, char *argv[])
       
       part[ip].mass=mass;
       lastpart=part+ip;
+      part[ip].idx=ir;
       ip++;
     }
   }
@@ -516,6 +527,107 @@ int main(int argc, char *argv[])
   npart=ip; // we compute the localnumber of particle
 
 #endif  
+
+#ifdef TESTCOSMO
+  int dummy;
+  float dummyf;
+  int npartf;
+
+  int nploc;
+  float munit;
+  float ainit;
+  float lbox;
+  float omegam,omegav,Hubble;
+
+  fd=fopen("utils/IC.PM.0","rb");
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(&nploc,sizeof(int),1,fd);
+  rstat=fread(&munit,sizeof(float),1,fd);
+  rstat=fread(&ainit,sizeof(float),1,fd);
+  rstat=fread(&lbox,sizeof(float),1,fd);
+  rstat=fread(&omegam,sizeof(float),1,fd);
+  rstat=fread(&omegav,sizeof(float),1,fd);
+  rstat=fread(&Hubble,sizeof(float),1,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  if(cpu.rank==0) printf("%f %d %f %f\n",ainit,nploc,omegav,Hubble);
+
+
+  float *pos;
+  float *vel;
+  
+  pos=(float *)malloc(sizeof(float)*3*nploc);
+  vel=(float *)malloc(sizeof(float)*3*nploc);
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd); 
+  rstat=fread(pos,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(pos+nploc,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(pos+2*nploc,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(vel,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(vel+nploc,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+  rstat=fread(vel+2*nploc,sizeof(float),nploc,fd);
+  rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+  fclose(fd);
+
+  mass=munit;
+  tsim=ainit;
+
+  ip=0.;
+  for(i=0;i<nploc;i++)
+    {
+      x=pos[i];
+      y=pos[i+nploc];
+      z=pos[i+2*nploc];
+
+      vx=vel[i];
+      vy=vel[i+nploc];
+      vz=vel[i+2*nploc];
+
+      // periodic boundary conditions
+    
+      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+
+      // it it belongs to the current cpu, we proceed and assign the particle to the particle array
+      if(segment_part(x,y,z,&cpu,levelcoarse)){
+	part[ip].x=x;
+	part[ip].y=y;
+	part[ip].z=z;
+	
+	part[ip].vx=vx;
+	part[ip].vy=vy;
+	part[ip].vz=vz;
+	
+	part[ip].mass=mass;
+	lastpart=part+ip;
+	ip++;
+      }
+      
+    }
+  
+  free(pos);
+  free(vel);
+  if (cpu.rank==0) printf("cosmo readpart done with munit=%e\n",munit);
+#endif
+
 
   // assigning particles to cells in coarse octs (assuming octs are aligned)
 
@@ -595,10 +707,10 @@ int main(int argc, char *argv[])
 #if 1
   // ==================================== Check the number of particles and octs
 
-  multicheck(firstoct,npart,levelmax,cpu.rank,cpu.noct);
+  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 
-  sprintf(filename,"data/parstart.%05d.p%05d",0,cpu.rank);
-  //dumppart(firstoct,filename,npart,levelcoarse,levelmax);
+  /* sprintf(filename,"data/parstart.%05d.p%05d",0,cpu.rank); */
+  /* dumppart(firstoct,filename,npart,levelcoarse,levelmax); */
 
 #endif	
 
@@ -621,10 +733,9 @@ int main(int argc, char *argv[])
 
 
 
-  sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
+  //sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
   //printf("%s\n",filename);
   //dumpcube(lmap,firstoct,1,filename);
-
 
 
 
@@ -646,55 +757,32 @@ int main(int argc, char *argv[])
   int ismooth,nsmooth=2;
   int marker;
 
-  for(nsteps=0;nsteps<=param.nsteps;nsteps++){
+  float tmax;
+#ifdef TESTCOSMO
+  tmax=1.;
+#else
+  tmax=1000.;
+#endif
+
+  for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
-    if(cpu.rank==0) printf("============== STEP %d ================\n",nsteps);
-    //printf("endoct=%p\n",endoct);
+#ifdef TESTCOSMO
+    if(cpu.rank==0) printf("============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
+#else
+    if(cpu.rank==0) printf("============== STEP %d tsim=%e ================\n",nsteps,tsim);
+#endif
+
 #if 1
     // ==================================== marking the cells
-    //if(nsteps==1)  breakmpi();
-    
-    /* sprintf(filename,"data/dmstart.%05d.p%05d",nsteps+1,cpu.rank); */
-    /* printf("%s\n",filename); */
-    /* dumpcube(lmap,firstoct,1,filename); */
-
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
 
-    /* sprintf(filename,"data/markstart.%05d.p%05d",nsteps+1,cpu.rank); */
-    /* printf("%s\n",filename); */
-    /* dumpcube(lmap,firstoct,4,filename); */
-    
-    
-  
     
     // ==================================== refining (and destroying) the octs
 
     
     refine_cells(levelcoarse,levelmax,firstoct,lastoct,endoct,&cpu);
     //if(nsteps==1) breakmpi();
-    // cleaning the marks
-    for(level=1;level<=levelmax;level++) // looping over levels
-      {
-	float maxd=0.,mind=1e30,avg=0.;
-	int ncell=0;
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      curoct->cell[icell].marked=0.;
-	      ncell++;
-	      avg+=curoct->cell[icell].density;
-	      if(curoct->cell[icell].density>maxd) maxd=curoct->cell[icell].density;
-	      if(curoct->cell[icell].density<mind) mind=curoct->cell[icell].density;
-	    }
-	}while(nextoct!=NULL);
 
-      printf("level=%d avg=%f mind=%f maxd=%f\n",level,avg/ncell,mind,maxd);
-      }
     
   // recomputing the last oct;
   
@@ -704,14 +792,12 @@ int main(int argc, char *argv[])
   endoct=lastoct[0];
   for(i=0;i<levelmax;i++) {
     if(lastoct[i]>endoct) endoct=lastoct[i];
-    //printf("i=%d %p %p\n",i+1,firstoct[i],lastoct[i]);
   }
-  //printf("endoct=%p\n",endoct);
 
 #endif
 
   sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank);
-  //dumpcube(lmap,firstoct,0,filename);
+  dumpcube(lmap,firstoct,0,filename);
 
 
 
@@ -740,17 +826,45 @@ int main(int argc, char *argv[])
   mpi_exchange(&cpu,sendbuffer,recvbuffer,1);
 #endif
 
+    // cleaning the marks
+    for(level=1;level<=levelmax;level++) // looping over levels
+      {
+	float maxd=0.,mind=1e30,avg=0.;
+	int ncell=0;
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		curoct->cell[icell].marked=0.;
+		ncell++;
+		avg+=curoct->cell[icell].density;
+		if(curoct->cell[icell].density>maxd) maxd=curoct->cell[icell].density;
+		if(curoct->cell[icell].density<mind) mind=curoct->cell[icell].density;
+	      }
+	  }while(nextoct!=NULL);
+
+	//printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
+      }
+
+
 #endif
 
-  sprintf(filename,"data/denstart.%05d.p%05d",nsteps+1,cpu.rank);
-  printf("%s\n",filename);
-  //dumpcube(lmap,firstoct,1,filename);
+  /*   sprintf(filename,"data/denstart.%05d.p%05d",nsteps+1,cpu.rank); */
+  /* printf("%s\n",filename); */
+  /* dumpcube(lmap,firstoct,1,filename); */
 
 
-#if 1
   // ==================================== Check the number of particles and octs
-  multicheck(firstoct,npart,levelmax,cpu.rank,cpu.noct);
-#endif	 
+  
+  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+#endif
+
 
 #if 1
 // ==================================== POISSON Testing the jacobi iteration
@@ -862,7 +976,11 @@ int main(int argc, char *argv[])
 	    if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
 
 	    // we compute the square of the norm of the density (first iteration only)
-	    if(iter==0) norm_d+=square(vcomp[7],nread);
+#ifdef TESTCOSMO
+	    if(iter==0) norm_d+=square(vcomp[7],nread)*pow(1.5*omegam/tsim,2);
+#else
+	    if(iter==0) norm_d+=square(vcomp[7],nread)*pow(4*M_PI,2);
+#endif
 
 #ifdef WMPI
 	    tt[4]=MPI_Wtime();
@@ -870,10 +988,18 @@ int main(int argc, char *argv[])
 	    // Third we perform the calculation (eventually on GPU) also returns the residual
 	    float dummy;
 	    if(stride<8*cpu.noct[level-1]){
+#ifdef TESTCOSMO
+	      dummy=laplaciancosmo(vcomp,nread,dx,8,omegam,tsim);
+#else
 	      dummy=laplacian(vcomp,nread,dx,8);
+#endif
 	    }
 	    else{
+#ifdef TESTCOSMO
+	      dummy=laplaciancosmo(vcomp,nread,dx,6,omegam,tsim);
+#else
 	      dummy=laplacian(vcomp,nread,dx,6);
+#endif
 	    }
 	    res+=dummy;
 #ifdef WMPI
@@ -937,13 +1063,14 @@ int main(int argc, char *argv[])
 	res=restot;
 #endif
 	//if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d dens=%e res=%e relative residual=%e\n ",level,iter,sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
-	if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e\n ",level,iter,sqrt(res/norm_d));
-
 	// if the level is absent on all processors we skip */
 	if((res==0.)&&(norm_d==0.)){
 	    if(cpu.rank==0) printf("Level %d skipped\n",level);
 	    break;
 	}
+
+	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e\n ",level,iter,sqrt(res/norm_d));
+
 
 	// convergence achieved
 	if(sqrt(res/norm_d)<acc) {
@@ -960,16 +1087,23 @@ int main(int argc, char *argv[])
   fclose(ft);
 #endif
 
-  sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
-  printf("%s\n",filename);
-  //dumpcube(lmap,firstoct,2,filename);
-	    
+  //sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
+  //  printf("%s\n",filename);
+  //  dumpcube(lmap,firstoct,2,filename);
+  //abort();	    
 
   // ==================================== Force calculation and velocity update   // corrector step
 
 
   if(nsteps!=0){
-    forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5,&cpu,sendbuffer,recvbuffer);
+
+#ifdef TESTCOSMO
+    faexp=f_aexp(tsim,omegam,omegav);
+#else
+    faexp=1.0;
+#endif
+
+    forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
   }
 
   // ==================================== DUMP AFTER SYNCHRONIZATION
@@ -979,6 +1113,8 @@ int main(int argc, char *argv[])
 
     sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,2,filename);
+    sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,1,filename);
     sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,0,filename);
     sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
@@ -995,21 +1131,29 @@ int main(int argc, char *argv[])
   
   // ==================================== Force calculation and velocity update   // predictor step
   
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5,&cpu,sendbuffer,recvbuffer);
+#ifdef TESTCOSMO
+  faexp=f_aexp(tsim,omegam,omegav);
+#else
+  faexp=1.0;
+#endif
   
-
-  printf("Moving particles\n");
-
-
-
+  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+  
   // ==================================== Moving Particles + Oct management
   
 
+  printf("Moving particles\n");
   // Computing displacement (predictor)
 
-  dtnew=movepart(levelcoarse,levelmax,firstoct,dt);
-  dt=dtnew;
+#ifdef TESTCOSMO
+  faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
+#else
+  faexp2=1.0;
+#endif
 
+  dtnew=movepart(levelcoarse,levelmax,firstoct,dt*faexp2,&cpu);
+  dt=dtnew/faexp2;
+  printf("dt=%e\n",dt);
   // Moving particles through cells (3 passes)
 
   partcellreorg(levelcoarse,levelmax,firstoct);
@@ -1031,10 +1175,12 @@ int main(int argc, char *argv[])
 
 #if 1
   // ==================================== Check the number of particles and octs
-  multicheck(firstoct,npart,levelmax,cpu.rank,cpu.noct);
+  multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #endif	 
 
   //==================================== timestep completed, looping
+  tsim+=dt;
+
   }
 
 #ifdef WMPI

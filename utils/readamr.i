@@ -66,6 +66,7 @@ func mergefield(fname,cname,ncpu,level){
 
 func plotamr(levmap,color=,width=)
 {
+  
   nx=dimsof(levmap)(2);
   ny=dimsof(levmap)(3);
 

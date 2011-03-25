@@ -77,7 +77,7 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
 }
 //------------------------------------------------------------------------
 
-float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
+float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu){
   
   int level;
   float mdisp,lmdisp;
@@ -88,9 +88,11 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
   struct PART *nexp;
   struct PART *curp;
   float disp;
+  float dtlev,dtnew;
 
   // Computing new timestep
   lmdisp=0.;
+  dtnew=dt;
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       mdisp=0.;
@@ -122,14 +124,22 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
 	      }
 	    }
 	}while(nextoct!=NULL);
-
-      if((mdisp/dxcur)>lmdisp) lmdisp=mdisp/dxcur;
-      //printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
+      if(mdisp>0.){
+	dtlev=0.5*dxcur*dt/mdisp;
+	dtnew=(dtlev<dtnew?dtlev:dtnew);
+      }
+      printf("level=%d maxdisp=%f or %f dx dtlev=%f\n",level,mdisp,mdisp/dxcur,dtlev);
     }
 
   // new tstep
-  dt=dt/lmdisp*0.5;
-  
+  printf("original dt=%f chosen dt=%f\n",dt,dtnew);
+  dt=dtnew;
+
+
+#ifdef WMPI
+  // reducing by taking the smallest time step
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_FLOAT,MPI_MIN,cpu->comm);
+#endif  
   
 
 
@@ -138,7 +148,7 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt){
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       // setting the first oct
-      
+      mdisp=0.;
       nextoct=firstoct[level-1];
       
       if(nextoct==NULL) continue; // in case the level is empty

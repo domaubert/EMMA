@@ -142,7 +142,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[])
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.level;
 				break;
 			      case 1:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].density;
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].density;
 				break;
 			      case 2:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].pot;
@@ -246,6 +246,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 {
   FILE *buf; 
   char stream[256];
+  size_t rstat;
+
   buf=fopen(fparam,"r");
   if(buf==NULL)
     {
@@ -254,15 +256,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
   else
     {
-      fscanf(buf,"%s %d",stream,&param->nbuff);
-      fscanf(buf,"%s %d",stream,&param->ndumps);
-      fscanf(buf,"%s %d",stream,&param->nsteps);
-      fscanf(buf,"%s %d",stream,&param->lcoarse);
-      fscanf(buf,"%s %d",stream,&param->lmax);
-      fscanf(buf,"%s %d",stream,&param->niter);
-      fscanf(buf,"%s %d",stream,&param->stride);
-      fscanf(buf,"%s %f",stream,&param->dt);
-      fscanf(buf,"%s %f",stream,&param->amrthresh);
+      rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
+      rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
+      rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
+      rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
+      rstat=fscanf(buf,"%s %d",stream,&param->lmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->niter);
+      rstat=fscanf(buf,"%s %d",stream,&param->stride);
+      rstat=fscanf(buf,"%s %f",stream,&param->dt);
+      rstat=fscanf(buf,"%s %f",stream,&param->amrthresh);
       fclose(buf);
     }
 
