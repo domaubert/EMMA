@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 #endif
 
   threshold=param.amrthresh;
-  lmap=levelmax;
+  lmap=param.levelmap;
   stride=fmax(8,param.stride);//pow(2,levelcoarse);
   ncomp=10;
   acc=1e-2;
@@ -617,6 +617,7 @@ int main(int argc, char *argv[])
 	part[ip].vz=vz;
 	
 	part[ip].mass=mass;
+	part[ip].idx=ip;
 	lastpart=part+ip;
 	ip++;
       }
@@ -782,6 +783,9 @@ int main(int argc, char *argv[])
     
     refine_cells(levelcoarse,levelmax,firstoct,lastoct,endoct,&cpu);
     //if(nsteps==1) breakmpi();
+    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
+    //printf("%s\n",filename);
+    dumpcube(lmap,firstoct,4,filename);
 
     
   // recomputing the last oct;
@@ -806,8 +810,6 @@ int main(int argc, char *argv[])
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax);
 #endif
 
-  sprintf(filename,"data/cpustart.%05d.p%05d",nsteps+1,cpu.rank);
-  //dumpcube(lmap,firstoct,3,filename);
 
 
 #if 1

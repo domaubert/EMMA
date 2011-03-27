@@ -1,0 +1,336 @@
+
+ Will generate initial conditions on grid of size          128         128
+          128
+
+ Select type of initial power spectrum (matter transfer function):
+     1 for T(k) from linger.dat
+     2 for T(k) from approx. analytical fit
+     3 for T(k)=1 (scale-free)
+ Enter case (1,2,3) now:
+ Enter linger.dat filename
+ Omegab,c,v,n=  5.0000001E-02  0.3000000      0.6500000      0.0000000E+00
+ H0,Tcmb,Y,Nnur,Nnunr,initfl=   65.00000       2.726000      0.2400000    
+            3           0           1
+ Enter long-wave spectral index n (scale-invariant is n=1)
+ Enter desired normalization at a=1:
+   Qrms-ps/micro-K (if > 0) or -sigma_8 (if < 0) = ?
+ Qrms-ps/micro-K=   19.10517    
+
+ I can write the power spectrum of delta_rho/rho to disk (power.dat).
+ If you would like this, please enter kmin and kmax (1/Mpc)
+ Enter 0,0 if you don't want the power spectrum written to a file
+ Enter dx (initial particle spacing in Mpc, not Mpc/h)
+    or enter -boxlength in Mpc/h
+    i.e. dx in Mpc if > 0, or -boxlength in Mpc/h if < 0
+ Enter 1 if these initial conditions will not be refined, otherwise
+   enter the ultimate refinement factor for the smallest grid spacing
+   (This is used only to set astart.)
+ Scaling initial conditions to starting a=  2.8646488E-02
+   when sigma at ultimate refinement scale=  0.2012655    
+
+ Enter 0 for final output or 1 for further refinement
+ Setting output grid to          128         128         128
+ Enter <RETURN> to skip output grid size
+ Enter <RETURN> to skip output grid offset
+ Enter <RETURN> to skip final grid size
+ Enter <RETURN> to skip final grid offset
+ Will produce output files ic_deltab, ic_velb[xyz], ic_velc[xyz]
+
+ Subgrid white noise:
+   Choose irand (1 or 2) from the following list:
+     irand=1 to generate new noise and save to file
+     irand=2 to read noise from existing file
+ Enter irand
+   Enter random number seed (9-digit integer, ignored if irand=2)
+   Enter filename of white noise file (or <RETURN> if irand=0)
+
+ Warning: Generating new random numbers in ic4!
+ Writing random numbers used in ic4 to 
+ wnsub.lev0                                                                      
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           0           0
+    Mean sigma, sampled sigma, maximum=  0.1328595      0.1331748    
+   0.6803112    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           1           0
+    Mean sigma, sampled sigma, maximum=  0.1820930      0.1492340    
+   0.6746812    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           2           0
+    Mean sigma, sampled sigma, maximum=  0.1820930      0.2279891    
+   0.8293803    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           3           0
+    Mean sigma, sampled sigma, maximum=  0.1820930      0.1897584    
+   0.7277842    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           1           0
+    Mean sigma, sampled sigma, maximum=  0.2046062      0.1680405    
+   0.7631487    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           2           0
+    Mean sigma, sampled sigma, maximum=  0.2046062      0.2556193    
+   0.9339820    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           3           0
+    Mean sigma, sampled sigma, maximum=  0.2046062      0.2129371    
+   0.8137385    
+53.2u 2.2s 0:56 98% 0+0k 0+3io 0pf+0w
+np1, np2, np3 = 128 128 128
+dx, xoff, yoff, zoff = 0.5 0 0 0
+astart, omegam, omegav, h0 = 0.0286465 0.35 0.65 65
+width, height= 128 128
+Enter plane (0-255): Finding min, max
+Min, max delta values = -0.459938 0.478146
+Enter dmax: 
+
+ Will generate initial conditions on grid of size          128         128
+          128
+
+ Select type of initial power spectrum (matter transfer function):
+     1 for T(k) from linger.dat
+     2 for T(k) from approx. analytical fit
+     3 for T(k)=1 (scale-free)
+ Enter case (1,2,3) now:
+ Enter linger.dat filename
+ Omegab,c,v,n=  5.0000001E-02  0.3000000      0.6500000      0.0000000E+00
+ H0,Tcmb,Y,Nnur,Nnunr,initfl=   65.00000       2.726000      0.2400000    
+            3           0           1
+ Enter long-wave spectral index n (scale-invariant is n=1)
+ Enter desired normalization at a=1:
+   Qrms-ps/micro-K (if > 0) or -sigma_8 (if < 0) = ?
+ Qrms-ps/micro-K=   19.10517    
+
+ I can write the power spectrum of delta_rho/rho to disk (power.dat).
+ If you would like this, please enter kmin and kmax (1/Mpc)
+ Enter 0,0 if you don't want the power spectrum written to a file
+ Enter dx (initial particle spacing in Mpc, not Mpc/h)
+    or enter -boxlength in Mpc/h
+    i.e. dx in Mpc if > 0, or -boxlength in Mpc/h if < 0
+ Enter 1 if these initial conditions will not be refined, otherwise
+   enter the ultimate refinement factor for the smallest grid spacing
+   (This is used only to set astart.)
+ Scaling initial conditions to starting a=  2.8646488E-02
+   when sigma at ultimate refinement scale=  0.2012655    
+
+ Enter 0 for final output or 1 for further refinement
+ Enter size (n1c,n2c,n3c) of the level-1 subgrid to be extracted.
+   Sizes must be even numbers and be no larger than           64          64
+           64
+ Enter offset of level-1 subgrid (m1off,m2off,m3off).
+   Offsets are relative to level-0 grid corner.
+   Offsets may be positive or negative, with absolute  values no larger than
+           64          64          64
+ Enter size (m1t,m2t,m3t) of the final subvolume, in units of top grid spacing
+ Enter offset of final subvolume (m1offt,m2off2,m3offt).
+   Offsets are relative to level-0 grid corner.
+   Final subvolume must lie within level-1 subgrid
+ Grafic1 will output level-1 subgrid as follows:
+   xmin, xmax =    16.00000       48.00000    
+   ymin, ymax =    16.00000       48.00000    
+   zmin, zmax =    8.000000       24.00000    
+ Grafic1 will compute tides assuming final subvolume:
+   xmin, xmax =    16.00000       48.00000    
+   ymin, ymax =    16.00000       48.00000    
+   zmin, zmax =    8.000000       24.00000    
+ Output file is grafic2.top; use as input to subsequent run of grafic2
+
+ Subgrid white noise:
+   Choose irand (1 or 2) from the following list:
+     irand=1 to generate new noise and save to file
+     irand=2 to read noise from existing file
+ Enter irand
+   Enter random number seed (9-digit integer, ignored if irand=2)
+   Enter filename of white noise file (or <RETURN> if irand=0)
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   2097061.         2097151 -6.2473018E-02
+ Statistics of ic4 for idim, itide=           0           0
+    Mean sigma, sampled sigma, maximum=  0.1809321      0.1811121    
+   0.9094659    
+ After extraction, component            0 has subvolume RMS=  0.1805298    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           1          -1
+    Mean sigma, sampled sigma, maximum=  0.1835287      2.5338948E-02
+   0.3391964    
+ After extraction, component            1 has subvolume RMS=  3.5352405E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           1           1
+    Mean sigma, sampled sigma, maximum=  0.1835287      0.1500636    
+   0.6993005    
+ After extraction, component            2 has subvolume RMS=  0.1570263    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           2          -1
+    Mean sigma, sampled sigma, maximum=  0.1835287      3.6773469E-02
+   0.4036115    
+ After extraction, component            3 has subvolume RMS=  5.0450750E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           2           1
+    Mean sigma, sampled sigma, maximum=  0.1835287      0.2194425    
+   0.8556073    
+ After extraction, component            4 has subvolume RMS=  0.2156590    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           3          -1
+    Mean sigma, sampled sigma, maximum=  0.1835287      2.4799563E-02
+   0.2967162    
+ After extraction, component            5 has subvolume RMS=  3.3889025E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           3           1
+    Mean sigma, sampled sigma, maximum=  0.1835287      0.1889638    
+   0.7490959    
+ After extraction, component            6 has subvolume RMS=  0.1750079    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           1          -1
+    Mean sigma, sampled sigma, maximum=  0.2062368      2.8606018E-02
+   0.3832233    
+ After extraction, component            7 has subvolume RMS=  3.9919786E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           1           1
+    Mean sigma, sampled sigma, maximum=  0.2062368      0.1689579    
+   0.7879567    
+ After extraction, component            8 has subvolume RMS=  0.1766724    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           2          -1
+    Mean sigma, sampled sigma, maximum=  0.2062368      4.1412212E-02
+   0.4556281    
+ After extraction, component            9 has subvolume RMS=  5.6853980E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           2           1
+    Mean sigma, sampled sigma, maximum=  0.2062368      0.2460888    
+   0.9632453    
+ After extraction, component           10 has subvolume RMS=  0.2418209    
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   129979.0          131072  -3.019006    
+ Statistics of ic4 for idim, itide=           3          -1
+    Mean sigma, sampled sigma, maximum=  0.2062368      2.8006261E-02
+   0.3351931    
+ After extraction, component           11 has subvolume RMS=  3.8279600E-02
+
+   Random numbers generated with iseed=   314159265
+ ic4 white noise: chisq, dof, nu=   1967082.         1966079  0.7149823    
+ Statistics of ic4 for idim, itide=           3           1
+    Mean sigma, sampled sigma, maximum=  0.2062368      0.2120558    
+   0.8437047    
+ After extraction, component           12 has subvolume RMS=  0.1963019    
+148.1u 3.9s 2:34 98% 0+0k 5+12io 0pf+0w
+ Will refine upper level in subgrid of size (n1c,n2c,n3c)=          64
+           64          32
+ Refinement factor=           2
+
+ Enter input filename containing upper level grid data
+ Reading upper-level grid data from file 
+ grafic2.lev0                                                                    
+  astart, Omegam, Omegav, H0=  2.8646488E-02  0.3500000      0.6500000    
+    65.00000    
+  dx (Mpc), offsets/dx=  0.5000000       16.00000       16.00000    
+    8.000000    
+  Tidal volume size/dx=          64          64          32
+  Tidal volume offsets/dx=           0           0           0
+
+ Select type of initial power spectrum (matter transfer function):
+     1 for T(k) from linger.dat
+     2 for T(k) from approx. analytical fit
+     3 for T(k)=1 (scale-free)
+ Enter case (1,2,3) now:
+ Enter linger.dat filename
+ Omegab,c,v,n=  5.0000001E-02  0.3000000      0.6500000      0.0000000E+00
+ H0,Tcmb,Y,Nnur,Nnunr,initfl=   65.00000       2.726000      0.2400000    
+            3           0           1
+ Enter long-wave spectral index n (scale-invariant is n=1)
+ Enter desired normalization at a=1:
+   Qrms-ps/micro-K (if > 0) or -sigma_8 (if < 0) = ?
+ Qrms-ps/micro-K=   19.10517    
+
+ I can write the power spectrum of delta_rho/rho to disk (power.dat).
+ If you would like this, please enter kmin and kmax (1/Mpc)
+ Enter 0,0 if you don't want the power spectrum written to a file
+ Enter 0 for final output or 1 for further refinement
+ Setting output grid to          128         128          64
+ Enter <RETURN> to skip output grid size
+ Enter <RETURN> to skip output grid offset
+ Will produce output files ic_deltab, ic_velb[xyz], ic_velc[xyz]
+ Subgrid white noise:
+   Choose irand (1 or 2) from the following list:
+     irand=1 to generate new noise and save to file
+     irand=2 to read existing noise from file
+ Enter irand
+   Enter random number seed (9-digit integer, ignored if irand=2)
+   Enter filename of wnsub noise file (or <RETURN> if irand=0)
+
+ Before refinement: component            0 has subvolume RMS=  0.1805298    
+ Warning: Generating new random numbers in wnsub!
+ Writing random numbers used in wnsub to 
+ wnsub.lev1                                                                      
+ wnsub white noise: chisq, dof, nu=   916521.1          917504  -1.026104    
+ After refinement, component            0 has subvolume RMS=  0.1627549    
+
+ Before refinement: component            1 has subvolume RMS=  3.5352405E-02
+
+ Before refinement: component            2 has subvolume RMS=  0.1570263    
+ After refinement, component            2 has subvolume RMS=  0.1636632    
+
+ Before refinement: component            3 has subvolume RMS=  5.0450750E-02
+
+ Before refinement: component            4 has subvolume RMS=  0.2156590    
+ After refinement, component            4 has subvolume RMS=  0.2573743    
+
+ Before refinement: component            5 has subvolume RMS=  3.3889025E-02
+
+ Before refinement: component            6 has subvolume RMS=  0.1750079    
+ After refinement, component            6 has subvolume RMS=  0.1318390    
+
+ Before refinement: component            7 has subvolume RMS=  3.9919786E-02
+
+ Before refinement: component            8 has subvolume RMS=  0.1766724    
+ After refinement, component            8 has subvolume RMS=  0.1841045    
+
+ Before refinement: component            9 has subvolume RMS=  5.6853980E-02
+
+ Before refinement: component           10 has subvolume RMS=  0.2418209    
+ After refinement, component           10 has subvolume RMS=  0.2888276    
+
+ Before refinement: component           11 has subvolume RMS=  3.8279600E-02
+
+ Before refinement: component           12 has subvolume RMS=  0.1963019    
+ After refinement, component           12 has subvolume RMS=  0.1482983    
+783.9u 18.1s 13:32 98% 0+0k 238+25io 0pf+0w
+np1, np2, np3 = 128 128 64
+dx, xoff, yoff, zoff = 0.25 16 16 8
+astart, omegam, omegav, h0 = 0.0286465 0.35 0.65 65
+width, height= 128 128
+Enter plane (0-255): Finding min, max
+Min, max delta values = -0.58486 0.610271
+Enter dmax: 

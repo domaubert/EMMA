@@ -261,6 +261,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->levelmap);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %d",stream,&param->stride);
       rstat=fscanf(buf,"%s %f",stream,&param->dt);

@@ -64,9 +64,9 @@ func mergefield(fname,cname,ncpu,level){
 
 }
 
-func plotamr(levmap,color=,width=)
+func plotamr(levmap,color=,width=,lmin=)
 {
-  
+  if(is_void(lmin)) lmin=1;
   nx=dimsof(levmap)(2);
   ny=dimsof(levmap)(3);
 
@@ -74,7 +74,7 @@ func plotamr(levmap,color=,width=)
   lcur=max(levmap);
   dx=2^(lmap-lcur);
   imod=1;
-  while(lcur>=1){
+  while(lcur>=lmin){
     lcur;
     www=where2(levmap==lcur);
     if(numberof(www)!=0){

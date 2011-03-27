@@ -36,6 +36,9 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
   struct PART *nexp;
   struct PART *curp;
   float mtot;
+  
+  float xc,yc,zc;
+
 
   if(rank==0) printf("Check\n");
   ntot=0.;
@@ -59,6 +62,10 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
 	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
 	      
+	      xc=curoct->x+(icell%2)*dx+dx*0.5;
+	      yc=curoct->y+((icell/2)%2)*dx+dx*0.5;
+	      zc=curoct->z+(icell/4)*dx+dx*0.5;
+
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		printf("check: split cell with particles !\n");
@@ -70,6 +77,16 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 		ntot++;
 		curp=nexp;
 		nexp=curp->next;
+		
+		/* if(curp->idx==96571){ */
+		/*   printf("mcheck %f %f %f lev=%d\n",curp->x,xc,(curp->x-xc)*2./dx,level); */
+		/* } */
+
+		if((fabs(curp->x-xc)>0.5*dx)*(fabs(curp->y-yc)>0.5*dx)*(fabs(curp->z-zc)>0.5*dx)){
+		  printf("particle not in cell: abort\n");
+		  abort();
+		}
+
 	      }while(nexp!=NULL);
 	    }
 	  noct++;

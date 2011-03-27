@@ -119,7 +119,6 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 		  // particle displacement
 		  disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
 		  if(disp>mdisp) mdisp=disp;
-
 		}while(nexp!=NULL);
 	      }
 	    }
@@ -129,6 +128,7 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 	dtnew=(dtlev<dtnew?dtlev:dtnew);
       }
       printf("level=%d maxdisp=%f or %f dx dtlev=%f\n",level,mdisp,mdisp/dxcur,dtlev);
+
     }
 
   // new tstep
@@ -167,10 +167,13 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 		  nexp=curp->next; 
 		 
 		  // particle displacement
+		  disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
+		  /* if(curp->idx==96571){ */
+		  /*   printf("bug disp=%f or %f dx// xinit=%f xinfal=%f\n",disp,disp/dxcur,curp->x,curp->x+curp->vx*dt); */
+		  /* } */
 		  curp->x+=curp->vx*dt;
 		  curp->y+=curp->vy*dt;
 		  curp->z+=curp->vz*dt;
-		  disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
 		  if(disp>mdisp) mdisp=disp;
 
 		}while(nexp!=NULL);
@@ -194,7 +197,7 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
   struct OCT *nextoct;
   struct OCT *curoct;
   struct OCT *newoct;
-  float dxcur;
+  float dxcur,dxcur2;
   int icell;
   struct PART *curp;
   struct PART *nexp;
@@ -223,7 +226,8 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
-
+		  newoct=NULL;
+		  newcell=NULL;
 		  // A few informations about the current cell
 		  getcellnei(icell, vnei, vcell);
 		
@@ -244,24 +248,24 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
-				xp=0;
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 				
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
-
+				//if((ip>7)||(ip<0)) ip=0; 
+				
 				newcell=&(newoct->cell[ip]);
 
 			      }
 
 			  }
-			  else{
+			  else{ // the particle drifts to a new oct
 			    // periodic boundaries
 			    curp->x+=(curp->x<0.)-(curp->x>1.);
 
@@ -274,17 +278,17 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
-				xp=0;
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 				
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 
 				newcell=&(newoct->cell[ip]);
 
@@ -299,18 +303,18 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
-				xp=1;
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 			      
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 			      
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 
 				newcell=&(newoct->cell[ip]);
 			      }
@@ -327,18 +331,18 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
-
-				xp=1;
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				dxcur2=1./pow(2.,newoct->level);
+				
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 			      
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 			      
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 
 				newcell=&(newoct->cell[ip]);
 			      }
@@ -357,15 +361,15 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=0;
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 				newcell=&(newoct->cell[ip]);
 			      }
 
@@ -385,15 +389,15 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=0;
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 				newcell=&(newoct->cell[ip]);
 			      }
 			    }
@@ -405,15 +409,15 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=1;
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				dxcur2=1./pow(2.,newoct->level);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 				newcell=&(newoct->cell[ip]);
 			      }
 
@@ -430,15 +434,15 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=1;
-				zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+				dxcur2=1./pow(2.,newoct->level);
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 				newcell=&(newoct->cell[ip]);
 			      }
 
@@ -459,17 +463,17 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      //if(curp->idx==82279) printf("to level +1");
 			      
 			      newoct=newcell->child;
-			      dxcur=1./pow(2.,newoct->level);
+			      dxcur2=1./pow(2.,newoct->level);
 			      
-			      xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-			      yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-			      zp=0;
+			      xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+			      yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+			      zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 			      ip=xp+yp*2+zp*4;
 			      
 			      //ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 			      
 			      // some particles will experience more than one displacement (along diagonals) we store them in cell 0
-			      if((ip>7)||(ip<0)) ip=0; 
+			      //if((ip>7)||(ip<0)) ip=0; 
 			      
 			      newcell=&(newoct->cell[ip]);
 			    }
@@ -488,17 +492,17 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 				//if(curp->idx==82279) printf("to level +1");
 
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=0;
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//if((ip>7)||(ip<0)) ip=0; 
 
 				newcell=&(newoct->cell[ip]);
 			      }
@@ -512,17 +516,17 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 			      newoct=newcell->child;
-			      dxcur=1./pow(2.,newoct->level);
+			      dxcur2=1./pow(2.,newoct->level);
 			      
-			      xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-			      yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-			      zp=1;
+			      xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+			      yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+			      zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 			      ip=xp+yp*2+zp*4;
 			      
 			      //				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 			      
 			      // some particles will experience more than one displacement (along diagonals) we store them in cell 0
-			      if((ip>7)||(ip<0)) ip=0; 
+			      //if((ip>7)||(ip<0)) ip=0; 
 			      
 			      newcell=&(newoct->cell[ip]);
 			    }
@@ -540,28 +544,26 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur=1./pow(2.,newoct->level);
+				dxcur2=1./pow(2.,newoct->level);
 				
-				xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-				yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-				zp=1;
+				xp=(int)(2*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+				yp=(int)(2*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+				zp=(int)(2*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 				ip=xp+yp*2+zp*4;
 
 				//				ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				if((ip>7)||(ip<0)) ip=0; 
+				//				if((ip>7)||(ip<0)) ip=0; 
 
 				newcell=&(newoct->cell[ip]);
 			      }
 			    }
 			  }
 			}
-			/* if(curp->idx==82279){ */
-			/*   printf("PPZ %f %f %f %d %p %p out=%d\n",curp->x,curp->y,curp->z,ip,curoct,newoct,out); */
-			/* } */
 			break;
 		      }
+		      
 		      if(out!=0){
 			// ========= assigning the particle to the newcell + pointer management
 
@@ -599,13 +601,23 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			curp->next=NULL;
 		      }
 
+			/* if(curp->idx==96571){ */
+			/*   struct OCT* ooct; */
+			/*   if(newcell!=NULL){ */
+			/*     ooct=cell2oct(newcell); */
+			/*     printf("PPZ %f %f %f %d %d  curoct=%f %f %f newoct=%f %f %f icell=%d dir=%d curoct=%p newoct=%p dxcur=%f final level=%d init level=%d\n",curp->x,curp->y,curp->z,ip,out,curoct->x,curoct->y,curoct->z,ooct->x,ooct->y,ooct->z,icell,dir,curoct,ooct,dxcur,ooct->level,curoct->level); */
+			/*   } */
+			/* } */
+
+
 		    }while(nexp!=NULL);
 		  }
 		}
 	  }while(nextoct!=NULL);
 	}	
       
-    }    
+    }
+
 }    
 
 //------------------------------------------------------------------------

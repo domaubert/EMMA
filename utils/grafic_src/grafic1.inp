@@ -1,0 +1,15 @@
+1		# use linger.dat file for transfer functions
+linger.lcdm
+1		# spectral index n
+-0.9		# normalization (sigma_8=-0.9)
+0 0		# don't output power.dat
+0.5		# Grid spacing (Mpc)
+2		# Ultimate refinement factor (used only to set astart)
+1		# further refinement (1 or 0 for yes or no)
+64 64 64	# next grid size (used only if further refinement)
+32 32 32	# next grid offsets (used only if further refinement)
+64 64 64	# final subvolume size (used only if further refinement)
+32 32 32	# final subvolume offsets (used only if further refinement)
+1		# irand =1 to generate new nos, =2 use old ones
+314159265	# iseed
+wnsub.lev0

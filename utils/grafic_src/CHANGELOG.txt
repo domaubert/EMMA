@@ -1,0 +1,24 @@
+April 27, 2001
+
+Fixed a bug in line 237 of grafic1.f: f(i1,i2,3) should have been
+f(i1,i2,i3).  Thanks to N. Nakasato and S. Borgani for finding this.
+
+March 21, 2001
+
+Changed n3c in grafic2.inc to be consistent with the test.
+
+
+Version 1.0, March 18, 2001
+-----------
+
+The initial release of GRAFIC2 includes the multiscale codes
+grafic1 and grafic2, the linear GR code lingers (derivative from
+linger_syn of COSMICS), and an image tool ic2gif.
+
+Known deficiencies:
+
+1. lingers doesn't do closed or open universes and it uses Peebles
+recombination (probably okay for transfer functions and quadrupole
+anisotropy).  These will be corrected.  Also, power.f (which reads
+linger.dat for grafic1 and grafic2) will be made compatible with
+CMBFAST transfer function output.

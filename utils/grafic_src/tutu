@@ -1,0 +1,1 @@
+ifort -O2 -cpp grafic1.o ic4.o power.o time.o util.o random8.o fft3r.o -o grafic1

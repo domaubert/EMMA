@@ -12,6 +12,7 @@ struct RUNPARAMS{
   
   int lcoarse; // the coarse level
   int lmax; // the max level of refinement
+  int levelmap; // the map projection level
   
   int niter; // the maximal number of iterations for the Poisson solver
   

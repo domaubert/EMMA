@@ -1,0 +1,4 @@
+.05 .30 .65 0		# Omega_b, Omega_c, Omega_Lambda, Omega_nu
+65 2.726 0.24 0		# H0, Tcmb, Y_He, N_nu (massive)
+1.e-4 50 100 0		# (kmin, kmax, nk, zend)
+1			# isentropc (adiabiatic) case
