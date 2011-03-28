@@ -202,11 +202,11 @@ int main(int argc, char *argv[])
   levelmax=param.lmax;
 
   ngridmax=3000000;
-  npartmax=64*64*64*2;
+  npartmax=128*128*128;
 #ifdef PART2
   npart=2;
 #else
-  npart=64*64*64;
+  npart=128*128*128;
 #endif
 
   threshold=param.amrthresh;
@@ -624,6 +624,7 @@ int main(int argc, char *argv[])
       
     }
   
+  npart=ip;
   free(pos);
   free(vel);
   if (cpu.rank==0) printf("cosmo readpart done with munit=%e\n",munit);
@@ -783,9 +784,9 @@ int main(int argc, char *argv[])
     
     refine_cells(levelcoarse,levelmax,firstoct,lastoct,endoct,&cpu);
     //if(nsteps==1) breakmpi();
-    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
+    //    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
     //printf("%s\n",filename);
-    dumpcube(lmap,firstoct,4,filename);
+    //    dumpcube(lmap,firstoct,4,filename);
 
     
   // recomputing the last oct;
@@ -800,8 +801,8 @@ int main(int argc, char *argv[])
 
 #endif
 
-  sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank);
-  dumpcube(lmap,firstoct,0,filename);
+/*   sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank); */
+/*   dumpcube(lmap,firstoct,0,filename); */
 
 
 
@@ -1014,7 +1015,7 @@ int main(int argc, char *argv[])
 
 #ifdef WMPI
 	    tt[6]=MPI_Wtime();
-	    fprintf(ft,"%d %d %e %e %e %e %e %e %e\n",level,stride,tt[6]-tt[0],tt[1]-tt[0],tt[2]-tt[1],tt[3]-tt[2],tt[4]-tt[3],tt[5]-tt[4],tt[6]-tt[5]);
+	    //fprintf(ft,"%d %d %e %e %e %e %e %e %e\n",level,stride,tt[6]-tt[0],tt[1]-tt[0],tt[2]-tt[1],tt[3]-tt[2],tt[4]-tt[3],tt[5]-tt[4],tt[6]-tt[5]);
 #endif
 	  }while(nextoct!=NULL);
 	}
@@ -1119,9 +1120,11 @@ int main(int argc, char *argv[])
     dumpcube(lmap,firstoct,1,filename);
     sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,0,filename);
+
+#ifdef WMPI
     sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,3,filename);
-
+#endif
   
   //==== Gathering particles for dump
 
