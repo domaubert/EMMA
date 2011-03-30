@@ -874,8 +874,8 @@ int main(int argc, char *argv[])
 
 #ifdef TIME_JAC
   FILE *ft;
-  sprintf(filename,"data/timejac.%05d.p%05d",nsteps+1,cpu.rank);
-  ft=fopen(filename,"w");
+  //  sprintf(filename,"data/timejac.%05d.p%05d",nsteps+1,cpu.rank);
+  //ft=fopen(filename,"w");
   
   double tg1,tg2;
   double tl1,tl2;
@@ -1087,7 +1087,7 @@ int main(int argc, char *argv[])
 #endif
   
 #ifdef TIME_JAC
-  fclose(ft);
+  //fclose(ft);
 #endif
 
   //sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
