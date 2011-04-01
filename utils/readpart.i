@@ -33,6 +33,18 @@ func mergepart(fname,ncpu){
 }
 
 
+func mergeparttime(fname){
+  ll=exec("ls -d "+fname+"*");
+  pf=[];
+  for(i=0;i<=numberof(ll);i++){
+    p=readpart(ll(i));
+    grow,pf,[p]
+  }
+  return pf;
+}
+                               
+
+
 func part2cic(p,n){
 dxn=1./n;
 

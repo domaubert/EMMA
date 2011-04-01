@@ -23,6 +23,8 @@ struct RUNPARAMS{
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   
   float amrthresh; // the refinement criterion (refine if mcell>amrthresh)
+
+  float poissonacc; // relaxation accuracy for Poisson equation
   
 };
 

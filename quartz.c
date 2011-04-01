@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
   lmap=param.levelmap;
   stride=fmax(8,param.stride);//pow(2,levelcoarse);
   ncomp=10;
-  acc=1e-2;
+  acc=param.poissonacc;
   dt=param.dt;
   cpu.maxhash=param.maxhash;
   //breakmpi();
