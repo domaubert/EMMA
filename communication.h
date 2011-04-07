@@ -1,5 +1,5 @@
 
-void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax);
+void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax, int loadb);
 void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field);
 int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PART **lastp);
 void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field);

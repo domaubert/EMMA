@@ -14,7 +14,7 @@
 #include "segment.h"
 #include "particle.h"
 
-void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax){
+void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
   int nnei=0;
   int *mpinei; // the COMPLETE list of neighbors cpu (can be redundant)
@@ -52,14 +52,14 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 	    curoct=nextoct;
 	    nextoct=curoct->next;
 	    if(level>=levelcoarse){
-
-	      if(level==levelcoarse){
+	      
+	      if((level==levelcoarse)&&(loadb)){
 		assigncpu2coarseoct(curoct, cpu, levelcoarse);
 	      }
-
+	      
 	      key=oct2key(curoct,level); // getting the key of the current oct
 
-	      if(curoct->cpu!=cpu->rank){
+	      if((curoct->cpu!=cpu->rank)&&(curoct->cpu!=-1)){
 		// a neighbor has been found
 		mpinei[nnei]=curoct->cpu;
 		cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission

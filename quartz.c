@@ -373,9 +373,9 @@ int main(int argc, char *argv[])
 
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
-
-  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax);
-
+  int newloadb=1;
+  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
+  newloadb=0;
   // allocating the communication buffers
 
  
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
   // ==== some initial dump
 
   sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank);
-  //dumpcube(lmap,firstoct,0,filename);
+  dumpcube(lmap,firstoct,0,filename);
   sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank);
   //dumpcube(lmap,firstoct,3,filename);
 
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
     // first we read the position etc... (eventually from the file)
     if(ir==0){
       x=0.5;
-      y=0.5+1./64*0.5;
+      y=0.5;
       z=0.5;
       
       vx=0.;
@@ -777,16 +777,15 @@ int main(int argc, char *argv[])
 #if 1
     // ==================================== marking the cells
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
+    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,4,filename);
+
 
     
     // ==================================== refining (and destroying) the octs
 
     
     refine_cells(levelcoarse,levelmax,firstoct,lastoct,endoct,&cpu);
-    //if(nsteps==1) breakmpi();
-    //    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
-    //printf("%s\n",filename);
-    //    dumpcube(lmap,firstoct,4,filename);
 
     
   // recomputing the last oct;
@@ -808,7 +807,7 @@ int main(int argc, char *argv[])
 
 #ifdef WMPI
   // ==================================== after refinement we should remap the boundary cells
-  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax);
+  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
 #endif
 
 
@@ -930,13 +929,6 @@ int main(int argc, char *argv[])
 	  
 	int vpass=0;
 	  
-#ifdef WMPI
-	t1=MPI_Wtime();
-	ts=0.;
-	tl=0.;
-	tg=0.;
-	ta=0.;
-#endif 
 	nextoct=firstoct[level-1];
 	float res=0.; // the square of the residual
 
@@ -1043,17 +1035,11 @@ int main(int argc, char *argv[])
 	  }
 	}
 	  
-#ifdef WMPI
-	t2=MPI_Wtime();
-	// dumping timings 
-#endif 
 	    
 #ifdef WMPI
 	// ====We communicate the buffer
-	tm1=MPI_Wtime();
 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
 	if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	tm2=MPI_Wtime();
 
 	// reducing the residuals
 	if(cpu.comm!=MPI_COMM_WORLD){
