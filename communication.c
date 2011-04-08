@@ -438,6 +438,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
   for(j=0;j<cpu->nnei;j++){
     for(i=0;i<cpu->nbuff;i++){
       part=precvbuffer[j]+i;
+      //      if(part==NULL) continue;
       if(part->level!=0){ // we do something
 	// first we compute the adress from the hashfunction
 	hidx=hfun(part->key,cpu->maxhash);
@@ -454,6 +455,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
 	    *lastp=*lastp+1; // getting the next slot in the global particle list
 	    
 	    if((*lastp)->mass>0) {
+	      //printf("lastp=%p lastp-1=%p\n",lastp,lastp-1);
 	      printf("oum\n");
 	      abort();
 	    }
@@ -546,7 +548,7 @@ void  clean_mpibuff_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, str
  //------------------------------------------------------------------------
 
 #ifdef WMPI
-void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field)
+void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field, int cmp_keys)
 {
   int i;
   int icpu;
@@ -560,20 +562,26 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
 
-  // ----------- 0  / we clean the mpi buffers
-  clean_mpibuff(cpu,sendbuffer,recvbuffer);
-  // ----------- I  / we compute the boundary keys and store them in recvbuffer
-  compute_bndkeys(cpu,recvbuffer);
-  // ----------- II / we send the keys to the server
 
-  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Isend(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->rank,MPI_COMM_WORLD,&req[i]  );
+  // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1)
+
+  if(cmp_keys){
+    // ----------- 0  / we clean the mpi buffers
+    clean_mpibuff(cpu,sendbuffer,recvbuffer);
+
+    // ----------- I  / we compute the boundary keys and store them in recvbuffer
+    compute_bndkeys(cpu,recvbuffer);
+    // ----------- II / we send the keys to the server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->rank,MPI_COMM_WORLD,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(sendbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
-  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Irecv(sendbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
-  }
-  MPI_Waitall(2*cpu->nnei,req,stat);
-  MPI_Barrier(MPI_COMM_WORLD);
 
   // ----------- III/ the server gather the data
   gather_mpi(cpu, sendbuffer, field);
@@ -582,6 +590,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(MPI_COMM_WORLD);
+
   // ----------- IV / the server send the data back to the client
 
 

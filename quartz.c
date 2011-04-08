@@ -230,6 +230,8 @@ int main(int argc, char *argv[])
   cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); // the htable keys->oct address
   cpu.noct=(int *)calloc(levelmax,sizeof(int)); // the number of octs per level
 
+  lastpart=part-1; // the last particle points before the first at the very beginning
+
   vcomp=(float **)calloc(ncomp,sizeof(float*));
   for(i=0;i<ncomp;i++)
     {
@@ -413,7 +415,7 @@ int main(int argc, char *argv[])
 
 
 #if 1  // ==================================== assigning particles to cells
-
+  //breakmpi();
   if(cpu.rank==0) printf("==> starting part\n");
   firstoct_currl=0;
   for(il=1;il<levelcoarse;il++) firstoct_currl+=pow(pow(2,il-1),3); // the index of the first oct of current level
@@ -631,6 +633,10 @@ int main(int argc, char *argv[])
 #endif
 
 
+  // we set all the "remaining" particles mass to -1
+  for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
+
+
   // assigning particles to cells in coarse octs (assuming octs are aligned)
 
   if(cpu.rank==0) printf("start populating coarse grid with particles\n");
@@ -729,7 +735,7 @@ int main(int argc, char *argv[])
 
   // ======================================= Density boundary mpi update 
 
-  mpi_exchange(&cpu,sendbuffer,recvbuffer,1);
+  mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
 
 #endif
 
@@ -766,6 +772,9 @@ int main(int argc, char *argv[])
   tmax=1000.;
 #endif
 
+  FILE *fegy;
+
+  //breakmpi();
   for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
@@ -814,7 +823,6 @@ int main(int argc, char *argv[])
 
 #if 1
   // ==================================== performing the CIC assignement
-  //breakmpi();
 
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
 
@@ -825,7 +833,7 @@ int main(int argc, char *argv[])
 
   // ======================================= Density boundary mpi update 
 
-  mpi_exchange(&cpu,sendbuffer,recvbuffer,1);
+  mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
 #endif
 
     // cleaning the marks
@@ -920,7 +928,7 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef WMPI
-	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
+	mpi_exchange(&cpu,sendbuffer,recvbuffer,2,1);
 #endif
       }
 
@@ -1038,14 +1046,10 @@ int main(int argc, char *argv[])
 	    
 #ifdef WMPI
 	// ====We communicate the buffer
-	mpi_exchange(&cpu,sendbuffer,recvbuffer,2);
+	mpi_exchange(&cpu,sendbuffer,recvbuffer,2,(iter==0));
 	if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 
 	// reducing the residuals
-	if(cpu.comm!=MPI_COMM_WORLD){
-	  printf("ouhle\n");
-	}
-	MPI_Barrier(cpu.comm);
 	float restot;
 	//if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
 	MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
@@ -1095,6 +1099,20 @@ int main(int argc, char *argv[])
     forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
   }
 
+#ifdef EGYCSV
+  // ==================================== Energy Conservation Test
+  
+  float egy;
+  egy=egypart(levelcoarse,levelmax,firstoct,&cpu);
+  printf("== Energy check etot=%e\n",egy);
+  if(nsteps==0){
+    fegy=fopen("egy.txt","w");
+  }
+  fprintf(fegy,"%e %e\n",tsim,egy);
+
+
+#endif  
+
   // ==================================== DUMP AFTER SYNCHRONIZATION
 #if 1
   if(nsteps%(param.ndumps)==0){
@@ -1129,7 +1147,7 @@ int main(int argc, char *argv[])
 #endif
   
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
-  
+
   // ==================================== Moving Particles + Oct management
   
 
@@ -1181,6 +1199,11 @@ int main(int argc, char *argv[])
   if(cpu.rank==0){
     printf("Done .....\n");
   }
+
+#ifdef EGYCSV
+  fclose(fegy);
+#endif
+
 #ifdef WMPI
   MPI_Barrier(cpu.comm);
   //breakmpi();

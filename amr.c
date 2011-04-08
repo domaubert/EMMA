@@ -420,13 +420,12 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 		  //printf("pass=%d nmark=%d\n",pass,nmark);
 		}
 #ifdef WMPI
-
 		MPI_Barrier(cpu->comm);
 		// first we correct from the marker diffusion
 		mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 		
 		// second exchange boundaries
-		mpi_exchange(cpu,sendbuffer,recvbuffer,3);
+		mpi_exchange(cpu,sendbuffer,recvbuffer,3,1);
 		//breakmpi();
 #endif
 	      }

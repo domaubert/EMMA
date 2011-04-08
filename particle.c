@@ -668,7 +668,7 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
       }
 
 #ifdef WMPI
-	  mpi_exchange(cpu,sendbuffer,recvbuffer,4);
+    mpi_exchange(cpu,sendbuffer,recvbuffer,4,1);
 #endif
   
  // ==================================== Computing the Velocities
@@ -704,3 +704,63 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 
 
 //------------------------------------------------------------------------
+
+float egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO *cpu){
+
+  int dir;
+  int level;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  float dx;
+  int icomp,icell;
+  struct PART *curp;
+  struct PART *nexp;
+  int nread;
+
+  float upart, utot=0.; // potential energy
+  float tpart, ttot=0.; // kinetic energy
+  float etot; // total energy
+
+  float vx,vy,vz;
+
+  // ==================================== performing the INVERSE CIC assignement
+  
+    //printf("start INVERSE CIC\n");
+    //start INVERSE CIC
+    for(level=levelmax;level>=levelcoarse;level--)
+      {
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	  
+	    //==== FIRST WE CONSIDER THE PARTICLES INSIDE THE BOUNDARIES AT LEVEL L
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
+		if(nexp!=NULL){ 
+		  do{  
+		    curp=nexp; 
+		    nexp=curp->next; 
+		    upart=cell2part_cic_egy(curp, curoct, icell); 
+		    utot=utot-upart;
+		    
+		    vx=curp->vx;
+		    vy=curp->vy;
+		    vz=curp->vz;
+
+		    tpart=0.5*curp->mass*(vx*vx+vy*vy+vz*vz);
+		    printf("tpart=%e upart=%e\n",tpart,upart);
+		    ttot+=tpart;
+		  }while(nexp!=NULL); 
+		}
+	      }
+	  }while(nextoct!=NULL);
+      }
+
+    printf("%e %e \n",utot,ttot);
+    etot=utot*0.5+ttot;
+    return etot;
+}
