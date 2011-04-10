@@ -752,7 +752,7 @@ float egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO
 		    vz=curp->vz;
 
 		    tpart=0.5*curp->mass*(vx*vx+vy*vy+vz*vz);
-		    printf("tpart=%e upart=%e\n",tpart,upart);
+		    //printf("tpart=%e upart=%e\n",tpart,upart);
 		    ttot+=tpart;
 		  }while(nexp!=NULL); 
 		}
@@ -760,7 +760,7 @@ float egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO
 	  }while(nextoct!=NULL);
       }
 
-    printf("%e %e \n",utot,ttot);
+    //printf("%e %e \n",utot,ttot);
     etot=utot*0.5+ttot;
     return etot;
 }

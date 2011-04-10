@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
   // ==== some initial dump
 
   sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank);
-  dumpcube(lmap,firstoct,0,filename);
+  dumpcube(lmap,firstoct,0,filename,0.);
   sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank);
   //dumpcube(lmap,firstoct,3,filename);
 
@@ -786,8 +786,8 @@ int main(int argc, char *argv[])
 #if 1
     // ==================================== marking the cells
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
-    sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,4,filename);
+    /* sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank); */
+    /* dumpcube(lmap,firstoct,4,filename); */
 
 
     
@@ -1104,12 +1104,18 @@ int main(int argc, char *argv[])
   
   float egy;
   egy=egypart(levelcoarse,levelmax,firstoct,&cpu);
-  printf("== Energy check etot=%e\n",egy);
-  if(nsteps==0){
-    fegy=fopen("egy.txt","w");
-  }
-  fprintf(fegy,"%e %e\n",tsim,egy);
+  
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&egy,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+#endif
 
+  if(cpu.rank==0){
+    printf("== Energy check etot=%e\n",egy);
+    if(nsteps==0){
+      fegy=fopen("egy.txt","w");
+    }
+    fprintf(fegy,"%e %e\n",tsim,egy);
+  }
 
 #endif  
 
@@ -1119,21 +1125,21 @@ int main(int argc, char *argv[])
     // ===== Casting rays to fill a map
 
     sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,2,filename);
+    dumpcube(lmap,firstoct,2,filename,tsim);
     sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,1,filename);
+    dumpcube(lmap,firstoct,1,filename,tsim);
     sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,0,filename);
+    dumpcube(lmap,firstoct,0,filename,tsim);
 
 #ifdef WMPI
     sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,3,filename);
+    dumpcube(lmap,firstoct,3,filename,tsim);
 #endif
   
   //==== Gathering particles for dump
 
     sprintf(filename,"data/part.%05d.p%05d",nsteps,cpu.rank);
-    dumppart(firstoct,filename,npart,levelcoarse,levelmax);
+    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
 
   }
 #endif

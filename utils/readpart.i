@@ -1,12 +1,14 @@
 
 
-func readpart(fname){
+func readpart(fname,&time){
   //fname=exec("ls -d data/part.*")
   //x=y=[];for(i=1;i<=numberof(fname);i++){phase=readpart(fname(i));www=where(phase(7,)==1);grow,x,phase(1,www);grow,y,phase(2,www);}
   fp=open(fname,"rb");
   adress=0;
   npart=array(int);
+  time=array(float);
   _read,fp,adress,npart;adress+=sizeof(npart);
+  _read,fp,adress,time;adress+=sizeof(time);
   if(npart!=0){
   phase=array(float,7,npart);
   _read,fp,adress,phase;adress+=sizeof(phase);
@@ -22,11 +24,12 @@ func readpart(fname){
 
 
 
-func mergepart(fname,ncpu){
+func mergepart(fname,ncpu,&time){
   pf=[];
+  time=array(float);
   for(i=0;i<ncpu;i++){
     fname2=swrite(format=fname+".p%05d",i);
-    p=readpart(fname2);
+    p=readpart(fname2,time);
     if(numberof(p)!=1) grow,pf,p;
   }
   return pf;

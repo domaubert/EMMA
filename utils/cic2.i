@@ -2,8 +2,9 @@
 
 
 
-p=readpart("../data/part.00315.p00000");
-n=256;
+//p=readpart("../data/part.00315.p00000");
+p=mergepart("data/part.00050",2);
+n=128;
 dxn=1./n;
 
 dens=array(double,n,n,n);

@@ -20,11 +20,13 @@ func readmap(fname){
   return map;
 }
 
-func readcube(fname){
+func readcube(fname,&time){
   fp=open(fname,"rb");
   adress=0;
   nmap=array(int);
+  time=array(float);
   _read,fp,adress,nmap;adress+=sizeof(nmap);
+  _read,fp,adress,time;adress+=sizeof(time);
   map=array(float,nmap^3);
   _read,fp,adress,map;
   close,fp;
@@ -47,15 +49,15 @@ func mapcpu(fname,ncpu){
   return cglob;
 }
 
-func mergefield(fname,cname,ncpu,level){
+func mergefield(fname,cname,ncpu,level,&time){
 
   field=array(float,2^level,2^level,2^level);
   c=mapcpu(cname,ncpu);
-
+  time=array(float);
   for(i=0;i<ncpu;i++)
     {
       fname2=swrite(format=fname+".p%05d",i);
-      f=readcube(fname2);
+      f=readcube(fname2,time);
       www=where(c==i);
       field(www)=f(www);
     }

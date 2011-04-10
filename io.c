@@ -88,7 +88,7 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
 
 }
 
-void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[])
+void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
 {
   float *map;
   int imap,jmap,kmap;
@@ -176,6 +176,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[])
   //printf("dumping %s\n",filename);
   fp=fopen(filename,"wb");
   fwrite(&nmap,1,sizeof(int),fp);
+  fwrite(&tsim,1,sizeof(float),fp);
   fwrite(map,nmap*nmap*nmap,sizeof(float),fp);
   fclose(fp);
   free(map);
@@ -184,7 +185,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[])
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
-void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax){
+void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax, float tsim){
 
   FILE *fp;
   float val;
@@ -200,6 +201,7 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
 
   fp=fopen(filename,"wb");
   fwrite(&npart,1,sizeof(int),fp);
+  fwrite(&tsim,1,sizeof(float),fp);
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       //printf("level=%d\n",level);
