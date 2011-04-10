@@ -170,5 +170,7 @@ struct OCT
   int level;// level of the cells in the oct
 
 
+  // vector info
+  int vecpos;
   
 };

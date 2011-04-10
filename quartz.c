@@ -298,6 +298,7 @@ int main(int argc, char *argv[])
   }
 
   grid->cpu=-1;
+  grid->vecpos=-1;
 
   // start the creation of the initial amr grid from level 1
   firstoct[0]=grid;
@@ -350,6 +351,9 @@ int main(int argc, char *argv[])
 		newoct->nei[ii]=&(curoct->cell[vcell[ii]]);
 	      }
 	    }
+
+	    // vector data
+	    newoct->vecpos=-1;
 	    
 	    // preparing the next creations on level+1
 	    newoct->next=NULL;
@@ -876,7 +880,6 @@ int main(int argc, char *argv[])
 #endif
 
 
-#if 1
 // ==================================== POISSON Testing the jacobi iteration
 
 #ifdef TIME_JAC
@@ -932,6 +935,8 @@ int main(int argc, char *argv[])
 #endif
       }
 
+
+#ifndef NEWJACK
       // looping over iterations
       for(iter=0;iter<niter;iter++){
 	  
@@ -1062,19 +1067,92 @@ int main(int argc, char *argv[])
 	    break;
 	}
 
-	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e\n ",level,iter,sqrt(res/norm_d));
-
+	if((iter%1==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e norm_d=%e res=%e\n ",level,iter,sqrt(res/norm_d),sqrt(norm_d),sqrt(res));
 
 	// convergence achieved
 	if(sqrt(res/norm_d)<acc) {
 	  break;
 	}
 
-
       }
-    }
-  
+#else
+
+      // some checks
+
+      if((levelmax!=levelcoarse)||(stride<pow(2,levelcoarse))){
+	  printf("still debugging\n");
+	  abort();
+	}
+
+
+      // allocating the vectorized tree
+      
+      float *vecpot; //contains the potential in "stride" octs
+      float *vecpotnew; //contains the potential in "stride" octs
+      float *vecden; //contains the density   in "stride" octs
+      int *vecnei;//contains the cell neighbors of the octs
+
+      vecpot=(float*)calloc(stride*8,sizeof(float));
+      vecpotnew=(float*)calloc(stride*8,sizeof(float));
+      vecden=(float*)calloc(stride*8,sizeof(float));
+      vecnei=(int *)calloc(stride*6,sizeof(int));
+
+      for(i=0;i<stride*6;i++){vecnei[i]=-1;}
+
+      norm_d=0.;
+      dx=pow(0.5,level);
+
+      curoct=firstoct[level-1];
+
+      // gathering the neighbors
+      
+      nextoct=gathervecnei(curoct,vecnei,stride,&cpu,&nread);
+      checknei(curoct,vecnei,stride);
+
+      // gathering the values
+      
+      nextoct=gathervec(curoct,vecden,0,stride,&cpu,&nread); // density
+      nextoct=gathervec(curoct,vecpot,1,stride,&cpu,&nread); // potential
+
+      printf("nread=%d\n",nread);
+
+      // we contrast the density by removing the average value
+      
+      remove_valvec(vecden,nread,stride,1.);
+
+      // we square and sum the density
+#ifdef TESTCOSMO
+      norm_d+=square_vec(vecden,nread,stride)*pow(1.5*omegam/tsim,2);
+#else
+      norm_d+=square_vec(vecden,nread,stride)*pow(4.0*M_PI,2);
 #endif
+      // looping over iterations
+
+      float res;
+
+      for(iter=0;iter<niter;iter++){
+	
+	// computing the laplacian
+	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,nread,stride,dx,omegam,tsim);
+
+	// exchange potential evaluations
+	memcpy(vecpot,vecpotnew,sizeof(float)*stride*8);
+	memset(vecpotnew,0,sizeof(float)*stride*8);
+
+	// some verbosity
+	if((iter%1==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e normd=%e res=%e\n ",level,iter,sqrt(res/norm_d),sqrt(norm_d),sqrt(res));
+	
+	// breaking condition
+	if(sqrt(res/norm_d)<acc) {
+	  break;
+	}
+      }
+
+      //scatter back the result
+      nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
+
+#endif
+    }      
   
 #ifdef TIME_JAC
   //fclose(ft);
