@@ -4,7 +4,7 @@
 #include "prototypes.h"
 
 //============================================================================
-struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -12,7 +12,8 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, int stride, struct C
   int inei;
   int ipos=0;
   int icur;
-  
+  int j;
+
   nextoct=octstart;
   if(nextoct!=NULL){
     do{ //sweeping levels
@@ -31,11 +32,29 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, int stride, struct C
       // we scan the neighbors
       for(inei=0;inei<6;inei++){
 	if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
-	  if(curoct->nei[inei]->child->vecpos==-1){ // the neighbor does not have a vector position
+
+	  if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
 	    curoct->nei[inei]->child->vecpos=ipos;
 	    ipos++;
 	  }
+
 	  vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+	}
+	else{ // we need to interpolate from coarser level
+	  
+	  vecnei[icur+inei*stride]=ipos; // we assign a neighbor
+	  vecl[ipos]=curoct->level-1; // we assign a level
+
+	  // the field is directly filled at this stage
+	  switch(var){
+	  case(0):
+	    for(j=0;j<8;j++) vec[ipos+j*stride]=curoct->nei[inei]->density;
+	    break;
+	  case(1):
+	    for(j=0;j<8;j++) vec[ipos+j*stride]=curoct->nei[inei]->pot;
+	    break;
+	  }
+	  ipos++;
 	}
       }
       iread++;
@@ -43,14 +62,14 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, int stride, struct C
   }
 
   (*nread)=iread;
-  printf("ipos=%d\n",ipos);
 
   return nextoct;
 }
 
+
 //============================================================================
 
-struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -78,6 +97,8 @@ struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int stride, st
 	  break;
 	}
       }
+      
+      vecl[ipos]=curoct->level; // assigning a level
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -154,26 +175,26 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
 
 
 //============================================================================
-void remove_valvec(float *vec, int nval, int stride, float avg)
+void remove_valvec(float *vec, int nval, int stride, float avg, int level, int *vecl)
 {
   int icell;
   int i;
   for(icell=0;icell<8;icell++){
-    for(i=0;i<nval;i++){
-      vec[i+icell*stride]=vec[i+icell*stride]-avg;
+    for(i=0;i<stride;i++){
+      vec[i+icell*stride]=(vec[i+icell*stride]-avg)*(level==vecl[i]);
     }
   }
 }
 
 //============================================================================
-float square_vec(float *vec, int nval, int stride)
+float square_vec(float *vec, int nval, int stride, int level, int *vecl)
 {
   int icell;
   int i;
   float sum=0.;
   for(icell=0;icell<8;icell++){
-    for(i=0;i<nval;i++){
-      sum+=vec[i+icell*stride]*vec[i+icell*stride];
+    for(i=0;i<stride;i++){
+      sum+=vec[i+icell*stride]*vec[i+icell*stride]*(level==vecl[i]);
     }  
   }
   return sum;
@@ -181,7 +202,7 @@ float square_vec(float *vec, int nval, int stride)
 
 
 //============================================================================
-float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int nread,int stride,float dx,float omegam,float tsim){
+float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int level, int nread,int stride,float dx,float omegam,float tsim){
 
   int inei,icell;
   int i;
@@ -189,9 +210,18 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
   float res,restot=0.;
   int vnei[6],vcell[6];
   int idxnei;
-  
+  float ominterp=0.2;
+
   for(i=0;i<stride;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
+
+      // we skip octs which do not belong to the current level
+      if(vecl[i]!=level){
+	vecpotnew[i+icell*stride]=vecpot[i+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+	continue; 
+      }
+
+      
       temp=0.;
       getcellnei(icell, vnei, vcell); // we get the neighbors
 
@@ -201,7 +231,12 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 	  temp+=vecpot[i+vcell[inei]*stride];
 	  }
 	else{
-	  temp+=vecpot[vecnei[vnei[inei]]+vcell[inei]*stride];
+	  if(vecl[vecnei[i+vnei[inei]*stride]]==vecl[i]){ // the octs share the same level
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride];
+	  }
+	  else{ // mixing values from two different levels
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride]*(1.-ominterp)+vecpot[i+icell*stride]*ominterp;
+	  }
 	}
       }
 
@@ -217,6 +252,7 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 #endif
 
 
+
       // we finsih the residual
       res=res-6.0*vecpot[i+icell*stride];
 
@@ -229,6 +265,19 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 
       // we store the new value
       vecpotnew[i+icell*stride]=temp;
+
+
+      /* if(vecden[i+icell*stride]>1000){ */
+      /* 	printf("==== temp=%e den=%e idx=%d=====\n",temp,vecden[i+icell*stride],i); */
+      /* 	for(inei=0;inei<6;inei++){ // we scan the neighbors */
+      /* 	  if(vnei[inei]==6){ // the neighbor is in the current oct */
+      /* 	    printf("inei=%d idx=%d old=%e new=%e den=%e\n",inei,i,vecpot[i+vcell[inei]*stride],vecpotnew[i+vcell[inei]*stride],vecden[i+vcell[inei]*stride]); */
+      /* 	  } */
+      /* 	  else{ */
+      /* 	    printf("inei=%d idx=%d old=%e new=%e den=%e\n",inei,vecnei[i+vnei[inei]*stride],vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride],vecpotnew[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride],vecden[i+vecnei[vnei[inei]*stride]+vcell[inei]*stride]); */
+      /* 	  } */
+      /* 	} */
+      /* } */
 
       // ready for the next cell
     }

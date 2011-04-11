@@ -146,6 +146,9 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		// it shares the same cpu
 		newoct->cpu=curoct->cpu;
 
+		// it is not vectorized yet
+		newoct->vecpos=-1;
+
 		//the neighbours
 		getcellnei(icell, vnei, vcell);
 		for(ii=0;ii<6;ii++){

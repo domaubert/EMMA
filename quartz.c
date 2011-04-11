@@ -534,6 +534,7 @@ int main(int argc, char *argv[])
 
 #endif  
 
+  float omegam,omegav,Hubble;
 #ifdef TESTCOSMO
   int dummy;
   float dummyf;
@@ -543,7 +544,6 @@ int main(int argc, char *argv[])
   float munit;
   float ainit;
   float lbox;
-  float omegam,omegav,Hubble;
 
   fd=fopen("utils/IC.PM.0","rb");
 
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[])
 	    break;
 	}
 
-	if((iter%1==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e norm_d=%e res=%e\n ",level,iter,sqrt(res/norm_d),sqrt(norm_d),sqrt(res));
+	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 
 	// convergence achieved
 	if(sqrt(res/norm_d)<acc) {
@@ -1079,7 +1079,7 @@ int main(int argc, char *argv[])
 
       // some checks
 
-      if((levelmax!=levelcoarse)||(stride<pow(2,levelcoarse))){
+      if((stride<pow(2,levelcoarse))){
 	  printf("still debugging\n");
 	  abort();
 	}
@@ -1091,40 +1091,48 @@ int main(int argc, char *argv[])
       float *vecpotnew; //contains the potential in "stride" octs
       float *vecden; //contains the density   in "stride" octs
       int *vecnei;//contains the cell neighbors of the octs
+      int *vecl; // contains the level of the octs
 
       vecpot=(float*)calloc(stride*8,sizeof(float));
       vecpotnew=(float*)calloc(stride*8,sizeof(float));
       vecden=(float*)calloc(stride*8,sizeof(float));
       vecnei=(int *)calloc(stride*6,sizeof(int));
-
+      vecl=(int *)calloc(stride,sizeof(int));
+      
+      
+      // setting neighbors to -1
       for(i=0;i<stride*6;i++){vecnei[i]=-1;}
 
-      norm_d=0.;
       dx=pow(0.5,level);
 
       curoct=firstoct[level-1];
 
       // gathering the neighbors
       
-      nextoct=gathervecnei(curoct,vecnei,stride,&cpu,&nread);
-      checknei(curoct,vecnei,stride);
+      nextoct=gathervecnei(curoct,vecnei,vecpot,1,vecl,stride,&cpu,&nread);
 
       // gathering the values
       
-      nextoct=gathervec(curoct,vecden,0,stride,&cpu,&nread); // density
-      nextoct=gathervec(curoct,vecpot,1,stride,&cpu,&nread); // potential
-
-      printf("nread=%d\n",nread);
-
-      // we contrast the density by removing the average value
+      nextoct=gathervec(curoct,vecden,0,vecl,stride,&cpu,&nread); // density
+      nextoct=gathervec(curoct,vecpot,1,vecl,stride,&cpu,&nread); // potential
+      //printf("nread=%d\n",nread);
       
-      remove_valvec(vecden,nread,stride,1.);
+      /* int itot=0; */
+      /* for(i=0;i<stride;i++) { */
+      /* 	//if(vecl[i]!=level) printf("lev=%d %d\n",level,vecl[i]); */
+      /* 	itot+=(vecl[i]==level); */
+      /* } */
+      /* printf("itot=%d\n",itot); */
+      
+// we contrast the density by removing the average value
+      
+      remove_valvec(vecden,nread,stride,1.,level,vecl);
 
       // we square and sum the density
 #ifdef TESTCOSMO
-      norm_d+=square_vec(vecden,nread,stride)*pow(1.5*omegam/tsim,2);
+      norm_d+=square_vec(vecden,nread,stride,level,vecl)*pow(1.5*omegam/tsim,2);
 #else
-      norm_d+=square_vec(vecden,nread,stride)*pow(4.0*M_PI,2);
+      norm_d+=square_vec(vecden,nread,stride,level,vecl)*pow(4.0*M_PI,2);
 #endif
       // looping over iterations
 
@@ -1133,14 +1141,19 @@ int main(int argc, char *argv[])
       for(iter=0;iter<niter;iter++){
 	
 	// computing the laplacian
-	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,nread,stride,dx,omegam,tsim);
+	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,vecl,level,nread,stride,dx,omegam,tsim);
 
 	// exchange potential evaluations
 	memcpy(vecpot,vecpotnew,sizeof(float)*stride*8);
-	memset(vecpotnew,0,sizeof(float)*stride*8);
+
+	// skip level if it does not exist
+	if((res==0.)&&(norm_d==0.)){
+	    if(cpu.rank==0) printf("Level %d skipped\n",level);
+	    break;
+	}
 
 	// some verbosity
-	if((iter%1==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e normd=%e res=%e\n ",level,iter,sqrt(res/norm_d),sqrt(norm_d),sqrt(res));
+	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 	
 	// breaking condition
 	if(sqrt(res/norm_d)<acc) {
@@ -1151,6 +1164,13 @@ int main(int argc, char *argv[])
       //scatter back the result
       nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
 
+      free(vecpot); //contains the potential in "stride" octs
+      free(vecpotnew); //contains the potential in "stride" octs
+      free(vecden); //contains the density   in "stride" octs
+      free(vecnei);//contains the cell neighbors of the octs
+      free(vecl); // contains the level of the octs
+
+
 #endif
     }      
   
@@ -1158,10 +1178,23 @@ int main(int argc, char *argv[])
   //fclose(ft);
 #endif
 
-  //sprintf(filename,"data/potstart.%05d.p%05d",nsteps+1,cpu.rank);
-  //  printf("%s\n",filename);
-  //  dumpcube(lmap,firstoct,2,filename);
-  //abort();	    
+#ifdef NEWJACK
+  // cleaning the vector positions
+  for(level=1;level<=levelmax;level++) // looping over levels
+    {
+      float maxd=0.,mind=1e30,avg=0.;
+      int ncell=0;
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  curoct->vecpos=-1;
+	}while(nextoct!=NULL);
+      
+    }
+#endif
 
   // ==================================== Force calculation and velocity update   // corrector step
 
