@@ -16,13 +16,11 @@
 #include "communication.h"
 #include <time.h>
 
-// TO COMPILE
 
-//mpicc -lm -DWMPI -DNBUFF=4096 -DNEWASSIGN -DTESTPLUM -DNDUMP=1 -DNSTEP=10 -DLCOARSE=6 -DLMAX=6  -DCIC2 -DNITER=4096 -DALLCELL -DSTRIDE=128 -DDT=1e-4 hilbert.c gilgamesh.c
-
-//gcc -g -lm -DNEWASSIGN -DPART2 -DNDUMP=1 -DNSTEP=10 -DLCOARSE=6 -DLMAX=6  -DCIC2 -DNITER=4096 -DALLCELL -DSTRIDE=128 -DDT=1e-4 hilbert.o gilgamesh.c
-
-//mpicc -lm -DWMPI -DNEWASSIGN -DPART2 -DNDUMP=1 -DNSTEP=10 -DLCOARSE=6 -DLMAX=6  -DCIC2 -DNITER=4096 -DALLCELL -DSTRIDE=128 -DDT=1e-4 hilbert.c gilgamesh.c
+#ifdef WGPU
+#include "interface.h"
+#include "vector_gpu.h"
+#endif
 
 
  //------------------------------------------------------------------------
@@ -412,13 +410,39 @@ int main(int argc, char *argv[])
   int *vecl; // contains the level of the octs
   int *vecicoarse; // contains the level of the octs
   
+#ifdef NEWJACK
   vecpot=(float*)calloc(stride*8,sizeof(float));
   vecpotnew=(float*)calloc(stride*8,sizeof(float));
   vecden=(float*)calloc(stride*8,sizeof(float));
   vecnei=(int *)calloc(stride*6,sizeof(int));
   vecl=(int *)calloc(stride,sizeof(int));
   vecicoarse=(int *)calloc(stride,sizeof(int));
+#endif 
 
+#ifdef WGPU
+  float *vecden_d;
+  int *vecl_d;
+  float *vec2_d;
+  float *vecsum_d;
+
+  float *vecpot_d; 
+  float *vecpotnew_d; 
+  int *vecnei_d;
+  int *vecicoarse_d; 
+
+  cudaMalloc((void **)&vecl_d,sizeof(int)*stride);
+  cudaMalloc((void **)&vecden_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vec2_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vecsum_d,sizeof(float)*stride*8);
+
+  cudaMalloc((void **)&vecpot_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vecpotnew_d,sizeof(float)*stride*8);
+
+  cudaMalloc((void **)&vecnei_d,sizeof(int)*stride*6);
+  cudaMalloc((void **)&vecicoarse_d,sizeof(int)*stride);
+
+
+#endif
 
   //===================================================================================================
   
@@ -862,8 +886,8 @@ int main(int argc, char *argv[])
     // cleaning the marks
     for(level=1;level<=levelmax;level++) // looping over levels
       {
-	float maxd=0.,mind=1e30,avg=0.;
-	int ncell=0;
+	/* float maxd=0.,mind=1e30,avg=0.; */
+	/* int ncell=0; */
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -873,10 +897,10 @@ int main(int argc, char *argv[])
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	      {
 		curoct->cell[icell].marked=0.;
-		ncell++;
-		avg+=curoct->cell[icell].density;
-		if(curoct->cell[icell].density>maxd) maxd=curoct->cell[icell].density;
-		if(curoct->cell[icell].density<mind) mind=curoct->cell[icell].density;
+		/* ncell++; */
+		/* avg+=curoct->cell[icell].density; */
+		/* if(curoct->cell[icell].density>maxd) maxd=curoct->cell[icell].density; */
+		/* if(curoct->cell[icell].density<mind) mind=curoct->cell[icell].density; */
 	      }
 	  }while(nextoct!=NULL);
 
@@ -893,7 +917,7 @@ int main(int argc, char *argv[])
 
   // ==================================== Check the number of particles and octs
   
-  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+    //mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
@@ -1151,16 +1175,44 @@ int main(int argc, char *argv[])
 
       //printf("nread=%d\n",nread);
       // we contrast the density by removing the average value
-      
+#ifndef WGPU      
       remove_valvec(vecden,nread,stride,1.,level,vecl);
+#else
+      CPU2GPU(vecden_d,vecden,sizeof(float)*stride*8);
+      CPU2GPU_INT(vecl_d  ,vecl,sizeof(int)*stride);
+      remove_valvec_GPU(vecden_d,nread,stride,1.,level,vecl_d);
+      GPU2CPU(vecden,vecden_d,sizeof(float)*stride*8);
+#endif
 
       // we square and sum the density
+#ifndef WGPU
+      // CPU CASE
 #ifdef TESTCOSMO
       norm_d+=square_vec(vecden,nread,stride,level,vecl)*pow(1.5*omegam/tsim,2);
 #else
       norm_d+=square_vec(vecden,nread,stride,level,vecl)*pow(4.0*M_PI,2);
 #endif
-      // looping over iterations
+
+#else
+      // GPU CASE
+#ifdef TESTCOSMO
+      norm_d+=square_vec_GPU(vecden_d,nread,stride,level,vecl_d,vec2_d,vecsum_d)*pow(1.5*omegam/tsim,2);
+#else
+      norm_d+=square_vec_GPU(vecden_d,nread,stride,level,vecl_d,vec2_d,vecsum_d)*pow(4.0*M_PI,2);
+#endif
+      
+#endif
+
+
+#ifdef WGPU
+      // sending data to GPU
+      CPU2GPU(vecpotnew_d,vecpotnew,sizeof(float)*stride*8);
+      CPU2GPU(vecpot_d,vecpot,sizeof(float)*stride*8);
+      CPU2GPU_INT(vecnei_d,vecnei,sizeof(int)*stride*6);
+      CPU2GPU_INT(vecicoarse_d,vecicoarse,sizeof(int)*stride);
+#endif
+
+      //======================== looping over iterations
 
       float res;
 
@@ -1168,13 +1220,25 @@ int main(int argc, char *argv[])
 	
 	// computing the laplacian
 #ifdef NEWJACK2
+#ifdef WGPU
+	cudaMemset(vec2_d,0,sizeof(float)*stride*8);
+	cudaMemset(vecsum_d,0,sizeof(float)*stride*8);
+	res=laplacian_vec2_GPU(vecden_d,vecpot_d,vecpotnew_d,vecnei_d,vecl_d, vecicoarse_d,level,nread,stride,dx,omegam,tsim,vec2_d,vecsum_d);
+#else
 	res=laplacian_vec2(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,level,nread,stride,dx,omegam,tsim);
+#endif
 #else
 	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,vecl,level,nread,stride,dx,omegam,tsim);
 #endif
 
+
+
 	// exchange potential evaluations
+#ifdef WGPU
+	GPU2GPU(vecpot_d,vecpotnew_d,sizeof(float)*stride*8);
+#else
 	memcpy(vecpot,vecpotnew,sizeof(float)*stride*8);
+#endif
 
 	// skip level if it does not exist
 	if((res==0.)&&(norm_d==0.)){
@@ -1185,14 +1249,17 @@ int main(int argc, char *argv[])
 	// some verbosity
 	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 	
-	//scatter back the result
-	nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
-
 	// breaking condition
 	if(sqrt(res/norm_d)<acc) {
 	  break;
 	}
       }
+
+#ifdef WGPU
+      GPU2CPU(vecpot,vecpot_d,sizeof(float)*8*stride);
+#endif
+      //scatter back the result
+      nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
 
 
 
@@ -1325,6 +1392,12 @@ int main(int argc, char *argv[])
       free(vecnei);//contains the cell neighbors of the octs
       free(vecl); // contains the level of the octs
       free(vecicoarse); // contains the level of the octs
+
+#ifdef WGPU
+      cudaFree(vecl_d);
+      cudaFree(vecden_d);
+#endif
+
 #endif
 
 
