@@ -402,6 +402,25 @@ int main(int argc, char *argv[])
 
 
   //===================================================================================================
+
+  // allocating the vectorized tree
+  
+  float *vecpot; //contains the potential in "stride" octs
+  float *vecpotnew; //contains the potential in "stride" octs
+  float *vecden; //contains the density   in "stride" octs
+  int *vecnei;//contains the cell neighbors of the octs
+  int *vecl; // contains the level of the octs
+  int *vecicoarse; // contains the level of the octs
+  
+  vecpot=(float*)calloc(stride*8,sizeof(float));
+  vecpotnew=(float*)calloc(stride*8,sizeof(float));
+  vecden=(float*)calloc(stride*8,sizeof(float));
+  vecnei=(int *)calloc(stride*6,sizeof(int));
+  vecl=(int *)calloc(stride,sizeof(int));
+  vecicoarse=(int *)calloc(stride,sizeof(int));
+
+
+  //===================================================================================================
   
   // ==== some initial dump
 
@@ -782,9 +801,9 @@ int main(int argc, char *argv[])
   for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
-    if(cpu.rank==0) printf("============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
+    if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
 #else
-    if(cpu.rank==0) printf("============== STEP %d tsim=%e ================\n",nsteps,tsim);
+    if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
 
 #if 1
@@ -896,6 +915,8 @@ int main(int argc, char *argv[])
   double tc1;
   double tg,tl,ts,ta;
 #endif
+
+
 
   if(cpu.rank==0){
     printf("=======================================\n");
@@ -1077,6 +1098,9 @@ int main(int argc, char *argv[])
       }
 #else
 
+      // cleaning the vector positions
+      clean_vec(levelmax,firstoct);
+
       // some checks
 
       if((stride<pow(2,levelcoarse))){
@@ -1084,22 +1108,13 @@ int main(int argc, char *argv[])
 	  abort();
 	}
 
+      memset(vecpot,0,sizeof(float)*stride*8);
+      memset(vecpotnew,0,sizeof(float)*stride*8);
+      memset(vecden,0,sizeof(float)*stride*8);
+      memset(vecnei,0,sizeof(int)*stride*6);
+      memset(vecl,0,sizeof(int)*stride);
+      memset(vecicoarse,0,sizeof(int)*stride);
 
-      // allocating the vectorized tree
-      
-      float *vecpot; //contains the potential in "stride" octs
-      float *vecpotnew; //contains the potential in "stride" octs
-      float *vecden; //contains the density   in "stride" octs
-      int *vecnei;//contains the cell neighbors of the octs
-      int *vecl; // contains the level of the octs
-
-      vecpot=(float*)calloc(stride*8,sizeof(float));
-      vecpotnew=(float*)calloc(stride*8,sizeof(float));
-      vecden=(float*)calloc(stride*8,sizeof(float));
-      vecnei=(int *)calloc(stride*6,sizeof(int));
-      vecl=(int *)calloc(stride,sizeof(int));
-      
-      
       // setting neighbors to -1
       for(i=0;i<stride*6;i++){vecnei[i]=-1;}
 
@@ -1108,23 +1123,34 @@ int main(int argc, char *argv[])
       curoct=firstoct[level-1];
 
       // gathering the neighbors
-      
+
+#ifdef NEWJACK2
+      nextoct=gathervecnei2(curoct,vecnei,vecpot,1,vecl,stride,&cpu,&nread);
+#else
       nextoct=gathervecnei(curoct,vecnei,vecpot,1,vecl,stride,&cpu,&nread);
+#endif
+
 
       // gathering the values
       
+
+#ifdef NEWJACK2
+      if(level>levelcoarse){
+	//gathering the data from coarse levels
+	nextoct=gathervec2(firstoct[level-2],vecden,0,vecl,vecicoarse,stride,&cpu,&nread); // density
+	nextoct=gathervec2(firstoct[level-2],vecpot,1,vecl,vecicoarse,stride,&cpu,&nread); // density
+      }
+
+      nextoct=gathervec2(curoct,vecden,0,vecl,vecicoarse,stride,&cpu,&nread); // density
+      nextoct=gathervec2(curoct,vecpot,1,vecl,vecicoarse,stride,&cpu,&nread); // density
+
+#else
       nextoct=gathervec(curoct,vecden,0,vecl,stride,&cpu,&nread); // density
       nextoct=gathervec(curoct,vecpot,1,vecl,stride,&cpu,&nread); // potential
+#endif
+
       //printf("nread=%d\n",nread);
-      
-      /* int itot=0; */
-      /* for(i=0;i<stride;i++) { */
-      /* 	//if(vecl[i]!=level) printf("lev=%d %d\n",level,vecl[i]); */
-      /* 	itot+=(vecl[i]==level); */
-      /* } */
-      /* printf("itot=%d\n",itot); */
-      
-// we contrast the density by removing the average value
+      // we contrast the density by removing the average value
       
       remove_valvec(vecden,nread,stride,1.,level,vecl);
 
@@ -1141,7 +1167,11 @@ int main(int argc, char *argv[])
       for(iter=0;iter<niter;iter++){
 	
 	// computing the laplacian
+#ifdef NEWJACK2
+	res=laplacian_vec2(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,level,nread,stride,dx,omegam,tsim);
+#else
 	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,vecl,level,nread,stride,dx,omegam,tsim);
+#endif
 
 	// exchange potential evaluations
 	memcpy(vecpot,vecpotnew,sizeof(float)*stride*8);
@@ -1155,20 +1185,15 @@ int main(int argc, char *argv[])
 	// some verbosity
 	if((iter%128==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 	
+	//scatter back the result
+	nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
+
 	// breaking condition
 	if(sqrt(res/norm_d)<acc) {
 	  break;
 	}
       }
 
-      //scatter back the result
-      nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); // density      
-
-      free(vecpot); //contains the potential in "stride" octs
-      free(vecpotnew); //contains the potential in "stride" octs
-      free(vecden); //contains the density   in "stride" octs
-      free(vecnei);//contains the cell neighbors of the octs
-      free(vecl); // contains the level of the octs
 
 
 #endif
@@ -1178,23 +1203,6 @@ int main(int argc, char *argv[])
   //fclose(ft);
 #endif
 
-#ifdef NEWJACK
-  // cleaning the vector positions
-  for(level=1;level<=levelmax;level++) // looping over levels
-    {
-      float maxd=0.,mind=1e30,avg=0.;
-      int ncell=0;
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  curoct->vecpos=-1;
-	}while(nextoct!=NULL);
-      
-    }
-#endif
 
   // ==================================== Force calculation and velocity update   // corrector step
 
@@ -1308,6 +1316,17 @@ int main(int argc, char *argv[])
   tsim+=dt;
 
   }
+
+
+#ifdef NEWJACK
+      free(vecpot); //contains the potential in "stride" octs
+      free(vecpotnew); //contains the potential in "stride" octs
+      free(vecden); //contains the density   in "stride" octs
+      free(vecnei);//contains the cell neighbors of the octs
+      free(vecl); // contains the level of the octs
+      free(vecicoarse); // contains the level of the octs
+#endif
+
 
 #ifdef WMPI
   MPI_Barrier(cpu.comm);

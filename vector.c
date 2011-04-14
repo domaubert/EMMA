@@ -2,6 +2,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "prototypes.h"
+#include "oct.h"
+
+//============================================================================
+void clean_vec(int levelmax,struct OCT **firstoct)
+{
+  int level;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  for(level=1;level<=levelmax;level++) // looping over levels
+    {
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  curoct->vecpos=-1;
+	}while(nextoct!=NULL);
+      
+    }
+}
+
 
 //============================================================================
 struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
@@ -20,7 +42,7 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var,
       curoct=nextoct;
       nextoct=curoct->next;
 
-      if(curoct->vecpos==-1){
+      if(curoct->vecpos<0){
 	// the current oct has not been vectorized yet
 	curoct->vecpos=ipos;
 	ipos++;
@@ -39,11 +61,20 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var,
 	  }
 
 	  vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+	  if(vecnei[icur+inei*stride]>=stride){
+	    printf("error vecnei\n");
+	    abort();
+	  }
 	}
 	else{ // we need to interpolate from coarser level
 	  
 	  vecnei[icur+inei*stride]=ipos; // we assign a neighbor
 	  vecl[ipos]=curoct->level-1; // we assign a level
+
+	  if(vecnei[icur+inei*stride]>=stride){
+	    printf("error vecnei\n");
+	    abort();
+	  }
 
 	  // the field is directly filled at this stage
 	  switch(var){
@@ -55,6 +86,67 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var,
 	    break;
 	  }
 	  ipos++;
+	}
+      }
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+
+  (*nread)=iread;
+
+  return nextoct;
+}
+
+//============================================================================
+struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  struct OCT* coarseoct;
+  int iread=0;
+  int inei;
+  int ipos=0;
+  int icur;
+  int j;
+
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      if(curoct->vecpos<0){
+	// the current oct has not been vectorized yet
+	curoct->vecpos=ipos;
+	ipos++;
+      }
+      
+      // getting the vector element
+      icur=curoct->vecpos;
+
+      // we scan the neighbors
+      for(inei=0;inei<6;inei++){
+	if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+
+	  if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
+	    curoct->nei[inei]->child->vecpos=ipos;
+	    ipos++;
+	  }
+
+	  vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+	  if(vecnei[icur+inei*stride]>=stride){
+	    printf("error vecnei\n");
+	    abort();
+	  }
+	}
+	else{ // we need to interpolate from coarser level
+	  
+	  coarseoct=cell2oct(curoct->nei[inei]);
+	  if(coarseoct->vecpos<0){
+	    coarseoct->vecpos=ipos;
+	    ipos++;
+	  }
+	  vecnei[icur+inei*stride]=coarseoct->vecpos; // we assign a neighbor
 	}
       }
       iread++;
@@ -98,6 +190,47 @@ struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int
 	}
       }
       
+      vecl[ipos]=curoct->level; // assigning a level
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+
+//============================================================================
+
+struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *vecicoarse, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos;
+  int iread=0;
+  int icell;
+  
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      //getting the vector element
+     ipos=curoct->vecpos;
+     if(ipos<0) continue; // for coarseocts not involved in fine level calculations
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+	switch(var){
+	case 0:
+	  vec[ipos+icell*stride]=curoct->cell[icell].density;
+	  break;
+	case 1 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].pot;
+	  break;
+	}
+      }
+      
+      vecicoarse[ipos]=curoct->parent->idx; // we store the idx of the parent cell of the current oct
       vecl[ipos]=curoct->level; // assigning a level
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -266,18 +399,83 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
       // we store the new value
       vecpotnew[i+icell*stride]=temp;
 
+      // ready for the next cell
+    }
+    //ready for the next oct
+  }
 
-      /* if(vecden[i+icell*stride]>1000){ */
-      /* 	printf("==== temp=%e den=%e idx=%d=====\n",temp,vecden[i+icell*stride],i); */
-      /* 	for(inei=0;inei<6;inei++){ // we scan the neighbors */
-      /* 	  if(vnei[inei]==6){ // the neighbor is in the current oct */
-      /* 	    printf("inei=%d idx=%d old=%e new=%e den=%e\n",inei,i,vecpot[i+vcell[inei]*stride],vecpotnew[i+vcell[inei]*stride],vecden[i+vcell[inei]*stride]); */
-      /* 	  } */
-      /* 	  else{ */
-      /* 	    printf("inei=%d idx=%d old=%e new=%e den=%e\n",inei,vecnei[i+vnei[inei]*stride],vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride],vecpotnew[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride],vecden[i+vecnei[vnei[inei]*stride]+vcell[inei]*stride]); */
-      /* 	  } */
-      /* 	} */
-      /* } */
+  return restot;
+}
+
+
+//============================================================================
+float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int level, int nread,int stride,float dx,float omegam,float tsim){
+
+  int inei,icell,icellcoarse;
+  int i;
+  float temp;
+  float res,restot=0.;
+  int vnei[6],vcell[6];
+  int vneic[6],vcellc[6];
+  int idxnei;
+  float ominterp=0.2;
+
+  for(i=0;i<stride;i++){ // we scan the octs
+    for(icell=0;icell<8;icell++){ // we scan the cells
+
+      // we skip octs which do not belong to the current level
+      if(vecl[i]!=level){
+	vecpotnew[i+icell*stride]=vecpot[i+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+	continue; 
+      }
+
+      
+      temp=0.;
+      getcellnei(icell, vnei, vcell); // we get the neighbors
+
+      // we compute the neighbor part of the laplacian
+      for(inei=0;inei<6;inei++){ // we scan the neighbors
+	if(vnei[inei]==6){ // the neighbor is in the current oct
+	  temp+=vecpot[i+vcell[inei]*stride];
+	  }
+	else{
+	  if(vecl[vecnei[i+vnei[inei]*stride]]==vecl[i]){ // the octs share the same level
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride];
+	  }
+	  else{ // mixing values from two different levels
+	    //
+	    icellcoarse=vecicoarse[i];
+	    getcellnei(icellcoarse,vneic,vcellc);
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcellc[inei]*stride]*(1.-ominterp)+vecpot[i+icell*stride]*ominterp;
+	  }
+	}
+      }
+
+      //we setup the residual
+      res=temp;
+
+      // we finish the laplacian
+      temp=temp/6.0;
+#ifndef TESTCOSMO
+      temp=temp-dx*dx*vecden[i+icell*stride]/6.*4.*M_PI;
+#else
+      temp=temp-dx*dx*vecden[i+icell*stride]/6.*1.5*omegam/tsim;
+#endif
+
+
+
+      // we finsih the residual
+      res=res-6.0*vecpot[i+icell*stride];
+
+#ifndef TESTCOSMO
+      res=res/(dx*dx)-4.0*M_PI*vecden[i+icell*stride];
+#else
+      res=res/(dx*dx)-1.5*omegam/tsim*vecden[i+icell*stride];
+#endif
+      restot+=res*res;
+
+      // we store the new value
+      vecpotnew[i+icell*stride]=temp;
 
       // ready for the next cell
     }
