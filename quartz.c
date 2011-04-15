@@ -1275,7 +1275,7 @@ int main(int argc, char *argv[])
 
 
   if(nsteps!=0){
-
+    printf("Corrector\n");
 #ifdef TESTCOSMO
     faexp=f_aexp(tsim,omegam,omegav);
 #else
@@ -1338,6 +1338,7 @@ int main(int argc, char *argv[])
   faexp=1.0;
 #endif
   
+  printf("Predictor\n");
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 
   // ==================================== Moving Particles + Oct management
