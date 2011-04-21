@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
   float xc,yc,zc;
   int stride;
   float **vcomp;
-  float *vcomp2;
   int ncomp;
   float acc;
   float dt;
@@ -121,6 +120,9 @@ int main(int argc, char *argv[])
   struct RUNPARAMS param;
 
   size_t rstat;
+
+  unsigned int *cartdict;
+
 
   //========== TEST ZONE (IF REQUIRED)==========
 
@@ -216,17 +218,16 @@ int main(int argc, char *argv[])
   cpu.maxhash=param.maxhash;
   //breakmpi();
   //========== allocations ===================
+  
+  //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024.*1024.*1024.));
 
-
-
-  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024.*1024.*1024.));
-
-  grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); // the oct grid
-  firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); // the firstoct of each level
-  lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); // the last oct of each level
-  part=(struct PART*)calloc(npartmax,sizeof(struct PART)); // the particle array
-  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); // the htable keys->oct address
-  cpu.noct=(int *)calloc(levelmax,sizeof(int)); // the number of octs per level
+  int memsize=0.;
+  grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
+  firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the firstoct of each level
+  lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the last oct of each level
+  part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); memsize+=cpu.maxhash*sizeof(struct OCT*);// the htable keys->oct address
+  cpu.noct=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
 
   lastpart=part-1; // the last particle points before the first at the very beginning
 
@@ -236,10 +237,55 @@ int main(int argc, char *argv[])
       vcomp[i]=(float *)calloc(stride,sizeof(float));
     }
 
-  vcomp2=(float*)calloc(stride*ncomp,sizeof(float)); // for vector based calculations
+  memsize+=ncomp*stride*sizeof(float);
 
-  if(cpu.rank==0) printf("Allocations ok\n");
+
+  //===================================================================================================
+
+  // allocating the vectorized tree
+  
+  float *vecpot; //contains the potential in "stride" octs
+  float *vecpotnew; //contains the potential in "stride" octs
+  float *vecden; //contains the density   in "stride" octs
+  int *vecnei;//contains the cell neighbors of the octs
+  int *vecl; // contains the level of the octs
+  int *vecicoarse; // contains the level of the octs
+  
+#ifdef NEWJACK
+  vecpot=(float*)calloc(stride*8,sizeof(float));
+  vecpotnew=(float*)calloc(stride*8,sizeof(float));
+  vecden=(float*)calloc(stride*8,sizeof(float));
+  vecnei=(int *)calloc(stride*6,sizeof(int));
+  vecl=(int *)calloc(stride,sizeof(int));
+  vecicoarse=(int *)calloc(stride,sizeof(int));
+  memsize+= stride*32*4;
+
+#endif 
+
+#ifdef WGPU
+  float *vecden_d;
+  int *vecl_d;
+  float *vec2_d;
+  float *vecsum_d;
+
+  float *vecpot_d; 
+  float *vecpotnew_d; 
+  int *vecnei_d;
+  int *vecicoarse_d; 
+
+  cudaMalloc((void **)&vecl_d,sizeof(int)*stride);
+  cudaMalloc((void **)&vecden_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vec2_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vecsum_d,sizeof(float)*stride*8);
+
+  cudaMalloc((void **)&vecpot_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&vecpotnew_d,sizeof(float)*stride*8);
+
+  cudaMalloc((void **)&vecnei_d,sizeof(int)*stride*6);
+  cudaMalloc((void **)&vecicoarse_d,sizeof(int)*stride);
+#endif
     
+  if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
 
   //========== setting up the parallel topology ===
 
@@ -377,13 +423,13 @@ int main(int argc, char *argv[])
 
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
+
   int newloadb=1;
-  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
+  setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb); // out of WMPI to compute the hash table
   newloadb=0;
+
+#ifdef WMPI
   // allocating the communication buffers
-
- 
-
   sendbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
   recvbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
   for(i=0;i<cpu.nnei;i++) {
@@ -397,60 +443,16 @@ int main(int argc, char *argv[])
     psendbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
     precvbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
   }
-
-
-  //===================================================================================================
-
-  // allocating the vectorized tree
-  
-  float *vecpot; //contains the potential in "stride" octs
-  float *vecpotnew; //contains the potential in "stride" octs
-  float *vecden; //contains the density   in "stride" octs
-  int *vecnei;//contains the cell neighbors of the octs
-  int *vecl; // contains the level of the octs
-  int *vecicoarse; // contains the level of the octs
-  
-#ifdef NEWJACK
-  vecpot=(float*)calloc(stride*8,sizeof(float));
-  vecpotnew=(float*)calloc(stride*8,sizeof(float));
-  vecden=(float*)calloc(stride*8,sizeof(float));
-  vecnei=(int *)calloc(stride*6,sizeof(int));
-  vecl=(int *)calloc(stride,sizeof(int));
-  vecicoarse=(int *)calloc(stride,sizeof(int));
-#endif 
-
-#ifdef WGPU
-  float *vecden_d;
-  int *vecl_d;
-  float *vec2_d;
-  float *vecsum_d;
-
-  float *vecpot_d; 
-  float *vecpotnew_d; 
-  int *vecnei_d;
-  int *vecicoarse_d; 
-
-  cudaMalloc((void **)&vecl_d,sizeof(int)*stride);
-  cudaMalloc((void **)&vecden_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vec2_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vecsum_d,sizeof(float)*stride*8);
-
-  cudaMalloc((void **)&vecpot_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vecpotnew_d,sizeof(float)*stride*8);
-
-  cudaMalloc((void **)&vecnei_d,sizeof(int)*stride*6);
-  cudaMalloc((void **)&vecicoarse_d,sizeof(int)*stride);
-
-
 #endif
+
 
   //===================================================================================================
   
   // ==== some initial dump
 
-  sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank);
-  dumpcube(lmap,firstoct,0,filename,0.);
-  sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank);
+  /* sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank); */
+  /* dumpcube(lmap,firstoct,0,filename,0.); */
+  /* sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank); */
   //dumpcube(lmap,firstoct,3,filename);
 
   // =====  computing the memory location of the last oct 
@@ -474,13 +476,19 @@ int main(int argc, char *argv[])
 
   int ir,nr=2;
   ip=0;
+  float dxcell=1./pow(2.,levelcoarse);
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
+#ifndef WGPU
       x=0.5;
       y=0.5;
       z=0.5;
-      
+#else
+      x=0.5-dxcell*0.5;
+      y=0.5-dxcell*0.5;
+      z=0.5-dxcell*0.5;
+#endif      
       vx=0.;
       vy=0.;
       vz=0.;
@@ -488,10 +496,15 @@ int main(int argc, char *argv[])
       mass=0.999;
     }
     else if(ir==1){
+#ifndef WGPU
       x=0.5+0.2;
       y=0.5;
       z=0.5;
-      
+#else
+      x=0.5-dxcell*0.5+0.2;
+      y=0.5-dxcell*0.5;
+      z=0.5-dxcell*0.5;
+#endif      
       vx=0.;
       vy=sqrt(0.999/0.2);
       vz=0.;
@@ -769,10 +782,11 @@ int main(int argc, char *argv[])
 
 #endif	
 
-#if 1
   // ==================================== performing the CIC assignement
-
+#ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
+#else
+  call_cic_GPU(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -787,11 +801,13 @@ int main(int argc, char *argv[])
 #endif
 
 
-
-  //sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
-  //printf("%s\n",filename);
-  //dumpcube(lmap,firstoct,1,filename);
-
+  sprintf(filename,"data/partstart.%05d.p%05d",0,cpu.rank);
+  dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
+  
+  sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
+  printf("%s\n",filename);
+  dumpcube(lmap,firstoct,1,filename,tsim);
+  //abort();
 
 
 
@@ -868,10 +884,13 @@ int main(int argc, char *argv[])
 
 
 
-#if 1
   // ==================================== performing the CIC assignement
 
+#ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
+#else
+  call_cic_GPU(levelmax,levelcoarse,firstoct,&cpu);
+#endif
 
 #ifdef WMPI
     // ==================================== performing the CIC BOUNDARY CORRECTION 
@@ -908,7 +927,6 @@ int main(int argc, char *argv[])
       }
 
 
-#endif
 
   /*   sprintf(filename,"data/denstart.%05d.p%05d",nsteps+1,cpu.rank); */
   /* printf("%s\n",filename); */

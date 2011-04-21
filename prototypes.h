@@ -138,9 +138,6 @@ struct CELL
   float pot;
   float temp;
 
-  // vector adress
-  float *vad;
-
 };
 
 

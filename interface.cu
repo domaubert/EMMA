@@ -10,6 +10,8 @@ extern "C" void GPU2CPU(float *cpupt, float *gpupt, int noctet);
 extern "C" void GPU2GPU(float *cpupt, float *gpupt, int noctet);
 extern "C" void CPU2GPU_INT(int *gpupt, int *cpupt, int noctet);
 extern "C" void GPU2CPU_INT(int *cpupt, int *gpupt, int noctet);
+extern "C" void CPU2GPU_UINT(unsigned int *gpupt, unsigned int *cpupt, int noctet);
+extern "C" void GPU2CPU_UINT(unsigned int *gpupt, unsigned int *cpupt, int noctet);
 
 //#define CUERR() printf("\n %s \n",cudaGetErrorString(cudaGetLastError()))
 
@@ -37,6 +39,16 @@ void CPU2GPU_INT(int *gpupt, int *cpupt, int noctet)
 }
 
 void GPU2CPU_INT(int *cpupt, int *gpupt, int noctet)
+{
+  cudaMemcpy(cpupt,gpupt,noctet,cudaMemcpyDeviceToHost);  
+}
+
+void CPU2GPU_UINT(unsigned int *gpupt, unsigned int *cpupt, int noctet)
+{
+  cudaMemcpy(gpupt,cpupt,noctet,cudaMemcpyHostToDevice);  
+}
+
+void GPU2CPU_UINT(unsigned int *cpupt, unsigned int *gpupt, int noctet)
 {
   cudaMemcpy(cpupt,gpupt,noctet,cudaMemcpyDeviceToHost);  
 }

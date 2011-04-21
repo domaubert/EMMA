@@ -6,13 +6,13 @@
 #include "prototypes.h"
 #include "oct.h"
 #include "cic.h"
+#include "segment.h"
+#include "particle.h"
 
 #ifdef WMPI
 #include <mpi.h>
 #endif 
 
-#include "segment.h"
-#include "particle.h"
 
 void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
