@@ -850,11 +850,11 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
   switch(dir){
   case(0):
     curp->vx+=-accel*dt;
-    if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vx);
+    //if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vx);
     break;
   case(1):
     curp->vy+=-accel*dt;
-    if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vy);
+    //if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vy);
     break;
   case(2):
     curp->vz+=-accel*dt;
@@ -902,9 +902,9 @@ void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char di
 #endif
 
 
-  xc=curoct->x+( icell   %2)*dxcur; // coordinates of the corner cell 
-  yc=curoct->y+((icell/2)%2)*dxcur;
-  zc=curoct->z+( icell/4   )*dxcur; 
+  xc=curoct->x+( icell   %2)*dxcur+0.5*dxcur; // coordinates of the cell center
+  yc=curoct->y+((icell/2)%2)*dxcur+0.5*dxcur;
+  zc=curoct->z+( icell/4   )*dxcur+0.5*dxcur; 
 
 		  
   // here we compute the indexes of the direct neighbors which are involved in the cic
@@ -912,15 +912,15 @@ void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char di
   neip[1]=(curp->y<yc?2:3);
   neip[2]=(curp->z<zc?4:5);
 
-  if((curp->x<xc)||(curp->y<yc)){
-    printf("x %e %e %e\n",curp->x,xc,curp->x-xc);
-    printf("x %e %e %e\n",curp->y,yc,curp->y-yc);
-    abort();
-  }
+  /* if((curp->x<xc)||(curp->y<yc)){ */
+  /*   printf("x %e %e %e\n",curp->x,xc,curp->x-xc); */
+  /*   printf("x %e %e %e\n",curp->y,yc,curp->y-yc); */
+  /*   abort(); */
+  /* } */
 		   
 
 #ifndef NEWFORCE
-  // getting the neighbors
+  // getting the neighbor
   getcellnei(icell, vnei, vcell);
 
  // here we denote the offset in ZYX
@@ -936,7 +936,7 @@ void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char di
   ty=fabs((curp->y-yc)/dxcur);
   tz=fabs((curp->z-zc)/dxcur);
 
-  if(curp->mass<0.5) printf("%e %e %e x=%e xc=%e xo=%e\n",tx,ty,tz,curp->x,xc,curoct->x);
+  //if(curp->mass<0.5) printf("%e %e %e x=%e xc=%e xo=%e\n",tx,ty,tz,curp->x,xc,curoct->x);
 	  
   dx=1.-tx;
   dy=1.-ty;
@@ -1535,11 +1535,9 @@ void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char di
   switch(dir){
   case(0):
     curp->vx+=-accel*dt;
-    if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vx);
     break;
   case(1):
     curp->vy+=-accel*dt;
-    if(curp->mass<0.5) printf("dir=%d accel=%e vy=%e\n",dir,accel,curp->vy);
     break;
   case(2):
     curp->vz+=-accel*dt;
@@ -2279,53 +2277,42 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	      }
 
 #ifndef NGP
+	      
+	      if(level>levelcoarse){
+		//==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
 
-	      //==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
-
-	      int visit[27];
-	      int iv;
-	      for(inei=0;inei<27;inei++) visit[inei]=0;
-	      int tot=0;
-	      // first the cartesian neighbors (6)
-	      for(inei=0;inei<6;inei++){
-		nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
-		iv=13+pow(3,inei/2)*(2*(inei%2)-1);
-		visit[iv]=1;
-		if(nexp!=NULL){
-		  do{ 
-		    curp=nexp;
-		    nexp=curp->next;
-		    part2cell_cic(curp, curoct, icell,0);
-		  }while(nexp!=NULL);
-		}
-#ifdef NEWCIC
-		// second the fundamental plane (4)
-		// each of the 6 cardinal neighbors will probe 4 neighbors
-		
-		newcell=curoct->nei[inei];
-		newoct=cell2oct(newcell); // we get the parent oct;
-		getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
-		for(il=0;il<6;il++){
-		  iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1);
-		  if((il/2)==(inei/2)) continue;
-		  if(visit[iv]) continue;
-		  if(vnei[il]==6){
-		    visit[iv]=1;
-		    nexp=newoct->cell[vcell[il]].phead;
-		    newcell2=&(newoct->cell[vcell[il]]);
-		    if(nexp!=NULL){
-		      do{ 
-			curp=nexp;
-			nexp=curp->next;
-			part2cell_cic(curp, curoct, icell,0);
-		      }while(nexp!=NULL);
-		    }
+		int visit[27];
+		int iv;
+		for(inei=0;inei<27;inei++) visit[inei]=0;
+		int tot=0;
+		// first the cartesian neighbors (6)
+		for(inei=0;inei<6;inei++){
+		  nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
+		  //		  iv=13+pow(3,inei/2)*(2*(inei%2)-1);
+		  iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+		  visit[iv]=1;
+		  if(nexp!=NULL){
+		    do{ 
+		      curp=nexp;
+		      nexp=curp->next;
+		      part2cell_cic(curp, curoct, icell,0);
+		    }while(nexp!=NULL);
 		  }
-		  else{
-		    if(newoct->nei[vnei[il]]->child!=NULL){
-		      nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
-		      newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
+		  // second the fundamental plane (4)
+		  // each of the 6 cardinal neighbors will probe 4 neighbors
+		
+		  newcell=curoct->nei[inei];
+		  newoct=cell2oct(newcell); // we get the parent oct;
+		  getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
+		  for(il=0;il<6;il++){
+		    //iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1);
+		    iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1);
+		    if((il>>1)==(inei>>1)) continue;
+		    if(visit[iv]) continue;
+		    if(vnei[il]==6){
 		      visit[iv]=1;
+		      nexp=newoct->cell[vcell[il]].phead;
+		      newcell2=&(newoct->cell[vcell[il]]);
 		      if(nexp!=NULL){
 			do{ 
 			  curp=nexp;
@@ -2335,101 +2322,63 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		      }
 		    }
 		    else{
-		      newcell2=NULL;
+		      if(newoct->nei[vnei[il]]->child!=NULL){
+			nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
+			newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
+			visit[iv]=1;
+			if(nexp!=NULL){
+			  do{ 
+			    curp=nexp;
+			    nexp=curp->next;
+			    part2cell_cic(curp, curoct, icell,0);
+			  }while(nexp!=NULL);
+			}
+		      }
+		      else{
+			newcell2=NULL;
+		      }
 		    }
-		  }
 
-		  // ecah of the 4 side neighbors will mark 2 corners
-		   if(newcell2!=NULL){
-		     newoct2=cell2oct(newcell2);
-		     getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
-		     for(ip=0;ip<6;ip++){
-		       iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1)+pow(3,ip/2)*(2*(ip%2)-1);
-		       if(((ip/2)==(il/2))||((ip/2)==(inei/2))) continue;
-		       if(visit[iv]) continue;
-		       if(vnei2[ip]==6){
-			 visit[iv]=1;
-			 nexp=newoct2->cell[vcell2[ip]].phead;
-			 if(nexp!=NULL){
-			   do{ 
-			     curp=nexp;
-			     nexp=curp->next;
-			     part2cell_cic(curp, curoct, icell,0);
-			   }while(nexp!=NULL);
-			 }
-		       }
-		       else{
-			 if(newoct2->nei[vnei2[ip]]->child!=NULL){
-			   visit[iv]=1;
-			   nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
-			   if(nexp!=NULL){
-			     do{ 
-			       curp=nexp;
-			       nexp=curp->next;
-			       part2cell_cic(curp, curoct, icell,0);
-			     }while(nexp!=NULL);
-			   }
-			 }
-		       }
-		     }
-		   }
-		}
-#endif
-	      }
-
-#ifndef NEWCIC
-	      // second the fundamental plane (4)
-
-	      char dir[4]={2,3,1,0};
-	      for(inei=0;inei<4;inei++){
-		if(curoct->nei[inei]->child!=NULL){
-		  nexp=curoct->nei[inei]->child->nei[dir[inei]]->phead; //sweeping the particles of the neighbour cell at level l-1
-		  if(nexp!=NULL){
-		    do{ 
-		      curp=nexp;
-		      nexp=curp->next;
-		      part2cell_cic(curp, curoct, icell,0);
-		    }while(nexp!=NULL);
-		  }
-		}
-	      }
-
-	      // third the top-bottom cross (8)
-	      for(inei=5;inei<6;inei++){
-		if(curoct->nei[inei]->child!=NULL){
-		  for(inei2=0;inei2<4;inei2++){
-		    nexp=curoct->nei[inei]->child->nei[inei2]->phead; //sweeping the particles of the neighbour cell at level l-1
-		    if(nexp!=NULL){
-		      do{ 
-			curp=nexp;
-			nexp=curp->next;
-			part2cell_cic(curp, curoct, icell,0);
-		      }while(nexp!=NULL);
-		    }
-		  }
-		}
-	      }
-
-	      // fourth the plane of each top/bottom cross returns the corners (8)
-	      
-	      for(inei=5;inei<6;inei++){
-		if(curoct->nei[inei]->child!=NULL){
-		  for(inei2=0;inei2<4;inei2++){
-		    if(curoct->nei[inei]->child->nei[inei2]->child!=NULL){
-		      nexp=curoct->nei[inei]->child->nei[inei2]->child->nei[dir[inei2]]->phead; 
-		      if(nexp!=NULL){
-			do{ 
-			  curp=nexp;
-			  nexp=curp->next;
-			  part2cell_cic(curp, curoct, icell,0);
-			}while(nexp!=NULL);
+		    // ecah of the 4 side neighbors will mark 2 corners
+		    if(newcell2!=NULL){
+		      newoct2=cell2oct(newcell2);
+		      getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
+		      for(ip=0;ip<6;ip++){
+			//iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1)+pow(3,ip/2)*(2*(ip%2)-1);
+			iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
+			//if(((ip/2)==(il/2))||((ip/2)==(inei/2))) continue;
+			if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
+			if(visit[iv]) continue;
+			if(vnei2[ip]==6){
+			  visit[iv]=1;
+			  nexp=newoct2->cell[vcell2[ip]].phead;
+			  if(nexp!=NULL){
+			    do{ 
+			      curp=nexp;
+			      nexp=curp->next;
+			      part2cell_cic(curp, curoct, icell,0);
+			    }while(nexp!=NULL);
+			  }
+			}
+			else{
+			  if(newoct2->nei[vnei2[ip]]->child!=NULL){
+			    visit[iv]=1;
+			    nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
+			    if(nexp!=NULL){
+			      do{ 
+				curp=nexp;
+				nexp=curp->next;
+				part2cell_cic(curp, curoct, icell,0);
+			      }while(nexp!=NULL);
+			    }
+			  }
+			}
 		      }
 		    }
 		  }
 		}
 	      }
 
-#endif
 #endif
 	      // THIRD WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
 	      if(curoct->cell[icell].child!=NULL){

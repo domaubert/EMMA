@@ -189,7 +189,6 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-#ifndef WGPU
 void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 
   int dir;
@@ -620,8 +619,8 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
     }
 
 }    
-#else
-void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
+
+void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 
   int dir;
   char out;
@@ -671,7 +670,7 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 		      out=0;
 		      switch(dir){
 		      case 0: // ======================================   x displacement============
-			xc=curoct->x+( icell   %2)*dxcur; // coordinates of the cell corner
+			xc=curoct->x+( icell   %2)*dxcur+0.5*dxcur; // coordinates of the cell 
 			out=((curp->x-xc)>dxcur)-((curp->x-xc)<0.);
 			if(out==1){
 			  if(vnei[1]==6){ // the particle will remain in the same oct
@@ -690,8 +689,6 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 				ip=xp+yp*2+zp*4;
 				
 				// some particles will experience more than one displacement (along diagonals) we store them in cell 0
-				//if((ip>7)||(ip<0)) ip=0; 
-				
 				newcell=&(newoct->cell[ip]);
 
 			      }
@@ -784,7 +781,7 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			}
 			break;
 		    case 1: // ======================================   y displacement============
-			yc=curoct->y+((icell/2)%2)*dxcur;
+			yc=curoct->y+((icell/2)%2)*dxcur+0.5*dxcur;
 			out=((curp->y-yc)>dxcur)-(curp->y<yc);
 			// getting the new cell 
 			if(out==1){
@@ -884,7 +881,7 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 			break;
 		      case 2: // ======================================   z displacement============
-			zc=curoct->z+(icell/4)*dxcur;
+			zc=curoct->z+(icell/4)*dxcur+0.5*dxcur;
 			out=((curp->z-zc)>dxcur)-((curp->z-zc)<0.);
 			// getting the new cell
 			if(out==1){
@@ -1035,7 +1032,17 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			/* if(curp->mass>0.5){ */
 			/*   struct OCT *ooct; */
 			/*   ooct=cell2oct(newcell); */
-			/*   printf("xp=%e xoorg=%e xo=%e xc=%e icell=%d dir=%d out=%d dif=%e\n",curp->y,curoct->y,ooct->y,yc,icell,dir,out,curp->y-yc); */
+			/*   switch(dir){ */
+			/*   case 0: */
+			/*     printf("xp=%e xoorg=%e xo=%e xc=%e icell=%d dir=%d out=%d dif=%e\n",curp->x,curoct->x,ooct->x,xc,icell,dir,out,curp->x-xc); */
+			/*     break; */
+			/*   case 1: */
+			/*     printf("xp=%e xoorg=%e xo=%e xc=%e icell=%d dir=%d out=%d dif=%e\n",curp->y,curoct->y,ooct->y,yc,icell,dir,out,curp->y-yc); */
+			/*     break; */
+			/*   case 2: */
+			/*     printf("xp=%e xoorg=%e xo=%e xc=%e icell=%d dir=%d out=%d dif=%e\n",curp->z,curoct->z,ooct->z,zc,icell,dir,out,curp->z-zc); */
+			/*     break; */
+			/*   } */
 			/* } */
 
 		      }
@@ -1051,7 +1058,6 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 }    
 
-#endif
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,int stride,float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){
@@ -1124,11 +1130,11 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 		  do{  
 		    curp=nexp; 
 		    nexp=curp->next; 
-#ifdef WGPU
-		    cell2part_cic_GPU(curp, curoct, icell,dir,dt); 
-#else
+/* #ifdef WGPU */
+/* 		    cell2part_cic_GPU(curp, curoct, icell,dir,dt);  */
+/* #else */
 		    cell2part_cic(curp, curoct, icell,dir,dt); 
-#endif
+		    //#endif
 		  }while(nexp!=NULL); 
 		}
 	      }

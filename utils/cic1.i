@@ -2,7 +2,7 @@
 
 
 
-p=readpart("data/partstart.00000.p00000");
+p=readpart("data/part.00006.p00000");
 //p=mergepart("data/partstart.00050",2);
 n=64;
 dxn=1./n;
@@ -17,6 +17,8 @@ for(q=1;q<=dimsof(p)(0);q++){
 
   if(q==1) mass=0.999;
   if(q==2) mass=0.001;
+
+  //mass=1./n^3;
   
   xc=ic(q)*dxn;
   yc=jc(q)*dxn;

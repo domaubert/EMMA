@@ -10,6 +10,16 @@
 #define NOMAX 262144
 #define NPBLOCK 64
 
+
+struct PLIGHT{
+  int keyp;
+  float xp;
+  float yp;
+  float zp;
+  float mp;
+};
+
+
 extern "C" void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO *cpu);
 
 //#define CUERR() printf("\n %s \n",cudaGetErrorString(cudaGetLastError()))
@@ -47,6 +57,91 @@ void CPU2GPU_UINT(unsigned int *gpupt, unsigned int *cpupt, int noctet)
 void GPU2CPU_UINT(unsigned int *cpupt, unsigned int *gpupt, int noctet)
 {
   cudaMemcpy(cpupt,gpupt,noctet,cudaMemcpyDeviceToHost);  
+}
+
+
+struct OCT* cell2oct(struct CELL* cell)
+{
+  long int adress;
+  struct OCT *poct;
+  adress=(long int) cell;
+  adress=adress-cell->idx*sizeof(struct CELL);
+  poct=(struct OCT*) adress;
+
+  return poct;
+}
+
+//------------------------------------------------------------------------
+
+void getcellnei(int cindex, int *neip, int *cell)
+{
+  switch(cindex){
+  case 0:
+    neip[0]=0;cell[0]=1;
+    neip[1]=6;cell[1]=1;
+    neip[2]=2;cell[2]=2;
+    neip[3]=6;cell[3]=2;
+    neip[4]=4;cell[4]=4;
+    neip[5]=6;cell[5]=4;
+    break;
+  case 1:
+    neip[0]=6;cell[0]=0;
+    neip[1]=1;cell[1]=0;
+    neip[2]=2;cell[2]=3;
+    neip[3]=6;cell[3]=3;
+    neip[4]=4;cell[4]=5;
+    neip[5]=6;cell[5]=5;
+    break;
+  case 2:
+    neip[0]=0;cell[0]=3;
+    neip[1]=6;cell[1]=3;
+    neip[2]=6;cell[2]=0;
+    neip[3]=3;cell[3]=0;
+    neip[4]=4;cell[4]=6;
+    neip[5]=6;cell[5]=6;
+    break;
+  case 3:
+    neip[0]=6;cell[0]=2;
+    neip[1]=1;cell[1]=2;
+    neip[2]=6;cell[2]=1;
+    neip[3]=3;cell[3]=1;
+    neip[4]=4;cell[4]=7;
+    neip[5]=6;cell[5]=7;
+    break;
+  case 4:
+    neip[0]=0;cell[0]=5;
+    neip[1]=6;cell[1]=5;
+    neip[2]=2;cell[2]=6;
+    neip[3]=6;cell[3]=6;
+    neip[4]=6;cell[4]=0;
+    neip[5]=5;cell[5]=0;
+    break;
+  case 5:
+    neip[0]=6;cell[0]=4;
+    neip[1]=1;cell[1]=4;
+    neip[2]=2;cell[2]=7;
+    neip[3]=6;cell[3]=7;
+    neip[4]=6;cell[4]=1;
+    neip[5]=5;cell[5]=1;
+    break;
+  case 6:
+    neip[0]=0;cell[0]=7;
+    neip[1]=6;cell[1]=7;
+    neip[2]=6;cell[2]=4;
+    neip[3]=3;cell[3]=4;
+    neip[4]=6;cell[4]=2;
+    neip[5]=5;cell[5]=2;
+    break;
+  case 7:
+    neip[0]=6;cell[0]=6;
+    neip[1]=1;cell[1]=6;
+    neip[2]=6;cell[2]=5;
+    neip[3]=3;cell[3]=5;
+    neip[4]=6;cell[4]=3;
+    neip[5]=5;cell[5]=3;
+    break;
+  }
+
 }
 
 // ====================================================================
@@ -113,7 +208,181 @@ __global__ void carte_flag_next(int *d_data, unsigned int *d_flag, int np ) {
 }
 
 
+// ================================================================
+
+struct OCT * cic_nei_oct(struct OCT* curoct, int cx, int cy, int cz)
+{
+  struct OCT* woct;
+  struct OCT* newoct;
+  int ioct;
+  
+  // computing the oct "index" for neighbor cells
+  ioct=(cx==2)+((cy==2)<<1)+((cz==2)<<2);
+  
+  woct=NULL;
+
+  switch(ioct){
+  case 0: //-------------------------------------
+    woct=curoct;
+    break;
+  case 1://-------------------------------------
+      woct=curoct->nei[1]->child;
+    break;
+  case 2://-------------------------------------
+    woct=curoct->nei[3]->child;
+    break;
+  case 4://-------------------------------------
+    woct=curoct->nei[5]->child;
+    break;
+  case 3://-------------------------------------
+    if(curoct->nei[1]->child!=NULL){
+      woct=curoct->nei[1]->child->nei[3]->child;
+    }
+    else if(curoct->nei[3]->child!=NULL){
+      woct=curoct->nei[3]->child->nei[1]->child;
+    }
+    break;
+  case 5://-------------------------------------
+    if(curoct->nei[1]->child!=NULL){
+      woct=curoct->nei[1]->child->nei[5]->child;
+    }
+    else if(curoct->nei[5]->child!=NULL){
+      woct=curoct->nei[5]->child->nei[1]->child;
+    }
+    break;
+  case 6://-------------------------------------
+    if(curoct->nei[3]->child!=NULL){
+      woct=curoct->nei[3]->child->nei[5]->child;
+    }
+    else if(curoct->nei[5]->child!=NULL){
+      woct=curoct->nei[5]->child->nei[3]->child;
+    }
+    break;
+  case 7://-------------------------------------
+    if(curoct->nei[1]->child!=NULL){
+      if(curoct->nei[1]->child->nei[3]->child!=NULL){
+	woct=curoct->nei[1]->child->nei[3]->child->nei[5]->child;
+      }
+      else if(curoct->nei[1]->child->nei[5]->child!=NULL){
+	woct=curoct->nei[1]->child->nei[5]->child->nei[3]->child;
+      }
+    }
+    
+    if((curoct->nei[3]->child!=NULL)&&(woct==NULL)){
+      if(curoct->nei[3]->child->nei[1]->child!=NULL){
+	woct=curoct->nei[3]->child->nei[1]->child->nei[5]->child;
+      }
+      else if(curoct->nei[3]->child->nei[5]->child!=NULL){
+	woct=curoct->nei[3]->child->nei[5]->child->nei[1]->child;
+      }
+    }
+    
+    if((curoct->nei[5]->child!=NULL)&&(woct==NULL)){
+      if(curoct->nei[5]->child->nei[1]->child!=NULL){
+	woct=curoct->nei[5]->child->nei[1]->child->nei[3]->child;
+      }
+      else if(curoct->nei[5]->child->nei[3]->child!=NULL){
+	woct=curoct->nei[5]->child->nei[3]->child->nei[1]->child;
+      }
+    }
+    break;
+  }
+
+  return woct;
+}
 // ====================================================================
+
+void getparticles(struct OCT *curoct, int *keyp, float *xp, float *yp, float *zp, float *mp, int *ipart, int root, float ix0, float iy0, float iz0, int idxoct,float idxcur, int iicell){ 
+  
+  int icell,icell2;
+  struct PART *nexp;
+  struct PART *curp;
+  float x0,y0,z0;
+  float xpc,ypc,zpc;
+  int cx,cy,cz;
+  int i,j,k;
+  float dxcur;
+  struct OCT * woct;
+  int inx,iny,inz;
+
+  for(icell=0;icell<8;icell++) // looping over cells in oct
+    {
+      if(root){ // we start the recursion
+	dxcur=1./(1<<(curoct->level)); // size of a cell
+	x0=(curoct->x+(icell%2)*dxcur); //corner coordinates
+	y0=(curoct->y+((icell/2)%2)*dxcur);
+	z0=(curoct->z+(icell/4)*dxcur);
+	iicell=icell;
+      }
+      else{
+	x0=ix0;
+	y0=iy0;
+	z0=iz0;
+	dxcur=idxcur;
+      }
+
+      // ===============  looking for cic neighbors at levels >= current level
+      for(i=0;i<2;i++){
+	for(j=0;j<2;j++){
+	  for(k=0;k<2;k++){
+	    
+	    if((!root)*((i+j+k)!=0)) break; // for higher levels particle the 8 cells should not be explored
+
+	    cx=(icell&1)+i;
+	    cy=((icell>>1)&1)+j;
+	    cz=(icell>>2)+k;
+      
+	    // getting the neighbor oct
+	    woct=cic_nei_oct(curoct,cx,cy,cz);
+
+	    // at this stage we have the recipient oct
+	    // we recompute the cell index
+	    icell2=(cx&1)+((cy&1)<<1)+((cz&1)<<2);
+	
+	    // gathering particles
+	    if(woct!=NULL){
+	      if(woct->cell[icell2].child!=NULL){ // the cell is refined we go one level further
+		getparticles(woct->cell[icell2].child, keyp,xp,yp,zp,mp,ipart,0,x0,y0,z0,idxoct,dxcur,iicell); 
+	      }
+	      else{
+		nexp=woct->cell[icell2].phead; //sweeping the particles of the current cell */
+
+		if(nexp!=NULL){ 
+		  do{  
+		    curp=nexp; 
+		    nexp=curp->next;
+		    
+		    xpc=curp->x-dxcur*0.5;xpc=(xpc<0?1.+xpc:xpc);
+		    ypc=curp->y-dxcur*0.5;ypc=(ypc<0?1.+ypc:ypc);
+		    zpc=curp->z-dxcur*0.5;zpc=(zpc<0?1.+zpc:zpc);
+
+		    // testing the particle (assuming particles are centered)
+		    // is the lower left corner inside ?
+
+		    inx=((xpc-x0)>=0.)*((xpc-x0)<dxcur);
+		    iny=((ypc-y0)>=0.)*((ypc-y0)<dxcur);
+		    inz=((zpc-z0)>=0.)*((zpc-z0)<dxcur);
+		    //printf("m=%e inx=%d iny=%d inz=%d xp=%e x0=%e\n",curp->mass,inx,iny,inz,ypc,y0);
+		    if((inx*iny*inz)!=1) continue;
+	    
+		    keyp[*ipart]=idxoct*8+iicell; // computing the key of each particle
+		    
+		    // we compute the relative position to ensure a consistency between cell and particle
+		    xp[*ipart]=xpc-x0;
+		    yp[*ipart]=ypc-y0;
+		    zp[*ipart]=zpc-z0;
+		    mp[*ipart]=curp->mass;
+		    (*ipart)=(*ipart)+1;
+		  }while(nexp!=NULL); 
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+}
+
 // ====================================================================
 
 void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO *cpu){
@@ -121,9 +390,10 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
+  struct OCT *woct;
   int icell;
-  struct PART *curp;
-  struct PART *nexp;
+  /* struct PART *curp; */
+  /* struct PART *nexp; */
   float dxcur;
   int ipart,ip;
   int i,j,k;
@@ -140,9 +410,9 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
   float *massp2; //contains the particle cumulated mass
 
   //  int keyo[NOMAX]; // contains the oct key
-  int keyoloc;
+  //int keyoloc;
   struct OCT **keyodict; // dictionnary keyo -> pointer
-  int ncart; // contains the max dimension along one direction
+  //  int ncart; // contains the max dimension along one direction
 
 
   //  ========================= GPU STUFF =====================
@@ -166,10 +436,12 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
 
   keyp=(int*)calloc(NPMAX,sizeof(int));
   flag=(unsigned int*)calloc(NPMAX,sizeof(unsigned int));
+  
   xp=(float*)calloc(NPMAX,sizeof(float));
   yp=(float*)calloc(NPMAX,sizeof(float));
   zp=(float*)calloc(NPMAX,sizeof(float));
   mp=(float*)calloc(NPMAX,sizeof(float));
+
   massp2=(float*)calloc(NPMAX,sizeof(float));
   keyodict=(struct OCT **)calloc(NOMAX,sizeof(struct OCT *));
 
@@ -208,63 +480,46 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
     keyodict[ip]=NULL;
   }
 
-  ip=0;
+  int idxoct;
   for(level=levelcoarse;level<=levelmax;level++)
     {
       dxcur=1./(1<<level); // size of a cell
       nextoct=firstoct[level-1];
 
-      ncart=1<<(level-1); // number of octs along one dimension
+      //ncart=1<<(level-1); // number of octs along one dimension
 
       // ========================   sweeping the octs sort the oct keys
       if(nextoct==NULL) continue;
+      idxoct=0;
+      ipart=0;
+      memset(keyp,0,sizeof(int)*NPMAX);
+      memset(xp,0,sizeof(int)*NPMAX);
+      memset(yp,0,sizeof(int)*NPMAX);
+      memset(zp,0,sizeof(int)*NPMAX);
+      memset(mp,0,sizeof(int)*NPMAX);
+      memset(keyodict,0,sizeof(struct OCT* )*NOMAX);
+
+
+      // gathering particles from levels>=current level
       do 
-	{	  // =============== FIX LARGE OCT NUMBERS ===== !!!!
+	{	  
+	  // =============== FIX LARGE OCT NUMBERS ===== !!!!
 
 	  curoct=nextoct;
 	  nextoct=curoct->next;
 
 	  // we skip octs which do not belong to the current CPU (they will be considered through mpi)
 	  if(curoct->cpu!=cpu->rank) continue;
-	
-	  // we compute the oct cartesian key
-	  keyoloc=(int)(curoct->x/dxcur*0.5)+(int)(curoct->y/dxcur*0.5)*ncart+(int)(curoct->z/dxcur*0.5)*ncart*ncart; // the cartesian key of the oct
-	  keyodict[keyoloc]=curoct; // building the dictionnary
-	  
+	  keyodict[idxoct]=curoct; // building the dictionnary
+
+	  // gathering particles from all levels >= current level
+	  getparticles(curoct, keyp,xp,yp,zp,mp,&ipart,1,0.,0.,0.,idxoct,0.,0); 
+	  idxoct++;
 	}while(nextoct!=NULL);
 	  
       
-      // ==================== sweeping the dictionnary to key the particles in the right order
+      //gathering particle from level=current level-1
       
-      ipart=0;
-      for(ip=0;ip<NOMAX;ip++){
-	if(keyodict[ip]==NULL) continue;
-	curoct=keyodict[ip];
-	for(icell=0;icell<8;icell++) // looping over cells in oct
-	  {
-	    nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-	    if(nexp!=NULL){ 
-	      //printf("ip=%d\n",ip);
-	      do{  
-		curp=nexp; 
-		nexp=curp->next;
-		
-		keyp[ipart]=ip*8+icell; // computing the key of each particle
-		//printf("%d\n",keyp[ipart]);
-		// we compute the relative position to ensure a consistency between cell and particle
-		xp[ipart]=curp->x-(curoct->x+(icell%2)*dxcur);
-		yp[ipart]=curp->y-(curoct->y+((icell/2)%2)*dxcur);
-		zp[ipart]=curp->z-(curoct->z+(icell/4)*dxcur);
-		mp[ipart]=curp->mass;
-		if(curp->mass>0.5) printf("key=%d icell=%d %e %e %e %p\n",keyp[ipart],icell,curp->x,curp->y,curp->z,&curoct->cell);
-		ipart++;
-	      }while(nexp!=NULL); 
-	    }
-	  }
-      }
-      
-      // at this stage each particle has been key-ed and are sorted
-
 
       // ==================================  launching the GPU horses =====================
 
@@ -289,6 +544,9 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
       CPU2GPU(zp_d,zp,sizeof(float)*NPMAX);
       CPU2GPU( m_d,mp,sizeof(float)*NPMAX);
 
+      cudaMemset(mass_d,0,sizeof(float)*NPMAX);
+      cudaMemset(mass2_d,0,sizeof(float)*NPMAX);
+      cudaMemset(flag_d,0,sizeof(unsigned int)*NPMAX);
       // ---------- kernels start
 
       // flag segments
@@ -303,7 +561,6 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
       // scanning the 8 CIC calculations
       
       int cx,cy,cz;
-      int ox,oy,oz;
 
       for(i=0;i<2;i++)
 	{
@@ -317,60 +574,40 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
 		  cudaThreadSynchronize();   
 		  //CUERR();
 		  GPU2CPU(massp2,mass_d,sizeof(float)*NPMAX);
-		  printf("mass=%e %e dx=%e i=%d j=%d k=%d %p\n",massp2[0],massp2[1],dxcur,i,j,k,mass_d);
 		  cudppSegmentedScan(plan, mass2_d, mass_d, flag_d, ipart);
 		  cudaThreadSynchronize();   
      
 		  // ------------ getting the data back
 		  
-		  /* GPU2CPU(massp2,yp_d,sizeof(float)*NPMAX); */
-		  /* printf("y=%e %e\n",massp2[0],massp2[1]); */
 		  GPU2CPU(massp2,mass2_d,sizeof(float)*NPMAX);
 
 		  // ------------ scatter in the tree
 		  
-		  int keyoct,icell;
-		  
+		  int idxoct,icell;
+
 		  for(ip=0;ip<ipart;ip++){
 		    if(flag[ip]==1){
-		      keyoct=keyp[ip]>>3;
-		      icell=keyp[ip]&7;
-		      
+		      idxoct=keyp[ip]>>3; // oct index
+		      icell=keyp[ip]&7; // cell index
+		      curoct=keyodict[idxoct]; // the current oct
+
 		      cx=(icell&1)+i;
 		      cy=((icell>>1)&1)+j;
 		      cz=(icell>>2)+k;
-		      
-		      ox=keyoct%ncart;
-		      oy=(keyoct/ncart)%ncart;
-		      oz=keyoct/(ncart*ncart);
-		      
-		      if(cx==2){
-			cx=0;
-			ox=(ox+1)%ncart;
-		      }
 
-		      if(cy==2){
-			cy=0;
-			oy=(oy+1)%ncart;
-		      }
+		      // getting the neighbor oct
+		      woct=cic_nei_oct(curoct,cx,cy,cz);
 
-		      if(cz==2){
-			cz=0;
-			oz=(oz+1)%ncart;
-		      }
+		      // at this stage we have the recipitent oct
+		      // we recompute the cell index
+		      icell=(cx&1)+((cy&1)<<1)+((cz&1)<<2);
 		      
-		      keyoct=ox+oy*ncart+oz*ncart*ncart;
-		      //		      if(mp[ip]>0.5) printf("keyoct=%d keyp=%d cx=%d cy=%d cz=%d ox=%d oy=%d oz=%d mp=%e\n",keyoct,keyp[ip],cx,cy,cz,ox,oy,oz,massp2[ip]);
-
-		      icell=(cz<<2)+(cy<<1)+cx;
-		      curoct=keyodict[keyoct];
-		      //printf("curoct=%p keyoct=%d icell=%d mass=%e\n",curoct,keyoct,icell,massp2[ip]);
-		      if(curoct!=NULL){
-			curoct->cell[icell].density+=massp2[ip];
+		      if(woct!=NULL){
+			woct->cell[icell].density+=massp2[ip];
 		      }
 		    }
 		  }
-		  
+
 		}
 	    }
 	}
@@ -378,7 +615,7 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
 
       cudppDestroyPlan(plan);
 
-    }
+    } // going to next level
 
   
   cudaFree(mass_d);

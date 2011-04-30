@@ -480,15 +480,10 @@ int main(int argc, char *argv[])
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
-#ifndef WGPU
       x=0.5;
       y=0.5;
       z=0.5;
-#else
-      x=0.5-dxcell*0.5;
-      y=0.5-dxcell*0.5;
-      z=0.5-dxcell*0.5;
-#endif      
+
       vx=0.;
       vy=0.;
       vz=0.;
@@ -496,15 +491,11 @@ int main(int argc, char *argv[])
       mass=0.999;
     }
     else if(ir==1){
-#ifndef WGPU
+
       x=0.5+0.2;
       y=0.5;
       z=0.5;
-#else
-      x=0.5-dxcell*0.5+0.2;
-      y=0.5-dxcell*0.5;
-      z=0.5-dxcell*0.5;
-#endif      
+
       vx=0.;
       vy=sqrt(0.999/0.2);
       vz=0.;
@@ -661,7 +652,6 @@ int main(int argc, char *argv[])
       vx=vel[i];
       vy=vel[i+nploc];
       vz=vel[i+2*nploc];
-
       // periodic boundary conditions
     
       x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
@@ -777,16 +767,13 @@ int main(int argc, char *argv[])
 
   mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 
-  /* sprintf(filename,"data/parstart.%05d.p%05d",0,cpu.rank); */
-  /* dumppart(firstoct,filename,npart,levelcoarse,levelmax); */
-
 #endif	
 
   // ==================================== performing the CIC assignement
 #ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic_GPU(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -800,16 +787,14 @@ int main(int argc, char *argv[])
 
 #endif
 
+  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 
   sprintf(filename,"data/partstart.%05d.p%05d",0,cpu.rank);
   dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
   
   sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
-  printf("%s\n",filename);
   dumpcube(lmap,firstoct,1,filename,tsim);
-  //abort();
-
-
+  //  abort();
 
   //================================================================================
   //================================================================================
@@ -849,11 +834,7 @@ int main(int argc, char *argv[])
 #if 1
     // ==================================== marking the cells
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
-    /* sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,4,filename); */
 
-
-    
     // ==================================== refining (and destroying) the octs
 
     
@@ -889,7 +870,7 @@ int main(int argc, char *argv[])
 #ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic_GPU(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -935,7 +916,7 @@ int main(int argc, char *argv[])
 
   // ==================================== Check the number of particles and octs
   
-    //mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+    mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
@@ -1376,7 +1357,11 @@ int main(int argc, char *argv[])
   printf("dt=%e\n",dt);
   // Moving particles through cells (3 passes)
 
+#ifdef WGPU
   partcellreorg(levelcoarse,levelmax,firstoct);
+#else
+  partcellreorg(levelcoarse,levelmax,firstoct);
+#endif
 
 #ifdef WMPI
 

@@ -84,6 +84,7 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 
 		if((fabs(curp->x-xc)>0.5*dx)*(fabs(curp->y-yc)>0.5*dx)*(fabs(curp->z-zc)>0.5*dx)){
 		  printf("particle not in cell: abort\n");
+		  printf("xp=%e xc=%e yp=%e yc=%e zp=%e zc=%e\n",curp->x,xc,curp->y,yc,curp->z,zc);
 		  abort();
 		}
 
