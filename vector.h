@@ -13,9 +13,12 @@ float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei, i
 float square_vec(float *vec, int nval, int stride, int, int*);
 void remove_valvec(float *vec, int nval, int stride, float avg, int, int *);
 struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread);
-struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *,int stride, struct CPUINFO *cpu, int *nread);
+struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *,int *veccpu, int stride, struct CPUINFO *cpu, int *nread);
+struct OCT *gathervec2_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread);
+
 struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread);
 struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, float *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread);
 
 struct OCT *checknei(struct OCT *octstart, int *vecnei, int stride);
 struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread);
+struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread);

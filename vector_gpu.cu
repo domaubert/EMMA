@@ -5,8 +5,8 @@
 
 
 extern "C" void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl);
-extern "C" float square_vec_GPU(float *vec, int nval, int stride, int level, int *vecl, float *vec2, float *vecsum);
-extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int level, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum);
+extern "C" float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu,int *vecl, int *veccpu, float *vec2, float *vecsum);
+extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level,int curcpu, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum);
 
 //============================================================================
 __global__ void dev_remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl)
@@ -35,7 +35,7 @@ void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, i
 }
 
 //============================================================================
-__global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, int *vecl, float *vec2)
+__global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2)
 {
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
@@ -46,12 +46,12 @@ __global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, 
   ioct=bx*blockDim.x+tx;
 
   for(icell=0;icell<8;icell++){
-    vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct]);
+    vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct])*(curcpu==veccpu[ioct]);
   }
 }
 
 
-float square_vec_GPU(float *vec, int nval, int stride, int level, int *vecl, float *vec2, float *vecsum)
+float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2, float *vecsum)
 {
   
   float res;
@@ -73,7 +73,7 @@ float square_vec_GPU(float *vec, int nval, int stride, int level, int *vecl, flo
   dim3 gridoct(stride/NTHREAD);
   dim3 blockoct(NTHREAD);
 
-  dev_square_vec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,level,vecl,vec2);
+  dev_square_vec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,level,curcpu,vecl,veccpu,vec2);
   cudppScan(planadd, vecsum, vec2, stride*8);
   cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
 
@@ -158,7 +158,7 @@ __device__ void getcellnei_gpu(int cindex, int *neip, int *cell)
 
 }
 
-__global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int level, int nread,int stride,float dx,float omegam,float tsim, float *vres){
+__global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float omegam,float tsim, float *vres, int curcpu){
 
   int inei,icell,icellcoarse;
   float temp;
@@ -180,7 +180,16 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
       vres[ioct+icell*stride]=0.;
       continue; 
     }
-      
+
+    // we skip octs which do not belong to the current cpu
+    if(veccpu[ioct]!=curcpu){
+      vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+      vres[ioct+icell*stride]=0.;
+      continue; 
+    }
+    
+
+
     temp=0.;
     getcellnei_gpu(icell, vnei, vcell); // we get the neighbors
 
@@ -236,7 +245,7 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
 }
 
 
-float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int level, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum){
+float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum){
   
   float res;
 
@@ -258,7 +267,7 @@ float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecne
   dim3 blockoct(NTHREAD);
 
 
-  dev_laplacian_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,level,nread,stride,dx,omegam,tsim,vres);
+  dev_laplacian_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,omegam,tsim,vres,curcpu);
   cudppScan(planadd, vecsum, vres, stride*8);
   cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
 

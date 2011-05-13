@@ -200,7 +200,7 @@ struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int
 
 //============================================================================
 
-struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *vecicoarse, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *vecicoarse, int *veccpu, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -232,6 +232,47 @@ struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, in
       
       vecicoarse[ipos]=curoct->parent->idx; // we store the idx of the parent cell of the current oct
       vecl[ipos]=curoct->level; // assigning a level
+      veccpu[ipos]=curoct->cpu; // assigning a level
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+
+struct OCT *gathervec2_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos;
+  int iread=0;
+  int icell;
+  
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      // only the boundaries are relevant
+      if(curoct->cpu==cpu->rank) continue;
+
+      //getting the vector element
+     ipos=curoct->vecpos;
+     if(ipos<0) continue; // for coarseocts not involved in fine level calculations
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+	switch(var){
+	case 1:
+	  vec[ipos+icell*stride]=curoct->cell[icell].pot;
+	  break;
+	case 0 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].density;
+	  break;
+	}
+      }
+      
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -290,11 +331,11 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
       // filling the values
       for(icell=0;icell<8;icell++){
 	switch(var){
-	case 0:
-	  curoct->cell[icell].density=vec[ipos+icell*stride];
-	  break;
-	case 1 :
+	case 1:
 	  curoct->cell[icell].pot=vec[ipos+icell*stride];
+	  break;
+	case 0 :
+	  curoct->cell[icell].density=vec[ipos+icell*stride];
 	  break;
 	}
       }
@@ -303,6 +344,44 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
   }
   return nextoct;
 }
+
+struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos,iread;
+  int icell;
+  
+  nextoct=octstart;
+  iread=0;
+
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      if(curoct->cpu!=cpu->rank) continue;
+
+      //getting the vector element
+     ipos=curoct->vecpos;
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+	switch(var){
+	case 1:
+	  curoct->cell[icell].pot=vec[ipos+icell*stride];
+	  break;
+	case 0 :
+	  curoct->cell[icell].density=vec[ipos+icell*stride];
+	  break;
+	}
+      }
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  return nextoct;
+}
+
 
 
 

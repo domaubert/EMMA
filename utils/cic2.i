@@ -2,7 +2,7 @@
 
 
 
-p=readpart("../data/part.00210.p00000");
+p=readpart("./data/part.00250.p00000");
 //p=mergepart("../data/part.00030",2);
 n=512;
 dxn=1./n;
