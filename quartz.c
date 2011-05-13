@@ -352,6 +352,7 @@ int main(int argc, char *argv[])
 
   grid->cpu=-1;
   grid->vecpos=-1;
+  grid->border=0;
 
   // start the creation of the initial amr grid from level 1
   firstoct[0]=grid;
@@ -407,6 +408,7 @@ int main(int argc, char *argv[])
 
 	    // vector data
 	    newoct->vecpos=-1;
+	    newoct->border=0;
 	    
 	    // preparing the next creations on level+1
 	    newoct->next=NULL;
@@ -1274,7 +1276,7 @@ int main(int argc, char *argv[])
 	    break;
 	}
 	
-	// exchanging data through the network ======================
+	// exchanging boundary data through the network ======================
 #ifdef WMPI
 	double t[10];
 	
@@ -1286,7 +1288,7 @@ int main(int argc, char *argv[])
 #endif
       //scatter back the result
 	t[1]=MPI_Wtime();
-	nextoct=scattervec_light(curoct,vecpot,1,stride,&cpu,nread); 
+	nextoct=scattervec_light(curoct,vecpot,1,stride,&cpu,nread);  // border only
 
 	// sending data through the network
 	t[2]=MPI_Wtime();
@@ -1313,25 +1315,23 @@ int main(int argc, char *argv[])
       // END MPI EXCHANGE =================================
 
 	// some verbosity
-	if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
+	if((iter%64==0)&&(cpu.rank==0)) 
+	  printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 	
 	// breaking condition
 	if(sqrt(res/norm_d)<acc) {
 	  break;
 	}
 	tit[1]=MPI_Wtime();
-	if(cpu.rank==0) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
+	if((iter==64)&&(cpu.rank==0)) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
       }
 
 
-#ifndef WMPI
 #ifdef WGPU
       GPU2CPU(vecpot,vecpot_d,sizeof(float)*8*stride);
 #endif
       //scatter back the result
       nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); 
-
-#endif
 #endif
 
     }      

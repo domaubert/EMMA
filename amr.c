@@ -74,6 +74,10 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		
 	      	// we remove the parent from the oct to be destroyed
 	      	desoct->parent=NULL;
+
+		// we cancels some flags
+		desoct->vecpos=-1;
+		desoct->border=0;
 		
 	      	// we remove the oct from the list
 		
@@ -148,6 +152,7 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 
 		// it is not vectorized yet
 		newoct->vecpos=-1;
+		newoct->border=0;
 
 		//the neighbours
 		getcellnei(icell, vnei, vcell);

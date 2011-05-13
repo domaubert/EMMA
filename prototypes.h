@@ -169,5 +169,7 @@ struct OCT
 
   // vector info
   int vecpos;
+  int border; // equal to zero if not a border
+
   
 };

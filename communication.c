@@ -312,6 +312,10 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
 	    //t[1]=MPI_Wtime();
 	    if(found){ // the reception oct has been found
+
+	      // we set the current oct as a border one (for vector based communications)
+	      curoct->border=1;
+
 	      for(icell=0;icell<8;icell++){
 		switch(field){
 		case 0:
@@ -343,18 +347,12 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	    printf("error no hash key obtained !!\n");
 	    abort();
 	  }
-/* 	  nt++; */
-/* 	  tt+=t[2]-t[0]; */
-/* 	  th+=t[1]-t[0]; */
-/* 	  tg+=t[2]-t[1]; */
-/* 	  tc+=t[1]-t[3]; */
 	}
       }
     }
     
 
     free(countpacket);
-    //    printf("total=%e tg=%e th=%e tc=%e\n",tt,tg,th,tc);
 }
 
  //------------------------------------------------------------------------
@@ -372,7 +370,6 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
     for(i=0;i<cpu->nbuff;i++){
       pack=recvbuffer[j]+i;
       if(pack->level!=0){ // we do something
-	  
 
 	// first we compute the adress from the hashfunction
 	hidx=hfun(pack->key,cpu->maxhash);

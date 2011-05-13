@@ -360,7 +360,7 @@ struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int str
       curoct=nextoct;
       nextoct=curoct->next;
       
-      if(curoct->cpu!=cpu->rank) continue;
+      if(curoct->border!=1) continue; // only border octs needs to be scattered
 
       //getting the vector element
      ipos=curoct->vecpos;
