@@ -173,3 +173,29 @@ struct OCT
 
   
 };
+
+
+struct MULTIVECT{
+  float *vecpot; //contains the potential in "stride" octs
+  float *vecpotnew; //contains the potential in "stride" octs
+  float *vecden; //contains the density   in "stride" octs
+  int *vecnei;//contains the cell neighbors of the octs
+  int *vecl; // contains the level of the octs
+  int *veccpu; // contains the level of the octs
+  int *vecicoarse; // contains the level of the octs
+
+#ifdef WGPU
+  float *vecden_d;
+  int *vecl_d;
+  int *veccpu_d;
+  float *vec2_d;
+  float *vecsum_d;
+
+  float *vecpot_d; 
+  float *vecpotnew_d; 
+  int *vecnei_d;
+  int *vecicoarse_d; 
+#endif
+
+
+};

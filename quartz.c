@@ -23,7 +23,208 @@
 #endif
 
 
- //------------------------------------------------------------------------
+void poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoct,struct MULTIVECT* vectors,int stride,struct CPUINFO *cpu,float omegam,float tsim, struct PACKET **sendbuffer,struct PACKET **recvbuffer, int niter, float acc){
+  
+  int i;
+  float dx;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int nread;
+  float norm_d;
+  float res;
+  double tit[2];
+  int iter;
+  float restot;
+
+  // cleaning the vector positions
+  clean_vec(levelmax,firstoct);
+  
+  // some checks
+
+  if((stride<pow(2,levelcoarse))){
+    printf("still debugging\n");
+    abort();
+  }
+
+  memset(vectors->vecpot,0,sizeof(float)*stride*8);
+  memset(vectors->vecpotnew,0,sizeof(float)*stride*8);
+  memset(vectors->vecden,0,sizeof(float)*stride*8);
+  memset(vectors->vecnei,0,sizeof(int)*stride*6);
+  memset(vectors->vecl,0,sizeof(int)*stride);
+  memset(vectors->veccpu,0,sizeof(int)*stride);
+  memset(vectors->vecicoarse,0,sizeof(int)*stride);
+
+  // setting neighbors to -1
+  for(i=0;i<stride*6;i++){vectors->vecnei[i]=-1;}
+
+  dx=pow(0.5,level);
+  
+  curoct=firstoct[level-1];
+
+  // gathering the neighbors
+  
+#ifdef NEWJACK2
+  nextoct=gathervecnei2(curoct,vectors->vecnei,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread);
+#else
+  nextoct=gathervecnei(curoct,vectors->vecnei,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread);
+#endif
+  
+  
+      // gathering the values
+#ifdef NEWJACK2
+  if(level>levelcoarse){
+    //gathering the data from coarse levels
+    nextoct=gathervec2(firstoct[level-2],vectors->vecden,0,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density
+    nextoct=gathervec2(firstoct[level-2],vectors->vecpot,1,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density
+  }
+
+  nextoct=gathervec2(curoct,vectors->vecden,0,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density
+  nextoct=gathervec2(curoct,vectors->vecpot,1,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // potential
+  
+#else
+  nextoct=gathervec(curoct,vectors->vecden,0,vectors->vecl,stride,cpu,&nread); // density
+  nextoct=gathervec(curoct,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread); // potential
+#endif
+
+     
+  // we contrast the density by removing the average value
+#ifndef WGPU      
+  remove_valvec(vectors->vecden,nread,stride,1.,level,vecl);
+#else
+  CPU2GPU(vectors->vecden_d,vectors->vecden,sizeof(float)*stride*8);
+  CPU2GPU_INT(vectors->vecl_d  ,vectors->vecl,sizeof(int)*stride);
+  CPU2GPU_INT(vectors->veccpu_d  ,vectors->veccpu,sizeof(int)*stride);
+  remove_valvec_GPU(vectors->vecden_d,nread,stride,1.,level,vectors->vecl_d);
+  GPU2CPU(vectors->vecden,vectors->vecden_d,sizeof(float)*stride*8);
+#endif
+  
+  // we square and sum the density
+#ifndef WGPU
+  // CPU CASE
+#ifdef TESTCOSMO
+  norm_d+=square_vec(vectors->vecden,nread,stride,level,cpu->rank,vectors->vecl,vectors->veccpu)*pow(1.5*omegam/tsim,2);
+#else
+  norm_d+=square_vec(vectors->vecden,nread,stride,level,cpu->rank,vectors->vecl,vectors->veccpu)*pow(4.0*M_PI,2);
+#endif
+      
+#else
+  // GPU CASE
+#ifdef TESTCOSMO
+  norm_d+=square_vec_GPU(vectors->vecden_d,nread,stride,level,cpu->rank,vectors->vecl_d,vectors->veccpu_d,vectors->vec2_d,vectors->vecsum_d)*pow(1.5*omegam/tsim,2);
+#else
+  norm_d+=square_vec_GPU(vectors->vecden_d,nread,stride,level,cpu->rank,vectors->vecl_d,vectors->veccpu_d,vectors->vec2_d,vectors->vecsum_d)*pow(4.0*M_PI,2);
+#endif
+  
+#endif
+
+
+#ifdef WMPI
+  // reducing the norm of the density
+  MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu->comm);
+#endif
+
+
+#ifdef WGPU
+  // sending data to GPU
+  CPU2GPU(vectors->vecpotnew_d,vectors->vecpotnew,sizeof(float)*stride*8);
+  CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*stride*8);
+  CPU2GPU_INT(vectors->vecnei_d,vectors->vecnei,sizeof(int)*stride*6);
+  CPU2GPU_INT(vectors->vecicoarse_d,vectors->vecicoarse,sizeof(int)*stride);
+#endif
+
+  //======================== looping over iterations
+  
+  for(iter=0;iter<niter;iter++){
+    
+    tit[0]=MPI_Wtime();
+    // computing the laplacian
+#ifdef NEWJACK2
+#ifdef WGPU
+    cudaMemset(vectors->vec2_d,0,sizeof(float)*stride*8);
+    cudaMemset(vectors->vecsum_d,0,sizeof(float)*stride*8);
+    res=laplacian_vec2_GPU(vectors->vecden_d,vectors->vecpot_d,vectors->vecpotnew_d,vectors->vecnei_d,vectors->vecl_d,vectors-> vecicoarse_d,vectors->veccpu_d,level,cpu->rank,nread,stride,dx,omegam,tsim,vectors->vec2_d,vectors->vecsum_d);
+#else
+    res=laplacian_vec2(vectors->vecden,vectors->vecpot,vectors->vecpotnew,vectors->vecnei,vectors->vecl,vectors->vecicoarse,vectors->veccpu,level,cpu->rank,nread,stride,dx,omegam,tsim);
+#endif
+#else
+    res=laplacian_vec(vectors->vecden,vectors->vecpot,vectors->vecpotnew,vectors->vecnei,vectors->vecl,level,nread,stride,dx,omegam,tsim);
+#endif
+    
+    // exchange potential evaluations
+#ifdef WGPU
+    GPU2GPU(vectors->vecpot_d,vectors->vecpotnew_d,sizeof(float)*stride*8);
+#else
+    memcpy(vectors->vecpot,vectors->vecpotnew,sizeof(float)*stride*8);
+#endif
+	
+    // skip level if it does not exist
+    if((res==0.)&&(norm_d==0.)){
+      if(cpu->rank==0) printf("Level %d skipped\n",level);
+      break;
+    }
+    
+    // exchanging boundary data through the network ======================
+#ifdef WMPI
+    double t[10];
+    t[0]=MPI_Wtime();
+    
+#ifdef WGPU
+    // GPU 2 HOST
+    GPU2CPU(vectors->vecpot,vectors->vecpot_d,sizeof(float)*8*stride);
+#endif
+    //scatter back the result
+    t[1]=MPI_Wtime();
+    nextoct=scattervec_light(curoct,vectors->vecpot,1,stride,cpu,nread);  // border only
+    
+    // sending data through the network
+    t[2]=MPI_Wtime();
+    mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
+    
+    t[3]=MPI_Wtime();
+    nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread); // potential
+    
+#ifdef WGPU
+    // HOST 2 GPU
+    t[4]=MPI_Wtime();
+    CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*8*stride);
+#endif
+    
+    t[5]=MPI_Wtime();
+    
+    
+    float restot;
+    // Reducing the residuals
+    MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu->comm);
+    res=restot;
+    
+#endif
+      // END MPI EXCHANGE =================================
+    
+    // some verbosity
+    if((iter%64==0)&&(cpu->rank==0)) 
+      printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
+	
+    // breaking condition
+    if(sqrt(res/norm_d)<acc) {
+      break;
+    }
+    tit[1]=MPI_Wtime();
+    if((iter==64)&&(cpu->rank==0)) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
+  }
+
+
+#ifdef WGPU
+  GPU2CPU(vectors->vecpot,vectors->vecpot_d,sizeof(float)*8*stride);
+#endif
+
+  //scatter back the result
+  nextoct=scattervec(curoct,vectors->vecpot,1,stride,cpu,nread); 
+
+}
+
+
+
+//------------------------------------------------------------------------
  // the MAIN CODE
  //------------------------------------------------------------------------
 
@@ -244,24 +445,17 @@ int main(int argc, char *argv[])
 
   // allocating the vectorized tree
   
-  float *vecpot; //contains the potential in "stride" octs
-  float *vecpotnew; //contains the potential in "stride" octs
-  float *vecden; //contains the density   in "stride" octs
-  int *vecnei;//contains the cell neighbors of the octs
-  int *vecl; // contains the level of the octs
-  int *veccpu; // contains the level of the octs
-  int *vecicoarse; // contains the level of the octs
+  struct MULTIVECT vectors;
   
 #ifdef NEWJACK
-  vecpot=(float*)calloc(stride*8,sizeof(float));
-  vecpotnew=(float*)calloc(stride*8,sizeof(float));
-  vecden=(float*)calloc(stride*8,sizeof(float));
-  vecnei=(int *)calloc(stride*6,sizeof(int));
-  vecl=(int *)calloc(stride,sizeof(int));
-  veccpu=(int *)calloc(stride,sizeof(int));
-  vecicoarse=(int *)calloc(stride,sizeof(int));
+  vectors.vecpot=(float*)calloc(stride*8,sizeof(float));
+  vectors.vecpotnew=(float*)calloc(stride*8,sizeof(float));
+  vectors.vecden=(float*)calloc(stride*8,sizeof(float));
+  vectors.vecnei=(int *)calloc(stride*6,sizeof(int));
+  vectors.vecl=(int *)calloc(stride,sizeof(int));
+  vectors.veccpu=(int *)calloc(stride,sizeof(int));
+  vectors.vecicoarse=(int *)calloc(stride,sizeof(int));
   memsize+= stride*32*4;
-
 #endif 
 
 #ifdef WGPU
@@ -270,28 +464,28 @@ int main(int argc, char *argv[])
   int ngpu;
   initlocaldevice(cpu.rank,1);
 
-  float *vecden_d;
-  int *vecl_d;
-  int *veccpu_d;
-  float *vec2_d;
-  float *vecsum_d;
+  /* float *vecden_d; */
+  /* int *vecl_d; */
+  /* int *veccpu_d; */
+  /* float *vec2_d; */
+  /* float *vecsum_d; */
 
-  float *vecpot_d; 
-  float *vecpotnew_d; 
-  int *vecnei_d;
-  int *vecicoarse_d; 
+  /* float *vecpot_d;  */
+  /* float *vecpotnew_d;  */
+  /* int *vecnei_d; */
+  /* int *vecicoarse_d;  */
 
-  cudaMalloc((void **)&vecl_d,sizeof(int)*stride);
-  cudaMalloc((void **)&veccpu_d,sizeof(int)*stride);
-  cudaMalloc((void **)&vecden_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vec2_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vecsum_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecl_d),sizeof(int)*stride);
+  cudaMalloc((void **)&(vectors.veccpu_d),sizeof(int)*stride);
+  cudaMalloc((void **)&(vectors.vecden_d),sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vec2_d),sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecsum_d),sizeof(float)*stride*8);
 
-  cudaMalloc((void **)&vecpot_d,sizeof(float)*stride*8);
-  cudaMalloc((void **)&vecpotnew_d,sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecpot_d),sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecpotnew_d),sizeof(float)*stride*8);
 
-  cudaMalloc((void **)&vecnei_d,sizeof(int)*stride*6);
-  cudaMalloc((void **)&vecicoarse_d,sizeof(int)*stride);
+  cudaMalloc((void **)&(vectors.vecnei_d),sizeof(int)*stride*6);
+  cudaMalloc((void **)&(vectors.vecicoarse_d),sizeof(int)*stride);
 #endif
     
   if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
@@ -1141,197 +1335,14 @@ int main(int argc, char *argv[])
 
 #else
 
+
+
       // ====================== Here starts the new jacobian procedure ====================
       //===================================================================================
       //===================================================================================
 
-      // cleaning the vector positions
-      clean_vec(levelmax,firstoct);
+      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
 
-      // some checks
-
-      if((stride<pow(2,levelcoarse))){
-	  printf("still debugging\n");
-	  abort();
-	}
-
-      memset(vecpot,0,sizeof(float)*stride*8);
-      memset(vecpotnew,0,sizeof(float)*stride*8);
-      memset(vecden,0,sizeof(float)*stride*8);
-      memset(vecnei,0,sizeof(int)*stride*6);
-      memset(vecl,0,sizeof(int)*stride);
-      memset(veccpu,0,sizeof(int)*stride);
-      memset(vecicoarse,0,sizeof(int)*stride);
-
-      // setting neighbors to -1
-      for(i=0;i<stride*6;i++){vecnei[i]=-1;}
-
-      dx=pow(0.5,level);
-
-      curoct=firstoct[level-1];
-
-      // gathering the neighbors
-
-#ifdef NEWJACK2
-      nextoct=gathervecnei2(curoct,vecnei,vecpot,1,vecl,stride,&cpu,&nread);
-#else
-      nextoct=gathervecnei(curoct,vecnei,vecpot,1,vecl,stride,&cpu,&nread);
-#endif
-
-
-      // gathering the values
-      
-
-#ifdef NEWJACK2
-      if(level>levelcoarse){
-	//gathering the data from coarse levels
-	nextoct=gathervec2(firstoct[level-2],vecden,0,vecl,vecicoarse,veccpu,stride,&cpu,&nread); // density
-	nextoct=gathervec2(firstoct[level-2],vecpot,1,vecl,vecicoarse,veccpu,stride,&cpu,&nread); // density
-      }
-
-      nextoct=gathervec2(curoct,vecden,0,vecl,vecicoarse,veccpu,stride,&cpu,&nread); // density
-      nextoct=gathervec2(curoct,vecpot,1,vecl,vecicoarse,veccpu,stride,&cpu,&nread); // potential
-
-#else
-      nextoct=gathervec(curoct,vecden,0,vecl,stride,&cpu,&nread); // density
-      nextoct=gathervec(curoct,vecpot,1,vecl,stride,&cpu,&nread); // potential
-#endif
-
-     
-      // we contrast the density by removing the average value
-#ifndef WGPU      
-      remove_valvec(vecden,nread,stride,1.,level,vecl);
-#else
-      CPU2GPU(vecden_d,vecden,sizeof(float)*stride*8);
-      CPU2GPU_INT(vecl_d  ,vecl,sizeof(int)*stride);
-      CPU2GPU_INT(veccpu_d  ,veccpu,sizeof(int)*stride);
-      remove_valvec_GPU(vecden_d,nread,stride,1.,level,vecl_d);
-      GPU2CPU(vecden,vecden_d,sizeof(float)*stride*8);
-#endif
-
-      // we square and sum the density
-#ifndef WGPU
-      // CPU CASE
-#ifdef TESTCOSMO
-      norm_d+=square_vec(vecden,nread,stride,level,cpu.rank,vecl,veccpu)*pow(1.5*omegam/tsim,2);
-#else
-      norm_d+=square_vec(vecden,nread,stride,level,cpu.rank,vecl,veccpu)*pow(4.0*M_PI,2);
-#endif
-
-#else
-      // GPU CASE
-#ifdef TESTCOSMO
-      norm_d+=square_vec_GPU(vecden_d,nread,stride,level,cpu.rank,vecl_d,veccpu_dvec2_d,vecsum_d)*pow(1.5*omegam/tsim,2);
-#else
-      norm_d+=square_vec_GPU(vecden_d,nread,stride,level,cpu.rank,vecl_d,veccpu_d,vec2_d,vecsum_d)*pow(4.0*M_PI,2);
-#endif
-      
-#endif
-
-
-#ifdef WMPI
-      // reducing the norm of the density
-      MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-#endif
-
-
-#ifdef WGPU
-      // sending data to GPU
-      CPU2GPU(vecpotnew_d,vecpotnew,sizeof(float)*stride*8);
-      CPU2GPU(vecpot_d,vecpot,sizeof(float)*stride*8);
-      CPU2GPU_INT(vecnei_d,vecnei,sizeof(int)*stride*6);
-      CPU2GPU_INT(vecicoarse_d,vecicoarse,sizeof(int)*stride);
-#endif
-
-      //======================== looping over iterations
-
-      float res;
-      double tit[2];
-      for(iter=0;iter<niter;iter++){
-	
-	tit[0]=MPI_Wtime();
-	// computing the laplacian
-#ifdef NEWJACK2
-#ifdef WGPU
-	cudaMemset(vec2_d,0,sizeof(float)*stride*8);
-	cudaMemset(vecsum_d,0,sizeof(float)*stride*8);
-	res=laplacian_vec2_GPU(vecden_d,vecpot_d,vecpotnew_d,vecnei_d,vecl_d, vecicoarse_d,veccpu_d,level,cpu.rank,nread,stride,dx,omegam,tsim,vec2_d,vecsum_d);
-#else
-	res=laplacian_vec2(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,cpu.rank,nread,stride,dx,omegam,tsim);
-#endif
-#else
-	res=laplacian_vec(vecden,vecpot,vecpotnew,vecnei,vecl,level,nread,stride,dx,omegam,tsim);
-#endif
-
-	// exchange potential evaluations
-#ifdef WGPU
-	GPU2GPU(vecpot_d,vecpotnew_d,sizeof(float)*stride*8);
-#else
-	memcpy(vecpot,vecpotnew,sizeof(float)*stride*8);
-#endif
-	
-	// skip level if it does not exist
-	if((res==0.)&&(norm_d==0.)){
-	    if(cpu.rank==0) printf("Level %d skipped\n",level);
-	    break;
-	}
-	
-	// exchanging boundary data through the network ======================
-#ifdef WMPI
-	double t[10];
-	
-	t[0]=MPI_Wtime();
-	
-#ifdef WGPU
-	// GPU 2 HOST
-	GPU2CPU(vecpot,vecpot_d,sizeof(float)*8*stride);
-#endif
-      //scatter back the result
-	t[1]=MPI_Wtime();
-	nextoct=scattervec_light(curoct,vecpot,1,stride,&cpu,nread);  // border only
-
-	// sending data through the network
-	t[2]=MPI_Wtime();
-	mpi_exchange(&cpu,sendbuffer,recvbuffer,2,(iter==0));
-	
-	t[3]=MPI_Wtime();
-	nextoct=gathervec2_light(curoct,vecpot,1,stride,&cpu,&nread); // potential
-	
-#ifdef WGPU
-      // HOST 2 GPU
-	t[4]=MPI_Wtime();
-	CPU2GPU(vecpot_d,vecpot,sizeof(float)*8*stride);
-#endif
-
-	t[5]=MPI_Wtime();
-	
-	
-	float restot;
-	// Reducing the residuals
-	MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	res=restot;
-	
-#endif
-      // END MPI EXCHANGE =================================
-
-	// some verbosity
-	if((iter%64==0)&&(cpu.rank==0)) 
-	  printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
-	
-	// breaking condition
-	if(sqrt(res/norm_d)<acc) {
-	  break;
-	}
-	tit[1]=MPI_Wtime();
-	if((iter==64)&&(cpu.rank==0)) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
-      }
-
-
-#ifdef WGPU
-      GPU2CPU(vecpot,vecpot_d,sizeof(float)*8*stride);
-#endif
-      //scatter back the result
-      nextoct=scattervec(curoct,vecpot,1,stride,&cpu,nread); 
 #endif
 
     }      
@@ -1461,18 +1472,18 @@ int main(int argc, char *argv[])
 
 
 #ifdef NEWJACK
-      free(vecpot); //contains the potential in "stride" octs
-      free(vecpotnew); //contains the potential in "stride" octs
-      free(vecden); //contains the density   in "stride" octs
-      free(vecnei);//contains the cell neighbors of the octs
-      free(vecl); // contains the level of the octs
-      free(veccpu); // contains the level of the octs
-      free(vecicoarse); // contains the level of the octs
+      free(vectors.vecpot); //contains the potential in "stride" octs
+      free(vectors.vecpotnew); //contains the potential in "stride" octs
+      free(vectors.vecden); //contains the density   in "stride" octs
+      free(vectors.vecnei);//contains the cell neighbors of the octs
+      free(vectors.vecl); // contains the level of the octs
+      free(vectors.veccpu); // contains the level of the octs
+      free(vectors.vecicoarse); // contains the level of the octs
 
 #ifdef WGPU
-      cudaFree(vecl_d);
-      cudaFree(veccpu_d);
-      cudaFree(vecden_d);
+      cudaFree(vectors.vecl_d);
+      cudaFree(vectors.veccpu_d);
+      cudaFree(vectors.vecden_d);
 #endif
 
 #endif
