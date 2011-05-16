@@ -6,85 +6,8 @@
 
 extern "C" void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl);
 extern "C" float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu,int *vecl, int *veccpu, float *vec2, float *vecsum);
-extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level,int curcpu, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum);
-
-//============================================================================
-__global__ void dev_remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl)
-{
-  unsigned int bx=blockIdx.x;
-  unsigned int tx=threadIdx.x;
-  
-  int ioct;
-  int icell;
-
-  ioct=bx*blockDim.x+tx;
-
-  for(icell=0;icell<8;icell++){
-      vec[ioct+icell*stride]=(vec[ioct+icell*stride]-avg)*(level==vecl[ioct]);
-  }
-}
-
-
-void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl){
-  
-  dim3 gridoct(stride/NTHREAD);
-  dim3 blockoct(NTHREAD);
-
-  dev_remove_valvec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,1.,level,vecl);
-
-}
-
-//============================================================================
-__global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2)
-{
-  unsigned int bx=blockIdx.x;
-  unsigned int tx=threadIdx.x;
-  
-  int ioct;
-  int icell;
-
-  ioct=bx*blockDim.x+tx;
-
-  for(icell=0;icell<8;icell++){
-    vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct])*(curcpu==veccpu[ioct]);
-  }
-}
-
-
-float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2, float *vecsum)
-{
-  
-  float res;
-
-  // ==== some config for reduction
-  CUDPPConfiguration config;
-  CUDPPHandle planadd;
-  config.algorithm = CUDPP_SCAN;
-  config.op = CUDPP_ADD;
-  config.datatype = CUDPP_FLOAT;
-  CUDPPOption direction = CUDPP_OPTION_BACKWARD;
-  CUDPPOption inclusivity = CUDPP_OPTION_INCLUSIVE;
-  config.options = direction | inclusivity;
-  cudppPlan(&planadd, config, stride*8, 1, 0);
-
-
-  // ==== we compute the square of the array
-
-  dim3 gridoct(stride/NTHREAD);
-  dim3 blockoct(NTHREAD);
-
-  dev_square_vec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,level,curcpu,vecl,veccpu,vec2);
-  cudppScan(planadd, vecsum, vec2, stride*8);
-  cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
-
-
-  //finish and return
-  cudppDestroyPlan(planadd);
-
-  return res;
-
-}
-
+extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level,int curcpu, int nread,int stride,float dx,float factdens, float *vres,float *vres2, float *vecsum);
+extern "C" int residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens, float *vres);
 
 //============================================================================
 __device__ void getcellnei_gpu(int cindex, int *neip, int *cell)
@@ -158,7 +81,85 @@ __device__ void getcellnei_gpu(int cindex, int *neip, int *cell)
 
 }
 
-__global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float omegam,float tsim, float *vres, int curcpu){
+//============================================================================
+__global__ void dev_remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl)
+{
+  unsigned int bx=blockIdx.x;
+  unsigned int tx=threadIdx.x;
+  
+  int ioct;
+  int icell;
+
+  ioct=bx*blockDim.x+tx;
+
+  for(icell=0;icell<8;icell++){
+      vec[ioct+icell*stride]=(vec[ioct+icell*stride]-avg)*(level==vecl[ioct]);
+  }
+}
+
+
+void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl){
+  
+  dim3 gridoct(stride/NTHREAD);
+  dim3 blockoct(NTHREAD);
+
+  dev_remove_valvec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,1.,level,vecl);
+
+}
+
+//============================================================================
+__global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2)
+{
+  unsigned int bx=blockIdx.x;
+  unsigned int tx=threadIdx.x;
+  
+  int ioct;
+  int icell;
+
+  ioct=bx*blockDim.x+tx;
+
+  for(icell=0;icell<8;icell++){
+    vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct])*(curcpu==veccpu[ioct]);
+  }
+}
+
+
+float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu, float *vec2, float *vecsum)
+{
+  
+  float res;
+
+  // ==== some config for reduction
+  CUDPPConfiguration config;
+  CUDPPHandle planadd;
+  config.algorithm = CUDPP_SCAN;
+  config.op = CUDPP_ADD;
+  config.datatype = CUDPP_FLOAT;
+  CUDPPOption direction = CUDPP_OPTION_BACKWARD;
+  CUDPPOption inclusivity = CUDPP_OPTION_INCLUSIVE;
+  config.options = direction | inclusivity;
+  cudppPlan(&planadd, config, stride*8, 1, 0);
+
+
+  // ==== we compute the square of the array
+
+  dim3 gridoct(stride/NTHREAD);
+  dim3 blockoct(NTHREAD);
+
+  dev_square_vec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,level,curcpu,vecl,veccpu,vec2);
+  cudppScan(planadd, vecsum, vec2, stride*8);
+  cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
+
+  //finish and return
+  cudppDestroyPlan(planadd);
+
+  return res;
+
+}
+
+// ================================================================================================================
+
+__global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float factdens, float *vres, int curcpu){
 
   int inei,icell,icellcoarse;
   float temp;
@@ -226,14 +227,9 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
 
     // we finsih the residual
     res=res-6.0*vecpot[ioct+icell*stride];
-
-#ifndef TESTCOSMO
-    res=res/(dx*dx)-4.0*M_PI*vecden[ioct+icell*stride];
-#else
-    res=res/(dx*dx)-1.5f*omegam/tsim*vecden[ioct+icell*stride];
-#endif
+    res=res/(dx*dx)-factdens*vecden[ioct+icell*stride];
     
-    // we store the residual
+    // we store the square of the residual
     vres[ioct+icell*stride]=res*res;
     
     // we store the new value
@@ -245,7 +241,79 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
 }
 
 
-float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float omegam,float tsim, float *vres, float *vecsum){
+// ================================================================================================================
+
+__global__ void dev_residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float factdens, float *vres, int curcpu){
+
+  int inei,icell,icellcoarse;
+  float temp;
+  float res;
+  int vnei[6],vcell[6];
+  int vneic[6],vcellc[6];
+  float ominterp=0.2;
+  
+  int ioct;
+  unsigned int bx=blockIdx.x;
+  unsigned int tx=threadIdx.x;
+
+  ioct=bx*blockDim.x+tx;
+  for(icell=0;icell<8;icell++){ // we scan the cells
+
+    // we skip octs which do not belong to the current level
+    if(vecl[ioct]!=level){
+      vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+      vres[ioct+icell*stride]=0.;
+      continue; 
+    }
+
+    // we skip octs which do not belong to the current cpu
+    if(veccpu[ioct]!=curcpu){
+      vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+      vres[ioct+icell*stride]=0.;
+      continue; 
+    }
+    
+
+
+    temp=0.;
+    getcellnei_gpu(icell, vnei, vcell); // we get the neighbors
+
+    // we compute the neighbor part of the laplacian
+    for(inei=0;inei<6;inei++){ // we scan the neighbors
+      if(vnei[inei]==6){ // the neighbor is in the current oct
+	temp+=vecpot[ioct+vcell[inei]*stride];
+      }
+      else{
+	if(vecl[vecnei[ioct+vnei[inei]*stride]]==vecl[ioct]){ // the octs share the same level
+	  temp+=vecpot[vecnei[ioct+vnei[inei]*stride]+vcell[inei]*stride];
+	}
+	else{ // mixing values from two different levels
+	  //
+	  icellcoarse=vecicoarse[ioct];
+	  getcellnei_gpu(icellcoarse,vneic,vcellc);
+	  temp+=vecpot[vecnei[ioct+vnei[inei]*stride]+vcellc[inei]*stride]*(1.-ominterp)+vecpot[ioct+icell*stride]*ominterp;
+	}
+      }
+    }
+
+    //we setup the residual
+    res=temp;
+
+
+    // we finsih the residual
+    res=res-6.0*vecpot[ioct+icell*stride];
+    res=res/(dx*dx)-factdens*vecden[ioct+icell*stride];
+    
+    // we store the residual
+    vres[ioct+icell*stride]=res;
+    
+  }
+
+}
+
+//============================================================================
+
+float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens, float *vres, float *vecsum){
   
   float res;
 
@@ -267,8 +335,8 @@ float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecne
   dim3 blockoct(NTHREAD);
 
 
-  dev_laplacian_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,omegam,tsim,vres,curcpu);
-  cudppScan(planadd, vecsum, vres, stride*8);
+  dev_laplacian_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,factdens,vres,curcpu);
+  cudppScan(planadd, vecsum, stride*8);
   cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
 
 
@@ -276,5 +344,24 @@ float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecne
   cudppDestroyPlan(planadd);
 
   return res;
+  
+}
+
+
+
+//============================================================================
+
+int residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens, float *vres){
+
+  // ==== we perform the laplacian
+
+  dim3 gridoct(stride/NTHREAD);
+  dim3 blockoct(NTHREAD);
+
+
+  dev_residual_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,factdens,vres,curcpu);
+
+
+  return 0;
   
 }

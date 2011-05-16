@@ -337,6 +337,9 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
 	case 0 :
 	  curoct->cell[icell].density=vec[ipos+icell*stride];
 	  break;
+	case 2 :
+	  curoct->cell[icell].temp=vec[ipos+icell*stride];
+	  break;
 	}
       }
       iread++;
@@ -399,14 +402,18 @@ void remove_valvec(float *vec, int nval, int stride, float avg, int level, int *
 }
 
 //============================================================================
-float square_vec(float *vec, int nval, int stride, int level, int *vecl)
+float square_vec(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu)
 {
   int icell;
   int i;
   float sum=0.;
   for(icell=0;icell<8;icell++){
     for(i=0;i<stride;i++){
+#ifdef WMPI
+      sum+=vec[i+icell*stride]*vec[i+icell*stride]*(level==vecl[i])*(curcpu==veccpu[i]);
+#else
       sum+=vec[i+icell*stride]*vec[i+icell*stride]*(level==vecl[i]);
+#endif
     }  
   }
   return sum;
@@ -488,7 +495,7 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 
 
 //============================================================================
-float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int level, int nread,int stride,float dx,float omegam,float tsim){
+float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens){
 
   int inei,icell,icellcoarse;
   int i;
@@ -508,7 +515,15 @@ float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,in
 	continue; 
       }
 
-      
+      // we skip octs which do not belong to the current cpu
+#ifdef WMPI
+      if(veccpu[i]!=curcpu){
+      	vecpotnew[i+icell*stride]=vecpot[i+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
+      	continue;
+      }
+#endif
+
+
       temp=0.;
       getcellnei(icell, vnei, vcell); // we get the neighbors
 
@@ -535,22 +550,11 @@ float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,in
 
       // we finish the laplacian
       temp=temp/6.0;
-#ifndef TESTCOSMO
-      temp=temp-dx*dx*vecden[i+icell*stride]/6.*4.*M_PI;
-#else
-      temp=temp-dx*dx*vecden[i+icell*stride]/6.*1.5*omegam/tsim;
-#endif
-
-
+      temp=temp-dx*dx*vecden[i+icell*stride]/6.*factdens;
 
       // we finsih the residual
       res=res-6.0*vecpot[i+icell*stride];
-
-#ifndef TESTCOSMO
-      res=res/(dx*dx)-4.0*M_PI*vecden[i+icell*stride];
-#else
-      res=res/(dx*dx)-1.5*omegam/tsim*vecden[i+icell*stride];
-#endif
+      res=res/(dx*dx)-factdens*vecden[i+icell*stride];
       restot+=res*res;
 
       // we store the new value
@@ -562,6 +566,81 @@ float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,in
   }
 
   return restot;
+}
+
+
+
+//============================================================================
+int residual_vec2(float *vecden,float *vecpot,float *vecres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens){
+
+  int inei,icell,icellcoarse;
+  int i;
+  float temp;
+  float res,restot=0.;
+  int vnei[6],vcell[6];
+  int vneic[6],vcellc[6];
+  int idxnei;
+  float ominterp=0.2;
+  int count=0;
+  
+  for(i=0;i<stride;i++){ // we scan the octs
+    for(icell=0;icell<8;icell++){ // we scan the cells
+
+      // we skip octs which do not belong to the current level
+      if(vecl[i]!=level){
+	vecres[i+icell*stride]=0.; // nevertheless we copy the (fixed) potential in the new potential
+	continue; 
+      }
+
+      count++;
+
+      // we skip octs which do not belong to the current cpu
+#ifdef WMPI
+      if(veccpu[i]!=curcpu){
+      	vecres[i+icell*stride]=0.; // nevertheless we copy the (fixed) potential in the new potential
+      	continue;
+      }
+#endif
+
+      
+      temp=0.;
+      getcellnei(icell, vnei, vcell); // we get the neighbors
+
+      // we compute the neighbor part of the laplacian
+      for(inei=0;inei<6;inei++){ // we scan the neighbors
+	if(vnei[inei]==6){ // the neighbor is in the current oct
+	  temp+=vecpot[i+vcell[inei]*stride];
+	  }
+	else{
+	  if(vecl[vecnei[i+vnei[inei]*stride]]==vecl[i]){ // the octs share the same level
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcell[inei]*stride];
+	  }
+	  else{ // mixing values from two different levels
+	    //
+	    icellcoarse=vecicoarse[i];
+	    getcellnei(icellcoarse,vneic,vcellc);
+	    temp+=vecpot[vecnei[i+vnei[inei]*stride]+vcellc[inei]*stride]*(1.-ominterp)+vecpot[i+icell*stride]*ominterp;
+	  }
+	}
+      }
+
+      //we setup the residual
+      res=temp;
+
+      // we finish the residual
+      res=res-6.0*vecpot[i+icell*stride];
+      res=res/(dx*dx)-factdens*vecden[i+icell*stride];
+
+      // we store the residual value
+      vecres[i+icell*stride]=res;
+
+      // ready for the next cell
+    }
+    //ready for the next oct
+  }
+
+  printf("count=%d\n",count);
+  return 0;
 }
 
 //============================================================================

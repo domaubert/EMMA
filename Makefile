@@ -1,9 +1,9 @@
 ##########################################
-ARCH = GPU
+ARCH = CPU
 C_LIBS = -lm 
 C_FLAGS = #-O1
 C_OBJS= quartz.o hilbert.o vector.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o
-DEFINES  = -DNEWASSIGN -DPART2 -DALLCELL  -DNEWCIC -DNEWFORCE  -DNEWJACK -DNEWJACK2  -DWMPI #-DNEWPART #-DWMPI # -DEGYCSV O2 #-DNEWCIC #-O2 -DWMPI
+DEFINES  = -DNEWASSIGN -DPART2 -DALLCELL  -DNEWCIC -DNEWFORCE  -DNEWJACK -DNEWJACK2 # -DMULTIGRID #-DWMPI #-DNEWPART #-DWMPI # -DEGYCSV O2 #-DNEWCIC #-O2 -DWMPI
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DWGPU
 EXECUTABLE = quartz

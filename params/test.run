@@ -1,11 +1,11 @@
 mpi_buffer_size 8192
 output_frequency 1
-max_number_of_steps 2
-level_coarse 7
-level_max 7
-level_map 7
-max_number_of_relaxation_poisson 2048
-poisson_accuracy 1e-2
+max_number_of_steps 0
+level_coarse 6
+level_max 6
+level_map 6
+max_number_of_relaxation_poisson 1024
+poisson_accuracy 1e-3
 vector_stencil_size 262144
 time_step_max  0.01
 amr_thresh 1e-4
