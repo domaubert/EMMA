@@ -266,6 +266,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->levelmap);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %f",stream,&param->poissonacc);
+      rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
+      rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->stride);
       rstat=fscanf(buf,"%s %f",stream,&param->dt);
       rstat=fscanf(buf,"%s %f",stream,&param->amrthresh);

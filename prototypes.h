@@ -25,7 +25,8 @@ struct RUNPARAMS{
   float amrthresh; // the refinement criterion (refine if mcell>amrthresh)
 
   float poissonacc; // relaxation accuracy for Poisson equation
-  
+  int mgridlmin;    // coarsest level for multigrid relaxation
+  int nvcycles; // number of vcycles for multigrid relaxation
 };
 
 

@@ -6,8 +6,8 @@
 
 extern "C" void remove_valvec_GPU(float *vec, int nval, int stride, float avg, int level, int *vecl);
 extern "C" float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu,int *vecl, int *veccpu, float *vec2, float *vecsum);
-extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level,int curcpu, int nread,int stride,float dx,float factdens, float *vres,float *vres2, float *vecsum);
-extern "C" int residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens, float *vres);
+extern "C" float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level,int curcpu, int nread,int stride,float dx,float factdens, float *vres, float *vecsum);
+extern "C" int residual_vec2_GPU(float *vecden,float *vecpot,float *vres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens);
 
 //============================================================================
 __device__ void getcellnei_gpu(int cindex, int *neip, int *cell)
@@ -119,7 +119,11 @@ __global__ void dev_square_vec_GPU(float *vec, int nval, int stride, int level, 
   ioct=bx*blockDim.x+tx;
 
   for(icell=0;icell<8;icell++){
+#ifdef WMPI
     vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct])*(curcpu==veccpu[ioct]);
+#else
+    vec2[ioct+icell*stride]=vec[ioct+icell*stride]*vec[ioct+icell*stride]*(level==vecl[ioct]);
+#endif
   }
 }
 
@@ -182,14 +186,14 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
       continue; 
     }
 
+#ifdef WMPI
     // we skip octs which do not belong to the current cpu
     if(veccpu[ioct]!=curcpu){
       vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
       vres[ioct+icell*stride]=0.;
       continue; 
     }
-    
-
+#endif
 
     temp=0.;
     getcellnei_gpu(icell, vnei, vcell); // we get the neighbors
@@ -217,13 +221,7 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
     
     // we finish the laplacian
     temp=temp/6.0f;
-#ifndef TESTCOSMO
-    temp=temp-dx*dx*vecden[ioct+icell*stride]/6.*4.*M_PI;
-#else
-    temp=temp-dx*dx*vecden[ioct+icell*stride]/6.f*1.5f*omegam/tsim;
-#endif
-
-
+    temp=temp-dx*dx*vecden[ioct+icell*stride]/6.*factdens;
 
     // we finsih the residual
     res=res-6.0*vecpot[ioct+icell*stride];
@@ -243,7 +241,7 @@ __global__ void dev_laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpot
 
 // ================================================================================================================
 
-__global__ void dev_residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float factdens, float *vres, int curcpu){
+__global__ void dev_residual_vec2_GPU(float *vecden,float *vecpot,float *vres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int nread,int stride,float dx,float factdens, int curcpu){
 
   int inei,icell,icellcoarse;
   float temp;
@@ -261,18 +259,17 @@ __global__ void dev_residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotn
 
     // we skip octs which do not belong to the current level
     if(vecl[ioct]!=level){
-      vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
       vres[ioct+icell*stride]=0.;
       continue; 
     }
 
+#ifdef WMPI
     // we skip octs which do not belong to the current cpu
     if(veccpu[ioct]!=curcpu){
-      vecpotnew[ioct+icell*stride]=vecpot[ioct+icell*stride]; // nevertheless we copy the (fixed) potential in the new potential
       vres[ioct+icell*stride]=0.;
       continue; 
     }
-    
+#endif
 
 
     temp=0.;
@@ -336,7 +333,8 @@ float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecne
 
 
   dev_laplacian_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,factdens,vres,curcpu);
-  cudppScan(planadd, vecsum, stride*8);
+
+  cudppScan(planadd, vecsum, vres, stride*8);
   cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);
 
 
@@ -351,7 +349,7 @@ float laplacian_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecne
 
 //============================================================================
 
-int residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens, float *vres){
+int residual_vec2_GPU(float *vecden,float *vecpot,float *vres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens){
 
   // ==== we perform the laplacian
 
@@ -359,8 +357,8 @@ int residual_vec2_GPU(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,i
   dim3 blockoct(NTHREAD);
 
 
-  dev_residual_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vecpotnew,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,factdens,vres,curcpu);
-
+  dev_residual_vec2_GPU<<<gridoct,blockoct>>>(vecden,vecpot,vres,vecnei,vecl,vecicoarse,veccpu,level,nread,stride,dx,factdens,curcpu);
+  cudaThreadSynchronize(); 
 
   return 0;
   

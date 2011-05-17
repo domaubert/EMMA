@@ -24,6 +24,27 @@ void clean_vec(int levelmax,struct OCT **firstoct)
     }
 }
 
+void clean_pot(int levelmax,struct OCT **firstoct)
+{
+  int level;
+  int icell;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  for(level=1;level<=levelmax;level++) // looping over levels
+    {
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) curoct->cell[icell].pot=0.;
+	  curoct->vecpos=-1;
+	}while(nextoct!=NULL);
+      
+    }
+}
+
 
 //============================================================================
 struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
@@ -639,7 +660,7 @@ int residual_vec2(float *vecden,float *vecpot,float *vecres,int *vecnei,int *vec
     //ready for the next oct
   }
 
-  printf("count=%d\n",count);
+  //  printf("count=%d\n",count);
   return 0;
 }
 

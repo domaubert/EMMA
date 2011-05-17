@@ -207,7 +207,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, float dt)
 {
   float xc,yc,zc;
-  float dxcur=1./pow(2,curoct->level);
+  //  float dxcur=1./pow(2,curoct->level);
+  float dxcur=1./(1<<curoct->level);
   int vnei [6],vcell [6];
   int vnei2[6],vcell2[6];
   int vnei3[6],vcell3[6];
@@ -237,10 +238,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
   cicoct=(struct OCT **)calloc(8,sizeof(struct OCT *));
 #endif
 
-  xc=curoct->x+( icell   %2)*dxcur+dxcur/2; // coordinates of the cell center 
-  yc=curoct->y+((icell/2)%2)*dxcur+dxcur/2;
-  zc=curoct->z+( icell/4   )*dxcur+dxcur/2; 
+  /* xc=curoct->x+( icell   %2)*dxcur+dxcur/2; // coordinates of the cell center  */
+  /* yc=curoct->y+((icell/2)%2)*dxcur+dxcur/2; */
+  /* zc=curoct->z+( icell/4   )*dxcur+dxcur/2;  */
 
+  xc=curoct->x+( icell   & 1)*dxcur+dxcur*0.5; // coordinates of the cell center 
+  yc=curoct->y+((icell>>1)& 1)*dxcur+dxcur*0.5;
+  zc=curoct->z+( icell>>2   )*dxcur+dxcur*0.5; 
 		  
   // here we compute the indexes of the direct neighbors which are involved in the cic
   neip[0]=(curp->x<xc?0:1);
@@ -261,9 +265,14 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 #endif
 
   // the CIC weights
-  tx=fabs((curp->x-xc)/dxcur);
-  ty=fabs((curp->y-yc)/dxcur);
-  tz=fabs((curp->z-zc)/dxcur);
+
+  tx=(curp->x-xc)/dxcur;tx=(tx>0.?tx:-tx);
+  ty=(curp->y-yc)/dxcur;ty=(ty>0.?ty:-ty);
+  tz=(curp->z-zc)/dxcur;tz=(tz>0.?tz:-tz);
+
+  /* tx=fabs((curp->x-xc)/dxcur); */
+  /* ty=fabs((curp->y-yc)/dxcur); */
+  /* tz=fabs((curp->z-zc)/dxcur); */
 	  
   dx=1.-tx;
   dy=1.-ty;
@@ -283,8 +292,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 
 
   // contrib from current cell 000 =====
-  float tot=0;
-  int ntot=0;
+  /* float tot=0; */
+  /* int ntot=0; */
 
   contrib=vcont[0];
   if((contrib<=1.)&&(contrib>=0.)){
@@ -296,20 +305,22 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
   // contribs to cardinal neighbors
   getcellnei(icell, vnei, vcell);
   for(i1=0;i1<3;i1++){
-    idx1=pow(2,i1);
+    //idx1=pow(2,i1);
+    idx1=(1<<i1);
+
     contrib=vcont[idx1];
     if(vnei[neip[i1]]==6){
       accel+=curoct->cell[vcell[neip[i1]]].temp*contrib;
       newcell=&(curoct->cell[vcell[neip[i1]]]);
-      tot+=contrib;
-      ntot++;
+      /* tot+=contrib; */
+      /* ntot++; */
     }
     else{
       if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
 	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
 	newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
-	tot+=contrib;
-	ntot++;
+	/* tot+=contrib; */
+	/* ntot++; */
 
       }
       else{
@@ -324,7 +335,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     // contrib to 2nd order neighbours
     if(newcell!=NULL){
       for(i2=0;i2<3;i2++){
-	idx2=pow(2,i1)+pow(2,i2);
+	//idx2=pow(2,i1)+pow(2,i2);
+	idx2=(1<<i1)+(1<<i2);
 	if(i2==i1) continue;
 	if(visit[idx2]) continue;
 
@@ -335,16 +347,16 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
 	  newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	  visit[idx2]=1;
-	  tot+=contrib;
-	  ntot++;
+	  /* tot+=contrib; */
+	  /* ntot++; */
 	}
 	else{
 	  if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
 	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
 	    newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
-	    tot+=contrib;
-	    ntot++;
+	    /* tot+=contrib; */
+	    /* ntot++; */
 	  }
 	  else{
 	    accel=0;
@@ -366,16 +378,16 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  if(vnei3[neip[i3]]==6){
 	    accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
 	    visit[7]=1;
-	    tot+=contrib;
-	    ntot++;
+	    /* tot+=contrib; */
+	    /* ntot++; */
 
 	  }
 	  else{
 	    if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
 	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
 	      visit[7]=1;
-	      tot+=contrib;
-	      ntot++;
+	      /* tot+=contrib; */
+	      /* ntot++; */
 	    }
 	    else{
 	      accel=0;
@@ -394,14 +406,19 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     // Getting the new curoct at low resolution
     curoctlr=cell2oct(curoct->parent);
     icell=curoct->parent->idx;
-    dxcur=1./pow(2,curoctlr->level);
+    //dxcur=1./pow(2,curoctlr->level);
+    dxcur=1./(1<<curoctlr->level);
 
     // start again
     
-    xc=curoctlr->x+( icell   %2)*dxcur+dxcur/2; // coordinates of the cell center 
-    yc=curoctlr->y+((icell/2)%2)*dxcur+dxcur/2;
-    zc=curoctlr->z+( icell/4   )*dxcur+dxcur/2; 
-    
+    /* xc=curoctlr->x+( icell   %2)*dxcur+dxcur/2; // coordinates of the cell center  */
+    /* yc=curoctlr->y+((icell/2)%2)*dxcur+dxcur/2; */
+    /* zc=curoctlr->z+( icell/4   )*dxcur+dxcur/2;  */
+
+    xc=curoctlr->x+( icell   & 1)*dxcur+dxcur*0.5; // coordinates of the cell center 
+    yc=curoctlr->y+((icell>>1)& 1)*dxcur+dxcur*0.5;
+    zc=curoctlr->z+( icell>>2   )*dxcur+dxcur*0.5; 
+
     // the CIC weights
     tx=fabs((curp->x-xc)/dxcur);
     ty=fabs((curp->y-yc)/dxcur);
@@ -426,8 +443,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 
 
     // contrib from current cell 000 =====
-    float tot=0;
-    int ntot=0;
+    /* float tot=0; */
+    /* int ntot=0; */
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
       accel+=curoctlr->cell[icell].temp*contrib;
@@ -437,20 +454,21 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     // contribs to cardinal neighbors
     getcellnei(icell, vnei, vcell);
     for(i1=0;i1<3;i1++){
-      idx1=pow(2,i1);
+      //idx1=pow(2,i1);
+      idx1=(1<<i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
 	accel+=curoctlr->cell[vcell[neip[i1]]].temp*contrib;
 	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
-	tot+=contrib;
-	ntot++;
+	/* tot+=contrib; */
+	/* ntot++; */
       }
       else{
 	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
 	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
 	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
-	  tot+=contrib;
-	  ntot++;
+	  /* tot+=contrib; */
+	  /* ntot++; */
 
 	}
       }
@@ -458,7 +476,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
       // contrib to 2nd order neighbours
       if(newcell!=NULL){
 	for(i2=0;i2<3;i2++){
-	  idx2=pow(2,i1)+pow(2,i2);
+	  //idx2=pow(2,i1)+pow(2,i2);
+	  idx2=(1<<i1)+(1<<i2);
 	  if(i2==i1) continue;
 	  if(visit[idx2]) continue;
 
@@ -469,16 +488,16 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	    accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
-	    tot+=contrib;
-	    ntot++;
+	    /* tot+=contrib; */
+	    /* ntot++; */
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
 	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
-	      tot+=contrib;
-	      ntot++;
+	      /* tot+=contrib; */
+	      /* ntot++; */
 	    }
 	  }
 	}
@@ -494,16 +513,16 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	    if(vnei3[neip[i3]]==6){
 	      accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
 	      visit[7]=1;
-	      tot+=contrib;
-	      ntot++;
+	      /* tot+=contrib; */
+	      /* ntot++; */
 
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
 		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
 		visit[7]=1;
-		tot+=contrib;
-		ntot++;
+		/* tot+=contrib; */
+		/* ntot++; */
 	      }
 	    }
 	  }
