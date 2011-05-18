@@ -592,7 +592,12 @@ int main(int argc, char *argv[])
 
   float omegam,omegav,Hubble;
 #ifdef TESTCOSMO
+
+#ifdef HPC
+  long dummy;
+#else
   int dummy;
+#endif
   float dummyf;
   int npartf;
 
