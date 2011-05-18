@@ -333,6 +333,17 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
 		  break;
+#ifdef AXLFORCE
+		case 5:
+		  pack->data[icell]=curoct->cell[icell].fx; //temp field for force calculation
+		  break;
+		case 6:
+		  pack->data[icell]=curoct->cell[icell].fy; //temp field for force calculation
+		  break;
+		case 7:
+		  pack->data[icell]=curoct->cell[icell].fz; //temp field for force calculation
+		  break;
+#endif
 		}
 	      }
 	    }
@@ -399,6 +410,17 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
 		break;
+#ifdef AXLFORCE
+	      case 5:
+		curoct->cell[icell].fx=pack->data[icell]; // temp field for force calculation
+		break;
+	      case 6:
+		curoct->cell[icell].fy=pack->data[icell]; // temp field for force calculation
+		break;
+	      case 7:
+		curoct->cell[icell].fz=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
 	      }
 	    }
 	  }

@@ -1072,7 +1072,9 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
   struct PART *nexp;
   int nread;
 
+#ifndef AXLFORCE
   for(dir=0;dir<3;dir++){
+#endif
     //printf("Force Start dir=%d\n",dir);
     for(level=levelcoarse;level<=levelmax;level++)
       {
@@ -1087,18 +1089,38 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 	else{
 	  do{ 
 	    curoct=nextoct;
-	    
+#ifndef AXLFORCE	    
 	    // First we gather the potential in all neighbors
 	    for(icomp=2*dir;icomp<=2*dir+1;icomp++){
 	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread);
 	    }
-	  
 	    // Next we perform the finite difference along x
 	    grad(vcomp,stride,dx,dir);
 	  
 	    // Then we scatter back the results in the temp variable
 	    nextoct=scattercomp(curoct, vcomp[6], 6, 2, stride,cpu);
+#else
+	    // First we gather the potential in all neighbors
+	    for(icomp=0;icomp<6;icomp++){
+	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
+	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread);
+	    }
+
+	    // Next we perform the finite difference along x
+	    grad(vcomp,stride,dx,0);
+	    // Next we perform the finite difference along y
+	    grad(vcomp,stride,dx,1);
+	    // Next we perform the finite difference along z
+	    grad(vcomp,stride,dx,2);
+
+	    // Then we scatter back the results in the force variable
+	    nextoct=scattercomp(curoct, vcomp[6], 6, 3, stride,cpu);
+	    nextoct=scattercomp(curoct, vcomp[7], 6, 4, stride,cpu);
+	    nextoct=scattercomp(curoct, vcomp[8], 6, 5, stride,cpu);
+#endif
+
+
 	  
 	  }while(nextoct!=NULL);
 	
@@ -1106,7 +1128,13 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
       }
 
 #ifdef WMPI
-    mpi_exchange(cpu,sendbuffer,recvbuffer,4,1);
+#ifndef AXLFORCE
+    mpi_exchange(cpu,sendbuffer,recvbuffer,4,1); // temp field
+#else
+    mpi_exchange(cpu,sendbuffer,recvbuffer,5,1); // fx field
+    mpi_exchange(cpu,sendbuffer,recvbuffer,6,1); // fy field
+    mpi_exchange(cpu,sendbuffer,recvbuffer,7,1); // fz field
+#endif
 #endif
   
  // ==================================== Computing the Velocities
@@ -1130,17 +1158,15 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 		  do{  
 		    curp=nexp; 
 		    nexp=curp->next; 
-/* #ifdef WGPU */
-/* 		    cell2part_cic_GPU(curp, curoct, icell,dir,dt);  */
-/* #else */
 		    cell2part_cic(curp, curoct, icell,dir,dt); 
-		    //#endif
 		  }while(nexp!=NULL); 
 		}
 	      }
 	  }while(nextoct!=NULL);
       }
+#ifndef AXLFORCE
   }
+#endif
 }
 
 

@@ -137,7 +137,14 @@ struct CELL
   // the physical quantities
   float density;
   float pot;
+
   float temp;
+
+#ifdef AXLFORCE
+  float fx;
+  float fy;
+  float fz;
+#endif
 
 };
 

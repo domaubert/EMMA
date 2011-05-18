@@ -1,5 +1,5 @@
 mpi_buffer_size 8192
-output_frequency 20
+output_frequency 100
 max_number_of_steps 5000
 level_coarse 7
 level_max 9
@@ -10,4 +10,4 @@ mgrid_lmin 2
 mgrid_nvcycles 2
 vector_stencil_size 262144
 time_step_max  0.01
-amr_thresh 1e-4
+amr_thresh 1.25e-5

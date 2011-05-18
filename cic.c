@@ -217,7 +217,14 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
   float dx,dy,dz;
   float contrib;
   struct OCT *curoctlr;
+#ifndef AXLFORCE
   float accel=0.;
+#else
+  float accelx=0.;
+  float accely=0.;
+  float accelz=0.;
+#endif
+
   char hres=1; // could be switched to hres=0 if particle is not deep enough
 
   int visit[8]={0,0,0,0,0,0,0,0};
@@ -297,7 +304,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 
   contrib=vcont[0];
   if((contrib<=1.)&&(contrib>=0.)){
+#ifndef AXLFORCE
     accel+=curoct->cell[icell].temp*contrib;
+#else
+    accelx+=curoct->cell[icell].fx*contrib;
+    accely+=curoct->cell[icell].fy*contrib;
+    accelz+=curoct->cell[icell].fz*contrib;
+#endif
   }
   
 
@@ -310,14 +323,26 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 
     contrib=vcont[idx1];
     if(vnei[neip[i1]]==6){
+#ifndef AXLFORCE
       accel+=curoct->cell[vcell[neip[i1]]].temp*contrib;
+#else
+      accelx+=curoct->cell[vcell[neip[i1]]].fx*contrib;
+      accely+=curoct->cell[vcell[neip[i1]]].fy*contrib;
+      accelz+=curoct->cell[vcell[neip[i1]]].fz*contrib;
+#endif
       newcell=&(curoct->cell[vcell[neip[i1]]]);
       /* tot+=contrib; */
       /* ntot++; */
     }
     else{
       if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
+#ifndef AXLFORCE
 	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
+#else
+	accelx+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fx*contrib;
+	accely+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fy*contrib;
+	accelz+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fz*contrib;
+#endif
 	newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	/* tot+=contrib; */
 	/* ntot++; */
@@ -325,7 +350,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
       }
       else{
 	// the particle is not deep enough we stop
+#ifndef AXLFORCE
 	accel=0;
+#else
+	accelx=0;
+	accely=0;
+	accelz=0;
+#endif
 	hres=0;
 	newcell=NULL;
 	break;
@@ -344,7 +375,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	getcellnei(newcell->idx, vnei2, vcell2);
 	newoct=cell2oct(newcell);
 	if(vnei2[neip[i2]]==6){
+#ifndef AXLFORCE
 	  accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
+#else
+	  accelx+=newoct->cell[vcell2[neip[i2]]].fx*contrib;
+	  accely+=newoct->cell[vcell2[neip[i2]]].fy*contrib;
+	  accelz+=newoct->cell[vcell2[neip[i2]]].fz*contrib;
+#endif
 	  newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	  visit[idx2]=1;
 	  /* tot+=contrib; */
@@ -352,14 +389,26 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	}
 	else{
 	  if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifndef AXLFORCE
 	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
+#else
+	    accelx+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fx*contrib;
+	    accely+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fy*contrib;
+	    accelz+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fz*contrib;
+#endif
 	    newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    /* tot+=contrib; */
 	    /* ntot++; */
 	  }
 	  else{
+#ifndef AXLFORCE
 	    accel=0;
+#else
+	    accelx=0;
+	    accely=0;
+	    accelz=0;
+#endif
 	    hres=0;
 	    newcell2=NULL;
 	    break;
@@ -376,7 +425,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  getcellnei(newcell2->idx, vnei3, vcell3);
 	  newoct2=cell2oct(newcell2);
 	  if(vnei3[neip[i3]]==6){
+#ifndef AXLFORCE
 	    accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
+#else
+	    accelx+=newoct2->cell[vcell3[neip[i3]]].fx*contrib;
+	    accely+=newoct2->cell[vcell3[neip[i3]]].fy*contrib;
+	    accelz+=newoct2->cell[vcell3[neip[i3]]].fz*contrib;
+#endif
 	    visit[7]=1;
 	    /* tot+=contrib; */
 	    /* ntot++; */
@@ -384,13 +439,25 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  }
 	  else{
 	    if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifndef AXLFORCE
 	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
+#else
+	      accelx+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fx*contrib;
+	      accely+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fy*contrib;
+	      accelz+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fz*contrib;
+#endif
 	      visit[7]=1;
 	      /* tot+=contrib; */
 	      /* ntot++; */
 	    }
 	    else{
+#ifndef AXLFORCE
 	      accel=0;
+#else
+	      accelx=0;
+	      accely=0;
+	      accelz=0;
+#endif
 	      hres=0;
 	      break;
 	    }
@@ -447,7 +514,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     /* int ntot=0; */
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
+#ifndef AXLFORCE
       accel+=curoctlr->cell[icell].temp*contrib;
+#else
+      accelx+=curoctlr->cell[icell].fx*contrib;
+      accely+=curoctlr->cell[icell].fy*contrib;
+      accelz+=curoctlr->cell[icell].fz*contrib;
+#endif
     }
   
   
@@ -458,14 +531,26 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
       idx1=(1<<i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
+#ifndef AXLFORCE
 	accel+=curoctlr->cell[vcell[neip[i1]]].temp*contrib;
+#else
+	accelx+=curoctlr->cell[vcell[neip[i1]]].fx*contrib;
+	accely+=curoctlr->cell[vcell[neip[i1]]].fy*contrib;
+	accelz+=curoctlr->cell[vcell[neip[i1]]].fz*contrib;
+#endif
 	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
 	/* tot+=contrib; */
 	/* ntot++; */
       }
       else{
 	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
+#ifndef AXLFORCE
 	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
+#else
+	  accelx+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fx*contrib;
+	  accely+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fy*contrib;
+	  accelz+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].fz*contrib;
+#endif
 	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	  /* tot+=contrib; */
 	  /* ntot++; */
@@ -485,7 +570,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
+#ifndef AXLFORCE
 	    accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
+#else
+	    accelx+=newoct->cell[vcell2[neip[i2]]].fx*contrib;
+	    accely+=newoct->cell[vcell2[neip[i2]]].fy*contrib;
+	    accelz+=newoct->cell[vcell2[neip[i2]]].fz*contrib;
+#endif
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    /* tot+=contrib; */
@@ -493,7 +584,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifndef AXLFORCE
 	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
+#else
+	      accelx+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fx*contrib;
+	      accely+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fy*contrib;
+	      accelz+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].fz*contrib;
+#endif
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
 	      /* tot+=contrib; */
@@ -511,7 +608,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
+#ifndef AXLFORCE
 	      accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
+#else
+	      accelx+=newoct2->cell[vcell3[neip[i3]]].fx*contrib;
+	      accely+=newoct2->cell[vcell3[neip[i3]]].fy*contrib;
+	      accelz+=newoct2->cell[vcell3[neip[i3]]].fz*contrib;
+#endif
 	      visit[7]=1;
 	      /* tot+=contrib; */
 	      /* ntot++; */
@@ -519,7 +622,13 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifndef AXLFORCE
 		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
+#else
+		accelx+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fx*contrib;
+		accely+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fy*contrib;
+		accelz+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].fz*contrib;
+#endif
 		visit[7]=1;
 		/* tot+=contrib; */
 		/* ntot++; */
@@ -866,6 +975,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
 #endif
   
   // Once we have the acceleration we can compute the velocity
+#ifndef AXLFORCE
   switch(dir){
   case(0):
     curp->vx+=-accel*dt;
@@ -879,6 +989,12 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     curp->vz+=-accel*dt;
     break;
   }
+#else
+  curp->vx+=-accelx*dt;
+  curp->vy+=-accely*dt;
+  curp->vz+=-accelz*dt;
+#endif
+
 #ifndef NEWFORCE
   free(cicoct);
 #endif

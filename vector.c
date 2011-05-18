@@ -820,6 +820,20 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
 	  case 2: //------>  temp
 	    curoct->cell[icell].temp=vec[nread];
 	    break;
+#ifdef AXLFORCE
+	    //==============================================
+	  case 3: //------>  temp
+	    curoct->cell[icell].fx=vec[nread];
+	    break;
+	    //==============================================
+	  case 4: //------>  temp
+	    curoct->cell[icell].fy=vec[nread];
+	    break;
+	    //==============================================
+	  case 5: //------>  temp
+	    curoct->cell[icell].fz=vec[nread];
+	    break;
+#endif
 	  }
 	  nread++;
 	}
@@ -951,7 +965,11 @@ void grad(float **vcomp, int stride, float dx, int dir){
       temp=-0.5*(vcomp[4][i]-vcomp[5][i])/dx;
       break;
     }
+#ifndef AXLFORCE
     vcomp[6][i]=temp;
+#else
+    vcomp[dir+6][i]=temp;
+#endif
   }
 }
 
