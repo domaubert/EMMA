@@ -790,9 +790,9 @@ int main(int argc, char *argv[])
 
   // ==================================== performing the CIC assignement
 #ifndef WGPU
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -883,9 +883,9 @@ int main(int argc, char *argv[])
   // ==================================== performing the CIC assignement
 
 #ifndef WGPU
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
