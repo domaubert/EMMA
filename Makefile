@@ -1,1 +1,1 @@
-Makefile.hpc
+Makefile.maggie

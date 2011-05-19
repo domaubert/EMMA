@@ -2370,7 +2370,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
   int vnei2[6],vcell2[6];
   int il,ip;
 
-  if(cpu->rank==0) printf("==> start CIC\n");
+  if(cpu->rank==0) printf("==> start CIC on CPU\n");
 
   // First we clean the density
   for(level=levelmax;level>=levelcoarse;level--)

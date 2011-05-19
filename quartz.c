@@ -22,6 +22,7 @@
 #ifdef WGPU
 #include "interface.h"
 #include "vector_gpu.h"
+#include "cic_gpu.h"
 #endif
 
 // ===============================================================================
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
   int ci,cj,ck;
   int cinext,cjnext,cknext;
   float threshold;
-  float tsim;
+  float tsim=0.;
   struct OCT oct;
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
   struct PART *part;
   struct PART *nexploc, *curploc;
 
-  struct OCT *endoct; // the very last oct of all the levels;
+  struct OCT *freeoct; // the first free oct available for refinement
   struct OCT *newoct;
   int nref=0,ndes=0;
 
@@ -464,13 +465,17 @@ int main(int argc, char *argv[])
   /* sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank); */
   //dumpcube(lmap,firstoct,3,filename);
 
-  // =====  computing the memory location of the last oct 
+  // =====================  computing the memory location of the first freeoct and linking the freeocts
 
-  endoct=lastoct[0];
-  for(i=0;i<levelcoarse;i++) {
-    if(lastoct[i]>endoct) endoct=lastoct[i];
+  freeoct=lastoct[levelcoarse-1]+1; //(at this stage the memory is perfectly aligned)
+  freeoct->prev=NULL;
+  freeoct->next=freeoct+1;
+  for(curoct=freeoct+1;curoct<(grid+ngridmax-1);curoct++){ // sweeping all the freeocts
+    curoct->prev=curoct-1;
+    curoct->next=curoct+1;
   }
-
+  curoct->next=NULL; // for the last free oct
+  printf("freeoct=%p\n",freeoct);
 
 #if 1  // ==================================== assigning particles to cells
   //breakmpi();
@@ -852,18 +857,14 @@ int main(int argc, char *argv[])
     // ==================================== refining (and destroying) the octs
 
     
-    refine_cells(levelcoarse,levelmax,firstoct,lastoct,endoct,&cpu);
-
+    curoct=refine_cells(levelcoarse,levelmax,firstoct,lastoct,freeoct,&cpu);
+    freeoct=curoct;
     
-  // recomputing the last oct;
+  /* // recomputing the last oct; */
   
-  printf("==> memory state\n");
-  printf("endoct=%p\n",endoct);
+  /* printf("==> memory state\n"); */
+  /* printf("endoct=%p\n",endoct); */
   
-  endoct=lastoct[0];
-  for(i=0;i<levelmax;i++) {
-    if(lastoct[i]>endoct) endoct=lastoct[i];
-  }
 
 #endif
 
@@ -1299,6 +1300,7 @@ int main(int argc, char *argv[])
   // ==================================== Check the number of particles and octs
   multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #endif	 
+
 
   //==================================== timestep completed, looping
   tsim+=dt;

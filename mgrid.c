@@ -139,8 +139,11 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   //======================== looping over iterations
   
   for(iter=0;iter<niter;iter++){
-    
+
+#ifdef WMPI    
     tit[0]=MPI_Wtime();
+#endif
+
     //---------------   computing the laplacian
 #ifdef NEWJACK2
 #ifdef WGPU
@@ -219,8 +222,8 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     }
     // ---------------------------
 
-    tit[1]=MPI_Wtime();
 #ifdef WMPI
+    tit[1]=MPI_Wtime();
 #ifdef WGPU
     if((iter==64)&&(cpu->rank==0)) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
 #endif

@@ -14,7 +14,7 @@
 #include "communication.h"
 #include "particle.h"
 
-void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * endoct, struct CPUINFO *cpu)
+struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu)
 {
   int nref,ndes;
   struct OCT *newoct;
@@ -37,7 +37,7 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
   nref=0;
   ndes=0;
 
-  newoct=endoct+1; // the new oct will be the next to the last one
+  newoct=freeoct; // the new oct will be the first freeoct
 
   if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d\n",cpu->rank,levelcoarse,levelmax);
   //breakmpi();
@@ -106,6 +106,11 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 	      	}
 
 		desoct->level=0;
+
+		// we fix the freeoct list
+		freeoct->prev=desoct;
+		desoct->next=freeoct;
+		freeoct=desoct;
 		
 	      	//======== dealing with particles
 	      	// we gather the particles of the oct to be destroyed in the parent cell
@@ -238,8 +243,12 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		};
 #endif
 		
-
+		
 		// preparing the next creations on level+1
+		//printf("%p %p\n",freeoct,freeoct->next);
+		freeoct=newoct->next; // we prepare the new free oct
+		freeoct->prev=NULL; // the new free oct has no previous oct
+
 		newoct->next=NULL;
 
 		if(firstoct[level]==NULL){
@@ -251,7 +260,8 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 		  lastoct[level]->next=newoct;
 		}
 		lastoct[level]=newoct;
-		newoct++;
+
+		newoct=freeoct; //ready to go to the next free oct
 	      }
 
 	      
@@ -263,6 +273,8 @@ void refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct O
 
   printf("octs created by rank %d =%d\n",cpu->rank,nref);
   printf("octs destroyed by rank %d=%d\n",cpu->rank,ndes);
+
+  return freeoct;
 
 }
 

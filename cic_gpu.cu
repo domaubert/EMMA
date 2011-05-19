@@ -430,7 +430,7 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
   float *mass_d;
   float *mass2_d;
 
-  if(cpu->rank==0) printf("==> start CIC\n");
+  if(cpu->rank==0) printf("==> start CIC on GPU\n");
 
  // alloc 2
 
@@ -517,9 +517,6 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
 	  idxoct++;
 	}while(nextoct!=NULL);
 	  
-      
-      //gathering particle from level=current level-1
-      
 
       // ==================================  launching the GPU horses =====================
 
