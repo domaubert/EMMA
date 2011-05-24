@@ -156,6 +156,17 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 			      case 5:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].temp;
 				break;
+#ifdef AXLFORCE
+			      case 6:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fx;
+				break;
+			      case 7:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fy;
+				break;
+			      case 8:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fz;
+				break;
+#endif
 			      }
 			      //map[(imap+ii)+(jmap+jj)*nmap]=fmin(oct.cell[icell].pot,map[(imap+ii)+(jmap+jj)*nmap]);
 			      //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.cell[icell].temp*oct.cell[icell].temp,map[(imap+ii)+(jmap+jj)*nmap]);
@@ -225,9 +236,15 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
 		  val=curp->x;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->y;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->z;fwrite(&val,1,sizeof(float),fp);
+#ifndef PARTN
 		  val=curp->vx;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vy;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vz;fwrite(&val,1,sizeof(float),fp);
+#else
+		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fz;fwrite(&val,1,sizeof(float),fp);
+#endif
 		  val=(float)(curp->idx);fwrite(&val,1,sizeof(float),fp);
 		  ipart++;
 		}while(nexp!=NULL);

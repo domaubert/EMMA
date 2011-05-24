@@ -71,6 +71,9 @@ struct CPUINFO{
 
   int nbuff; // the max number of buffer cells
 
+  int *nrecv;
+  int *nsend;
+
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
@@ -92,6 +95,12 @@ struct PART
   float vx;
   float vy;
   float vz;
+
+#ifdef PARTN
+  float fx;
+  float fy;
+  float fz;
+#endif
 
   struct PART *next;
   struct PART *prev;

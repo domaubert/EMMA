@@ -210,12 +210,16 @@ int main(int argc, char *argv[])
   levelmin=param.mgridlmin;
   nvcycles=param.nvcycles;
 
-  ngridmax=3000000;
+  ngridmax=300000;
   npartmax=128*128*128;
 #ifdef PART2
   npart=2;
 #else
   npart=128*128*128;
+#endif
+
+#ifdef PARTN
+  npart=32768;
 #endif
 
   threshold=param.amrthresh;
@@ -296,6 +300,9 @@ int main(int argc, char *argv[])
   if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
 
   //========== setting up the parallel topology ===
+
+  cpu.nsend=NULL;
+  cpu.nrecv=NULL;
 
   // We segment the oct distributions at levelcoarse 
     cpu.bndoct=NULL;
@@ -463,7 +470,7 @@ int main(int argc, char *argv[])
   /* sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank); */
   /* dumpcube(lmap,firstoct,0,filename,0.); */
   /* sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank); */
-  //dumpcube(lmap,firstoct,3,filename);
+  /* dumpcube(lmap,firstoct,3,filename,tsim); */
 
   // =====================  computing the memory location of the first freeoct and linking the freeocts
 
@@ -515,6 +522,71 @@ int main(int argc, char *argv[])
       vz=0.;
       
       mass=0.001;
+    }
+    
+    // periodic boundary conditions
+    
+    x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+    y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+    z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+    
+    // it it belongs to the current cpu, we proceed and assign the particle to the particle array
+    if(segment_part(x,y,z,&cpu,levelcoarse)){
+      part[ip].x=x;
+      part[ip].y=y;
+      part[ip].z=z;
+      
+      part[ip].vx=vx;
+      part[ip].vy=vy;
+      part[ip].vz=vz;
+      
+      part[ip].mass=mass;
+      lastpart=part+ip;
+      part[ip].idx=ir;
+      ip++;
+    }
+  }
+  
+  npart=ip; // we compute the localnumber of particle
+
+#endif
+
+
+#ifdef PARTN
+
+  int ir,nr=32768;
+  ip=0;
+  float dxcell=1./pow(2.,levelcoarse);
+  float th,ph,r;
+  for(ir=0;ir<nr;ir++) {
+    // first we read the position etc... (eventually from the file)
+    if(ir==0){
+      x=0.5;
+      y=0.5;
+      z=0.5;
+
+      vx=0.;
+      vy=0.;
+      vz=0.;
+      
+      mass=1.;
+    }
+    else{
+
+
+      th=acos(((float)(rand())/RAND_MAX*2-1.));
+      ph=2*M_PI*(float)(rand())/RAND_MAX;
+      r=(float)(rand())/RAND_MAX*10./64.;
+
+      x=r*sin(th)*cos(ph)+0.5;
+      y=r*sin(th)*sin(ph)+0.5;
+      z=r*cos(th)+0.5;
+
+      vx=(float)(rand())/RAND_MAX*2.-1.;
+      vy=(float)(rand())/RAND_MAX*2.-1.;
+      vz=(float)(rand())/RAND_MAX*2.-1.;
+      
+      mass=0.;
     }
     
     // periodic boundary conditions
@@ -790,9 +862,9 @@ int main(int argc, char *argv[])
 
   // ==================================== performing the CIC assignement
 #ifndef WGPU
-  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -883,9 +955,9 @@ int main(int argc, char *argv[])
   // ==================================== performing the CIC assignement
 
 #ifndef WGPU
-  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #else
-  call_cic2(levelmax,levelcoarse,firstoct,&cpu);
+  call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #endif
 
 #ifdef WMPI
@@ -1160,7 +1232,7 @@ int main(int argc, char *argv[])
       if((level==levelcoarse)&&(levelcoarse!=levelmin)){
 	// --- for coarse level two levels mgrid relaxation
 	for(igrid=0;igrid<nvcycles;igrid++){
-	  printf("----------------------------------------\n");
+	  if(cpu.rank==0) printf("----------------------------------------\n");
 	  clean_pot(levelcoarse-1,firstoct);	    // ------------- cleaning the vector positions
 	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
 	  if(res<acc) break;
@@ -1171,7 +1243,7 @@ int main(int argc, char *argv[])
 	poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
       }
 
-	printf("----------------------------------------\n");
+       if(cpu.rank==0) printf("----------------------------------------\n");
 
 	//sprintf(filename,"data/res3d.%05d.p%05d",nsteps,cpu.rank);
 	//dumpcube(lmap,firstoct,5,filename,tsim);
@@ -1191,7 +1263,9 @@ int main(int argc, char *argv[])
   // ==================================== Force calculation and velocity update   // corrector step
 
 
+#ifndef PARTN
   if(nsteps!=0){
+#endif
     printf("Corrector\n");
 #ifdef TESTCOSMO
     faexp=f_aexp(tsim,omegam,omegav);
@@ -1200,7 +1274,9 @@ int main(int argc, char *argv[])
 #endif
 
     forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+#ifndef PARTN
   }
+#endif
 
 #ifdef EGYCSV
   // ==================================== Energy Conservation Test
@@ -1231,8 +1307,15 @@ int main(int argc, char *argv[])
     dumpcube(lmap,firstoct,2,filename,tsim);
     sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,1,filename,tsim);
-    sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
+    sprintf(filename,"data/le3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,0,filename,tsim);
+    sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,6,filename,tsim);
+    sprintf(filename,"data/fy.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,7,filename,tsim);
+    sprintf(filename,"data/fz.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,8,filename,tsim);
+
 
 #ifdef WMPI
     sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
@@ -1260,6 +1343,7 @@ int main(int argc, char *argv[])
 
   // ==================================== Moving Particles + Oct management
   
+#ifndef PARTN
 
   printf("Moving particles\n");
   // Computing displacement (predictor)
@@ -1291,6 +1375,7 @@ int main(int argc, char *argv[])
   npart=npart+deltan;
 #endif
 
+#endif
   //==== Gathering particles for dump
 
   //  sprintf(filename,"data/partstart.%05d.p%05d",nsteps+1,cpu.rank);

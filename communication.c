@@ -51,9 +51,10 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 	  {
 	    curoct=nextoct;
 	    nextoct=curoct->next;
-	    if(level>=levelcoarse){
+	    //if(level>=levelcoarse){
+	    if(level>=0){
 	      
-	      if((level==levelcoarse)&&(loadb)){
+	      if((level<=levelcoarse)&&(loadb)){
 		assigncpu2coarseoct(curoct, cpu, levelcoarse);
 	      }
 	      
@@ -63,6 +64,7 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 		// a neighbor has been found
 		mpinei[nnei]=curoct->cpu;
 		cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission
+		//if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
 		nnei++;
 	      }
 
@@ -123,7 +125,6 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   // nbnd contains the number of boundary octs
   // nnei contains the number of neighbor procs
   // mpinei contains the rank of the neighbor procs and has a size nnei
-  // inidx contains the number of innerboundary octs
 
 
   // some displays
@@ -366,6 +367,100 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     free(countpacket);
 }
 
+//====================================================================
+
+void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field, int level){
+
+  int i,j;
+  int found=0;
+  int hidx;
+  struct PACKET *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  int *countpacket;
+
+/*   double t[10]; */
+/*   double th=0,tg=0,tt=0,tc=0; */
+/*   int nt=0; */
+
+  // we create a counter of values for each neighbor
+  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+
+    for(j=0;j<cpu->nnei;j++){
+      for(i=0;i<cpu->nbuff;i++){
+	pack=sendbuffer[j]+i; // we assume that the sendbuffer already contains the keys
+	if(pack->level==level){ // we do something
+	  //t[0]=MPI_Wtime();
+	  countpacket[j]++;
+
+	  // first we compute the adress from the hashfunction
+	  hidx=hfun(pack->key,cpu->maxhash);
+	  nextoct=cpu->htable[hidx];
+	  //t[3]=MPI_Wtime();
+	  if(nextoct!=NULL){
+	    do{ // resolving collisions
+	      curoct=nextoct;
+	      nextoct=curoct->nexthash;
+	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    }while((nextoct!=NULL)&&(!found));
+
+	    //t[1]=MPI_Wtime();
+	    if(found){ // the reception oct has been found
+
+	      // we set the current oct as a border one (for vector based communications)
+	      curoct->border=1;
+
+	      for(icell=0;icell<8;icell++){
+		switch(field){
+		case 0:
+		  pack->data[icell]=curoct->cell[icell].density; // density
+		  break;
+		case 1:
+		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
+		  break;
+		case 2:
+		  pack->data[icell]=curoct->cell[icell].pot; // potential
+		  break;
+		case 3:
+		  pack->data[icell]=curoct->cell[icell].marked; //refinment mark
+		  break;
+		case 4:
+		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  break;
+#ifdef AXLFORCE
+		case 5:
+		  pack->data[icell]=curoct->cell[icell].fx; //temp field for force calculation
+		  break;
+		case 6:
+		  pack->data[icell]=curoct->cell[icell].fy; //temp field for force calculation
+		  break;
+		case 7:
+		  pack->data[icell]=curoct->cell[icell].fz; //temp field for force calculation
+		  break;
+#endif
+		}
+	      }
+	    }
+	    else{
+	      printf("error no reception oct found !");
+	      abort();
+	    }
+	    //t[2]=MPI_Wtime();
+
+	    
+	  }else{
+	    printf("error no hash key obtained !!\n");
+	    abort();
+	  }
+	}
+      }
+    }
+    
+
+    free(countpacket);
+}
+
  //------------------------------------------------------------------------
 void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 
@@ -381,6 +476,81 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
     for(i=0;i<cpu->nbuff;i++){
       pack=recvbuffer[j]+i;
       if(pack->level!=0){ // we do something
+
+	// first we compute the adress from the hashfunction
+	hidx=hfun(pack->key,cpu->maxhash);
+	nextoct=cpu->htable[hidx];
+	if(nextoct!=NULL){
+	  do{ // resolving collisions
+	    curoct=nextoct;
+	    nextoct=curoct->nexthash;
+	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	  }while((nextoct!=NULL)&&(!found));
+
+	  if(found){ // the reception oct has been found
+	    for(icell=0;icell<8;icell++){
+	      switch(field){
+	      case 0:
+		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
+		break;
+	      case 1:
+		curoct->cell[icell].density =pack->data[icell]; // density
+		break;
+	      case 2:
+		curoct->cell[icell].pot=pack->data[icell]; // potential
+		break;
+	      case 3:
+		curoct->cell[icell].marked=fmax(pack->data[icell],(float)curoct->cell[icell].marked); // refinement mark
+		break;
+	      case 4:
+		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		break;
+#ifdef AXLFORCE
+	      case 5:
+		curoct->cell[icell].fx=pack->data[icell]; // temp field for force calculation
+		break;
+	      case 6:
+		curoct->cell[icell].fy=pack->data[icell]; // temp field for force calculation
+		break;
+	      case 7:
+		curoct->cell[icell].fz=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
+	      }
+	    }
+	  }
+	  else{
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%d\n",i,pack->level,pack->key);
+	    abort();
+	  }
+	    
+	}else{
+	  printf("error no hash key obtained !!\n");
+	  abort();
+	}
+      }
+    }
+  }
+    
+      
+}
+
+
+ //------------------------------------------------------------------------
+void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field, int level){
+
+  int i,j;
+  int found=0;
+  int hidx;
+  struct PACKET *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  for(j=0;j<cpu->nnei;j++){
+    for(i=0;i<cpu->nbuff;i++){
+      pack=recvbuffer[j]+i;
+      if(pack->level==level){ // we do something
 
 	// first we compute the adress from the hashfunction
 	hidx=hfun(pack->key,cpu->maxhash);
@@ -537,13 +707,51 @@ void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
     keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
     cpuloc=cpu->bndoct[i]->cpu;
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
+
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
     pack->key=keyloc;
     pack->level=cpu->bndoct[i]->level;
+
     countpacket[inei]++;
   }  
 
   free(countpacket);
+}
+
+//------------------------------------------------------------------------
+void compute_bndkeys_level(struct CPUINFO *cpu, struct PACKET **recvbuffer, int level, int *countpacket){
+
+  /* // we create a counter of values for each neighbor */
+
+  /* int *countpacket; */
+  /* countpacket=(int*)calloc(cpu->nnei,sizeof(int)); */
+
+  memset(countpacket,0,cpu->nnei*sizeof(int));
+
+
+  // filling the keys in the reception buffer (which will be processed by the remote cpus)
+  struct PACKET *pack;
+
+  int i;
+  for(i=0;i<cpu->nebnd;i++) {
+    int keyloc;
+    int cpuloc;
+    int inei;
+
+    if(cpu->bndoct[i]->level != level) continue; // we skip the borders which do not belong to current level
+
+    keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
+    cpuloc=cpu->bndoct[i]->cpu;
+    inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
+
+    pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
+    pack->key=keyloc;
+    pack->level=cpu->bndoct[i]->level;
+
+    countpacket[inei]++;
+  }  
+
+  //free(countpacket);
 }
 
 //------------------------------------------------------------------------
@@ -590,6 +798,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
 
     // ----------- I  / we compute the boundary keys and store them in recvbuffer
     compute_bndkeys(cpu,recvbuffer);
+
     // ----------- II / we send the keys to the server
 
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
@@ -639,6 +848,108 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
+
+// -------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------
+
+void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field, int cmp_keys, int level)
+{
+  int i;
+  int icpu;
+  MPI_Status *stat;
+  MPI_Request *req;
+  MPI_Datatype MPI_PACKET=*(cpu->MPI_PACKET);
+  int mpitag=1;
+
+  double t[10];
+  double tot;
+  req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
+  stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
+
+
+  // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1)
+
+  if(cmp_keys){
+    // ----------- 0  / we clean the mpi buffers
+    clean_mpibuff(cpu,sendbuffer,recvbuffer);
+
+    // ----------- 0.5  / we allocate the number of octs to transmit
+    if(cpu->nsend!=NULL){
+      free(cpu->nsend);
+      free(cpu->nrecv);
+    }
+
+    cpu->nsend=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+
+
+    // ----------- I  / we compute the boundary keys and store them in recvbuffer
+    compute_bndkeys_level(cpu,recvbuffer,level,cpu->nrecv);
+
+    // ----------- I bis/ we send the number of requested packets to each server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(cpu->nrecv+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,MPI_COMM_WORLD,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(cpu->nsend+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+
+    // ----------- II / we send the keys to the server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(recvbuffer[i],*(cpu->nrecv+i),MPI_PACKET,cpu->mpinei[i],cpu->rank,MPI_COMM_WORLD,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(sendbuffer[i],*(cpu->nsend+i),MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+
+  // ----------- III/ the server gather the data
+  gather_mpi_level(cpu, sendbuffer, field,level);
+
+  //if(cpu->rank==0) printf("--- X ---\n");
+  memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
+  memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // ----------- IV / the server send the data back to the client
+
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Isend(sendbuffer[i],*(cpu->nsend+i),MPI_PACKET,cpu->mpinei[i],cpu->rank         ,MPI_COMM_WORLD,&req[i]  );
+  }
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Irecv(recvbuffer[i],*(cpu->nrecv+i),MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
+  }
+  MPI_Waitall(2*cpu->nnei,req,stat);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+
+
+  t[5]=MPI_Wtime();
+  // ----------- V  / the client scatter the data back in the oct tree
+  scatter_mpi_level(cpu,recvbuffer,field,level);
+  
+  t[6]=MPI_Wtime();
+
+  //
+  free(req);
+  free(stat);
+
+  t[7]=MPI_Wtime();
+  tot=t[7]-t[0];
+  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+
+}
+
 
 //------------------------------------------------------------------------
 void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field)

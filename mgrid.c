@@ -82,7 +82,11 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   // ---------------- gathering the neighbors
   
 #ifdef NEWJACK2
-  nextoct=gathervecnei2(curoct,vectors->vecnei,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread);
+  int nocttotal;
+  nocttotal=countvecocts(curoct,stride,cpu,&nread); // we count the actual numbers of octs involved
+  //stride=(nocttotal%64==0?nocttotal:(nocttotal/64+1)*64); // let us be wild ! we change stride for nread
+  //printf("new stride=%d\n",stride);
+  nextoct=gathervecnei2(curoct,vectors->vecnei,stride,cpu,&nread); // actual gather
 #else
   nextoct=gathervecnei(curoct,vectors->vecnei,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread);
 #endif
@@ -97,6 +101,8 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   }
   nextoct=gathervec2(curoct,vectors->vecden,0,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density (only for coarse level and finer)
   nextoct=gathervec2(curoct,vectors->vecpot,1,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // potential
+
+  //printf("nread=%d stride=%d\n",nread,stride);
 #else
   nextoct=gathervec(curoct,vectors->vecden,0,vectors->vecl,stride,cpu,&nread); // density
   nextoct=gathervec(curoct,vectors->vecpot,1,vectors->vecl,stride,cpu,&nread); // potential
@@ -126,10 +132,18 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #ifdef WMPI
   // ---------------  reducing the norm of the density
     MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu->comm);
+
+    //if(cpu->rank==0) printf("normd=%e\n",sqrt(norm_d));
+
 #endif
+
+
+
 
 #ifdef WGPU
   // ---------------  sending data to GPU
+
+
   CPU2GPU(vectors->vecpotnew_d,vectors->vecpotnew,sizeof(float)*stride*8);
   CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*stride*8);
   CPU2GPU_INT(vectors->vecnei_d,vectors->vecnei,sizeof(int)*stride*6);
@@ -181,14 +195,15 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #endif
     // ---------------  scatter back the result to the tree
     t[1]=MPI_Wtime();
-    nextoct=scattervec_light(curoct,vectors->vecpot,1,stride,cpu,nread);  // border only
+    nextoct=scattervec_light(curoct,vectors->vecpot,1,stride,cpu,nread,level);  // border only
     
     // ---------------  sending tree data through the network
     t[2]=MPI_Wtime();
-    mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
+    mpi_exchange_level(cpu,sendbuffer,recvbuffer,2,(iter==0),level);
+    //mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
     
     t[3]=MPI_Wtime();
-    nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread); // potential
+    nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread,level); // potential
     
 #ifdef WGPU
     // ---------------  HOST 2 GPU
@@ -231,7 +246,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 
   } // next iteration ready
 
-  printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
+  if(cpu->rank==0) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 
 #ifdef MULTIGRID
   // if multigrid enabled, we recompute the residual

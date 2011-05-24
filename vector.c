@@ -119,7 +119,63 @@ struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var,
 }
 
 //============================================================================
-struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
+int countvecocts(struct OCT *octstart, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  struct OCT* coarseoct;
+  int iread=0;
+  int inei;
+  int ipos=0;
+  int icur;
+  int j;
+
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      if(curoct->vecpos<0){
+	// the current oct has not been vectorized yet
+	curoct->vecpos=ipos;
+	ipos++;
+      }
+      
+      // getting the vector element
+      icur=curoct->vecpos;
+
+      // we scan the neighbors
+      for(inei=0;inei<6;inei++){
+	if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+
+	  if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
+	    curoct->nei[inei]->child->vecpos=ipos;
+	    ipos++;
+	  }
+	}
+	else{ // we need to interpolate from coarser level
+	  
+	  coarseoct=cell2oct(curoct->nei[inei]);
+	  if(coarseoct->vecpos<0){
+	    coarseoct->vecpos=ipos;
+	    ipos++;
+	  }
+	}
+      }
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+
+
+  //printf("iread=%d ipos=%d\n",iread,ipos);
+  (*nread)=iread; 
+
+  return ipos; // we return the required number of octs
+}
+
+//============================================================================
+struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -156,7 +212,7 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, float *vec, int var
 
 	  vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
 	  if(vecnei[icur+inei*stride]>=stride){
-	    printf("error vecnei\n");
+	    printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
 	    abort();
 	  }
 	}
@@ -369,7 +425,7 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
   return nextoct;
 }
 
-struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread)
+struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread, int level)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -384,7 +440,7 @@ struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int str
       curoct=nextoct;
       nextoct=curoct->next;
       
-      if(curoct->border!=1) continue; // only border octs needs to be scattered
+      if((curoct->border!=1)||(curoct->level!=level)) continue; // only border octs needs to be scattered
 
       //getting the vector element
      ipos=curoct->vecpos;
@@ -725,7 +781,7 @@ struct OCT* gathercomp(struct OCT *octstart, float *vec, char nei, char var, int
 	nextoct=curoct->next;
 	
 	if(cpu->rank!=curoct->cpu) continue; // we consider only current cpu octs
-	
+       
 	for(icell=0;icell<8;icell++){
 	  switch(var){
 	    //=================================

@@ -182,6 +182,12 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  newoct->cell[ii].density=curoct->cell[icell].density;
 		  newoct->cell[ii].idx=ii;
 		  newoct->cell[ii].phead=NULL;
+		  newoct->cell[ii].temp=0.;
+#ifdef AXLFORCE
+		  newoct->cell[ii].fx=0.;
+		  newoct->cell[ii].fy=0.;
+		  newoct->cell[ii].fz=0.;
+#endif
 		}
 
 
