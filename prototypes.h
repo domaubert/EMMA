@@ -82,6 +82,7 @@ struct CPUINFO{
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
+  int levelcoarse; // the levelcoarse
 };
 
 //=======================================
@@ -97,6 +98,12 @@ struct PART
   float vz;
 
 #ifdef PARTN
+  float fx;
+  float fy;
+  float fz;
+#endif
+
+#ifdef PART2
   float fx;
   float fy;
   float fz;

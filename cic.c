@@ -671,6 +671,12 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
   curp->vy+=-accely*dt;
   curp->vz+=-accelz*dt;
 
+#ifdef PART2
+  curp->fx=-accelx;
+  curp->fy=-accely;
+  curp->fz=-accelz;
+#endif
+
 #ifdef PARTN
   curp->fx=-accelx;
   curp->fy=-accely;

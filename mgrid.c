@@ -84,7 +84,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #ifdef NEWJACK2
   int nocttotal;
   nocttotal=countvecocts(curoct,stride,cpu,&nread); // we count the actual numbers of octs involved
-  //stride=(nocttotal%64==0?nocttotal:(nocttotal/64+1)*64); // let us be wild ! we change stride for nread
+  stride=(nocttotal%64==0?nocttotal:(nocttotal/64+1)*64); // let us be wild ! we change stride for nread
   //printf("new stride=%d\n",stride);
   nextoct=gathervecnei2(curoct,vectors->vecnei,stride,cpu,&nread); // actual gather
 #else
@@ -294,7 +294,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   float res;
 
   // pre relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,5,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
 
   if(!((level==levelcoarse)&&(res<acc))){
   // reduction
@@ -331,7 +331,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   }
 
   // post relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,5,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
   }
   
   return res;

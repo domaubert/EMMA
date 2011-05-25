@@ -236,7 +236,7 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
 		  val=curp->x;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->y;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->z;fwrite(&val,1,sizeof(float),fp);
-#ifndef PARTN
+#ifndef PART2
 		  val=curp->vx;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vy;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vz;fwrite(&val,1,sizeof(float),fp);

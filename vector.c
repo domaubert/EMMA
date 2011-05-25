@@ -135,7 +135,7 @@ int countvecocts(struct OCT *octstart, int stride, struct CPUINFO *cpu, int *nre
     do{ //sweeping levels
       curoct=nextoct;
       nextoct=curoct->next;
-
+      
       if(curoct->vecpos<0){
 	// the current oct has not been vectorized yet
 	curoct->vecpos=ipos;
@@ -145,21 +145,27 @@ int countvecocts(struct OCT *octstart, int stride, struct CPUINFO *cpu, int *nre
       // getting the vector element
       icur=curoct->vecpos;
 
-      // we scan the neighbors
-      for(inei=0;inei<6;inei++){
-	if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+      if(curoct->cpu==cpu->rank){ // we only consider octs which belong to current cpu
+	// we scan the neighbors
+	for(inei=0;inei<6;inei++){
+	  /* if(curoct->nei[inei]==NULL){ */
+	  /*   printf("rank=%d cpu=%d level=%d\n",cpu->rank,curoct->cpu,curoct->level); */
+	  /*   abort(); */
+	  /* } */
 
-	  if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
-	    curoct->nei[inei]->child->vecpos=ipos;
-	    ipos++;
+	  if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+	    if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
+	      curoct->nei[inei]->child->vecpos=ipos;
+	      ipos++;
+	    }
 	  }
-	}
-	else{ // we need to interpolate from coarser level
+	  else{ // we need to interpolate from coarser level
 	  
-	  coarseoct=cell2oct(curoct->nei[inei]);
-	  if(coarseoct->vecpos<0){
-	    coarseoct->vecpos=ipos;
-	    ipos++;
+	    coarseoct=cell2oct(curoct->nei[inei]);
+	    if(coarseoct->vecpos<0){
+	      coarseoct->vecpos=ipos;
+	      ipos++;
+	    }
 	  }
 	}
       }
@@ -198,32 +204,34 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 	ipos++;
       }
       
-      // getting the vector element
-      icur=curoct->vecpos;
+      if(curoct->cpu==cpu->rank){ // we look for neighbors of current cpu octs only
+	// getting the vector element
+	icur=curoct->vecpos;
 
-      // we scan the neighbors
-      for(inei=0;inei<6;inei++){
-	if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+	// we scan the neighbors
+	for(inei=0;inei<6;inei++){
+	  if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
 
-	  if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
-	    curoct->nei[inei]->child->vecpos=ipos;
-	    ipos++;
+	    if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
+	      curoct->nei[inei]->child->vecpos=ipos;
+	      ipos++;
+	    }
+
+	    vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+	    if(vecnei[icur+inei*stride]>=stride){
+	      printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
+	      abort();
+	    }
 	  }
-
-	  vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
-	  if(vecnei[icur+inei*stride]>=stride){
-	    printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
-	    abort();
-	  }
-	}
-	else{ // we need to interpolate from coarser level
+	  else{ // we need to interpolate from coarser level
 	  
-	  coarseoct=cell2oct(curoct->nei[inei]);
-	  if(coarseoct->vecpos<0){
-	    coarseoct->vecpos=ipos;
-	    ipos++;
+	    coarseoct=cell2oct(curoct->nei[inei]);
+	    if(coarseoct->vecpos<0){
+	      coarseoct->vecpos=ipos;
+	      ipos++;
+	    }
+	    vecnei[icur+inei*stride]=coarseoct->vecpos; // we assign a neighbor
 	  }
-	  vecnei[icur+inei*stride]=coarseoct->vecpos; // we assign a neighbor
 	}
       }
       iread++;

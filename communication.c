@@ -329,7 +329,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		  pack->data[icell]=curoct->cell[icell].pot; // potential
 		  break;
 		case 3:
-		  pack->data[icell]=curoct->cell[icell].marked; //refinment mark
+		  pack->data[icell]=curoct->cell[icell].marked;//*(curoct->level>=cpu->levelcoarse); //refinment mark
 		  break;
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation

@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
   acc=param.poissonacc;
   dt=param.dt;
   cpu.maxhash=param.maxhash;
+  cpu.levelcoarse=levelcoarse;
   //breakmpi();
   //========== allocations ===================
   
@@ -467,8 +468,8 @@ int main(int argc, char *argv[])
   
   // ==== some initial dump
 
-  /* sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank); */
-  /* dumpcube(lmap,firstoct,0,filename,0.); */
+  sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank);
+  dumpcube(lmap,firstoct,0,filename,0.);
   /* sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank); */
   /* dumpcube(lmap,firstoct,3,filename,tsim); */
 
@@ -509,19 +510,19 @@ int main(int argc, char *argv[])
       vy=0.;
       vz=0.;
       
-      mass=0.999;
+      mass=1.;
     }
     else if(ir==1){
 
-      x=0.5+0.2;
+      x=0.5+0.1;
       y=0.5;
       z=0.5;
 
       vx=0.;
-      vy=sqrt(0.999/0.2);
+      vy=sqrt(1./0.1);
       vz=0.;
       
-      mass=0.001;
+      mass=0.;
     }
     
     // periodic boundary conditions
@@ -576,7 +577,7 @@ int main(int argc, char *argv[])
 
       th=acos(((float)(rand())/RAND_MAX*2-1.));
       ph=2*M_PI*(float)(rand())/RAND_MAX;
-      r=(float)(rand())/RAND_MAX*10./64.;
+      r=(float)(rand())/RAND_MAX*0.3;
 
       x=r*sin(th)*cos(ph)+0.5;
       y=r*sin(th)*sin(ph)+0.5;
@@ -926,6 +927,14 @@ int main(int argc, char *argv[])
     // ==================================== marking the cells
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
 
+    if(nsteps%(param.ndumps)==0){
+      // ===== Casting rays to fill a map
+      
+      sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
+      dumpcube(lmap,firstoct,4,filename,tsim);
+      sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
+      dumpcube(lmap,firstoct,0,filename,tsim);
+    }
     // ==================================== refining (and destroying) the octs
 
     
@@ -1307,8 +1316,6 @@ int main(int argc, char *argv[])
     dumpcube(lmap,firstoct,2,filename,tsim);
     sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,1,filename,tsim);
-    sprintf(filename,"data/le3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,0,filename,tsim);
     sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank);
     dumpcube(lmap,firstoct,6,filename,tsim);
     sprintf(filename,"data/fy.%05d.p%05d",nsteps,cpu.rank);
@@ -1334,9 +1341,12 @@ int main(int argc, char *argv[])
   
 #ifdef TESTCOSMO
   faexp=f_aexp(tsim,omegam,omegav);
+  faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
 #else
   faexp=1.0;
+  faexp2=1.0;
 #endif
+
   
   printf("Predictor\n");
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
@@ -1347,12 +1357,6 @@ int main(int argc, char *argv[])
 
   printf("Moving particles\n");
   // Computing displacement (predictor)
-
-#ifdef TESTCOSMO
-  faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
-#else
-  faexp2=1.0;
-#endif
 
   dtnew=movepart(levelcoarse,levelmax,firstoct,dt*faexp2,&cpu);
   dt=dtnew/faexp2;
