@@ -75,28 +75,29 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
   }
   return curp;
 }
-//------------------------------------------------------------------------
 
-float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu){
+
+//=====================================================================
+//=====================================================================
+
+float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, struct CPUINFO* cpu){
   
   int level;
-  float mdisp,lmdisp;
+  float vmax,lmdisp;
   struct OCT *nextoct;
   struct OCT oct;
   float dxcur;
   int icell;
   struct PART *nexp;
   struct PART *curp;
-  float disp;
-  float dtlev,dtnew;
+  float va;
+  float dtlev,dtnew=1e9;
+  float dt;
 
   // Computing new timestep
-  lmdisp=0.;
-  dtnew=dt;
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
-      mdisp=0.;
-
+      vmax=0.;
       // setting the first oct
       
       nextoct=firstoct[level-1];
@@ -117,22 +118,28 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 		  nexp=curp->next; 
 
 		  // particle displacement
-		  disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
-		  if(disp>mdisp) mdisp=disp;
+		  va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
+		  printf("va=%e\n",va);
+		  if(va>vmax) vmax=va;
 		}while(nexp!=NULL);
 	      }
 	    }
 	}while(nextoct!=NULL);
-      if(mdisp>0.){
-	dtlev=0.5*dxcur*dt/mdisp;
+
+      if(vmax>0.){
+	dtlev=0.5*dxcur/vmax;
 	dtnew=(dtlev<dtnew?dtlev:dtnew);
       }
-      printf("level=%d maxdisp=%f or %f dx dtlev=%f\n",level,mdisp,mdisp/dxcur,dtlev);
+      else{
+	dtlev=1e9;
+	dtnew=(dtlev<dtnew?dtlev:dtnew);
+      }
+      //printf("level=%d vmax=%e dtlev=%e\n",level,vmax,dtlev);
 
     }
 
   // new tstep
-  printf("original dt=%f chosen dt=%f\n",dt,dtnew);
+  //printf("original dt=%f chosen dt=%f\n",dt,dtnew);
   dt=dtnew;
 
 
@@ -140,8 +147,25 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
   // reducing by taking the smallest time step
   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_FLOAT,MPI_MIN,cpu->comm);
 #endif  
-  
 
+  return dt;
+}
+
+//=====================================================================
+//=====================================================================
+
+float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu){
+  
+  int level;
+  float mdisp,lmdisp;
+  struct OCT *nextoct;
+  struct OCT oct;
+  float dxcur;
+  int icell;
+  struct PART *nexp;
+  struct PART *curp;
+  float disp;
+  float dtlev,dtnew;
 
   // === Moving particles
 
@@ -180,7 +204,7 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 	      }
 	    }
 	}while(nextoct!=NULL);
-      printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
+      if(cpu->rank==0) printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
     }
 
   return dt;

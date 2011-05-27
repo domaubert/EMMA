@@ -1,6 +1,6 @@
 mpi_buffer_size 8192
 output_frequency 1
-max_number_of_steps 500
+max_number_of_steps 150
 level_coarse 6
 level_max 6
 level_map 6

@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
       z=0.5;
 
       vx=0.;
-      vy=sqrt(1./0.1);
+      vy=sqrt(1./0.1)*0.7;
       vz=0.;
       
       mass=0.;
@@ -923,6 +923,56 @@ int main(int argc, char *argv[])
     if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
 
+
+    
+    // ==================================== New timestep
+    printf("Computing dt\n");
+    
+#ifdef TESTCOSMO
+    faexp=f_aexp(tsim,omegam,omegav);
+    faexp2=f_aexp(tsim,omegam,omegav)/(tsim*tsim);
+#else
+    faexp=1.0;
+    faexp2=1.0;
+#endif
+    
+    dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu);
+    dt=dtnew;
+    if(cpu.rank==0) printf("dt=%e\n",dt);
+
+    // ==================================== Moving Particles + Oct management
+  
+#ifndef PARTN
+    printf("Moving particles\n");
+    // Computing displacement (predictor)
+    
+    movepart(levelcoarse,levelmax,firstoct,dt*faexp2*0.5,&cpu);
+
+    // Moving particles through cells (3 passes)
+    
+#ifdef WGPU
+    partcellreorg(levelcoarse,levelmax,firstoct);
+#else
+    partcellreorg(levelcoarse,levelmax,firstoct);
+#endif
+    
+#ifdef WMPI
+    
+    // Communication of particles
+    int deltan;
+    deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
+    
+    // Recounting particles
+    npart=npart+deltan;
+#endif
+#endif
+
+#if 1
+  // ==================================== Check the number of particles and octs
+  multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+#endif	 
+
+
 #if 1
     // ==================================== marking the cells
     mark_cells(levelcoarse,levelmax,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
@@ -937,29 +987,19 @@ int main(int argc, char *argv[])
     }
     // ==================================== refining (and destroying) the octs
 
-    
     curoct=refine_cells(levelcoarse,levelmax,firstoct,lastoct,freeoct,&cpu);
     freeoct=curoct;
-    
-  /* // recomputing the last oct; */
   
-  /* printf("==> memory state\n"); */
-  /* printf("endoct=%p\n",endoct); */
-  
-
 #endif
 
 /*   sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank); */
 /*   dumpcube(lmap,firstoct,0,filename); */
 
 
-
 #ifdef WMPI
   // ==================================== after refinement we should remap the boundary cells
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
 #endif
-
-
 
   // ==================================== performing the CIC assignement
 
@@ -979,7 +1019,7 @@ int main(int argc, char *argv[])
   mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
 #endif
 
-    // cleaning the marks
+  //======================================= cleaning the marks
     for(level=1;level<=levelmax;level++) // looping over levels
       {
 	/* float maxd=0.,mind=1e30,avg=0.; */
@@ -993,10 +1033,6 @@ int main(int argc, char *argv[])
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	      {
 		curoct->cell[icell].marked=0.;
-		/* ncell++; */
-		/* avg+=curoct->cell[icell].density; */
-		/* if(curoct->cell[icell].density>maxd) maxd=curoct->cell[icell].density; */
-		/* if(curoct->cell[icell].density<mind) mind=curoct->cell[icell].density; */
 	      }
 	  }while(nextoct!=NULL);
 
@@ -1011,14 +1047,14 @@ int main(int argc, char *argv[])
 
 
   // ==================================== Check the number of particles and octs
-  
+    
     mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+    MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
 
 
-// ==================================== POISSON Testing the jacobi iteration
+    // ==================================== POISSON Testing the jacobi iteration
 
 #ifdef TIME_JAC
   FILE *ft;
@@ -1034,8 +1070,6 @@ int main(int argc, char *argv[])
   double tc1;
   double tg,tl,ts,ta;
 #endif
-
-
 
   if(cpu.rank==0){
     printf("=======================================\n");
@@ -1053,7 +1087,8 @@ int main(int argc, char *argv[])
     {
       norm_d=0.;
 	
-      /* 	// FINE LEVEL ONLY initial guess from parent cell */
+      /* ================================ 	// FINE LEVEL ONLY initial guess from parent cell */
+
       if(level>levelcoarse){
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL){
@@ -1074,158 +1109,6 @@ int main(int argc, char *argv[])
 	mpi_exchange(&cpu,sendbuffer,recvbuffer,2,1);
 #endif
       }
-
-
-#ifndef NEWJACK
-
-      // ====================== Here starts the old jacobian procedure ====================
-      //===================================================================================
-      //===================================================================================
-
-
-
-      // looping over iterations
-      for(iter=0;iter<niter;iter++){
-	  
-	int vpass=0;
-	  
-	nextoct=firstoct[level-1];
-	float res=0.; // the square of the residual
-
-	double tt[10];
-
-	//start
-	if(nextoct!=NULL){
-	  dx=pow(0.5,level);
-	  do{ 
-	    curoct=nextoct;
-	      
-	  
-	    // ==== We gather vector data if this the first iteration or at each iteration if the stride is too small
-	    //First we gather the potential in all neighbors
-#ifdef WMPI
-	    tt[0]=MPI_Wtime();
-#endif
-	    /* for(icomp=0;icomp<6;icomp++){ */
-	    /*   nextoct=gathercompempty(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread); */
-	    /* } */
-#ifdef WMPI	      
-	    tt[1]=MPI_Wtime();
-#endif
-	    for(icomp=0;icomp<6;icomp++){
-	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,&cpu,&nread);
-	    }
-#ifdef WMPI	    
-	    tt[2]=MPI_Wtime();
-#endif
-	    if((stride<8*cpu.noct[level-1])||(iter==0)){
-	      // Second we gather the local density and the local potential
-	      nextoct=gathercomp(curoct, vcomp[6], 6, 1, stride,&cpu,&nread);
-	      nextoct=gathercomp(curoct, vcomp[7], 6, 0, stride,&cpu,&nread);
-	    }
-#ifdef WMPI
-	    tt[3]=MPI_Wtime();
-#endif
-	  
-	    // 2.5 ==== we contrast the density by removing the average density value 
-	    if((stride<8*cpu.noct[level-1])||(iter==0)) remove_avg(vcomp[7],nread,1.);
-
-	    // we compute the square of the norm of the density (first iteration only)
-#ifdef TESTCOSMO
-	    if(iter==0) norm_d+=square(vcomp[7],nread)*pow(1.5*omegam/tsim,2);
-#else
-	    if(iter==0) norm_d+=square(vcomp[7],nread)*pow(4*M_PI,2);
-#endif
-
-#ifdef WMPI
-	    tt[4]=MPI_Wtime();
-#endif
-	    // Third we perform the calculation (eventually on GPU) also returns the residual
-	    float dummy;
-	    if(stride<8*cpu.noct[level-1]){
-#ifdef TESTCOSMO
-	      dummy=laplaciancosmo(vcomp,nread,dx,8,omegam,tsim);
-#else
-	      dummy=laplacian(vcomp,nread,dx,8);
-#endif
-	    }
-	    else{
-#ifdef TESTCOSMO
-	      dummy=laplaciancosmo(vcomp,nread,dx,6,omegam,tsim);
-#else
-	      dummy=laplacian(vcomp,nread,dx,6);
-#endif
-	    }
-	    res+=dummy;
-#ifdef WMPI
-	    tt[5]=MPI_Wtime();
-#endif
-	    if(stride<8*cpu.noct[level-1]){
-	      // Fourth we scatter back the potential estimation to the temp position 
-	      nextoct=scattercomp(curoct, vcomp[8], 6, 2, stride,&cpu);
-	    }
-
-#ifdef WMPI
-	    tt[6]=MPI_Wtime();
-	    //fprintf(ft,"%d %d %e %e %e %e %e %e %e\n",level,stride,tt[6]-tt[0],tt[1]-tt[0],tt[2]-tt[1],tt[3]-tt[2],tt[4]-tt[3],tt[5]-tt[4],tt[6]-tt[5]);
-#endif
-	  }while(nextoct!=NULL);
-	}
-
-	// ===============  we copy the result in the temp position to the potential 
-	  
-	if(stride<8*cpu.noct[level-1]){
-	  nextoct=firstoct[level-1];
-	  if(nextoct!=NULL){
-	    do{ 
-	      curoct=nextoct;
-	      nextoct=gathercomp(curoct, vcomp[0], 6, 2, stride,&cpu,&nread); // getting the data in the temp field
-	      nextoct=scattercomp(curoct, vcomp[0], 6, 1, stride,&cpu);
-		
-	    }while(nextoct!=NULL);
-	  }
-	}
-	else{
-	  nextoct=firstoct[level-1];
-	  if(nextoct!=NULL){
-	    do{ 
-	      curoct=nextoct;
-	      nextoct=scattercomp(curoct, vcomp[6], 6, 1, stride,&cpu);
-	    }while(nextoct!=NULL);
-	  }
-	}
-	  
-	    
-#ifdef WMPI
-	// ====We communicate the buffer
-	mpi_exchange(&cpu,sendbuffer,recvbuffer,2,(iter==0));
-	if(iter==0) MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-
-	// reducing the residuals
-	float restot;
-	//if(iter%64==0) printf("res = %f on rank=%d\n",res,cpu.rank);
-	MPI_Allreduce(&res,&restot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
-	res=restot;
-#endif
-	//if((iter%64==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d dens=%e res=%e relative residual=%e\n ",level,iter,sqrt(norm_d),sqrt(res),sqrt(res/norm_d));
-	// if the level is absent on all processors we skip */
-	if((res==0.)&&(norm_d==0.)){
-	    if(cpu.rank==0) printf("Level %d skipped\n",level);
-	    break;
-	}
-
-	if((iter%1==0)&&(cpu.rank==0)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
-
-	// convergence achieved
-	if(sqrt(res/norm_d)<acc) {
-	  break;
-	}
-
-      }
-      // ====================== Here stops the old jacobian procedure ====================
-
-#else
-
 
 
       // ====================== Here starts the new jacobian procedure ====================
@@ -1253,13 +1136,6 @@ int main(int argc, char *argv[])
       }
 
        if(cpu.rank==0) printf("----------------------------------------\n");
-
-	//sprintf(filename,"data/res3d.%05d.p%05d",nsteps,cpu.rank);
-	//dumpcube(lmap,firstoct,5,filename,tsim);
-
-#endif
-
-
 #endif
 
     }      
@@ -1269,23 +1145,69 @@ int main(int argc, char *argv[])
 #endif
 
 
-  // ==================================== Force calculation and velocity update   // corrector step
+  // ==================================== Force calculation and velocity update   // Predictor step
 
 
 #ifndef PARTN
   if(nsteps!=0){
 #endif
-    printf("Corrector\n");
-#ifdef TESTCOSMO
-    faexp=f_aexp(tsim,omegam,omegav);
-#else
-    faexp=1.0;
-#endif
-
+    printf("Predictor\n");
     forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 #ifndef PARTN
   }
 #endif
+
+
+  // ==================================== New timestep
+
+#ifdef TESTCOSMO
+  faexp=f_aexp(tsim+dt*0.5,omegam,omegav);
+  faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
+#else
+  faexp=1.0;
+  faexp2=1.0;
+#endif
+
+  dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu);
+  dtnew=2.0*dtnew-dt;
+
+  if(cpu.rank==0) printf("dt=%e\n",dtnew);
+  // ==================================== Force calculation and velocity update   // corrector step
+  
+
+  printf("Corrector\n");
+  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+
+  // ==================================== Moving Particles + Oct management
+  
+#ifndef PARTN
+    printf("Moving particles\n");
+    // Computing displacement (predictor)
+    
+    movepart(levelcoarse,levelmax,firstoct,dtnew*faexp2*0.5,&cpu);
+    // Moving particles through cells (3 passes)
+    
+#ifdef WGPU
+    partcellreorg(levelcoarse,levelmax,firstoct);
+#else
+    partcellreorg(levelcoarse,levelmax,firstoct);
+#endif
+    
+#ifdef WMPI
+    
+    // Communication of particles
+    deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
+    
+    // Recounting particles
+    npart=npart+deltan;
+#endif
+#endif
+
+#if 1
+  // ==================================== Check the number of particles and octs
+  multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+#endif	 
+
 
 #ifdef EGYCSV
   // ==================================== Energy Conservation Test
@@ -1337,62 +1259,10 @@ int main(int argc, char *argv[])
   }
 #endif
   
-  // ==================================== Force calculation and velocity update   // predictor step
-  
-#ifdef TESTCOSMO
-  faexp=f_aexp(tsim,omegam,omegav);
-  faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
-#else
-  faexp=1.0;
-  faexp2=1.0;
-#endif
-
-  
-  printf("Predictor\n");
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
-
-  // ==================================== Moving Particles + Oct management
-  
-#ifndef PARTN
-
-  printf("Moving particles\n");
-  // Computing displacement (predictor)
-
-  dtnew=movepart(levelcoarse,levelmax,firstoct,dt*faexp2,&cpu);
-  dt=dtnew/faexp2;
-  printf("dt=%e\n",dt);
-  // Moving particles through cells (3 passes)
-
-#ifdef WGPU
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#else
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#endif
-
-#ifdef WMPI
-
-  // Communication of particles
-  int deltan;
-  deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
-
-  // Recounting particles
-  npart=npart+deltan;
-#endif
-
-#endif
-  //==== Gathering particles for dump
-
-  //  sprintf(filename,"data/partstart.%05d.p%05d",nsteps+1,cpu.rank);
-  //dumppart(firstoct,filename,npart,levelcoarse,levelmax);
-
-#if 1
-  // ==================================== Check the number of particles and octs
-  multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-#endif	 
 
 
   //==================================== timestep completed, looping
-  tsim+=dt;
+  tsim+=(dt+dtnew)*0.5;
 
   }
 
