@@ -97,17 +97,12 @@ struct PART
   float vy;
   float vz;
 
-#ifdef PARTN
+#ifndef TESTCOSMO
   float fx;
   float fy;
   float fz;
 #endif
 
-#ifdef PART2
-  float fx;
-  float fy;
-  float fz;
-#endif
 
   struct PART *next;
   struct PART *prev;

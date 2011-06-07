@@ -150,6 +150,7 @@ float square_vec_GPU(float *vec, int nval, int stride, int level, int curcpu, in
   dim3 gridoct(stride/NTHREAD);
   dim3 blockoct(NTHREAD);
 
+  cudaMemset(vecsum,0,stride*8*sizeof(float));
   dev_square_vec_GPU<<<gridoct,blockoct>>>(vec,nval,stride,level,curcpu,vecl,veccpu,vec2);
   cudppScan(planadd, vecsum, vec2, stride*8);
   cudaMemcpy(&res,vecsum,sizeof(float),cudaMemcpyDeviceToHost);

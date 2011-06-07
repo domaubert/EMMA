@@ -499,6 +499,7 @@ int main(int argc, char *argv[])
   int ir,nr=2;
   ip=0;
   float dxcell=1./pow(2.,levelcoarse);
+  float epsilon=0.;
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
@@ -510,7 +511,7 @@ int main(int argc, char *argv[])
       vy=0.;
       vz=0.;
       
-      mass=1.;
+      mass=1.0-epsilon;
     }
     else if(ir==1){
 
@@ -519,10 +520,10 @@ int main(int argc, char *argv[])
       z=0.5;
 
       vx=0.;
-      vy=sqrt(1./0.1)*0.7;
+      vy=sqrt((1.-epsilon)/0.1)*.5;
       vz=0.;
       
-      mass=0.;
+      mass=epsilon;
     }
     
     // periodic boundary conditions
@@ -684,8 +685,11 @@ int main(int argc, char *argv[])
   float ainit;
   float lbox;
 
+#ifndef ZELDO
   fd=fopen("utils/IC.PM.0","rb");
-
+#else
+  fd=fopen("utils/ZEL.PM.0","rb");
+#endif
   rstat=fread(&dummy,sizeof(dummy),1,fd);
   rstat=fread(&nploc,sizeof(int),1,fd);
   rstat=fread(&munit,sizeof(float),1,fd);
@@ -888,6 +892,19 @@ int main(int argc, char *argv[])
   dumpcube(lmap,firstoct,1,filename,tsim);
   //  abort();
 
+  // =============================================== dumping information file
+
+
+  FILE *fi;
+  fi=fopen("data/inforun.txt","w");
+  fprintf(fi,"levelcoarse=%d\n",levelcoarse);
+  fprintf(fi,"levelmax=%d\n",levelmax);
+  fprintf(fi,"levelmap=%d\n",lmap);
+  fprintf(fi,"nstepmax=%d\n",param.nsteps);
+  fprintf(fi,"amr threshold=%e\n",threshold);
+
+  
+
   //================================================================================
   //================================================================================
   //================================================================================
@@ -915,6 +932,12 @@ int main(int argc, char *argv[])
   FILE *fegy;
 
   //breakmpi();
+
+#ifndef TESTCOSMO
+    faexp=1.0;
+    faexp2=1.0;
+#endif
+
   for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
@@ -929,19 +952,16 @@ int main(int argc, char *argv[])
     printf("Computing dt\n");
     
 #ifdef TESTCOSMO
-    faexp=f_aexp(tsim,omegam,omegav);
     faexp2=f_aexp(tsim,omegam,omegav)/(tsim*tsim);
-#else
-    faexp=1.0;
-    faexp2=1.0;
 #endif
     
-    dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu);
+    dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu,param.dt);
     dt=dtnew;
     if(cpu.rank==0) printf("dt=%e\n",dt);
 
     // ==================================== Moving Particles + Oct management
   
+#if 1
 #ifndef PARTN
     printf("Moving particles\n");
     // Computing displacement (predictor)
@@ -966,6 +986,7 @@ int main(int argc, char *argv[])
     npart=npart+deltan;
 #endif
 #endif
+#endif
 
 #if 1
   // ==================================== Check the number of particles and octs
@@ -982,8 +1003,6 @@ int main(int argc, char *argv[])
       
       sprintf(filename,"data/mark3d.%05d.p%05d",nsteps,cpu.rank);
       dumpcube(lmap,firstoct,4,filename,tsim);
-      sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
-      dumpcube(lmap,firstoct,0,filename,tsim);
     }
     // ==================================== refining (and destroying) the octs
 
@@ -991,9 +1010,10 @@ int main(int argc, char *argv[])
     freeoct=curoct;
   
 #endif
-
-/*   sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank); */
-/*   dumpcube(lmap,firstoct,0,filename); */
+  if(nsteps%(param.ndumps)==0){
+    sprintf(filename,"data/levstart.%05d.p%05d",nsteps+1,cpu.rank); 
+    dumpcube(lmap,firstoct,0,filename,tsim); 
+    }
 
 
 #ifdef WMPI
@@ -1054,8 +1074,11 @@ int main(int argc, char *argv[])
 #endif
 
 
-    // ==================================== POISSON Testing the jacobi iteration
 
+    // ==================================== POISSON Testing the jacobi iteration
+      float res;
+
+#ifndef PERFECT
 #ifdef TIME_JAC
   FILE *ft;
   //  sprintf(filename,"data/timejac.%05d.p%05d",nsteps+1,cpu.rank);
@@ -1092,7 +1115,7 @@ int main(int argc, char *argv[])
       if(level>levelcoarse){
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL){
-	  printf("Proc %d skipping\n",cpu.rank);
+	  printf("Proc %d skipping level=%d\n",cpu.rank,level);
 	}
 	else{
 	  do{
@@ -1117,22 +1140,23 @@ int main(int argc, char *argv[])
 
 #ifndef MULTIGRID
       // --- pure jacobi relaxation
-      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim+dt*0.5,sendbuffer,recvbuffer,niter,acc);
 #else
       int igrid;
-      float res;
       if((level==levelcoarse)&&(levelcoarse!=levelmin)){
 	// --- for coarse level two levels mgrid relaxation
 	for(igrid=0;igrid<nvcycles;igrid++){
 	  if(cpu.rank==0) printf("----------------------------------------\n");
 	  clean_pot(levelcoarse-1,firstoct);	    // ------------- cleaning the vector positions
-	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim+dt*0.5,sendbuffer,recvbuffer,niter,acc);
 	  if(res<acc) break;
 	}
       }
       else{
 	// --- pure jacobi relaxation
-	poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+	if(firstoct[level-1]!=NULL){
+	  poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim+dt*0.5,sendbuffer,recvbuffer,niter,acc);
+	}
       }
 
        if(cpu.rank==0) printf("----------------------------------------\n");
@@ -1144,14 +1168,17 @@ int main(int argc, char *argv[])
   //fclose(ft);
 #endif
 
+#endif
 
   // ==================================== Force calculation and velocity update   // Predictor step
-
-
 #ifndef PARTN
   if(nsteps!=0){
 #endif
     printf("Predictor\n");
+
+#ifdef TESTCOSMO
+    faexp=f_aexp(tsim+dt*0.5,omegam,omegav);
+#endif
     forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 #ifndef PARTN
   }
@@ -1161,14 +1188,10 @@ int main(int argc, char *argv[])
   // ==================================== New timestep
 
 #ifdef TESTCOSMO
-  faexp=f_aexp(tsim+dt*0.5,omegam,omegav);
   faexp2=f_aexp(tsim+dt*0.5,omegam,omegav)/((tsim+dt*0.5)*(tsim+dt*0.5));
-#else
-  faexp=1.0;
-  faexp2=1.0;
 #endif
 
-  dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu);
+  dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,&cpu,param.dt);
   dtnew=2.0*dtnew-dt;
 
   if(cpu.rank==0) printf("dt=%e\n",dtnew);
@@ -1176,13 +1199,23 @@ int main(int argc, char *argv[])
   
 
   printf("Corrector\n");
+
+#ifdef TESTCOSMO
+  faexp=f_aexp(tsim+(dt)*0.5,omegam,omegav);
+#endif
+
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 
   // ==================================== Moving Particles + Oct management
   
+#if 1
 #ifndef PARTN
     printf("Moving particles\n");
     // Computing displacement (predictor)
+
+#ifdef TESTCOSMO
+    faexp2=f_aexp(tsim+(dt+dtnew)*0.5,omegam,omegav)/pow(tsim+0.5*(dt+dtnew),2);
+#endif
     
     movepart(levelcoarse,levelmax,firstoct,dtnew*faexp2*0.5,&cpu);
     // Moving particles through cells (3 passes)
@@ -1207,7 +1240,7 @@ int main(int argc, char *argv[])
   // ==================================== Check the number of particles and octs
   multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 #endif	 
-
+#endif
 
 #ifdef EGYCSV
   // ==================================== Energy Conservation Test
@@ -1233,39 +1266,45 @@ int main(int argc, char *argv[])
 #if 1
   if(nsteps%(param.ndumps)==0){
     // ===== Casting rays to fill a map
-
+    if(cpu.rank==0) printf("Dumping .......\n");
     sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,2,filename,tsim);
+    dumpcube(lmap,firstoct,2,filename,tsim+(dt+dtnew)*0.5);
+    sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,0,filename,tsim+(dt+dtnew)*0.5);
     sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,1,filename,tsim);
+    dumpcube(lmap,firstoct,1,filename,tsim+(dt+dtnew)*0.5);
     sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,6,filename,tsim);
+    dumpcube(lmap,firstoct,6,filename,tsim+(dt+dtnew)*0.5);
     sprintf(filename,"data/fy.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,7,filename,tsim);
+    dumpcube(lmap,firstoct,7,filename,tsim+(dt+dtnew)*0.5);
     sprintf(filename,"data/fz.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,8,filename,tsim);
+    dumpcube(lmap,firstoct,8,filename,tsim+(dt+dtnew)*0.5);
 
 
 #ifdef WMPI
     sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,3,filename,tsim);
+    dumpcube(lmap,firstoct,3,filename,tsim+(dt+dtnew)*0.5);
 #endif
   
   //==== Gathering particles for dump
 
     sprintf(filename,"data/part.%05d.p%05d",nsteps,cpu.rank);
-    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
+    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim+(dt+dtnew)*0.5);
 
   }
 #endif
   
 
 
+  // =================================== dumping information
+
+  fprintf(fi,"istep=%d t=%e dt=%e coarseres=%e\n",nsteps,tsim,(dt+dtnew)*0.5,res);
+
   //==================================== timestep completed, looping
   tsim+=(dt+dtnew)*0.5;
 
   }
-
+  fclose(fi);
 
 #ifdef NEWJACK
       free(vectors.vecpot); //contains the potential in "stride" octs

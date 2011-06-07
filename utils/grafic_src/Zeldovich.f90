@@ -90,14 +90,14 @@ program Grafic2Gadget
 !!$  !*******************
 
 
-  np1=128
+  np1=64
   np2=np1
   np3=np1
   omegam=0.3
   omegav=0.7
   h0=70.
   astart=0.1
-  across=2.
+  across=0.5
   dx=100./(h0/100.)/np1
   nmult=1
 
@@ -170,14 +170,15 @@ program Grafic2Gadget
   vfact=dplus(a_out,omega0_out,omegaL_out)
 
   do i3=1,np3
-     z0=(i3-1)*dx
+     z0=(i3-0.5)*dx
      do i2=1,np2
-        y0=(i2-1)*dx
+        y0=(i2-0.5)*dx
         do i1=1,np1
-           x0=(i1-1)*dx
-           posx(i1,i2,i3)=x0/dx+vfact*amp*sin((i1-1)*2.*3.14159/np1)
-           posy(i1,i2,i3)=y0/dx
-           posz(i1,i2,i3)=z0/dx
+           x0=(i1-0.5)*dx
+           posx(i1,i2,i3)=x0/(np1*dx)+vfact*amp*sin((i1-0.5)*2.*3.14159/np1)/np1
+           posy(i1,i2,i3)=y0/(np2*dx)
+           posz(i1,i2,i3)=z0/(np3*dx)
+           !write(*,*) posx(i1,i2,i3),posy(i1,i2,i3),posz(i1,i2,i3)
         end do
      end do
   end do
@@ -186,22 +187,23 @@ program Grafic2Gadget
   do i3=1,np3/nmult
      do i2=1,np2
         do i1=1,np1
-!!$           if(posx(i1,i2,i3).ge.np1) then
-!!$              posx(i1,i2,i3)=posx(i1,i2,i3)-np1
+
+!!$           if(posx(i1,i2,i3).ge.1.) then
+!!$              posx(i1,i2,i3)=posx(i1,i2,i3)-1.
 !!$           elseif(posx(i1,i2,i3).lt.0) then
-!!$              posx(i1,i2,i3)=posx(i1,i2,i3)+np1
+!!$              posx(i1,i2,i3)=posx(i1,i2,i3)+1.
 !!$           endif
            
-           if(posy(i1,i2,i3).ge.np2) then
-              posy(i1,i2,i3)=posy(i1,i2,i3)-np2
+           if(posy(i1,i2,i3).ge.1.) then
+              posy(i1,i2,i3)=posy(i1,i2,i3)-1.
            elseif(posy(i1,i2,i3).lt.0) then
-              posy(i1,i2,i3)=posy(i1,i2,i3)+np2
+              posy(i1,i2,i3)=posy(i1,i2,i3)+1.
            endif
            
-           if(posz(i1,i2,i3).ge.np3) then
-              posz(i1,i2,i3)=posz(i1,i2,i3)-np3
+           if(posz(i1,i2,i3).ge.1.) then
+              posz(i1,i2,i3)=posz(i1,i2,i3)-1.
            elseif(posz(i1,i2,i3).lt.0) then
-              posz(i1,i2,i3)=posz(i1,i2,i3)+np3
+              posz(i1,i2,i3)=posz(i1,i2,i3)+1.
            endif
            
         end do
@@ -210,9 +212,14 @@ program Grafic2Gadget
   
   write(*,*) 'toto'
   
-  write(100+ifile) (((posx(i1,i2,i3),posy(i1,i2,i3)&
-       ,posz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3/nmult)
-  
+!!$  write(100+ifile) (((posx(i1,i2,i3),posy(i1,i2,i3)&
+!!$       ,posz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3/nmult)
+
+
+  write(100+ifile) (((posx(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+  write(100+ifile) (((posy(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+  write(100+ifile) (((posz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+           
   write(*,*) 'toto'
 
   !
@@ -224,6 +231,8 @@ program Grafic2Gadget
   vfact=fomega(a_out,omega0_out,omegaL_out)*hubblea(a_out,omega0_out,omegaL_out)
   vfact=vfact*dplus(a_out,omega0_out,omegaL_out)
   
+  write(*,*) 'vfact=',vfact
+
   ii=0.
   count=1
   do i3=1,np3/nmult
@@ -232,7 +241,7 @@ program Grafic2Gadget
         y0=(i2-1)*dx
         do i1=1,np1
            x0=(i1-1)*dx
-           velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-1)/np1)*vfact
+           velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/np1
            vely(i1,i2,i3)=0.
            velz(i1,i2,i3)=0.
            ind(count)=ii
@@ -244,8 +253,12 @@ program Grafic2Gadget
 
   ! WRITING VELOCITIES
   
-  write(100+ifile) (((velx(i1,i2,i3),vely(i1,i2,i3),velz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
-  write(100+ifile) (ind(i3),i3=1,np1*np2*np3)
+  write(100+ifile) (((velx(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+  write(100+ifile) (((vely(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+  write(100+ifile) (((velz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+  
+!  write(100+ifile) (((velx(i1,i2,i3),vely(i1,i2,i3),velz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
+ ! write(100+ifile) (ind(i3),i3=1,np1*np2*np3)
   
   close(100+ifile)
   

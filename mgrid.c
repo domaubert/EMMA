@@ -99,6 +99,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     nextoct=gathervec2(firstoct[level-2],vectors->vecden,0,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density
     nextoct=gathervec2(firstoct[level-2],vectors->vecpot,1,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // potential
   }
+
   nextoct=gathervec2(curoct,vectors->vecden,0,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // density (only for coarse level and finer)
   nextoct=gathervec2(curoct,vectors->vecpot,1,vectors->vecl,vectors->vecicoarse,vectors->veccpu,stride,cpu,&nread); // potential
 
@@ -294,7 +295,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   float res;
 
   // pre relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,5,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
 
   if(!((level==levelcoarse)&&(res<acc))){
   // reduction
@@ -331,7 +332,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   }
 
   // post relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,5,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
   }
   
   return res;

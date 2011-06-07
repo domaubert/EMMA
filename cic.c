@@ -90,6 +90,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   // contrib to current cell 000 =====
 
   float tot=0;
+  float tot2=0;
   int ntot=0;
   //contrib=vcont[0];
   //  if((contrib<=1.)&&(contrib>=0.)){
@@ -99,7 +100,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 #else
       curoct->cell[icell].density+=1./pow(dxcur,3)*curp->mass;
 #endif
-      /* tot+=contrib; */
+      /* tot+=vcont[0]; */
+      /* tot2+=curoct->cell[icell].density; */
       /* ntot++; */
     }
     //}
@@ -115,13 +117,16 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       if(vnei[neip[i1]]==6){
 	curoct->cell[vcell[neip[i1]]].density+=vcont[idx1];
 	newcell=&(curoct->cell[vcell[neip[i1]]]);
-	/* tot+=contrib; */
+	/* tot+=vcont[idx1];  */
+	/* tot2+=curoct->cell[vcell[neip[i1]]].density; */
 	/* ntot++; */
       }
       else{
 	if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
 	  curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density+=vcont[idx1];
 	  newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
+	  /* tot+=vcont[idx1];  */
+	  /* tot2+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density; */
 	  /* tot+=contrib; */
 	  /* ntot++; */
 
@@ -146,7 +151,9 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	    newoct->cell[vcell2[neip[i2]]].density+=vcont[idx2];
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
-	    /* tot+=contrib; */
+	    /* tot+=vcont[idx2];  */
+	    /* tot2+=newoct->cell[vcell2[neip[i2]]].density; */
+/* tot+=contrib; */
 	    /* ntot++; */
 	  }
 	  else{
@@ -154,6 +161,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	      newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density+=vcont[idx2];
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
+	      /* tot+=vcont[idx2];  */
+	      /* tot2+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density; */
 	      /* tot+=contrib; */
 	      /* ntot++; */
 	    }
@@ -174,6 +183,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	    if(vnei3[neip[i3]]==6){
 	      newoct2->cell[vcell3[neip[i3]]].density+=vcont[7];
 	      visit[7]=1;
+	      /* tot+=vcont[7];  */
+	      /* tot2+=newoct2->cell[vcell3[neip[i3]]].density; */
 	      /* tot+=contrib; */
 	      /* ntot++; */
 
@@ -182,6 +193,8 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
 		newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density+=vcont[7];
 		visit[7]=1;
+		/* tot+=vcont[7];  */
+		/* tot2+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density; */
 		/* tot+=contrib; */
 		/* ntot++; */
 	      }
@@ -197,6 +210,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   /* if((dy+ty)!=1.) abort(); */
   /* if((dz+tz)!=1.) abort(); */
 
+  //printf("lev= %d tot=%e tot2=%e\n",curoct->level,tot,tot2);
 #endif
 
 }
@@ -465,6 +479,14 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     }
   }
 
+  /* float accelx2,accely2,accelz2; */
+
+  /* accelx2=accelx; */
+  /* accely2=accely; */
+  /* accelz2=accelz; */
+
+  /* hres=0; */
+
   // we must recompute the force from level-1 if the particle is not deep enough LOWRES
   if(hres!=1){
     
@@ -667,27 +689,41 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, char dir, f
     break;
   }
 #else
+
+#ifdef PERFECT
+   if(curp->mass<0.5) {
+    float r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+    accelx=(curp->x-0.5)/(r*r*r);
+    accely=(curp->y-0.5)/(r*r*r);
+    accelz=(curp->z-0.5)/(r*r*r);
+    }
+#endif
+
   curp->vx+=-accelx*dt;
   curp->vy+=-accely*dt;
   curp->vz+=-accelz*dt;
 
-#ifdef PART2
-  curp->fx=-accelx;
-  curp->fy=-accely;
-  curp->fz=-accelz;
-#endif
 
-#ifdef PARTN
+  //printf("idx=%d fx=%e/%e fy=%e/%e fz=%e/%e\n",curp->idx,accelx2,accelx,accely2,accely,accelz2,accelz);
+
+#ifndef TESTCOSMO
   curp->fx=-accelx;
   curp->fy=-accely;
   curp->fz=-accelz;
 
-  if(curp->idx==418){
-    printf("id=%d hres=%d x=%e y=%e z=%e fx=%e fy=%e fz=%e level=%d\n",curp->idx,hres,curp->x,curp->y,curp->z,-accelx,-accely,-accelz,curoct->level);
-    int icell;
-    for(icell=0;icell<6;icell++){printf("%p ",curoct->nei[icell]->child);}
-    printf("\n");
+  if(curp->idx==1) {
+    float r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+    float f=sqrt((curp->fx)*(curp->fx)+(curp->fy)*(curp->fy)+(curp->fz)*(curp->fz));
+    float fth=1./(r*r);
+    printf("r=%e force=%e fth=%e rap=%e\n",r,f,fth,(f-fth)/fth);
   }
+
+  /* if(curp->idx==418){ */
+  /*   printf("id=%d hres=%d x=%e y=%e z=%e fx=%e fy=%e fz=%e level=%d\n",curp->idx,hres,curp->x,curp->y,curp->z,-accelx,-accely,-accelz,curoct->level); */
+  /*   int icell; */
+  /*   for(icell=0;icell<6;icell++){printf("%p ",curoct->nei[icell]->child);} */
+  /*   printf("\n"); */
+  /* } */
 #endif
 #endif
 
@@ -2102,14 +2138,21 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	    {
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
 	      if(nexp!=NULL){ 
+		/* if(level==levelcoarse){ */
+		/*   printf("ouhla\n"); */
+		/*   //		  abort(); */
+		/* } */
 		do{  
 		  curp=nexp; 
 		  nexp=curp->next; 
 		  part2cell_cic(curp, curoct, icell,1); 
 		}while(nexp!=NULL); 
 	      }
-
-#ifndef NGP
+	      else if(curoct->cell[icell].child!=NULL){
+	      // THEN WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
+		cic_child(curoct->cell[icell].child,curoct,icell);
+	      }
+#if 1
 	      
 	      if(level>levelcoarse){
 		//==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
@@ -2213,10 +2256,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	      }
 
 #endif
-	      // THIRD WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
-	      if(curoct->cell[icell].child!=NULL){
-		cic_child(curoct->cell[icell].child,curoct,icell);
-	      }
+	     
 	    }
 	}while(nextoct!=NULL);
     }
@@ -2225,180 +2265,3 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 
 
 
-void call_cic2(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO *cpu){
-
-  int level;
-  struct OCT *nextoct;
-  struct OCT *curoct;
-  int icell;
-  struct PART *curp;
-  struct PART *nexp;
-  int inei,inei2;
-  float dxcur;
-
-  struct OCT *newoct;
-  struct OCT *newoct2;
-  
-  struct CELL *newcell;
-  struct CELL *newcell2;
-
-  int vnei[6],vcell[6];
-  int vnei2[6],vcell2[6];
-  int il,ip;
-
-  double t[10];
-
-  if(cpu->rank==0) printf("==> start CIC on CPU\n");
-
-  // First we clean the density
-  for(level=levelmax;level>=levelcoarse;level--)
-    {
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=0.;
-	}while(nextoct!=NULL);
-    }
-
-  //second start CIC
-  for(level=levelcoarse;level<=levelmax;level++)
-    {
-      dxcur=1./pow(2,level);
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  
-	  // we skip octs which do not belong to the current CPU (they will be considered through mpi)
-	  if(curoct->cpu!=cpu->rank) continue;
-	  
-	  //==== FIRST WE CONSIDER THE PARTICLES INSIDE THE BOUNDARIES AT LEVEL L
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-	      if(nexp!=NULL){ 
-		do{  
-		  curp=nexp; 
-		  nexp=curp->next; 
-		  part2cell_cic(curp, curoct, icell,1); 
-		}while(nexp!=NULL); 
-	      }
-
-	      // THIRD WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
-	      if(curoct->cell[icell].child!=NULL){
-		cic_child(curoct->cell[icell].child,curoct,icell);
-	      }
-	    }
-
-	  
-	  if(level>levelcoarse){
-	    //==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
-
-	    int visit[27];
-	    int iv;
-	    for(inei=0;inei<27;inei++) visit[inei]=0;
-	    int tot=0;
-	    // first the cartesian neighbors (6)
-	    for(inei=0;inei<6;inei++){
-	      nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
-	      //		  iv=13+pow(3,inei/2)*(2*(inei%2)-1);
-	      iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
-	      visit[iv]=1;
-	      if(nexp!=NULL){
-		do{ 
-		  curp=nexp;
-		  nexp=curp->next;
-		  for(icell=0;icell<8;icell++) part2cell_cic(curp, curoct, icell,0);
-		}while(nexp!=NULL);
-	      }
-
-	      // second the fundamental plane (4)
-	      // each of the 6 cardinal neighbors will probe 4 neighbors
-		
-	      newcell=curoct->nei[inei];
-	      newoct=cell2oct(newcell); // we get the parent oct;
-	      getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
-	      for(il=0;il<6;il++){
-		//iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1);
-		iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1);
-		if((il>>1)==(inei>>1)) continue;
-		if(visit[iv]) continue;
-		if(vnei[il]==6){
-		  visit[iv]=1;
-		  nexp=newoct->cell[vcell[il]].phead;
-		  newcell2=&(newoct->cell[vcell[il]]);
-		  if(nexp!=NULL){
-		    do{ 
-		      curp=nexp;
-		      nexp=curp->next;
-		      for(icell=0;icell<8;icell++) part2cell_cic(curp, curoct, icell,0);
-		    }while(nexp!=NULL);
-		  }
-		}
-		else{
-		  if(newoct->nei[vnei[il]]->child!=NULL){
-		    nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
-		    newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
-		    visit[iv]=1;
-		    if(nexp!=NULL){
-		      do{ 
-			curp=nexp;
-			nexp=curp->next;
-			for(icell=0;icell<8;icell++) part2cell_cic(curp, curoct, icell,0);
-		      }while(nexp!=NULL);
-		    }
-		  }
-		  else{
-		    newcell2=NULL;
-		  }
-		}
-
-		// ecah of the 4 side neighbors will mark 2 corners
-		if(newcell2!=NULL){
-		  newoct2=cell2oct(newcell2);
-		  getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
-		  for(ip=0;ip<6;ip++){
-		    //iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1)+pow(3,ip/2)*(2*(ip%2)-1);
-		    iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
-		    //if(((ip/2)==(il/2))||((ip/2)==(inei/2))) continue;
-		    if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
-		    if(visit[iv]) continue;
-		    if(vnei2[ip]==6){
-		      visit[iv]=1;
-		      nexp=newoct2->cell[vcell2[ip]].phead;
-		      if(nexp!=NULL){
-			do{ 
-			  curp=nexp;
-			  nexp=curp->next;
-			  for(icell=0;icell<8;icell++) part2cell_cic(curp, curoct, icell,0);
-			}while(nexp!=NULL);
-		      }
-		    }
-		    else{
-		      if(newoct2->nei[vnei2[ip]]->child!=NULL){
-			visit[iv]=1;
-			nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
-			if(nexp!=NULL){
-			  do{ 
-			    curp=nexp;
-			    nexp=curp->next;
-			    for(icell=0;icell<8;icell++) part2cell_cic(curp, curoct, icell,0);
-			  }while(nexp!=NULL);
-			}
-		      }
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-
-	}while(nextoct!=NULL);
-    }
-  //  printf("great total=%f\n",toto);
-}

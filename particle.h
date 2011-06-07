@@ -5,4 +5,4 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct);
 void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,int stride,float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer);
 float egypart(int levelcoarse,int levelmax,struct OCT **firstoct,struct CPUINFO *cpu);
-float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu);
+float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu,float);

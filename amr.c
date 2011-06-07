@@ -144,7 +144,18 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 	      // creation of a new oct ==================
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
 
-/* #ifdef WMPI */
+
+#ifdef WMPI
+		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(levelcoarse))){
+		  int segok;
+		  segok=segment_cell(curoct,icell,cpu,levelcoarse);// the current cell will be splitted according to a segmentation condition
+		  if(!segok) continue;
+ 
+		}
+
+#endif
+
+		/* #ifdef WMPI */
 /* 		if(curoct->cpu!=cpu->rank){ */
 /* 		  if(curoct->level<levelcoarse){ */
 /* 		    if(curoct->cell[icell].marked==4) continue; */
@@ -175,13 +186,14 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		getcellnei(icell, vnei, vcell);
 		for(ii=0;ii<6;ii++){
 		  if(vnei[ii]!=6){
-		
+		    if(curoct->nei[vnei[ii]]!=NULL){	
 		    if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
 		      printf("ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 		      abort();
 		    }
 		    // Note that boundary octs are refined but may have missing neighbors
 		    if(curoct->nei[vnei[ii]]->child!=NULL) newoct->nei[ii]=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
+		    }
 		  }else{
 		    newoct->nei[ii]=&(curoct->cell[vcell[ii]]);
 		  }
@@ -344,14 +356,14 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 		    {
 		      curoct=nextoct;
 		      nextoct=curoct->next;
-		    
+		      if(curoct->cpu!=cpu->rank) continue;
 		      for(icell=0;icell<8;icell++) // looping over cells in oct
 			{
 			  switch(pass){
 			    //=========================================================
 			  case 0: // marking cell already refined or marked marker=1/4
 			    smark=0;
-			    if(curoct->cell[icell].child!=NULL){ // CHECK IF ACTING ON ORIGINAL OR COPY
+			    if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0)){ // CHECK IF ACTING ON ORIGINAL OR COPY
 			      newoct=curoct->cell[icell].child;
 			      for(ichild=0;ichild<8;ichild++){
 				smark+=((newoct->cell[ichild].marked!=0)||(newoct->cell[ichild].child!=NULL));
@@ -443,8 +455,9 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    break;
 			    //=========================================================
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
-			    if(curoct->level<levelmax){ // we don't need to test the finest level
-			      mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->cpu==cpu->rank)*(curoct->level>=levelcoarse);
+			    if(curoct->level<=levelmax){ // we don't need to test the finest level
+			      mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->level>=levelcoarse);
+			      //mcell=countpart(curoct->cell[icell].phead);
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
@@ -462,6 +475,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 		
 		// second exchange boundaries
 		//mpi_exchange(cpu,sendbuffer,recvbuffer,3,1);
+		if(level>=(levelcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
+		//mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
 		//breakmpi();
 #endif
 	      }

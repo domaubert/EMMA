@@ -68,7 +68,9 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
+
 		printf("check: split cell with particles !\n");
+		printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
 		abort();
 	      }
 	      if(nexp==NULL)continue;

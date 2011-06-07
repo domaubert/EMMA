@@ -80,7 +80,7 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
 //=====================================================================
 //=====================================================================
 
-float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, struct CPUINFO* cpu){
+float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, struct CPUINFO* cpu, float tmax){
   
   int level;
   float vmax,lmdisp;
@@ -119,7 +119,7 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, st
 
 		  // particle displacement
 		  va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
-		  printf("va=%e\n",va);
+		  //printf("va=%e\n",va);
 		  if(va>vmax) vmax=va;
 		}while(nexp!=NULL);
 	      }
@@ -127,7 +127,7 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, st
 	}while(nextoct!=NULL);
 
       if(vmax>0.){
-	dtlev=0.5*dxcur/vmax;
+	dtlev=0.20*dxcur/vmax;///fa;
 	dtnew=(dtlev<dtnew?dtlev:dtnew);
       }
       else{
@@ -148,6 +148,7 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, st
   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_FLOAT,MPI_MIN,cpu->comm);
 #endif  
 
+  dt=(dt>tmax?tmax:dt);
   return dt;
 }
 
@@ -181,6 +182,8 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 	  oct=(*nextoct);
 	  dxcur=1./pow(2,oct.level);
 	  nextoct=oct.next;
+
+	  //if(oct.cpu!=cpu->rank) continue;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
@@ -198,6 +201,7 @@ float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, str
 		  curp->x+=curp->vx*dt;
 		  curp->y+=curp->vy*dt;
 		  curp->z+=curp->vz*dt;
+		  //if(curp->idx==0) printf("%e %e %e\n",curp->vx,curp->vy,curp->vz);
 		  if(disp>mdisp) mdisp=disp;
 
 		}while(nexp!=NULL);
