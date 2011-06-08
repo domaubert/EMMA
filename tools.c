@@ -57,6 +57,7 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 	{
 	  curoct=nextoct;
 	  nextoct=curoct->next;
+	  if(curoct->cpu!=rank) continue;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
@@ -94,7 +95,7 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 	    }
 	  noct++;
 	}while(nextoct!=NULL);
-      printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
+      if(noct!=0) printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;
     }

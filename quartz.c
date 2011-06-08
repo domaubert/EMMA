@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
   // assigning a GPU to each CPU
   int ngpu;
   int memgpu;
-  initlocaldevice(cpu.rank,1);
+  initlocaldevice(cpu.rank,2);
 
   // main Tree data on GPU
   cudaMalloc((void **)&(vectors.vecl_d),sizeof(int)*stride);
@@ -1154,9 +1154,7 @@ int main(int argc, char *argv[])
       }
       else{
 	// --- pure jacobi relaxation
-	if(firstoct[level-1]!=NULL){
 	  poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim+dt*0.5,sendbuffer,recvbuffer,niter,acc);
-	}
       }
 
        if(cpu.rank==0) printf("----------------------------------------\n");

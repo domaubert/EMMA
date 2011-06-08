@@ -867,7 +867,6 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
 
-
   // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1)
 
   if(cmp_keys){
@@ -946,7 +945,7 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
 
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+
 
 }
 

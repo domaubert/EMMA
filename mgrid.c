@@ -18,17 +18,22 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   struct OCT *curoct;
   struct OCT *nextoct;
   int nread;
-  float norm_d=0.;
-  float res;
+  float norm_d=0.,normd_org=0.;
+  float res=0.;
   double tit[2];
   int iter;
-  float restot;
+  float restot=0.;
   float factdens;
   float epsilon;
-
+  double t[10];
+    
   // ------------- cleaning the vector positions
   clean_vec(levelmax,firstoct);
 
+  // --------------- setting the first oct of the level
+  curoct=firstoct[level-1];
+
+  if(curoct!=NULL){
   // ------------- setting the factor of the density (cosmo vs newtonian gravity)
 
   if(level>=levelcoarse){
@@ -76,8 +81,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   for(i=0;i<stride*6;i++){vectors->vecnei[i]=-1;}
 
   
-  // --------------- setting the first oct of the level
-  curoct=firstoct[level-1];
 
   // ---------------- gathering the neighbors
   
@@ -129,32 +132,32 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     // GPU CASE
   norm_d+=square_vec_GPU(vectors->vecden_d,nread,stride,level,cpu->rank,vectors->vecl_d,vectors->veccpu_d,vectors->vec2_d,vectors->vecsum_d)*pow(factdens,2);
 #endif
-  
-#ifdef WMPI
-  // ---------------  reducing the norm of the density
-    MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu->comm);
-
-    //if(cpu->rank==0) printf("normd=%e\n",sqrt(norm_d));
-
-#endif
-
-
 
 
 #ifdef WGPU
   // ---------------  sending data to GPU
-
-
   CPU2GPU(vectors->vecpotnew_d,vectors->vecpotnew,sizeof(float)*stride*8);
   CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*stride*8);
   CPU2GPU_INT(vectors->vecnei_d,vectors->vecnei,sizeof(int)*stride*6);
   CPU2GPU_INT(vectors->vecicoarse_d,vectors->vecicoarse,sizeof(int)*stride);
 #endif
 
+  }
+  
+#ifdef WMPI
+  // ---------------  reducing the norm of the density
+  normd_org=norm_d;
+  MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu->comm);
+#endif
+
+
+
+
   //======================== looping over iterations
   
   for(iter=0;iter<niter;iter++){
-
+    res=0.;
+    if(curoct!=NULL){
 #ifdef WMPI    
     tit[0]=MPI_Wtime();
 #endif
@@ -165,6 +168,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     cudaMemset(vectors->vec2_d,0,sizeof(float)*stride*8);
     cudaMemset(vectors->vecsum_d,0,sizeof(float)*stride*8);
     res=laplacian_vec2_GPU(vectors->vecden_d,vectors->vecpot_d,vectors->vecpotnew_d,vectors->vecnei_d,vectors->vecl_d,vectors-> vecicoarse_d,vectors->veccpu_d,level,cpu->rank,nread,stride,dx,factdens,vectors->vec2_d,vectors->vecsum_d);
+    //if(level==7) printf("res=%e\n",res);
 #else
     res=laplacian_vec2(vectors->vecden,vectors->vecpot,vectors->vecpotnew,vectors->vecnei,vectors->vecl,vectors->vecicoarse,vectors->veccpu,level,cpu->rank,nread,stride,dx,factdens);
 #endif
@@ -179,15 +183,9 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     memcpy(vectors->vecpot,vectors->vecpotnew,sizeof(float)*stride*8);
 #endif
 	
-    // ---------------  skip level if it does not exist
-    if((res==0.)&&(norm_d==0.)){
-      if(cpu->rank==0) printf("Level %d skipped res=%e norm_d=%e\n",level,res,norm_d);
-      break;
-    }
     
     // exchanging boundary data through the network ======================
 #ifdef WMPI
-    double t[10];
     t[0]=MPI_Wtime();
     
 #ifdef WGPU
@@ -197,23 +195,23 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     // ---------------  scatter back the result to the tree
     t[1]=MPI_Wtime();
     nextoct=scattervec_light(curoct,vectors->vecpot,1,stride,cpu,nread,level);  // border only
-    
-    // ---------------  sending tree data through the network
     t[2]=MPI_Wtime();
+    }
+
+    // ---------------  sending tree data through the network
     mpi_exchange_level(cpu,sendbuffer,recvbuffer,2,(iter==0),level);
     //mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
     
-    t[3]=MPI_Wtime();
-    nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread,level); // potential
-    
+    if(curoct!=NULL){
+      t[3]=MPI_Wtime();
+      nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread,level); // potential
 #ifdef WGPU
-    // ---------------  HOST 2 GPU
-    t[4]=MPI_Wtime();
-    CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*8*stride);
+      // ---------------  HOST 2 GPU
+      t[4]=MPI_Wtime();
+      CPU2GPU(vectors->vecpot_d,vectors->vecpot,sizeof(float)*8*stride);
 #endif
-    
-    t[5]=MPI_Wtime();
-    
+      t[5]=MPI_Wtime();
+    }
     
     float restot;
     // ---------------  Reducing the residuals
@@ -222,10 +220,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #endif
       // END MPI EXCHANGE =================================
     
-    /* // ---------------  some verbosity */
-    //     if((iter==0)&&(cpu->rank==0))  
-    //       printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d)); 
-	
     // ---------------  breaking condition
     if(level>=levelcoarse){
       epsilon=sqrt(res/norm_d);
@@ -240,49 +234,48 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 
 #ifdef WMPI
     tit[1]=MPI_Wtime();
-#ifdef WGPU
-    if((iter==64)&&(cpu->rank==0)) printf("GPU2CPU=%e SCAT=%e MPI=%e GATH=%e CPU2GPU=%e COMM=%e ITER=%e\n",t[1]-t[0],t[2]-t[1],t[3]-t[2],t[4]-t[3],t[5]-t[4],t[5]-t[0],tit[1]-tit[0]);
-#endif
 #endif
 
   } // next iteration ready
 
-  if(cpu->rank==0) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
+  //if(level==7) printf("normd=%e restot=%e res=%e on rank %d\n",normd_org,restot,res,cpu->rank);
+  if((cpu->rank==0)&&(norm_d!=0.)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
+
+  if(curoct!=NULL){
+#ifdef MULTIGRID
+    // if multigrid enabled, we recompute the residual
+    // to spare some memory we copy the residual in vecpotnew
+    if(level<=levelcoarse){
+#ifndef WGPU
+      // CPU
+      residual_vec2(vectors->vecden,vectors->vecpot,vectors->vecpotnew,vectors->vecnei,vectors->vecl,vectors->vecicoarse,vectors->veccpu,level,cpu->rank,nread,stride,dx,factdens);
+#else
+      residual_vec2_GPU(vectors->vecden_d,vectors->vecpot_d,vectors->vecpotnew_d,vectors->vecnei_d,vectors->vecl_d, vectors->vecicoarse_d, vectors->veccpu_d,level,cpu->rank,nread,stride,dx,factdens);
+#endif
+    }
+
+#endif
+
+
+    // --------------- full transfer of data to the tree
+#ifdef WGPU
+    GPU2CPU(vectors->vecpot,vectors->vecpot_d,sizeof(float)*8*stride);
+#endif
+
+    //---------------  scatter back the result
+    nextoct=scattervec(curoct,vectors->vecpot,1,stride,cpu,nread); 
 
 #ifdef MULTIGRID
-  // if multigrid enabled, we recompute the residual
-  // to spare some memory we copy the residual in vecpotnew
-  if(level<=levelcoarse){
-#ifndef WGPU
-  // CPU
-    residual_vec2(vectors->vecden,vectors->vecpot,vectors->vecpotnew,vectors->vecnei,vectors->vecl,vectors->vecicoarse,vectors->veccpu,level,cpu->rank,nread,stride,dx,factdens);
-#else
-    residual_vec2_GPU(vectors->vecden_d,vectors->vecpot_d,vectors->vecpotnew_d,vectors->vecnei_d,vectors->vecl_d, vectors->vecicoarse_d, vectors->veccpu_d,level,cpu->rank,nread,stride,dx,factdens);
+#ifdef WGPU
+    // -------------- bringing back the residual in the potnew field
+    GPU2CPU(vectors->vecpotnew,vectors->vecpotnew_d,sizeof(float)*8*stride);
+#endif
+    // -------------- we scatter the residual in the temp field of the tree
+    nextoct=scattervec(curoct,vectors->vecpotnew,2,stride,cpu,nread); 
 #endif
   }
 
-#endif
-
-
-  // --------------- full transfer of data to the tree
-#ifdef WGPU
-  GPU2CPU(vectors->vecpot,vectors->vecpot_d,sizeof(float)*8*stride);
-#endif
-
-  //---------------  scatter back the result
-  nextoct=scattervec(curoct,vectors->vecpot,1,stride,cpu,nread); 
-
-#ifdef MULTIGRID
-#ifdef WGPU
-  // -------------- bringing back the residual in the potnew field
-  GPU2CPU(vectors->vecpotnew,vectors->vecpotnew_d,sizeof(float)*8*stride);
-#endif
-  // -------------- we scatter the residual in the temp field of the tree
-  nextoct=scattervec(curoct,vectors->vecpotnew,2,stride,cpu,nread); 
-#endif
-
   return epsilon;
-
 }
 
 //=====================================================

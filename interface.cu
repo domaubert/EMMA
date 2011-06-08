@@ -63,7 +63,7 @@ int countdevices(int rank)
 
 void initlocaldevice(int rank, int count)
 {
-  int devicenum=rank/count;
+  int devicenum=rank%count;
   struct cudaDeviceProp prop;
   cudaSetDevice(devicenum);
   cudaGetDeviceProperties(&prop,devicenum);

@@ -64,7 +64,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 	      //if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))){
 		//if((curoct->level==(levelcoarse-1))&&(curoct->cpu==cpu->rank)) continue; // we don't want to destroy the cpu coarse grid
 
-	      	ndes++;
+	      	if(cpu->rank==curoct->cpu) ndes++;
 		
 		desoct=curoct->cell[icell].child; // the oct to destroy
 		
@@ -163,7 +163,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 /* 		} */
 /* #endif */
 
-		nref++;
+		if(curoct->cpu==cpu->rank) nref++;
 		
 		// a new oct is created
 		newoct->parent=&(curoct->cell[icell]);
