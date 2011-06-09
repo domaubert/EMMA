@@ -128,9 +128,16 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 
 
   // some displays
-  printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank);
-  for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]);
-  printf("\n");
+  /* printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank); */
+  /* for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]); */
+  /* printf("\n"); */
+
+#ifdef WMPI
+  int nvois_loc=cpu->nebnd;
+  int nvois_max;
+  MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
+  if(cpu->rank==0) printf("Max number of neighbors=%d\n",nvois_max);
+#endif
   
 #ifdef WMPI
   if(cpu->nebnd>cpu->nbuff){

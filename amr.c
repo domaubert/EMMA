@@ -301,8 +301,19 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
       //printf("level=%d done\n",level);
     }
 
-  printf("octs created by rank %d =%d\n",cpu->rank,nref);
-  printf("octs destroyed by rank %d=%d\n",cpu->rank,ndes);
+#ifdef WMPI
+  int nreftot;
+  int ndestot;
+  MPI_Allreduce(&nref,&nreftot,1,MPI_INT,MPI_SUM,cpu->comm);
+  nref=nreftot;
+  MPI_Allreduce(&ndes,&ndestot,1,MPI_INT,MPI_SUM,cpu->comm);
+  ndes=ndestot;
+#endif
+
+  if(cpu->rank==0){
+    printf("octs created   = %d\n",nref);
+    printf("octs destroyed = %d\n",ndes);
+  }
 
   return freeoct;
 
