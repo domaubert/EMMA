@@ -1,0 +1,32 @@
+##########################################
+ARCH = GPU
+C_LIBS = -lm 
+C_FLAGS = -g
+C_OBJS= quartz.o hilbert.o vector.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o mgrid.o
+DEFINES  = -DNEWASSIGN -DTESTCOSMO -DALLCELL  -DNEWCIC -DNEWFORCE  -DNEWJACK -DNEWJACK2 -DMULTIGRID -DAXLFORCE -DWMPI #-DZELDO #-DPERFECT #-DWMPI #-DNEWPART #-DWMPI # -DEGYCSV O2 #-DNEWCIC #-O2 -DWMPI
+ifeq ($(ARCH),GPU)
+DEFINESGLOB= $(DEFINES) -DWGPU
+EXECUTABLE = quartz
+CUDA_OBJS= interface.o vector_gpu.o # cic_gpu.o 
+CUDA_LIBS = -lcuda -L/opt/cuda/lib -lcudart -lcudpp64 -L/opt/cuda/sdk/2.2/common/lib -L/opt/cuda/sdk/2.2/lib -L/opt/cuda/sdk/2.2/common/lib/linux -lcudpp64 -lcudpp64D -I/opt/cuda/sdk/2.2/common/inc -I/opt/cuda/sdk/2.2/common/inc/cudpp -lm -L/opt/mpi/bullxmpi/1.0.2/lib -I/opt/mpi/bullxmpi/1.0.2/include -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lpthread 
+else
+DEFINESGLOB= $(DEFINES) 
+EXECUTABLE = quartzcpu
+CUDA_OBJS= 
+CUDA_LIBS =
+endif
+NVCC= nvcc #--device-emulation
+CC = mpicc
+OBJECTS = $(C_OBJS) $(CUDA_OBJS)
+.c.o:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -c $<
+ifeq ($(ARCH),GPU)
+%.o:%.cu
+	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -c $*.cu	
+endif
+
+all:$(C_OBJS) $(CUDA_OBJS)
+	$(CC)  $(CUDA_OBJS) $(C_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+
+clean:
+	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~
