@@ -6,6 +6,8 @@
 //=======================================
 
 struct RUNPARAMS{
+  int npartmax; // the max particles number (per process)
+  int ngridmax; // the max oct numbers (per process)
   int nbuff; // the mpi buffer size
   int ndumps; // the frequency of outputs
   int nsteps; // the maximal number of timesteps

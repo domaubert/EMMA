@@ -210,8 +210,8 @@ int main(int argc, char *argv[])
   levelmin=param.mgridlmin;
   nvcycles=param.nvcycles;
 
-  ngridmax=300000;
-  npartmax=128*128*128;
+  ngridmax=param.ngridmax;
+  npartmax=param.npartmax;
 #ifdef PART2
   npart=2;
 #else
@@ -701,78 +701,88 @@ int main(int argc, char *argv[])
   rstat=fread(&dummy,sizeof(dummy),1,fd);
 
   if(cpu.rank==0) printf("%f %d %f %f\n",ainit,nploc,omegav,Hubble);
-
-
-  float *pos;
-  float *vel;
   
-  pos=(float *)malloc(sizeof(float)*3*nploc);
-  vel=(float *)malloc(sizeof(float)*3*nploc);
-
-  rstat=fread(&dummy,sizeof(dummy),1,fd); 
-  rstat=fread(pos,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(pos+nploc,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(pos+2*nploc,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(vel,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(vel+nploc,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(vel+2*nploc,sizeof(float),nploc,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-  fclose(fd);
-
   mass=munit;
   tsim=ainit;
 
+  float *pos;
+  float *vel;
+  int nread=(nploc<2097152?nploc:2097152); // we read by patch of 128^3
+  int npatch=nploc/nread;
+  int ipatch;
+
+  pos=(float *)malloc(sizeof(float)*3*nread);
+  vel=(float *)malloc(sizeof(float)*3*nread);
+  int pstart=ftell(fd);
+
   ip=0.;
-  for(i=0;i<nploc;i++)
-    {
-      x=pos[i];
-      y=pos[i+nploc];
-      z=pos[i+2*nploc];
+  for(ipatch=0;ipatch<npatch;ipatch++) {
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd); 
+    //    fseek(fd,pstart,SEEK_SET);
+    fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(float)+1*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos,sizeof(float),nread,fd);
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
-      vx=vel[i];
-      vy=vel[i+nploc];
-      vz=vel[i+2*nploc];
-      // periodic boundary conditions
-    
-      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(float)+3*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos+nread,sizeof(float),nread,fd);
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
-      // it it belongs to the current cpu, we proceed and assign the particle to the particle array
-      if(segment_part(x,y,z,&cpu,levelcoarse)){
-	part[ip].x=x;
-	part[ip].y=y;
-	part[ip].z=z;
-	
-	part[ip].vx=vx;
-	part[ip].vy=vy;
-	part[ip].vz=vz;
-	
-	part[ip].mass=mass;
-	part[ip].idx=ip;
-	lastpart=part+ip;
-	ip++;
-      }
-      
-    }
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(float)+5*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos+2*nread,sizeof(float),nread,fd);
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
   
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(float)+7*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel,sizeof(float),nread,fd);
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(float)+9*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel+nread,sizeof(float),nread,fd);
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(float)+11*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel+2*nread,sizeof(float),nread,fd);
+    //rstat=fread(&dummy,sizeof(dummy),1,fd);
+    
+    for(i=0;i<nread;i++)
+      {
+	x=pos[i];
+	y=pos[i+nread];
+	z=pos[i+2*nread];
+	
+	vx=vel[i];
+	vy=vel[i+nread];
+	vz=vel[i+2*nread];
+	// periodic boundary conditions
+	
+	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+	
+	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
+	if(segment_part(x,y,z,&cpu,levelcoarse)){
+	  part[ip].x=x;
+	  part[ip].y=y;
+	  part[ip].z=z;
+	  
+	  part[ip].vx=vx;
+	  part[ip].vy=vy;
+	  part[ip].vz=vz;
+	  
+	  part[ip].mass=mass;
+	  part[ip].idx=ip;
+	  lastpart=part+ip;
+	  ip++;
+	}
+      }
+  }
+
   npart=ip;
+  fclose(fd);
   free(pos);
   free(vel);
   if (cpu.rank==0) printf("cosmo readpart done with munit=%e\n",munit);

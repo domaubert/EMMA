@@ -275,6 +275,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
   else
     {
+      rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);
       rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
