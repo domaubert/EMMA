@@ -3,7 +3,7 @@
 p=l=nd=[];
 t=[];
 
-for(i=1;i<=800;i+=1){ 
+for(i=1;i<=880;i+=1){ 
   //  pname=swrite(format="data/l7_6/part.%05d",i);
   pname=swrite(format="data/part.%05d.p00000",i);
   pp=readpart(pname,a);
@@ -12,10 +12,10 @@ for(i=1;i<=800;i+=1){
   grow,t,a;
   // ll=readcube(swrite(format="../data/lev3d.%05d.p00000",i));
   // grow,l,[ll(,,64)];
-  d=readcube(swrite(format="data/den3d.%05d.p00000",i));
-  ad=avg(d);
-  normd=4*pi*sqrt(((d-ad)^2)(*)(sum));
-  grow,nd,normd;
+  // d=readcube(swrite(format="data/den3d.%05d.p00000",i));
+  // ad=avg(d);
+  // normd=4*pi*sqrt(((d-ad)^2)(*)(sum));
+  // grow,nd,normd;
  }
 
 epsilon=0.;

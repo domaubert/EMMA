@@ -63,12 +63,6 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
 			    map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].pot*pow(2,lmap-oct.level);
 			    break;
 			  }
-			  //map[(imap+ii)+(jmap+jj)*nmap]=fmin(oct.cell[icell].pot,map[(imap+ii)+(jmap+jj)*nmap]);
-			  //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.cell[icell].temp*oct.cell[icell].temp,map[(imap+ii)+(jmap+jj)*nmap]);
-			  //map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].pot*pow(2,lmap-oct.level);
-			  //map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].density*pow(2,lmap-oct.level);
-			  //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.level,map[(imap+ii)+(jmap+jj)*nmap]);
-			  //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.cell[icell].marked,map[(imap+ii)+(jmap+jj)*nmap]);
 			}
 		    }
 		}
@@ -168,12 +162,6 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 				break;
 #endif
 			      }
-			      //map[(imap+ii)+(jmap+jj)*nmap]=fmin(oct.cell[icell].pot,map[(imap+ii)+(jmap+jj)*nmap]);
-			      //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.cell[icell].temp*oct.cell[icell].temp,map[(imap+ii)+(jmap+jj)*nmap]);
-			      //map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].pot*pow(2,lmap-oct.level);
-			      //map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].density*pow(2,lmap-oct.level);
-			      //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.level,map[(imap+ii)+(jmap+jj)*nmap]);
-			      //map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.cell[icell].marked,map[(imap+ii)+(jmap+jj)*nmap]);
 			    }
 			}
 		    }

@@ -80,7 +80,7 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
 //=====================================================================
 //=====================================================================
 
-float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, struct CPUINFO* cpu, float tmax){
+float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, float fa2, struct CPUINFO* cpu, float tmax){
   
   int level;
   float vmax,lmdisp;
@@ -91,13 +91,14 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, st
   struct PART *nexp;
   struct PART *curp;
   float va;
+  float aa;
   float dtlev,dtnew=1e9;
   float dt;
 
   // Computing new timestep
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
-      vmax=0.;
+      dtlev=0.;
       // setting the first oct
       
       nextoct=firstoct[level-1];
@@ -106,34 +107,63 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, st
       do // sweeping through the octs of level
 	{
 	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
+	  dxcur=1./pow(2,oct.level+1); // +1 to protect level change
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 
 	      if(nexp!=NULL){
+
+#ifdef AXLFORCE
+		//cell acceleration
+		aa=sqrt(oct.cell[icell].fx*oct.cell[icell].fx+oct.cell[icell].fy*oct.cell[icell].fy+oct.cell[icell].fz*oct.cell[icell].fz)*fa2;
+#else
+		aa=0.;
+#endif
 		do{ 
 		  curp=nexp; 
 		  nexp=curp->next; 
 
-		  // particle displacement
+#ifdef PART2
+		  if(curp->idx==0) continue;
+#endif
+		  // particle velocit
 		  va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
-		  //printf("va=%e\n",va);
-		  if(va>vmax) vmax=va;
+
+		  // loc dt
+		  if((va>0.)&&(aa>0.)){
+		    float EPS=2.0*(0.2*dxcur)*aa/(va*va);
+		    if(EPS<1e-1){
+		      dtlev=(0.2*dxcur)/va;
+		    }
+		    else if(EPS>10.){
+		      dtlev=sqrt(2.0*(0.2*dxcur)/aa);
+		    }
+		    else{
+		      dtlev=va/aa*(sqrt(1.+2.*aa*(0.2*dxcur)/(va*va))-1.);
+		    }
+		  }		 
+		  else if((aa==0.)||(va==0.)){
+		    dtlev=1e9;
+		  } 
+#ifdef PART2
+		  printf("mass=%e aa=%e va=%e dt=%e tmax=%e\n",curp->mass,aa,va,dtlev,tmax);
+#endif
+		  if(dtnew>dtlev) dtnew=dtlev;
 		}while(nexp!=NULL);
 	      }
 	    }
 	}while(nextoct!=NULL);
 
-      if(vmax>0.){
-	dtlev=0.20*dxcur/vmax;///fa;
-	dtnew=(dtlev<dtnew?dtlev:dtnew);
-      }
-      else{
-	dtlev=1e9;
-	dtnew=(dtlev<dtnew?dtlev:dtnew);
-      }
+      /* if(vmax>0.){ */
+      /* 	dtlev=0.20*dxcur/vmax;///fa; */
+      /* 	dtnew=(dtlev<dtnew?dtlev:dtnew); */
+      /* } */
+      /* else{ */
+      /* 	dtlev=1e9; */
+      /* 	dtnew=(dtlev<dtnew?dtlev:dtnew); */
+      /* } */
       //printf("level=%d vmax=%e dtlev=%e\n",level,vmax,dtlev);
 
     }
