@@ -148,7 +148,7 @@ struct CELL
   struct PART * phead;
 
   // the physical quantities
-  float density;
+  float density; // total density
   float pot;
 
   float temp;
@@ -158,6 +158,16 @@ struct CELL
   float fy;
   float fz;
 #endif
+
+#ifdef HYDRO
+  float d; // gas density
+  float u; // velx
+  float v; // vely
+  float w; // velz
+  float p; // pressure
+  float a; // sound speed
+#endif
+
 
 };
 

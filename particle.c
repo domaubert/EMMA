@@ -12,6 +12,7 @@
 #include "communication.h"
 #endif
 
+#define FRACDX 0.4
 
 
 //------------------------------------------------------------------------
@@ -111,8 +112,9 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 
+#ifdef PIC
+	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
 
 #ifdef AXLFORCE
@@ -133,15 +135,15 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 
 		  // loc dt
 		  if((va>0.)&&(aa>0.)){
-		    float EPS=2.0*(0.2*dxcur)*aa/(va*va);
+		    float EPS=2.0*(FRACDX*dxcur)*aa/(va*va);
 		    if(EPS<1e-1){
-		      dtlev=(0.2*dxcur)/va;
+		      dtlev=(FRACDX*dxcur)/va;
 		    }
 		    else if(EPS>10.){
-		      dtlev=sqrt(2.0*(0.2*dxcur)/aa);
+		      dtlev=sqrt(2.0*(FRACDX*dxcur)/aa);
 		    }
 		    else{
-		      dtlev=va/aa*(sqrt(1.+2.*aa*(0.2*dxcur)/(va*va))-1.);
+		      dtlev=va/aa*(sqrt(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
 		    }
 		  }		 
 		  else if((aa==0.)||(va==0.)){
@@ -153,11 +155,12 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 		  if(dtnew>dtlev) dtnew=dtlev;
 		}while(nexp!=NULL);
 	      }
+#endif
 	    }
 	}while(nextoct!=NULL);
 
       /* if(vmax>0.){ */
-      /* 	dtlev=0.20*dxcur/vmax;///fa; */
+      /* 	dtlev=FRACDX*dxcur/vmax;///fa; */
       /* 	dtnew=(dtlev<dtnew?dtlev:dtnew); */
       /* } */
       /* else{ */
@@ -1195,7 +1198,8 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 #endif
 #endif
   
- // ==================================== Computing the Velocities
+#ifdef PIC
+    // ==================================== Computing the Velocities
     // ==================================== performing the INVERSE CIC assignement
   
     //printf("start INVERSE CIC\n");
@@ -1222,6 +1226,7 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,
 	      }
 	  }while(nextoct!=NULL);
       }
+#endif
 #ifndef AXLFORCE
   }
 #endif

@@ -5,9 +5,10 @@ x=span(0,1,65)(zcen);
 pp=vp=[];
 pt=vt=[];
 aexp=[];
-for(i=0;i<=70;i+=1){
+for(i=0;i<=35;i+=1){
   i;
-  p=readpart(swrite(format="data/part.%05d.p00000",i),a);
+  //p=readpart(swrite(format="../data/part.%05d.p00000",i),a);
+  p=mergepart(swrite(format="../data/part.%05d",i),2,a);
   p=p(,sort(p(7,)));
   grow,pp,[p(1,:64)];
   grow,vp,[p(4,:64)];

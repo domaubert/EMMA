@@ -14,11 +14,11 @@
 #endif 
 
 
-void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
+void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
   int nnei=0;
-  int *mpinei; // the COMPLETE list of neighbors cpu (can be redundant)
-  int *neicpu; // the reduced list of neighbors CPU (not redundant);
+  /*int *mpinei; // the COMPLETE list of neighbors cpu (can be redundant) */
+   int *neicpu; // the reduced list of neighbors CPU (not redundant); 
   int hidx;
   int inidx; // counts the number of inner boundaries octs
   int level;
@@ -31,9 +31,11 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   int i,j;
   int nbnd;
   int icell;
+  int *flagcpu;
 
-  mpinei =(int*)calloc(ngridmax,sizeof(int));
-  neicpu =(int*)calloc(ngridmax,sizeof(int));
+  /* mpinei =(int*)calloc(ngridmax,sizeof(int)); */
+  /* neicpu =(int*)calloc(ngridmax,sizeof(int)); */
+  flagcpu=(int*) calloc(cpu->nproc,sizeof(float));
 
   if(cpu->bndoct!=NULL) free(cpu->bndoct);
   cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
@@ -46,27 +48,20 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
   for(level=1;level<=levelmax;level++)
     {
       nextoct=firstoct[level-1];
+      int level_in_cpu=0;
+
       if(nextoct!=NULL){
 	do // sweeping level
 	  {
 	    curoct=nextoct;
 	    nextoct=curoct->next;
 	    //if(level>=levelcoarse){
-	    if(level>=0){
-	      
 	      if((level<=levelcoarse)&&(loadb)){
 		assigncpu2coarseoct(curoct, cpu, levelcoarse);
 	      }
-	      
-	      key=oct2key(curoct,level); // getting the key of the current oct
 
-	      if((curoct->cpu!=cpu->rank)&&(curoct->cpu!=-1)){
-		// a neighbor has been found
-		mpinei[nnei]=curoct->cpu;
-		cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission
-		//if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
-		nnei++;
-	      }
+	      if(cpu->rank==curoct->cpu) level_in_cpu=1;
+	      key=oct2key(curoct,level); // getting the key of the current oct
 
 	      //filling the hash table for levelcoarse octs
 	      hidx=hfun(key,cpu->maxhash); // getting the hash index from the key
@@ -84,11 +79,23 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 		desoct->nexthash=curoct;
 		curoct->nexthash=NULL;
 	      }
-	    }
-	    else{
-	      curoct->cpu=-1;
+	  }while(nextoct!=NULL);
+
+	if((level_in_cpu)||(level>=levelcoarse)){
+	  nextoct=firstoct[level-1];
+	  do{
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    if((curoct->cpu!=cpu->rank)&&(curoct->cpu!=-1)){
+	      // a neighbor has been found
+	      //mpinei[nnei]=curoct->cpu;
+	      flagcpu[curoct->cpu]=1;
+	      cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission
+	      //if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
+	      nnei++;
 	    }
 	  }while(nextoct!=NULL);
+	}
       }
     }
 
@@ -97,20 +104,33 @@ void  setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int le
 
 
   // computing the mpi neighbor list
-  myradixsort(mpinei,nnei); // we sort the neighbors list
-  neicpu[0]=mpinei[0];
+  neicpu=(int*) calloc(cpu->nproc,sizeof(float));
+  for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
-  for(i=1;i<nnei;i++){ // we scan the list
-    if(mpinei[i]!=neicpu[j]){
+  for(i=0;i<cpu->nproc;i++){ // we scan the list
+    if(flagcpu[i]==1){
+      neicpu[j]=i;
       j++;
-      neicpu[j]=mpinei[i];
     }
   }
+
+  free(flagcpu);
+  myradixsort(neicpu,cpu->nproc); // we sort the neighbors list
+
+  /* myradixsort(mpinei,nnei); // we sort the neighbors list */
+  /* neicpu[0]=mpinei[0]; */
+  /* j=0; */
+  /* for(i=1;i<nnei;i++){ // we scan the list */
+  /*   if(mpinei[i]!=neicpu[j]){ */
+  /*     j++; */
+  /*     neicpu[j]=mpinei[i]; */
+  /*   } */
+  /* } */
+
   nbnd=nnei;
-  nnei=j+1;
+  nnei=j;
 
 
-  free(mpinei);
 
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;

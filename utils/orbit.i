@@ -3,10 +3,11 @@
 p=l=nd=[];
 t=[];
 
-for(i=1;i<=880;i+=1){ 
+for(i=1;i<=1080;i+=1){ 
   //  pname=swrite(format="data/l7_6/part.%05d",i);
-  pname=swrite(format="data/part.%05d.p00000",i);
-  pp=readpart(pname,a);
+  pname=swrite(format="../data/part.%05d",i);
+  //  pp=readpart(pname,a);
+  pp=mergepart(pname,2,a);
   s=sort(pp(7,));
   grow,p,[pp(,s)];
   grow,t,a;

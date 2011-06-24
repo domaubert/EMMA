@@ -174,6 +174,7 @@ int main(int argc, char *argv[])
   MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PACKET);
   MPI_Type_commit(&MPI_PACKET);
 
+#ifdef PIC
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
@@ -193,11 +194,13 @@ int main(int argc, char *argv[])
   MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PART);
   MPI_Type_commit(&MPI_PART);
   
+#endif
   //============================================
 
-
   cpu.MPI_PACKET=&MPI_PACKET;
+#ifdef PIC
   cpu.MPI_PART=&MPI_PART;
+#endif
   cpu.comm=MPI_COMM_WORLD;
 #else
   cpu.rank=0;
@@ -211,6 +214,8 @@ int main(int argc, char *argv[])
   nvcycles=param.nvcycles;
 
   ngridmax=param.ngridmax;
+
+#ifdef PIC
   npartmax=param.npartmax;
 #ifdef PART2
   npart=2;
@@ -220,6 +225,7 @@ int main(int argc, char *argv[])
 
 #ifdef PARTN
   npart=32768;
+#endif
 #endif
 
   threshold=param.amrthresh;
@@ -237,9 +243,18 @@ int main(int argc, char *argv[])
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
+  part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+ 
+  if(cpu.rank==0){
+    printf(" === alloc Memory ===\n");
+    printf(" grid = %f MB\n",(ngridmax/(1024*1024.))*sizeof(struct OCT));
+    printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct OCT));
+  }
+
   firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the firstoct of each level
   lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the last oct of each level
-  part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+#ifdef PIC
+#endif
   cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); memsize+=cpu.maxhash*sizeof(struct OCT*);// the htable keys->oct address
   cpu.noct=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
 
@@ -269,6 +284,7 @@ int main(int argc, char *argv[])
   vectors.veccpu=(int *)calloc(stride,sizeof(int));
   vectors.vecicoarse=(int *)calloc(stride,sizeof(int));
   memsize+= stride*32*4;
+  if(cpu.rank==0) printf(" vect = %f MB\n",((stride*32)/(1024*1024.))*sizeof(float));
 #endif 
 
 #ifdef WGPU
@@ -485,7 +501,20 @@ int main(int argc, char *argv[])
   curoct->next=NULL; // for the last free oct
   //printf("freeoct=%p\n",freeoct);
 
-#if 1  // ==================================== assigning particles to cells
+
+#if PIC
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+  // ==================================== assigning particles to cells
   //breakmpi();
   if(cpu.rank==0) printf("==> starting part\n");
   firstoct_currl=0;
@@ -774,7 +803,7 @@ int main(int argc, char *argv[])
 	  part[ip].vz=vz;
 	  
 	  part[ip].mass=mass;
-	  part[ip].idx=ip;
+	  part[ip].idx=i;
 	  lastpart=part+ip;
 	  ip++;
 	}
@@ -867,7 +896,6 @@ int main(int argc, char *argv[])
     }
 
 
-#endif
 #if 1
   // ==================================== Check the number of particles and octs
 
@@ -895,12 +923,63 @@ int main(int argc, char *argv[])
 
   mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
 
-  sprintf(filename,"data/partstart.%05d.p%05d",0,cpu.rank);
-  dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
+  /* sprintf(filename,"data/partstart.%05d.p%05d",0,cpu.rank); */
+  /* dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim); */
   
-  sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank);
-  dumpcube(lmap,firstoct,1,filename,tsim);
+  /* sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank); */
+  /* dumpcube(lmap,firstoct,1,filename,tsim); */
   //  abort();
+#endif
+
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+
+
+#ifdef HYDRO
+  
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+  // initialisation of hydro quantities
+
+
+  
+
+
+
+
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+#endif
+
+
+
 
   // =============================================== dumping information file
 
@@ -935,7 +1014,11 @@ int main(int argc, char *argv[])
 
   float tmax;
 #ifdef TESTCOSMO
+#ifdef ZELD0
+  tmax=0.5;
+#else
   tmax=1.;
+#endif
 #else
   tmax=1000.;
 #endif
@@ -949,10 +1032,13 @@ int main(int argc, char *argv[])
     faexp2=1.0;
 #endif
 
-  for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
+    //==================================== MAIN LOOP ================================================
+    //===============================================================================================
+    
+    for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
-    if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
 #else
     if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
@@ -975,8 +1061,8 @@ int main(int argc, char *argv[])
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
 #endif
 
+#ifdef PIC
   // ==================================== performing the CIC assignement
-
 #ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
 #else
@@ -985,13 +1071,13 @@ int main(int argc, char *argv[])
 
 #ifdef WMPI
     // ==================================== performing the CIC BOUNDARY CORRECTION 
-
   mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
-
   // ======================================= Density boundary mpi update 
-
   mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
+
 #endif
+#endif
+
 
   //======================================= cleaning the marks
     for(level=1;level<=levelmax;level++) // looping over levels
@@ -1118,12 +1204,13 @@ int main(int argc, char *argv[])
 #endif
 
   // ==================================== Force calculation and velocity update   // Corrector step
+#ifdef PIC
   if(cpu.rank==0) printf("Predictor\n");
-
 #ifdef TESTCOSMO
   faexp=f_aexp(tsim,omegam,omegav);
 #endif
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+#endif
 
   // ==================================== DUMP AFTER SYNCHRONIZATION
 #if 1
@@ -1171,8 +1258,6 @@ int main(int argc, char *argv[])
   if(cpu.rank==0) printf("dt=%e\n",dtnew);
 
   // ==================================== Force calculation and velocity update   // predictor step
-  
-
   if(cpu.rank==0) printf("Corrector\n");
 
 #ifdef TESTCOSMO
@@ -1182,6 +1267,7 @@ int main(int argc, char *argv[])
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 
   // ==================================== Moving Particles + Oct management
+#ifdef PIC
   
 #if 1
 #ifndef PARTN
@@ -1211,6 +1297,7 @@ int main(int argc, char *argv[])
     npart=npart+deltan;
 #endif
 #endif
+#endif
 
 #if 1
   // ==================================== Check the number of particles and octs
@@ -1237,9 +1324,6 @@ int main(int argc, char *argv[])
   }
 
 #endif  
-
-  
-
 
   // =================================== dumping information
 

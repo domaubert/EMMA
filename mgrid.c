@@ -33,6 +33,18 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   // --------------- setting the first oct of the level
   curoct=firstoct[level-1];
 
+
+#ifdef WMPI
+  int nolevel=(curoct==NULL);
+  // --------------- do we need to calculate the level ?
+  MPI_Allreduce(MPI_IN_PLACE,&nolevel,1,MPI_INT,MPI_SUM,cpu->comm);
+  if(nolevel==cpu->nproc){
+    //we skip the calculation
+    epsilon=0.;
+    return epsilon;
+  }
+#endif
+
   if(curoct!=NULL){
   // ------------- setting the factor of the density (cosmo vs newtonian gravity)
 
