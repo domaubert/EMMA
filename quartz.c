@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
 
   size_t rstat;
 
-  unsigned int *cartdict;
 
+  float omegam,omegav,Hubble;
 
   //========== TEST ZONE (IF REQUIRED)==========
 
@@ -698,7 +698,6 @@ int main(int argc, char *argv[])
 
 #endif  
 
-  float omegam,omegav,Hubble;
 #ifdef TESTCOSMO
 
 #ifdef HPC
@@ -958,11 +957,75 @@ int main(int argc, char *argv[])
   //===================================================================================================================================
 
   // initialisation of hydro quantities
+  // Shock Tube
 
+  struct Wtype WL, WR;
+  float X0;
+  if(cpu.rank==0) printf("Init Hydro\n");
 
+   /* // TEST 1 */
+
+#ifdef TESTH1
+  WL.d=1.;
+  WL.u  =0.75;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p  =1.;
+
+  WR.d=0.125;
+  WR.u  =0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p  =0.1;
+  X0=0.3;
+#endif
+
+  WL.a=sqrtf(GAMMA*WL.p/WL.d);
+  WR.a=sqrtf(GAMMA*WR.p/WR.d);
+
+  // ======================================================
+
+  for(level=levelcoarse;level<=levelcoarse;level++) // (levelcoarse only for the moment)
+    {
+      dxcur=pow(0.5,level);
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      xc=curoct->x+( icell   %2)*dxcur+0.5*dxcur; 
+
+	      if(xc<X0){
+		curoct->cell[icell].d=WL.d;
+		curoct->cell[icell].u=WL.u;
+		curoct->cell[icell].v=WL.v;
+		curoct->cell[icell].w=WL.w;
+		curoct->cell[icell].p=WL.p;
+		curoct->cell[icell].a=WL.a;
+	      }
+	      else{
+		curoct->cell[icell].d=WR.d;
+		curoct->cell[icell].u=WR.u;
+		curoct->cell[icell].v=WR.v;
+		curoct->cell[icell].w=WR.w;
+		curoct->cell[icell].p=WR.p;
+		curoct->cell[icell].a=WR.a;
+	      }
+
+	    }
+	}while(nextoct!=NULL);
+      
+      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
+    }
   
 
+  sprintf(filename,"data/denhyd.%05d.p%05d",0,cpu.rank); 
+  dumpcube(lmap,firstoct,101,filename,0.); 
 
+  abort();
 
 
   //===================================================================================================================================

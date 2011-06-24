@@ -161,6 +161,11 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fz;
 				break;
 #endif
+#ifdef HYDRO
+			      case 101:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].d;
+				break;
+#endif
 			      }
 			    }
 			}
@@ -263,8 +268,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
   else
     {
-      rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
       rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
       rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);

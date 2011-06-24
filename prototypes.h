@@ -3,6 +3,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef HYDRO
+#define GAMMA (1.4)
+#endif
+
 //=======================================
 
 struct RUNPARAMS{
@@ -86,6 +90,46 @@ struct CPUINFO{
   int *noct; // the number of octs per levels
   int levelcoarse; // the levelcoarse
 };
+
+
+
+// =================== Local types for hydro calculations
+// W stands for primitive quantities
+// U stands for conservative quantities
+//
+
+
+struct Wtype{
+  float d;   // density
+  float u;   // velocity
+  float v;   // velocity
+  float w;   // velocity
+  float p;   // pressure
+  float a;   // sound speed
+};
+
+struct Utype{
+  float d;    // density
+  float du;   // momentum
+  float dv;   // momentum
+  float dw;   // momentum
+  float E;    // Energy
+};
+
+
+struct Wtype1D{
+  float d;   // density
+  float u;   // velocity
+  float p;   // pressure
+  float a;   // sound speed
+};
+
+struct Utype1D{
+  float d;    // density
+  float du;   // momentum
+  float E;    // Energy
+};
+
 
 //=======================================
 

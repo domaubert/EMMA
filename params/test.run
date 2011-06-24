@@ -3,9 +3,9 @@ max_number_of_part 2097152
 mpi_buffer_size 8192
 output_frequency 1
 max_number_of_steps 1200
-level_coarse 5
-level_max 7
-level_map 5
+level_coarse 6
+level_max 6
+level_map 6
 max_number_of_relaxation_poisson 1024
 poisson_accuracy 1e-3
 mgrid_lmin 2

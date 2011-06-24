@@ -170,9 +170,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   for(iter=0;iter<niter;iter++){
     res=0.;
     if(curoct!=NULL){
-#ifdef WMPI    
-    tit[0]=MPI_Wtime();
-#endif
 
     //---------------   computing the laplacian
 #ifdef NEWJACK2
@@ -198,8 +195,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     
     // exchanging boundary data through the network ======================
 #ifdef WMPI
-    t[0]=MPI_Wtime();
-    
 #ifdef WGPU
     // ---------------  GPU 2 HOST
     GPU2CPU(vectors->vecpot,vectors->vecpot_d,sizeof(float)*8*stride);
@@ -208,12 +203,16 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     t[1]=MPI_Wtime();
     nextoct=scattervec_light(curoct,vectors->vecpot,1,stride,cpu,nread,level);  // border only
     t[2]=MPI_Wtime();
+#endif
     }
 
     // ---------------  sending tree data through the network
+#ifdef WMPI
     mpi_exchange_level(cpu,sendbuffer,recvbuffer,2,(iter==0),level);
+#endif
     //mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
     
+#ifdef WMPI
     if(curoct!=NULL){
       t[3]=MPI_Wtime();
       nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread,level); // potential
@@ -244,9 +243,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     }
     // ---------------------------
 
-#ifdef WMPI
-    tit[1]=MPI_Wtime();
-#endif
 
   } // next iteration ready
 
