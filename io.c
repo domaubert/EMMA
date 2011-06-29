@@ -161,7 +161,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fz;
 				break;
 #endif
-#ifdef HYDRO
+#ifdef WHYDRO
 			      case 101:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].d;
 				break;

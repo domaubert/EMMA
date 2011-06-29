@@ -27,7 +27,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   char first=1;
   int max,min;
-  unsigned keyloc;
+  unsigned long keyloc;
 
   // First we compute the current cell position (lower left corner)
   // Note : this is equivalenet to the position of the next level oct
@@ -88,7 +88,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	      c[0]=ix+(int)(i*pow(0.5,curoct->level-levelcoarse+1))-(i==1);
 	      c[1]=iy+(int)(j*pow(0.5,curoct->level-levelcoarse+1))-(j==1);
 	      c[2]=iz+(int)(k*pow(0.5,curoct->level-levelcoarse+1))-(k==1);
-	      keyloc=(unsigned)(hilbert_c2i(3,levelcoarse,c));
+	      keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
 	      
 	      //if((curoct->level==1)) printf("i=%d j=%d k=%d|| %d %d %d || %d || %d %d\n",i,j,k,(int)(c[0]),(int)(c[1]),(int)(c[2]),keyloc,cpu->kmin,cpu->kmax);
 	      if(first){
@@ -127,12 +127,12 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 
 //------------------------------------------------------------------------
 
-unsigned oct2key(struct OCT *curoct,int level){
+unsigned long oct2key(struct OCT *curoct,int level){
   
   float xc,yc,zc;
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned keyloc;
+  unsigned long keyloc;
 
   xc=curoct->x;
   yc=curoct->y;
@@ -148,7 +148,7 @@ unsigned oct2key(struct OCT *curoct,int level){
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
-  keyloc=(unsigned)(hilbert_c2i(3,level,c));
+  keyloc=(unsigned long)(hilbert_c2i(3,level,c));
 
   return keyloc;
 
@@ -163,7 +163,7 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
   int ix,iy,iz;
   float dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned keyloc;
+  unsigned long keyloc;
   int cpuloc;
 
   xc=curoct->x;
@@ -180,7 +180,7 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
-  keyloc=(unsigned)(hilbert_c2i(3,levelcoarse,c));
+  keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
   cpuloc=keyloc/cpu->nkeys;
   curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
 }
@@ -193,7 +193,7 @@ int segment_part(float xc,float yc,float zc, struct CPUINFO *cpu, int levelcoars
   int ix,iy,iz;
   float dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned keyloc;
+  unsigned long keyloc;
   int cpuloc;
 	
   // we convert it in dxcoarse octs unit
@@ -206,7 +206,7 @@ int segment_part(float xc,float yc,float zc, struct CPUINFO *cpu, int levelcoars
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
-  keyloc=(unsigned)(hilbert_c2i(3,levelcoarse,c));
+  keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
 
   if((keyloc>=cpu->kmin)&&(keyloc<=cpu->kmax)){
     return 1;
@@ -225,7 +225,7 @@ int segment_part(float xc,float yc,float zc, struct CPUINFO *cpu, int levelcoars
  //------------------------------------------------------------------------
 
  // the hash function
-int hfun(unsigned key, unsigned maxval){
+int hfun(unsigned long key, unsigned long maxval){
   // warnign maxval must be a power of two
   //return key>>6;
   return key&(maxval-1);

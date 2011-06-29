@@ -3,7 +3,7 @@
 #include <mpi.h>
 #endif
 
-#ifdef HYDRO
+#ifdef WHYDRO
 #define GAMMA (1.4)
 #endif
 
@@ -43,7 +43,7 @@ struct RUNPARAMS{
 
 struct PACKET{
   float data[8]; // the data to be transfered (8 since we transmit data per octs)
-  int key; // the destination hilbert key
+  long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -172,7 +172,7 @@ struct PART_MPI // For mpi communications
   float mass;
   int idx;
 
-  int key; // the destination hilbert key
+  long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
 };
@@ -203,7 +203,7 @@ struct CELL
   float fz;
 #endif
 
-#ifdef HYDRO
+#ifdef WHYDRO
   float d; // gas density
   float u; // velx
   float v; // vely
@@ -254,6 +254,21 @@ struct MULTIVECT{
   float *vecpot; //contains the potential in "stride" octs
   float *vecpotnew; //contains the potential in "stride" octs
   float *vecden; //contains the density   in "stride" octs
+
+#ifdef WHYDRO
+  float *vec_d; 
+  float *vec_u; 
+  float *vec_v; 
+  float *vec_w;
+  float *vec_p;
+
+  float *vec_dnew; 
+  float *vec_unew; 
+  float *vec_vnew; 
+  float *vec_wnew;
+  float *vec_pnew;
+#endif
+
   int *vecnei;//contains the cell neighbors of the octs
   int *vecl; // contains the level of the octs
   int *veccpu; // contains the level of the octs
@@ -271,6 +286,5 @@ struct MULTIVECT{
   int *vecnei_d;
   int *vecicoarse_d; 
 #endif
-
-
 };
+

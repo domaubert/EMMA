@@ -45,7 +45,7 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
   ntotd=0.;
   nlevd=0.;
 
-  for(level=levelcoarse;level<=levelmax;level++)
+  for(level=1;level<=levelmax;level++)
     {
       nextoct=firstoct[level-1];
       dx=1./pow(2,level);
@@ -58,7 +58,9 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 	  curoct=nextoct;
 	  nextoct=curoct->next;
 	  if(curoct->cpu!=rank) continue;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	  if(level>=levelcoarse)
+	    {
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
 	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
@@ -66,7 +68,7 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 	      xc=curoct->x+(icell%2)*dx+dx*0.5;
 	      yc=curoct->y+((icell/2)%2)*dx+dx*0.5;
 	      zc=curoct->z+(icell/4)*dx+dx*0.5;
-
+#ifdef PIC
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 
@@ -92,6 +94,8 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
 		}
 
 	      }while(nexp!=NULL);
+#endif
+	    }
 	    }
 	  noct++;
 	}while(nextoct!=NULL);
@@ -101,10 +105,13 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
     }
   
   //if(rank==0) printf("CHECK==> RANK # %d total   npart=%d/%d npartd=%f\n",rank,ntot,npart,ntotd);
+#ifdef PIC
   if(ntot!=npart) {
     printf("particles number discrepancy ntot=%d npart=%d\n",ntot,npart);
     abort();
   }
+#endif
+
   return mtot;
 }
  //------------------------------------------------------------------------

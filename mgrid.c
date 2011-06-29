@@ -45,7 +45,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   }
 #endif
 
-  if(curoct!=NULL){
+  if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
   // ------------- setting the factor of the density (cosmo vs newtonian gravity)
 
   if(level>=levelcoarse){
@@ -162,14 +162,11 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
   MPI_Allreduce(MPI_IN_PLACE,&norm_d,1,MPI_FLOAT,MPI_SUM,cpu->comm);
 #endif
 
-
-
-
   //======================== looping over iterations
   
   for(iter=0;iter<niter;iter++){
     res=0.;
-    if(curoct!=NULL){
+    if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
 
     //---------------   computing the laplacian
 #ifdef NEWJACK2
@@ -213,7 +210,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     //mpi_exchange(cpu,sendbuffer,recvbuffer,2,(iter==0));
     
 #ifdef WMPI
-    if(curoct!=NULL){
+    if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
       t[3]=MPI_Wtime();
       nextoct=gathervec2_light(curoct,vectors->vecpot,1,stride,cpu,&nread,level); // potential
 #ifdef WGPU
@@ -246,10 +243,9 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 
   } // next iteration ready
 
-  //if(level==7) printf("normd=%e restot=%e res=%e on rank %d\n",normd_org,restot,res,cpu->rank);
   if((cpu->rank==0)&&(norm_d!=0.)) printf("level=%2d iter=%4d relative residual=%e res=%e den=%e \n ",level,iter,sqrt(res/norm_d),sqrt(res),sqrt(norm_d));
 
-  if(curoct!=NULL){
+  if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
 #ifdef MULTIGRID
     // if multigrid enabled, we recompute the residual
     // to spare some memory we copy the residual in vecpotnew
@@ -283,6 +279,12 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #endif
   }
 
+#ifdef MULTIGRID
+#ifdef WMPI
+  mpi_exchange_level(cpu,sendbuffer,recvbuffer,4,(iter==0),level);
+#endif
+#endif
+  
   return epsilon;
 }
 

@@ -15,7 +15,6 @@
 #include "segment.h"
 #include "communication.h"
 #include "mgrid.h"
-
 #include <time.h>
 
 
@@ -23,6 +22,10 @@
 #include "interface.h"
 #include "vector_gpu.h"
 #include "cic_gpu.h"
+#endif
+
+#ifdef WHYDRO
+#include "hydro_utils.h"
 #endif
 
 // ===============================================================================
@@ -150,12 +153,12 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD,&(cpu.rank));
 
   //========= creating a PACKET MPI type =======
-  MPI_Datatype MPI_PACKET,oldtypes[2]; 
-  int          blockcounts[2];
+  MPI_Datatype MPI_PACKET,oldtypes[3]; 
+  int          blockcounts[3];
   
   /* MPI_Aint type used to be consistent with syntax of */
   /* MPI_Type_extent routine */
-  MPI_Aint    offsets[2], extent;
+  MPI_Aint    offsets[3], extent;
   
   
   /* Setup description of the 8 MPI_FLOAT fields data */
@@ -167,11 +170,16 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_FLOAT */
   MPI_Type_extent(MPI_FLOAT, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_INT;
-  blockcounts[1] = 2;
+  oldtypes[1] = MPI_LONG;
+  blockcounts[1] = 1;
+
+  MPI_Type_extent(MPI_LONG, &extent);
+  offsets[2] = offsets[1]+extent;
+  oldtypes[2] = MPI_INT;
+  blockcounts[2] = 1;
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PACKET);
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET);
   MPI_Type_commit(&MPI_PACKET);
 
 #ifdef PIC
@@ -188,10 +196,15 @@ int main(int argc, char *argv[])
   MPI_Type_extent(MPI_FLOAT, &extent);
   offsets[1] = 7 * extent;
   oldtypes[1] = MPI_INT;
-  blockcounts[1] = 4;
+  blockcounts[1] = 3;
+
+  MPI_Type_extent(MPI_INT, &extent);
+  offsets[2] = 3 * extent+offsets[1];
+  oldtypes[2] = MPI_LONG;
+  blockcounts[2] = 1;
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PART);
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART);
   MPI_Type_commit(&MPI_PART);
   
 #endif
@@ -243,18 +256,19 @@ int main(int argc, char *argv[])
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
+#ifdef PIC
   part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+#endif
  
   if(cpu.rank==0){
     printf(" === alloc Memory ===\n");
+    printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);
     printf(" grid = %f MB\n",(ngridmax/(1024*1024.))*sizeof(struct OCT));
-    printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct OCT));
+    printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct PART));
   }
 
   firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the firstoct of each level
   lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the last oct of each level
-#ifdef PIC
-#endif
   cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); memsize+=cpu.maxhash*sizeof(struct OCT*);// the htable keys->oct address
   cpu.noct=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
 
@@ -279,6 +293,22 @@ int main(int argc, char *argv[])
   vectors.vecpot=(float*)calloc(stride*8,sizeof(float));
   vectors.vecpotnew=(float*)calloc(stride*8,sizeof(float));
   vectors.vecden=(float*)calloc(stride*8,sizeof(float));
+
+#ifdef WHYDRO
+  vectors.vec_d=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_u=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_v=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_w=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_p=(float*)calloc(stride*8,sizeof(float));
+
+  vectors.vec_dnew=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_unew=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_vnew=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_wnew=(float*)calloc(stride*8,sizeof(float));
+  vectors.vec_pnew=(float*)calloc(stride*8,sizeof(float));
+
+#endif
+
   vectors.vecnei=(int *)calloc(stride*6,sizeof(int));
   vectors.vecl=(int *)calloc(stride,sizeof(int));
   vectors.veccpu=(int *)calloc(stride,sizeof(int));
@@ -361,7 +391,7 @@ int main(int argc, char *argv[])
 
   grid->parent=NULL;
   grid->level=1;
-  for(i=0;i<6;i++) grid->nei[i]=&root;
+  for(i=0;i<6;i++) grid->nei[i]=&root; //periodic boundary conditions
   grid->prev=NULL;
   grid->next=NULL;
 
@@ -494,11 +524,12 @@ int main(int argc, char *argv[])
   freeoct=lastoct[levelcoarse-1]+1; //(at this stage the memory is perfectly aligned)
   freeoct->prev=NULL;
   freeoct->next=freeoct+1;
-  for(curoct=freeoct+1;curoct<(grid+ngridmax-1);curoct++){ // sweeping all the freeocts
+  for(curoct=freeoct+1;curoct<(grid+ngridmax);curoct++){ // sweeping all the freeocts
     curoct->prev=curoct-1;
-    curoct->next=curoct+1;
+    curoct->next=NULL;
+    if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
-  curoct->next=NULL; // for the last free oct
+  //curoct->next=NULL; // for the last free oct
   //printf("freeoct=%p\n",freeoct);
 
 
@@ -943,7 +974,7 @@ int main(int argc, char *argv[])
 
 
 
-#ifdef HYDRO
+#ifdef WHYDRO
   
   //===================================================================================================================================
   //===================================================================================================================================
@@ -965,27 +996,25 @@ int main(int argc, char *argv[])
 
    /* // TEST 1 */
 
-#ifdef TESTH1
   WL.d=1.;
-  WL.u  =0.75;
+  WL.u=0.;
   WL.v=0.;
   WL.w=0.;
-  WL.p  =1.;
+  WL.p =1.;
 
   WR.d=0.125;
   WR.u  =0.;
   WR.v=0.;
   WR.w=0.;
   WR.p  =0.1;
-  X0=0.3;
-#endif
+  X0=0.5;
 
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
 
   // ======================================================
 
-  for(level=levelcoarse;level<=levelcoarse;level++) // (levelcoarse only for the moment)
+  for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
     {
       dxcur=pow(0.5,level);
       nextoct=firstoct[level-1];
@@ -996,9 +1025,9 @@ int main(int argc, char *argv[])
 	  nextoct=curoct->next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      xc=curoct->x+( icell   %2)*dxcur+0.5*dxcur; 
+	      xc=curoct->x+( icell   %2)*dxcur;
 
-	      if(xc<X0){
+	      if(xc<=X0){
 		curoct->cell[icell].d=WL.d;
 		curoct->cell[icell].u=WL.u;
 		curoct->cell[icell].v=WL.v;
@@ -1022,10 +1051,9 @@ int main(int argc, char *argv[])
     }
   
 
-  sprintf(filename,"data/denhyd.%05d.p%05d",0,cpu.rank); 
+  sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank); 
   dumpcube(lmap,firstoct,101,filename,0.); 
 
-  abort();
 
 
   //===================================================================================================================================
@@ -1114,7 +1142,7 @@ int main(int argc, char *argv[])
 
     // ==================================== refining (and destroying) the octs
 
-    curoct=refine_cells(levelcoarse,levelmax,firstoct,lastoct,freeoct,&cpu);
+    curoct=refine_cells(levelcoarse,levelmax,firstoct,lastoct,freeoct,&cpu,grid+ngridmax);
     freeoct=curoct;
   
 #endif
@@ -1171,8 +1199,34 @@ int main(int argc, char *argv[])
     MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
 
+  int ltot,gtot=0,nomax,nomin;
+  if(cpu.rank==0){
+    printf("===================================================\n");
+  }
+  for(level=2;level<=levelmax;level++){
+    ltot=cpu.noct[level-1];
+    nomax=ltot;
+    nomin=ltot;
+    gtot+=ltot;
+#ifdef WMPI
+    MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu.comm);
+    MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu.comm);
+    MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
+#endif
+    if(cpu.rank==0){
+      printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
+    }
+  }
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu.comm);
+#endif
+  if(cpu.rank==0){
+    printf("grid occupancy=%4.1f \n",(gtot/(1.0*ngridmax))*100.);
+  }
 
 
+
+#ifdef PIC
     // ==================================== POISSON Testing the jacobi iteration
       float res;
 
@@ -1265,6 +1319,7 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
+#endif
 
   // ==================================== Force calculation and velocity update   // Corrector step
 #ifdef PIC
@@ -1274,7 +1329,6 @@ int main(int argc, char *argv[])
 #endif
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
 #endif
-
   // ==================================== DUMP AFTER SYNCHRONIZATION
 #if 1
   if(nsteps%(param.ndumps)==0){
@@ -1303,24 +1357,37 @@ int main(int argc, char *argv[])
   
   //==== Gathering particles for dump
 
+#ifdef PIC
     sprintf(filename,"data/part.%05d.p%05d",nsteps,cpu.rank);
     dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
+#endif
 
   }
 #endif
 
 
   // ==================================== New timestep
-
+  dtnew=dt;
 #ifdef TESTCOSMO
   faexp2=f_aexp(tsim,omegam,omegav)/(tsim*tsim);
 #endif
 
-  dtnew=comptstep(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+#ifdef PIC
+  float dtpic;
+  dtpic=comptstep(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+  dtnew=(dtpic<dtnew?dtpic:dtnew);
+#endif
 
-  if(cpu.rank==0) printf("dt=%e\n",dtnew);
+#ifdef WHYDRO
+  float dthydro;
+  dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+  dtnew=(dthydro<dtnew?dthydro:dtnew);
+#endif
+
+  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 
   // ==================================== Force calculation and velocity update   // predictor step
+#ifdef PIC
   if(cpu.rank==0) printf("Corrector\n");
 
 #ifdef TESTCOSMO
@@ -1328,11 +1395,11 @@ int main(int argc, char *argv[])
 #endif
 
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+#endif
 
   // ==================================== Moving Particles + Oct management
 #ifdef PIC
   
-#if 1
 #ifndef PARTN
   if(cpu.rank==0) printf("Moving particles\n");
     // Computing displacement (predictor)
@@ -1362,11 +1429,104 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
+
+#ifdef WHYDRO
+
+    // ================================= performing hydro calculations
+    
+    if(cpu.rank==0) printf("Start Hydro\n");
+    for(level=levelcoarse;level<=levelmax;level++)
+      {
+	dxcur=pow(0.5,level);
+	// ------------- cleaning the vector positions
+	clean_vec(levelmax,firstoct);
+
+	// --------------- setting the first oct of the level
+	curoct=firstoct[level-1];
+	
+
+#ifdef WMPI
+	int nolevel=(curoct==NULL);
+	// --------------- do we need to calculate the level ?
+	MPI_Allreduce(MPI_IN_PLACE,&nolevel,1,MPI_INT,MPI_SUM,cpu.comm);
+	if(nolevel==cpu.nproc){
+	  //we skip the calculation
+	  epsilon=0.;
+	  return epsilon;
+	}
+#endif
+	
+	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	  
+	  // -------------  cleaning working arrays
+	  
+	  memset(vectors.vec_d,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_u,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_v,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_w,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_p,0,sizeof(float)*stride*8);
+	  
+	  memset(vectors.vec_dnew,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_unew,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_vnew,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_wnew,0,sizeof(float)*stride*8);
+	  memset(vectors.vec_pnew,0,sizeof(float)*stride*8);
+	  
+	  memset(vectors.vecnei,0,sizeof(int)*stride*6);
+	  memset(vectors.vecl,0,sizeof(int)*stride);
+	  memset(vectors.veccpu,0,sizeof(int)*stride);
+	  memset(vectors.vecicoarse,0,sizeof(int)*stride);
+	  
+      
+	  // ------------------- setting neighbors to -1
+	  for(i=0;i<stride*6;i++){vectors.vecnei[i]=-1;}
+	  
+	  // ---------------- gathering the neighbors
+	  
+	  int nocttotal,nread;
+	  nocttotal=countvecocts(curoct,stride,&cpu,&nread); // we count the actual numbers of octs involved
+	  stride=(nocttotal%64==0?nocttotal:(nocttotal/64+1)*64); // let us be wild ! we change stride for nread
+	  //printf("new stride=%d\n",stride);
+
+	  nextoct=gathervecnei2(curoct,vectors.vecnei,stride,&cpu,&nread); // gathering the neighbours
+	  
+  
+	  // ------------ gathering the PRIMITIVE values
+	  nextoct=gathervec2(curoct,vectors.vec_d,10,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // density 
+	  nextoct=gathervec2(curoct,vectors.vec_u,20,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // u
+	  nextoct=gathervec2(curoct,vectors.vec_v,30,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // v
+	  nextoct=gathervec2(curoct,vectors.vec_w,40,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // w
+	  nextoct=gathervec2(curoct,vectors.vec_p,50,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // p
+	  
+
+	  // ------------ solving the hydro
+	  
+	  hydrosolve(&vectors,level,cpu.rank,nread,stride,dxcur,dtnew);
+	  
+	  
+	  // ------------ scatter back the result
+	  
+	  nextoct=scattervec(curoct,vectors.vec_d,10,stride,&cpu,nread); 
+	  nextoct=scattervec(curoct,vectors.vec_u,20,stride,&cpu,nread); 
+	  nextoct=scattervec(curoct,vectors.vec_v,30,stride,&cpu,nread); 
+	  nextoct=scattervec(curoct,vectors.vec_w,40,stride,&cpu,nread); 
+	  nextoct=scattervec(curoct,vectors.vec_p,50,stride,&cpu,nread); 
+
+	}
+      }
+
+    sprintf(filename,"data/denhyd.%05d.p%05d",nsteps,cpu.rank); 
+    dumpcube(lmap,firstoct,101,filename,0.); 
+    if(cpu.rank==0) printf("Hydro done\n");
+
+#endif
+
+
 #if 1
   // ==================================== Check the number of particles and octs
   multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+
 #endif	 
-#endif
 
 #ifdef EGYCSV
   // ==================================== Energy Conservation Test
@@ -1390,7 +1550,9 @@ int main(int argc, char *argv[])
 
   // =================================== dumping information
 
+#ifdef PIC
   if(cpu.rank==0) fprintf(fi,"istep=%d t=%e dt=%e coarseres=%e\n",nsteps,tsim,(dt+dtnew)*0.5,res);
+#endif
 
   //==================================== timestep completed, looping
   tsim+=dtnew;
@@ -1403,6 +1565,21 @@ int main(int argc, char *argv[])
       free(vectors.vecpot); //contains the potential in "stride" octs
       free(vectors.vecpotnew); //contains the potential in "stride" octs
       free(vectors.vecden); //contains the density   in "stride" octs
+
+#ifdef WHYDRO
+      free(vectors.vec_d); 
+      free(vectors.vec_u); 
+      free(vectors.vec_v); 
+      free(vectors.vec_w); 
+      free(vectors.vec_p); 
+
+      free(vectors.vec_dnew); 
+      free(vectors.vec_unew); 
+      free(vectors.vec_vnew); 
+      free(vectors.vec_wnew); 
+      free(vectors.vec_pnew); 
+#endif
+
       free(vectors.vecnei);//contains the cell neighbors of the octs
       free(vectors.vecl); // contains the level of the octs
       free(vectors.veccpu); // contains the level of the octs

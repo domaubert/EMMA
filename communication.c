@@ -26,7 +26,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   struct OCT *curoct;
   struct OCT *desoct;
   struct OCT *newoct;
-  int key;
+  long key;
   int inei;
   int i,j;
   int nbnd;
@@ -197,7 +197,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     
     // assigning the values
     pack->level=cpu->bndoct[i]->level;
-    pack->key=(int)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
+    pack->key=(long)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
     for(ii=0;ii<8;ii++){
       switch(field){
       case 0:
@@ -250,7 +250,7 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PAR
 
 	  // assigning the values
 	  part->level=cpu->bndoct[i]->level;
-	  part->key=(int)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct (is the eventual destination)
+	  part->key=(long)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct (is the eventual destination)
 	  part->icell=ii;
 
 	  // we assign the data to the communicator
@@ -547,7 +547,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%d\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -622,7 +622,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%d\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    

@@ -14,7 +14,7 @@
 #include "communication.h"
 #include "particle.h"
 
-struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu)
+struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit)
 {
   int nref,ndes;
   struct OCT *newoct;
@@ -292,6 +292,10 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		lastoct[level]=newoct;
 
 		newoct=freeoct; //ready to go to the next free oct
+		if(newoct>=(limit-1)){
+ 		  printf("\n ERROR === Allocated grid full, please increase ngridmax");
+ 		  abort();
+ 		}
 	      }
 
 	      
@@ -466,7 +470,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    break;
 			    //=========================================================
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
-			    if(curoct->level<=levelmax){ // we don't need to test the finest level
+			    if((curoct->level<=levelmax)&&(ismooth==0)){ // we don't need to test the finest level
 			      mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->level>=levelcoarse);
 			      //mcell=countpart(curoct->cell[icell].phead);
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {

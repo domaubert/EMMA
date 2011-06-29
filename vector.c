@@ -218,6 +218,27 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 	    }
 
 	    vecnei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+
+#ifdef TRANSXP
+	    if(inei==1){
+	      if((curoct->nei[inei]->child->x-curoct->x)<0.5){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
+#ifdef TRANSXM
+	    if(inei==0){
+	      if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
 	    if(vecnei[icur+inei*stride]>=stride){
 	      printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
 	      abort();
@@ -312,12 +333,29 @@ struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, in
 	case 1 :
 	  vec[ipos+icell*stride]=curoct->cell[icell].pot;
 	  break;
+#ifdef WHYDRO
+	case 10 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].d;
+	  break;
+	case 20 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].u;
+	  break;
+	case 30 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].v;
+	  break;
+	case 40 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].w;
+	  break;
+	case 50 :
+	  vec[ipos+icell*stride]=curoct->cell[icell].p;
+	  break;
+#endif
 	}
       }
       
       vecicoarse[ipos]=curoct->parent->idx; // we store the idx of the parent cell of the current oct
       vecl[ipos]=curoct->level; // assigning a level
-      veccpu[ipos]=curoct->cpu; // assigning a level
+      veccpu[ipos]=curoct->cpu; // assigning a cpu
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -425,6 +463,23 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
 	case 2 :
 	  curoct->cell[icell].temp=vec[ipos+icell*stride];
 	  break;
+#ifdef WHYDRO
+	case 10 :
+	  curoct->cell[icell].d=vec[ipos+icell*stride];
+	  break;
+	case 20 :
+	  curoct->cell[icell].u=vec[ipos+icell*stride];
+	  break;
+	case 30 :
+	  curoct->cell[icell].v=vec[ipos+icell*stride];
+	  break;
+	case 40 :
+	  curoct->cell[icell].w=vec[ipos+icell*stride];
+	  break;
+	case 50 :
+	  curoct->cell[icell].p=vec[ipos+icell*stride];
+	  break;
+#endif
 	}
       }
       iread++;

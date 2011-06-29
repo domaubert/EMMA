@@ -3,7 +3,7 @@
 p=l=nd=[];
 t=[];
 
-for(i=1;i<=1080;i+=1){ 
+for(i=1;i<=1200;i+=1){ 
   //  pname=swrite(format="data/l7_6/part.%05d",i);
   pname=swrite(format="../data/part.%05d",i);
   //  pp=readpart(pname,a);
