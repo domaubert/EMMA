@@ -8,7 +8,7 @@
 #define GAMMA (1.4)
 #define NX 32
 #define CFL 0.8
-#define STEPMAX 10000
+#define STEPMAX 5
 
 
 struct Wtype{
@@ -541,8 +541,8 @@ int main()
   WR.v=0.;
   WR.w=0.;
   WR.p  =0.1;
-  X0=0.5;
-  TMAX=0.2;
+  X0=0.3;
+  TMAX=0.25;
 
   /* // TEST 2 */
   /* WL.d=1.; */
@@ -762,12 +762,12 @@ int main()
 		  // Getting the fluxes RIGHT
 		  getflux_X(&Utest3D,FR);
 
-		  if(((WLloc.d==1.)&&(WRloc.d==0.125))&&(d==1)){
-		    //printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0]));
-		    printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n dt=%e dx=%e", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0]),dt,dx);
-		    //flag=1;
-		    abort();
-		  }
+		  /* if(((WLloc.d==1.)&&(WRloc.d==0.125))&&(d==1)){ */
+		  /*   //printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0])); */
+		  /*   printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n dt=%e dx=%e", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0]),dt,dx); */
+		  /*   //flag=1; */
+		  /*   abort(); */
+		  /* } */
 
 
 		  // Y DIRECTION =========================================================================
@@ -985,7 +985,6 @@ int main()
       t+=dt;
       count++;
       if(count>STEPMAX) break;
-      break;
     }
 
 

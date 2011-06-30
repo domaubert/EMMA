@@ -221,7 +221,7 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 
 #ifdef TRANSXP
 	    if(inei==1){
-	      if((curoct->nei[inei]->child->x-curoct->x)<0.5){
+	      if((curoct->nei[inei]->child->x-curoct->x)<0.){
 		// the neighbor is a periodic mirror
 		//printf("wouhou\n");
 		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor

@@ -997,7 +997,7 @@ int main(int argc, char *argv[])
    /* // TEST 1 */
 
   WL.d=1.;
-  WL.u=0.;
+  WL.u=0.75;
   WL.v=0.;
   WL.w=0.;
   WL.p =1.;
@@ -1007,7 +1007,7 @@ int main(int argc, char *argv[])
   WR.v=0.;
   WR.w=0.;
   WR.p  =0.1;
-  X0=0.5;
+  X0=0.3;
 
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
@@ -1104,6 +1104,8 @@ int main(int argc, char *argv[])
   int marker;
 
   float tmax;
+
+
 #ifdef TESTCOSMO
 #ifdef ZELD0
   tmax=0.5;
@@ -1112,6 +1114,10 @@ int main(int argc, char *argv[])
 #endif
 #else
   tmax=1000.;
+#endif
+
+#ifdef WHYDRO
+  tmax=0.21;
 #endif
 
   FILE *fegy;
@@ -1131,7 +1137,7 @@ int main(int argc, char *argv[])
 #ifdef TESTCOSMO
       if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
 #else
-    if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
+      if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
 
 

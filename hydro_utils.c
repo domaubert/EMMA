@@ -333,20 +333,21 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
       // X DIRECTION =========================================================================
       
       // --------- solving the Riemann Problems LEFT
-
+      int vc;
       inei=0; // we go to the left
       if(vnei[inei]==6){
 	idxL=i+vcell[inei]*stride;
       }
       else{
 	idxL=data->vecnei[i+vnei[inei]*stride];
+	vc=vcell[inei];
 #ifdef TRANSXM
 	if(idxL==i){
 	  // we found a transmissive boundary
-	  vcell[inei]=vcell[inei]+((vcell[inei]&1)==0?1:-1); // flipping the cells
+	  vc=vc+((vc&1)==0?1:-1); // flipping the cells
 	}
 #endif
-	idxL=idxL+vcell[inei]*stride;
+	idxL=idxL+vc*stride;
       }
       idxR=i+icell*stride;
 
@@ -361,7 +362,7 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
       WRloc.u=data->vec_u[idxR];
       WRloc.p=data->vec_p[idxR];
       WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
+      //if(WLloc.d!=WRloc.d) printf("R== %e %e %e p=%e u=%e niter=%d\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n);
 
       // Riemann Solver
       pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
@@ -373,6 +374,7 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
       Wtest3D.p=Wtest.p;
       Wtest3D.a=Wtest.a;
       
+      //if(WLloc.d!=WRloc.d) printf("L== %e %e %e p=%e u=%e niter=%d\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n);
       /* if((WLloc.d==1.0)&&(WRloc.d==0.125)){ */
       /* 	printf("L== %e %e %e p=%e u=%e niter=%d\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n); */
       /* 	flag=1; */
@@ -404,13 +406,14 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
       }
       else{
 	idxR=data->vecnei[i+vnei[inei]*stride];
+	vc=vcell[inei];
 #ifdef TRANSXP	
 	if(idxR==i){
 	  // we found a transmissive boundary
-	  vcell[inei]=vcell[inei]+((vcell[inei]&1)==0?1:-1); // flipping the cells
+	  vc=vc+((vc&1)==0?1:-1); // flipping the cells
 	}
 #endif
-	idxR=idxR+vcell[inei]*stride;
+	idxR=idxR+vc*stride;
       }
 
       // Switching to Split description
@@ -668,7 +671,7 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
 		  
       U2W(&Unew,&Wnew);
       
-      //if(Wnew.d!=Wold.d) printf("R== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e dt/dx=%e\n", WLloc.d,WRloc.d,Wnew.d,pstar,ustar,n,FL[0],FR[0],dt/dx);
+      //if(Wold.d==1.) printf("R== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e dt/dx=%e\n", WLloc.d,WRloc.d,Wnew.d,pstar,ustar,n,FL[0],FR[0],dt/dx);
 
       idxR=i+icell*stride;
       
