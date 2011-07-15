@@ -165,6 +165,19 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 			      case 101:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].d;
 				break;
+			      case 102:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].u;
+				break;
+			      case 103:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].v;
+				break;
+			      case 104:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].w;
+				break;
+			      case 105:
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].p;
+				break;
+
 #endif
 			      }
 			    }

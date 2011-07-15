@@ -239,6 +239,46 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 	    }
 #endif
 
+#ifdef TRANSYP
+	    if(inei==3){
+	      if((curoct->nei[inei]->child->y-curoct->y)<0.){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
+#ifdef TRANSYM
+	    if(inei==2){
+	      if((curoct->nei[inei]->child->y-curoct->y)>0.5){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
+#ifdef TRANSZP
+	    if(inei==5){
+	      if((curoct->nei[inei]->child->z-curoct->z)<0.){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
+#ifdef TRANSZM
+	    if(inei==4){
+	      if((curoct->nei[inei]->child->z-curoct->z)>0.5){
+		// the neighbor is a periodic mirror
+		//printf("wouhou\n");
+		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
+	      }
+	    }
+#endif
+
 	    if(vecnei[icur+inei*stride]>=stride){
 	      printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
 	      abort();
@@ -363,6 +403,82 @@ struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, in
   return nextoct;
 }
 
+#ifdef WHYDRO
+struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos;
+  int iread=0;
+  int icell;
+  
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      //getting the vector element
+     ipos=curoct->vecpos;
+     if(ipos<0) continue; // for coarseocts not involved in fine level calculations
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+
+	data->vec_d[ipos+icell*stride]=curoct->cell[icell].d;
+	data->vec_u[ipos+icell*stride]=curoct->cell[icell].u;
+	data->vec_v[ipos+icell*stride]=curoct->cell[icell].v;
+	data->vec_w[ipos+icell*stride]=curoct->cell[icell].w;
+	data->vec_p[ipos+icell*stride]=curoct->cell[icell].p;
+
+#ifdef AXLFORCE
+#ifdef SELFGRAV
+	// we store the gravitational force in the new fields
+	data->vec_unew[ipos+icell*stride]=curoct->cell[icell].fx;
+	data->vec_vnew[ipos+icell*stride]=curoct->cell[icell].fy;
+	data->vec_wnew[ipos+icell*stride]=curoct->cell[icell].fz;
+	//if(curoct->cell[icell].d>0.5) printf("fx=%e\n",data->vec_unew[ipos+icell*stride]);
+#endif
+#endif
+/* 	switch(var){ */
+/* 	case 0: */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].density; */
+/* 	  break; */
+/* 	case 1 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].pot; */
+/* 	  break; */
+/* #ifdef WHYDRO */
+/* 	case 10 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].d; */
+/* 	  break; */
+/* 	case 20 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].u; */
+/* 	  break; */
+/* 	case 30 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].v; */
+/* 	  break; */
+/* 	case 40 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].w; */
+/* 	  break; */
+/* 	case 50 : */
+/* 	  vec[ipos+icell*stride]=curoct->cell[icell].p; */
+/* 	  break; */
+/* #endif */
+/* 	} */
+
+      }
+      
+      data->vecicoarse[ipos]=curoct->parent->idx; // we store the idx of the parent cell of the current oct
+      data->vecl[ipos]=curoct->level; // assigning a level
+      data->veccpu[ipos]=curoct->cpu; // assigning a cpu
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+#endif
+
 struct OCT *gathervec2_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
@@ -433,7 +549,7 @@ struct OCT *checknei(struct OCT *octstart, int *vecnei, int stride)
 
 //============================================================================
 
-struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread)
+struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -487,6 +603,69 @@ struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, s
   }
   return nextoct;
 }
+
+#ifdef WHYDRO
+struct OCT *scattervechydro(struct OCT *octstart, struct MULTIVECT *data, int stride, struct CPUINFO *cpu)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos,iread;
+  int icell;
+  
+  nextoct=octstart;
+  iread=0;
+
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      //getting the vector element
+     ipos=curoct->vecpos;
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+	curoct->cell[icell].d=data->vec_dnew[ipos+icell*stride];
+	curoct->cell[icell].u=data->vec_unew[ipos+icell*stride];
+	curoct->cell[icell].v=data->vec_vnew[ipos+icell*stride];
+	curoct->cell[icell].w=data->vec_wnew[ipos+icell*stride];
+	curoct->cell[icell].p=data->vec_pnew[ipos+icell*stride];
+
+/* 	switch(var){ */
+/* 	case 1: */
+/* 	  curoct->cell[icell].pot=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 0 : */
+/* 	  curoct->cell[icell].density=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 2 : */
+/* 	  curoct->cell[icell].temp=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* #ifdef WHYDRO */
+/* 	case 10 : */
+/* 	  curoct->cell[icell].d=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 20 : */
+/* 	  curoct->cell[icell].u=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 30 : */
+/* 	  curoct->cell[icell].v=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 40 : */
+/* 	  curoct->cell[icell].w=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* 	case 50 : */
+/* 	  curoct->cell[icell].p=vec[ipos+icell*stride]; */
+/* 	  break; */
+/* #endif */
+/* 	} */
+      }
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  return nextoct;
+}
+#endif
 
 struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread, int level)
 {

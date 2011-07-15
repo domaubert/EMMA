@@ -2106,7 +2106,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 
   if(cpu->rank==0) printf("==> start CIC on CPU\n");
 
-  // First we clean the density
+  // First we clean the density (or setup the density with hydro values)
   for(level=levelmax;level>=levelcoarse;level--)
     {
       nextoct=firstoct[level-1];
@@ -2115,10 +2115,15 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	{
 	  curoct=nextoct;
 	  nextoct=curoct->next;
+#ifdef WHYDRO
+	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=curoct->cell[icell].d;
+#else
 	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=0.;
+#endif
 	}while(nextoct!=NULL);
     }
 
+#ifdef PIC
   //second start CIC
   for(level=levelcoarse;level<=levelmax;level++)
     {
@@ -2260,6 +2265,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	    }
 	}while(nextoct!=NULL);
     }
+#endif
   //  printf("great total=%f\n",toto);
 }
 

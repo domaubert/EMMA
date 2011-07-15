@@ -16,7 +16,7 @@
 #include "communication.h"
 #include "mgrid.h"
 #include <time.h>
-
+#include <mpi.h>
 
 #ifdef WGPU
 #include "interface.h"
@@ -133,7 +133,12 @@ int main(int argc, char *argv[])
 
 
   float omegam,omegav,Hubble;
-
+  float avgdens; 
+#ifdef PIC
+  avgdens=1.;//we assume a unit mass in a unit length box
+#else
+  avgdens=0.;
+#endif
   //========== TEST ZONE (IF REQUIRED)==========
 
 /*   printf("size =%d\n",sizeof(struct CELL)); */
@@ -249,6 +254,7 @@ int main(int argc, char *argv[])
   dt=param.dt;
   cpu.maxhash=param.maxhash;
   cpu.levelcoarse=levelcoarse;
+
   //breakmpi();
   //========== allocations ===================
   
@@ -997,23 +1003,40 @@ int main(int argc, char *argv[])
    /* // TEST 1 */
 
   WL.d=1.;
-  WL.u=0.75;
+  WL.u=0.;
+  WL.v=0.;
+  WL.w=0.75;
+  WL.p =1.;
+
+  WR.d=0.125;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.1;
+  X0=0.3;
+
+   /* // SPHERICAL EXPLOSION */
+
+  WL.d=10.;
+  WL.u=0.;
   WL.v=0.;
   WL.w=0.;
   WL.p =1.;
 
   WR.d=0.125;
-  WR.u  =0.;
+  WR.u=0.;
   WR.v=0.;
   WR.w=0.;
-  WR.p  =0.1;
-  X0=0.3;
+  WR.p=1.;
+  X0=0.2;
 
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
 
   // ======================================================
 
+  float dtot=0.;
+  int nc=0;
   for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
     {
       dxcur=pow(0.5,level);
@@ -1025,23 +1048,70 @@ int main(int argc, char *argv[])
 	  nextoct=curoct->next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      xc=curoct->x+( icell   %2)*dxcur;
+	      xc=curoct->x+( icell&1)*dxcur;
+	      yc=curoct->y+((icell>>1)&1)*dxcur;
+	      zc=curoct->z+((icell>>2))*dxcur;
 
-	      if(xc<=X0){
-		curoct->cell[icell].d=WL.d;
-		curoct->cell[icell].u=WL.u;
-		curoct->cell[icell].v=WL.v;
-		curoct->cell[icell].w=WL.w;
-		curoct->cell[icell].p=WL.p;
-		curoct->cell[icell].a=WL.a;
+	      float vrx=(((float)rand())/RAND_MAX)*0.02-0.01;
+	      float vry=(((float)rand())/RAND_MAX)*0.02-0.01;
+	      float vrz=(((float)rand())/RAND_MAX)*0.02-0.01;
+
+	      /* if((zc>0.75)||(zc<0.25)){ */
+	      /* 	curoct->cell[icell].d=1.0; */
+	      /* 	curoct->cell[icell].u=-0.5+vrx; */
+	      /* 	curoct->cell[icell].v=vry; */
+	      /* 	curoct->cell[icell].w=vrz; */
+	      /* 	curoct->cell[icell].p=2.5; */
+	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].d=2.0; */
+	      /* 	curoct->cell[icell].u=0.5+vrx; */
+	      /* 	curoct->cell[icell].v=vry; */
+	      /* 	curoct->cell[icell].w=vrz; */
+	      /* 	curoct->cell[icell].p=2.5; */
+	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
+	      /* } */
+
+	      
+	      if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){
+	      	curoct->cell[icell].d=WL.d;
+	      	curoct->cell[icell].u=WL.u;
+	      	curoct->cell[icell].v=WL.v;
+	      	curoct->cell[icell].w=WL.w;
+	      	curoct->cell[icell].p=WL.p;
+	      	curoct->cell[icell].a=WL.a;
+
 	      }
 	      else{
-		curoct->cell[icell].d=WR.d;
-		curoct->cell[icell].u=WR.u;
-		curoct->cell[icell].v=WR.v;
-		curoct->cell[icell].w=WR.w;
-		curoct->cell[icell].p=WR.p;
-		curoct->cell[icell].a=WR.a;
+	      	curoct->cell[icell].d=WR.d;
+	      	curoct->cell[icell].u=WR.u;
+	      	curoct->cell[icell].v=WR.v;
+	      	curoct->cell[icell].w=WR.w;
+	      	curoct->cell[icell].p=WR.p;
+	      	curoct->cell[icell].a=WR.a;
+	      }
+	      
+	      /* if(zc<=X0){ */
+	      /* 	curoct->cell[icell].d=WL.d; */
+	      /* 	curoct->cell[icell].u=WL.u; */
+	      /* 	curoct->cell[icell].v=WL.v; */
+	      /* 	curoct->cell[icell].w=WL.w; */
+	      /* 	curoct->cell[icell].p=WL.p; */
+	      /* 	curoct->cell[icell].a=WL.a; */
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].d=WR.d; */
+	      /* 	curoct->cell[icell].u=WR.u; */
+	      /* 	curoct->cell[icell].v=WR.v; */
+	      /* 	curoct->cell[icell].w=WR.w; */
+	      /* 	curoct->cell[icell].p=WR.p; */
+	      /* 	curoct->cell[icell].a=WR.a; */
+	      /* } */
+	      
+	      if(level==levelcoarse) {
+		dtot+=curoct->cell[icell].d;
+		nc++;
 	      }
 
 	    }
@@ -1050,11 +1120,13 @@ int main(int argc, char *argv[])
       //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
     }
   
+  avgdens+=dtot/nc;
+  printf("avgdens=%e\n",avgdens);
 
   sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank); 
   dumpcube(lmap,firstoct,101,filename,0.); 
 
-
+  //  abort();
 
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1158,7 +1230,10 @@ int main(int argc, char *argv[])
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
 #endif
 
-#ifdef PIC
+
+
+
+
   // ==================================== performing the CIC assignement
 #ifndef WGPU
   call_cic(levelmax,levelcoarse,firstoct,&cpu);
@@ -1167,34 +1242,32 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WMPI
-    // ==================================== performing the CIC BOUNDARY CORRECTION 
+  //------------- performing the CIC BOUNDARY CORRECTION 
   mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
-  // ======================================= Density boundary mpi update 
+  //------------  Density boundary mpi update 
   mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
-
-#endif
 #endif
 
 
   //======================================= cleaning the marks
-    for(level=1;level<=levelmax;level++) // looping over levels
-      {
-	/* float maxd=0.,mind=1e30,avg=0.; */
-	/* int ncell=0; */
-	nextoct=firstoct[level-1];
-	if(nextoct==NULL) continue;
-	do // sweeping level
-	  {
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
-		curoct->cell[icell].marked=0.;
-	      }
-	  }while(nextoct!=NULL);
+  for(level=1;level<=levelmax;level++) // looping over levels
+    {
+      /* float maxd=0.,mind=1e30,avg=0.; */
+      /* int ncell=0; */
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      curoct->cell[icell].marked=0.;
+	    }
+	}while(nextoct!=NULL);
 
-	//printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
-      }
+      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
+    }
 
 
 
@@ -1232,11 +1305,9 @@ int main(int argc, char *argv[])
 
 
 
-#ifdef PIC
+#ifdef SELFGRAV
     // ==================================== POISSON Testing the jacobi iteration
       float res;
-
-#ifndef PERFECT
 #ifdef TIME_JAC
   FILE *ft;
   //  sprintf(filename,"data/timejac.%05d.p%05d",nsteps+1,cpu.rank);
@@ -1298,7 +1369,7 @@ int main(int argc, char *argv[])
 
 #ifndef MULTIGRID
       // --- pure jacobi relaxation
-      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
 #else
       int igrid;
       if((level==levelcoarse)&&(levelcoarse!=levelmin)){
@@ -1306,13 +1377,13 @@ int main(int argc, char *argv[])
 	for(igrid=0;igrid<nvcycles;igrid++){
 	  if(cpu.rank==0) printf("----------------------------------------\n");
 	  clean_pot(levelcoarse-1,firstoct);	    // ------------- cleaning the vector positions
-	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
 	  if(res<acc) break;
 	}
       }
       else{
 	// --- pure jacobi relaxation
-	  poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+	poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
       }
 
        if(cpu.rank==0) printf("----------------------------------------\n");
@@ -1325,29 +1396,28 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
-#endif
 
   // ==================================== Force calculation and velocity update   // Corrector step
-#ifdef PIC
   if(cpu.rank==0) printf("Predictor\n");
 #ifdef TESTCOSMO
   faexp=f_aexp(tsim,omegam,omegav);
 #endif
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
-#endif
+
+
   // ==================================== DUMP AFTER SYNCHRONIZATION
 #if 1
   if(nsteps%(param.ndumps)==0){
     // ===== Casting rays to fill a map
     if(cpu.rank==0) printf("Dumping .......\n");
-    /* sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,2,filename,tsim+(dt+dtnew)*0.5); */
+    sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,2,filename,tsim+(dt+dtnew)*0.5);
     /* sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank); */
     /* dumpcube(lmap,firstoct,0,filename,tsim); */
-    /* sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,1,filename,tsim+(dt+dtnew)*0.5); */
-    /* sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,6,filename,tsim+(dt+dtnew)*0.5); */
+    sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,1,filename,tsim+(dt+dtnew)*0.5);
+    sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank);
+    dumpcube(lmap,firstoct,6,filename,tsim+(dt+dtnew)*0.5);
     /* sprintf(filename,"data/fy.%05d.p%05d",nsteps,cpu.rank); */
     /* dumpcube(lmap,firstoct,7,filename,tsim+(dt+dtnew)*0.5); */
     /* sprintf(filename,"data/fz.%05d.p%05d",nsteps,cpu.rank); */
@@ -1388,9 +1458,9 @@ int main(int argc, char *argv[])
   float dthydro;
   dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
   dtnew=(dthydro<dtnew?dthydro:dtnew);
+  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 #endif
 
-  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 
   // ==================================== Force calculation and velocity update   // predictor step
 #ifdef PIC
@@ -1440,6 +1510,7 @@ int main(int argc, char *argv[])
 
     // ================================= performing hydro calculations
     
+    double t0,t100,t20,t80;
     if(cpu.rank==0) printf("Start Hydro\n");
     for(level=levelcoarse;level<=levelmax;level++)
       {
@@ -1494,36 +1565,52 @@ int main(int argc, char *argv[])
 	  stride=(nocttotal%64==0?nocttotal:(nocttotal/64+1)*64); // let us be wild ! we change stride for nread
 	  //printf("new stride=%d\n",stride);
 
+	  t0=MPI_Wtime();
 	  nextoct=gathervecnei2(curoct,vectors.vecnei,stride,&cpu,&nread); // gathering the neighbours
 	  
   
 	  // ------------ gathering the PRIMITIVE values
-	  nextoct=gathervec2(curoct,vectors.vec_d,10,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // density 
-	  nextoct=gathervec2(curoct,vectors.vec_u,20,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // u
-	  nextoct=gathervec2(curoct,vectors.vec_v,30,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // v
-	  nextoct=gathervec2(curoct,vectors.vec_w,40,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // w
-	  nextoct=gathervec2(curoct,vectors.vec_p,50,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // p
+	  /* nextoct=gathervec2(curoct,vectors.vec_d,10,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // density  */
+	  /* nextoct=gathervec2(curoct,vectors.vec_u,20,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // u */
+	  /* nextoct=gathervec2(curoct,vectors.vec_v,30,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // v */
+	  /* nextoct=gathervec2(curoct,vectors.vec_w,40,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // w */
+	  /* nextoct=gathervec2(curoct,vectors.vec_p,50,vectors.vecl,vectors.vecicoarse,vectors.veccpu,stride,&cpu,&nread); // p */
 	  
+	  nextoct=gathervechydro(curoct,&vectors,stride,&cpu, &nread);
 
 	  // ------------ solving the hydro
 	  
+	  t20=MPI_Wtime();
 	  hydrosolve(&vectors,level,cpu.rank,nread,stride,dxcur,dtnew);
+	  t80=MPI_Wtime();
 	  
 	  
 	  // ------------ scatter back the result
 	  
-	  nextoct=scattervec(curoct,vectors.vec_d,10,stride,&cpu,nread); 
-	  nextoct=scattervec(curoct,vectors.vec_u,20,stride,&cpu,nread); 
-	  nextoct=scattervec(curoct,vectors.vec_v,30,stride,&cpu,nread); 
-	  nextoct=scattervec(curoct,vectors.vec_w,40,stride,&cpu,nread); 
-	  nextoct=scattervec(curoct,vectors.vec_p,50,stride,&cpu,nread); 
+	  nextoct=scattervechydro(curoct,&vectors, stride, &cpu);
+
+	  t100=MPI_Wtime();
+
+	  /*   nextoct=scattervec(curoct,vectors.vec_d,10,stride,&cpu,nread);  */
+	  /* nextoct=scattervec(curoct,vectors.vec_u,20,stride,&cpu,nread);  */
+	  /* nextoct=scattervec(curoct,vectors.vec_v,30,stride,&cpu,nread);  */
+	  /* nextoct=scattervec(curoct,vectors.vec_w,40,stride,&cpu,nread);  */
+	  /* nextoct=scattervec(curoct,vectors.vec_p,50,stride,&cpu,nread);  */
 
 	}
       }
 
+  if(nsteps%(param.ndumps)==0){
     sprintf(filename,"data/denhyd.%05d.p%05d",nsteps,cpu.rank); 
-    dumpcube(lmap,firstoct,101,filename,0.); 
-    if(cpu.rank==0) printf("Hydro done\n");
+    dumpcube(lmap,firstoct,101,filename,tsim+dtnew); 
+    sprintf(filename,"data/velhyd.%05d.p%05d",nsteps,cpu.rank); 
+    dumpcube(lmap,firstoct,102,filename,tsim+dtnew); 
+    sprintf(filename,"data/prehyd.%05d.p%05d",nsteps,cpu.rank); 
+    dumpcube(lmap,firstoct,105,filename,tsim+dtnew); 
+    /* sprintf(filename,"data/denhyd.%05d.p%05d",nsteps,cpu.rank);  */
+    /* dumpcube(lmap,firstoct,101,filename,0.);  */
+  }
+  if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);
 
 #endif
 

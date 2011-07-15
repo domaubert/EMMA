@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <mpi.h>
 
 #define NITERMAX 10
 #define ERRTOL 1e-6
 #define GAMMA (1.4)
-#define NX 32
+#define NX 128
 #define CFL 0.8
-#define STEPMAX 5
+#define STEPMAX 250
 
 
 struct Wtype{
@@ -497,7 +498,7 @@ void BCXPper(struct Wtype *W, struct Utype *U)
 int main()
 {
   
-  struct Wtype WL, WR;
+  struct Wtype1D WL, WR;
   float pstar,ustar;
   int n;
   int i,j,k;
@@ -531,18 +532,18 @@ int main()
 
   /* // TEST 1 */
   WL.d=1.;
-  WL.u  =0.;
-  WL.v=0.;
-  WL.w=0.;
+  WL.u  =0.75;
+  //WL.v=0.;
+  //WL.w=0.;
   WL.p  =1.;
 
   WR.d=0.125;
   WR.u  =0.;
-  WR.v=0.;
-  WR.w=0.;
+  /* WR.v=0.; */
+  /* WR.w=0.; */
   WR.p  =0.1;
   X0=0.3;
-  TMAX=0.25;
+  TMAX=0.2;
 
   /* // TEST 2 */
   /* WL.d=1.; */
@@ -573,19 +574,19 @@ int main()
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
   
-  /* pstar=findPressure(&WL,&WR,&n,&ustar); */
-  /* printf("TEST 1 niter=%d pstart=%e ustar=%e\n",n,pstar,ustar); */
+  pstar=findPressure(&WL,&WR,&n,&ustar);
+  printf("TEST 1 niter=%d pstart=%e ustar=%e\n",n,pstar,ustar);
 
-  /* fp=fopen("test1.dat","w"); */
-  /* t=TMAX; */
-  /* for(i=0;i<NX;i++) */
-  /*   { */
-  /*     //printf("i=%d\n",i); */
-  /*     getW(&Wtest, (x[i]-X0)/t, &WL, &WR, pstar, ustar); */
-  /*     //      printf("%e %e %e %e\n",x[i],Wtest.d,Wtest.u,Wtest.p); */
-  /*     fprintf(fp,"%e %e %e %e\n",x[i],Wtest.d,Wtest.u,Wtest.p); */
-  /*   } */
-  /* fclose(fp); */
+  fp=fopen("test1.dat","w");
+  t=TMAX;
+  for(i=0;i<NX;i++)
+    {
+      //printf("i=%d\n",i);
+      getW(&Wtest, (x[i]-X0)/t, &WL, &WR, pstar, ustar);
+      //      printf("%e %e %e %e\n",x[i],Wtest.d,Wtest.u,Wtest.p);
+      fprintf(fp,"%e %e %e %e\n",x[i],Wtest.d,Wtest.u,Wtest.p);
+    }
+  fclose(fp);
 
   //***************************************************************************
   // NUMERICAL RESULT
@@ -606,8 +607,8 @@ int main()
 		{
 		  Warray[idx].d=WL.d;
 		  Warray[idx].u=WL.u;
-		  Warray[idx].v=WL.v;
-		  Warray[idx].w=WL.w;
+		  Warray[idx].v=0.;
+		  Warray[idx].w=0.;
 		  Warray[idx].p=WL.p;
 		  Warray[idx].a=WL.a;
 		  W2U(&Warray[idx],&Uarray[idx]);
@@ -616,8 +617,8 @@ int main()
 		{
 		  Warray[idx].d=WR.d;
 		  Warray[idx].u=WR.u;
-		  Warray[idx].v=WR.v;
-		  Warray[idx].w=WR.w;
+		  Warray[idx].v=0.;
+		  Warray[idx].w=0.;
 		  Warray[idx].p=WR.p;
 		  Warray[idx].a=WR.a;
 		  W2U(&Warray[idx],&Uarray[idx]);
@@ -646,6 +647,8 @@ int main()
   float Smax;
   struct Wtype1D WRloc, WLloc,dtest;
   int d;
+
+  double t0,t100;
   t=0.;
   count=1;
   while(t<TMAX)
@@ -660,7 +663,7 @@ int main()
       dt=dx*CFL/Smax/3.;
 
       printf("Timestep #%d t=%e dt=%e\n",count,t,dt);
-
+      t0=MPI_Wtime();
       // setting the time step
       for(k=0;k<NX;k++)
 	{
@@ -669,7 +672,7 @@ int main()
 	      for(i=0;i<NX;i++)
 		{
 
-		  d=0;
+		  
 		  idx =i  +1+(j+1)*(NX+2)+(k+1)*(NX+2)*(NX+2);
 		  //printf("%d\n",idx);
 		  
@@ -762,14 +765,7 @@ int main()
 		  // Getting the fluxes RIGHT
 		  getflux_X(&Utest3D,FR);
 
-		  /* if(((WLloc.d==1.)&&(WRloc.d==0.125))&&(d==1)){ */
-		  /*   //printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0])); */
-		  /*   printf("L== %e %e %e p=%e u=%e niter=%d FL=%e FR=%e exp=%e\n dt=%e dx=%e", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n,FL[0],FR[0],1.+dt/dx*(FL[0]-FR[0]),dt,dx); */
-		  /*   //flag=1; */
-		  /*   abort(); */
-		  /* } */
-
-
+	
 		  // Y DIRECTION =========================================================================
 		  // solving the Riemann Problems LEFT
 
@@ -957,8 +953,8 @@ int main()
 		}
 	    }
 	}
+      
 
-      printf("cells ok\n");
 
       //memcpy(&Uarray[0],&Uarray[1],3*sizeof(float));
       //      memcpy(&Uarray[NX],&Uarray[NX-1],3*sizeof(float));
@@ -980,6 +976,9 @@ int main()
 	{
 	  U2W(&Uarray[i],&Warray[i]);
 	}
+
+      t100=MPI_Wtime();
+      printf("cells ok in %e\n",t100-t0);
 
       // update time
       t+=dt;

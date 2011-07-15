@@ -11,7 +11,7 @@
 #include "vector_gpu.h"
 #endif
 
-float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoct,struct MULTIVECT* vectors,int stride,struct CPUINFO *cpu,float omegam,float tsim, struct PACKET **sendbuffer,struct PACKET **recvbuffer, int niter, float acc){
+float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoct,struct MULTIVECT* vectors,int stride,struct CPUINFO *cpu,float omegam,float tsim, struct PACKET **sendbuffer,struct PACKET **recvbuffer, int niter, float acc, float avgdens){
   
   int i;
   float dx;
@@ -127,12 +127,12 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
      
   // -------------- we contrast the density by removing the average value
 #ifndef WGPU      
-  if(level>=levelcoarse) remove_valvec(vectors->vecden,nread,stride,1.,level,vectors->vecl); // restricted to coarse + fine levels
+  if(level>=levelcoarse) remove_valvec(vectors->vecden,nread,stride,avgdens,level,vectors->vecl); // restricted to coarse + fine levels
 #else
   CPU2GPU(vectors->vecden_d,vectors->vecden,sizeof(float)*stride*8);
   CPU2GPU_INT(vectors->vecl_d  ,vectors->vecl,sizeof(int)*stride);
   CPU2GPU_INT(vectors->veccpu_d  ,vectors->veccpu,sizeof(int)*stride);
-  if(level>=levelcoarse) remove_valvec_GPU(vectors->vecden_d,nread,stride,1.,level,vectors->vecl_d); // restricted to coarse + fine levels
+  if(level>=levelcoarse) remove_valvec_GPU(vectors->vecden_d,nread,stride,avgdens,level,vectors->vecl_d); // restricted to coarse + fine levels
   GPU2CPU(vectors->vecden,vectors->vecden_d,sizeof(float)*stride*8);
 #endif
   
@@ -290,7 +290,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 
 //=====================================================
 
-float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct OCT **firstoct,struct MULTIVECT *vectors,int stride, struct CPUINFO *cpu, float omegam, float tsim, struct PACKET** sendbuffer, struct PACKET **recvbuffer, int niter, float acc){
+float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct OCT **firstoct,struct MULTIVECT *vectors,int stride, struct CPUINFO *cpu, float omegam, float tsim, struct PACKET** sendbuffer, struct PACKET **recvbuffer, int niter, float acc, float avgdens){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -298,7 +298,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   float res;
 
   // pre relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc,avgdens);
 
   if(!((level==levelcoarse)&&(res<acc))){
   // reduction
@@ -316,10 +316,10 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
 
   // full relaxation at coarse level or recursive call to mgrid
   if((level-1)==levelmin){
-    poisson_jacob(level-1,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+    poisson_jacob(level-1,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
   }
   else{
-    poisson_mgrid(level-1,levelcoarse,levelmax,levelmin,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc);
+    poisson_mgrid(level-1,levelcoarse,levelmax,levelmin,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
   }
 
   // prolongation + correction
@@ -335,7 +335,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   }
 
   // post relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc,avgdens);
   }
   
   return res;
