@@ -154,6 +154,30 @@ unsigned long oct2key(struct OCT *curoct,int level){
 
 }
 
+//------------------------------------------------------------------------
+unsigned long pos2key(float xc, float yc, float zc,int level){
+  
+  int ix,iy,iz;
+  bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
+  unsigned long keyloc;
+
+	
+  // we convert it in dxcoarse octs unit
+  
+  ix=(int)(xc/pow(0.5,level-1));
+  iy=(int)(yc/pow(0.5,level-1));
+  iz=(int)(zc/pow(0.5,level-1));
+	
+  // we compute the keys of the lowest corners 
+  c[0]=ix;
+  c[1]=iy;
+  c[2]=iz;
+  keyloc=(unsigned long)(hilbert_c2i(3,level,c));
+
+  return keyloc;
+
+}
+
 
 //------------------------------------------------------------------------
 void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoarse)

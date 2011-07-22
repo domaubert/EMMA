@@ -52,8 +52,13 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #ifndef TESTCOSMO
     factdens=4.0*M_PI;
 #else
+#ifdef SUPERCOMOV
+    factdens=6.0*tsim;
+#else
     factdens=1.5*omegam/tsim;
 #endif
+#endif
+
     dx=pow(0.5,level);
   }
   else{
@@ -290,7 +295,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 
 //=====================================================
 
-float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct OCT **firstoct,struct MULTIVECT *vectors,int stride, struct CPUINFO *cpu, float omegam, float tsim, struct PACKET** sendbuffer, struct PACKET **recvbuffer, int niter, float acc, float avgdens){
+float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct OCT **firstoct,struct MULTIVECT *vectors,int stride, struct CPUINFO *cpu, float omegam, float tsim, struct PACKET** sendbuffer, struct PACKET **recvbuffer, int niter, float acc, float avgdens, int nrelax){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -298,7 +303,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   float res;
 
   // pre relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc,avgdens);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,nrelax,acc,avgdens);
 
   if(!((level==levelcoarse)&&(res<acc))){
   // reduction
@@ -319,7 +324,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
     poisson_jacob(level-1,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
   }
   else{
-    poisson_mgrid(level-1,levelcoarse,levelmax,levelmin,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
+    poisson_mgrid(level-1,levelcoarse,levelmax,levelmin,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens,nrelax);
   }
 
   // prolongation + correction
@@ -335,7 +340,7 @@ float  poisson_mgrid(int level,int levelcoarse,int levelmax,int levelmin, struct
   }
 
   // post relaxation
-  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,15,acc,avgdens);
+  res=poisson_jacob(level,levelcoarse,levelmax,firstoct,vectors,stride,cpu,omegam,tsim,sendbuffer,recvbuffer,nrelax,acc,avgdens);
   }
   
   return res;

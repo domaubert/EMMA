@@ -4,8 +4,13 @@
 #endif
 
 #ifdef WHYDRO
-#define GAMMA (1.4)
+#define GAMMA (1.666667)
 #endif
+
+#ifdef SUPERCOMOV
+#define NCOSMOTAB (262144)
+#endif
+
 
 //=======================================
 
@@ -33,6 +38,7 @@ struct RUNPARAMS{
   float poissonacc; // relaxation accuracy for Poisson equation
   int mgridlmin;    // coarsest level for multigrid relaxation
   int nvcycles; // number of vcycles for multigrid relaxation
+  int nrelax; // number of smoothing cycles
 };
 
 

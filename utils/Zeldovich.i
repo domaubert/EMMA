@@ -71,7 +71,8 @@ func Zeldovich(aini,across,&x,&vx,ng=,omegam=,omegav=)
   
   vfact=fomega(aini,omegam,omegav)*Hubblea(aini,omegam,omegav)*dplus(aini,omegam,omegav);
   vfact;
-  vx=aini^2*amp*sin(2*pi*(indgen(ng)-0.5)/ng)*vfact/ng;
+  //vx=aini^2*amp*sin(2*pi*(indgen(ng)-0.5)/ng)*vfact/ng; // KRAVTSOV STYLE
+  vx=aini^2*amp*sin(2*pi*(indgen(ng)-0.5)/ng)*vfact/ng/(sqrt(omegam)*0.5); // MARTEL STYLE
   return 0;
 }
 

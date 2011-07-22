@@ -15,6 +15,7 @@
 #include "segment.h"
 #include "communication.h"
 #include "mgrid.h"
+#include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
 
   int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
+  int nrelax;
   int ngridmax,ngrid;
   int npartmax;
   int cur,curnext; // flat indexes with boundaries
@@ -109,7 +111,7 @@ int main(int argc, char *argv[])
   struct PART *lastpart;
 
   int curc;
-  float dtnew;
+  float dtnew=0.;
   int nbnd;
 
   float x,y,z;
@@ -117,6 +119,7 @@ int main(int argc, char *argv[])
   float mass,mtot;
   float idx;
   float faexp, faexp2;
+  float aexp;
   unsigned key;
 
   struct CPUINFO cpu;
@@ -132,7 +135,7 @@ int main(int argc, char *argv[])
   size_t rstat;
 
 
-  float omegam,omegav,Hubble;
+  float omegam,omegav,Hubble,omegab=0.045;
   float avgdens; 
 #ifdef PIC
   avgdens=1.;//we assume a unit mass in a unit length box
@@ -230,6 +233,7 @@ int main(int argc, char *argv[])
   levelmax=param.lmax;
   levelmin=param.mgridlmin;
   nvcycles=param.nvcycles;
+  nrelax=param.nrelax;
 
   ngridmax=param.ngridmax;
 
@@ -407,6 +411,16 @@ int main(int argc, char *argv[])
     grid->cell[icell].pot=0.;
     grid->cell[icell].temp=0.;
     grid->cell[icell].idx=icell;
+
+#ifdef WHYDRO
+    grid->cell[icell].d=0.;
+    grid->cell[icell].u=0.;
+    grid->cell[icell].v=0.;
+    grid->cell[icell].w=0.;
+    grid->cell[icell].p=0.;
+    grid->cell[icell].a=0.;
+#endif
+
   }
 
   grid->cpu=-1;
@@ -453,6 +467,14 @@ int main(int argc, char *argv[])
 	      newoct->cell[ii].density=0.;
 	      newoct->cell[ii].idx=ii;
 	      newoct->cell[ii].phead=NULL;
+#ifdef WHYDRO    
+	      newoct->cell[icell].d=0.;
+	      newoct->cell[icell].u=0.;
+	      newoct->cell[icell].v=0.;
+	      newoct->cell[icell].w=0.;
+	      newoct->cell[icell].p=0.;
+	      newoct->cell[icell].a=0.;
+#endif
 	    }
 	    
 	    //the neighbours
@@ -539,7 +561,7 @@ int main(int argc, char *argv[])
   //printf("freeoct=%p\n",freeoct);
 
 
-#if PIC
+#ifdef PIC
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -750,6 +772,25 @@ int main(int argc, char *argv[])
   float ainit;
   float lbox;
 
+#ifdef GRAFIC // ==================== read grafic file
+
+  lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &omegam, &omegav, &Hubble, &npart,omegab);
+
+#ifdef SUPERCOMOV
+  // at this stage we have to compute the conformal time
+  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
+  
+  // we compute the friedmann tables
+  
+  double tab_aexp[NCOSMOTAB];
+  double tab_ttilde[NCOSMOTAB];
+  double tab_t[NCOSMOTAB];
+  
+  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
+  
+#endif
+
+#else // ============================  explicit read here
 #ifndef ZELDO
   fd=fopen("utils/IC.PM.0","rb");
 #else
@@ -769,6 +810,23 @@ int main(int argc, char *argv[])
   
   mass=munit;
   tsim=ainit;
+  aexp=ainit;
+
+#ifdef SUPERCOMOV
+  // at this stage we have to compute the conformal time
+  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
+
+  // we compute the friedmann tables
+
+  double tab_aexp[NCOSMOTAB];
+  double tab_ttilde[NCOSMOTAB];
+  double tab_t[NCOSMOTAB];
+
+  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
+
+#endif
+
+  // ------------------ dealing with particles
 
   float *pos;
   float *vel;
@@ -818,7 +876,6 @@ int main(int argc, char *argv[])
 	x=pos[i];
 	y=pos[i+nread];
 	z=pos[i+2*nread];
-	
 	vx=vel[i];
 	vy=vel[i+nread];
 	vz=vel[i+2*nread];
@@ -827,9 +884,13 @@ int main(int argc, char *argv[])
 	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
 	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
 	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-	
+	if(ip<4){
+	  printf("x=%f y=%f z=%f\n",x,y,z);
+	  printf("vx=%f\n",vx);
+	}
 	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
 	if(segment_part(x,y,z,&cpu,levelcoarse)){
+	  if(ip<4) printf("passed\n");
 	  part[ip].x=x;
 	  part[ip].y=y;
 	  part[ip].z=z;
@@ -852,7 +913,7 @@ int main(int argc, char *argv[])
   free(vel);
   if (cpu.rank==0) printf("cosmo readpart done with munit=%e\n",munit);
 #endif
-
+#endif
 
   // we set all the "remaining" particles mass to -1
   for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
@@ -964,7 +1025,7 @@ int main(int argc, char *argv[])
   
   /* sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank); */
   /* dumpcube(lmap,firstoct,1,filename,tsim); */
-  //  abort();
+  /* abort(); */
 #endif
 
   //===================================================================================================================================
@@ -982,6 +1043,11 @@ int main(int argc, char *argv[])
 
 #ifdef WHYDRO
   
+#ifdef GRAFIC
+  int ncellhydro;
+  ncellhydro=read_grafic_hydro(&cpu,omegab);
+  printf("%d hydro cell found in grafic file\n",ncellhydro);
+#else
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1123,10 +1189,12 @@ int main(int argc, char *argv[])
   avgdens+=dtot/nc;
   printf("avgdens=%e\n",avgdens);
 
+#endif
   sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank); 
   dumpcube(lmap,firstoct,101,filename,0.); 
+  sprintf(filename,"data/prehydstart.%05d.p%05d",0,cpu.rank); 
+  dumpcube(lmap,firstoct,105,filename,0.); 
 
-  //  abort();
 
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1179,10 +1247,18 @@ int main(int argc, char *argv[])
 
 
 #ifdef TESTCOSMO
-#ifdef ZELD0
+#ifdef ZELDO
+#ifdef SUPERCOMOV
+  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(0.5,1.0,omegam,omegav,1e-8);
+#else
   tmax=0.5;
+#endif
+#else
+#ifdef SUPERCOMOV
+  tmax=0.; // in SC coordinates the maximal conformal time is 0.
 #else
   tmax=1.;
+#endif
 #endif
 #else
   tmax=1000.;
@@ -1201,13 +1277,20 @@ int main(int argc, char *argv[])
     faexp2=1.0;
 #endif
 
+
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
-    
+
+    int ndumps=0;
     for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,tsim,1./tsim-1.);
+#ifdef SUPERCOMOV
+      aexp=interp_aexp(tsim,tab_aexp,tab_ttilde);
+#else
+      aexp=tsim;
+#endif
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,aexp,1./aexp-1.);
 #else
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
@@ -1229,10 +1312,6 @@ int main(int argc, char *argv[])
   // ==================================== after refinement we should remap the boundary cells
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
 #endif
-
-
-
-
 
   // ==================================== performing the CIC assignement
 #ifndef WGPU
@@ -1369,7 +1448,7 @@ int main(int argc, char *argv[])
 
 #ifndef MULTIGRID
       // --- pure jacobi relaxation
-      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
+      poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,aexp,sendbuffer,recvbuffer,niter,acc,avgdens);
 #else
       int igrid;
       if((level==levelcoarse)&&(levelcoarse!=levelmin)){
@@ -1377,13 +1456,13 @@ int main(int argc, char *argv[])
 	for(igrid=0;igrid<nvcycles;igrid++){
 	  if(cpu.rank==0) printf("----------------------------------------\n");
 	  clean_pot(levelcoarse-1,firstoct);	    // ------------- cleaning the vector positions
-	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
+	  res=poisson_mgrid(level,levelcoarse,levelmax,levelmin,firstoct,&vectors,stride,&cpu,omegam,aexp,sendbuffer,recvbuffer,niter,acc,avgdens,nrelax);
 	  if(res<acc) break;
 	}
       }
       else{
 	// --- pure jacobi relaxation
-	poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,tsim,sendbuffer,recvbuffer,niter,acc,avgdens);
+	poisson_jacob(level,levelcoarse,levelmax,firstoct,&vectors,stride,&cpu,omegam,aexp,sendbuffer,recvbuffer,niter,acc,avgdens);
       }
 
        if(cpu.rank==0) printf("----------------------------------------\n");
@@ -1400,52 +1479,95 @@ int main(int argc, char *argv[])
   // ==================================== Force calculation and velocity update   // Corrector step
   if(cpu.rank==0) printf("Predictor\n");
 #ifdef TESTCOSMO
-  faexp=f_aexp(tsim,omegam,omegav);
+#ifdef SUPERCOMOV
+  faexp=1.0;
+#else
+  faexp=f_aexp(aexp,omegam,omegav);
 #endif
+#endif
+  
+#ifdef SUPERCOMOV
+  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+#else
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+#endif
 
+#ifdef SELFGRAV
+  // ==================================== hydro update   // Corrector step
+  if(cpu.rank==0) printf("Predictor hydro\n");
+  for(level=levelcoarse;level<=levelmax;level++)
+    {
+      nextoct=firstoct[level-1];
+      correct_grav_hydro(nextoct, &cpu, dt*(nsteps!=0));
+    }
+#endif
 
   // ==================================== DUMP AFTER SYNCHRONIZATION
-#if 1
+
   if(nsteps%(param.ndumps)==0){
-    // ===== Casting rays to fill a map
     if(cpu.rank==0) printf("Dumping .......\n");
-    sprintf(filename,"data/pot3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,2,filename,tsim+(dt+dtnew)*0.5);
-    /* sprintf(filename,"data/lev3d.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,0,filename,tsim); */
-    sprintf(filename,"data/den3d.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,1,filename,tsim+(dt+dtnew)*0.5);
-    sprintf(filename,"data/fx.%05d.p%05d",nsteps,cpu.rank);
-    dumpcube(lmap,firstoct,6,filename,tsim+(dt+dtnew)*0.5);
-    /* sprintf(filename,"data/fy.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,7,filename,tsim+(dt+dtnew)*0.5); */
-    /* sprintf(filename,"data/fz.%05d.p%05d",nsteps,cpu.rank); */
-    /* dumpcube(lmap,firstoct,8,filename,tsim+(dt+dtnew)*0.5); */
+    float tdump;
+
+#ifdef TESTCOSMO
+#ifdef SUPERCOMOV
+    tdump=interp_aexp(tsim+0*(dt+dtnew)*0.5*(nsteps!=0),tab_aexp,tab_ttilde);
+#else
+    tdump=tsim+(dt+dtnew)*0.5*(nsteps!=0);
+#endif
+#else
+    tdump=tsim+(dt+dtnew)*0.5*(nsteps!=0);
+#endif
+    // ===== Casting rays to fill a map
+    sprintf(filename,"data/pot3d.%05d.p%05d",ndumps,cpu.rank);
+    dumpcube(lmap,firstoct,2,filename,tdump);
+    /* sprintf(filename,"data/lev3d.%05d.p%05d",ndumps,cpu.rank); */
+    /* dumpcube(lmap,firstoct,0,filename,tdump); */
+    sprintf(filename,"data/den3d.%05d.p%05d",ndumps,cpu.rank);
+    dumpcube(lmap,firstoct,1,filename,tdump);
+    sprintf(filename,"data/fx.%05d.p%05d",ndumps,cpu.rank);
+    dumpcube(lmap,firstoct,6,filename,tdump);
+    /* sprintf(filename,"data/fy.%05d.p%05d",ndumps,cpu.rank); */
+    /* dumpcube(lmap,firstoct,7,filename,tdump); */
+    /* sprintf(filename,"data/fz.%05d.p%05d",ndumps,cpu.rank); */
+    /* dumpcube(lmap,firstoct,8,filename,tdump); */
 
 
 #ifdef WMPI
     if(nsteps==0){
-      sprintf(filename,"data/cpu3d.%05d.p%05d",nsteps,cpu.rank);
-      dumpcube(lmap,firstoct,3,filename,tsim);
+      sprintf(filename,"data/cpu3d.%05d.p%05d",ndumps,cpu.rank);
+      dumpcube(lmap,firstoct,3,filename,tdump);
     }
 #endif
   
   //==== Gathering particles for dump
 
 #ifdef PIC
-    sprintf(filename,"data/part.%05d.p%05d",nsteps,cpu.rank);
-    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim);
+    sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
+    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
 #endif
 
-  }
+    // === Hydro dump
+#ifdef WHYDRO
+    sprintf(filename,"data/denhyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,101,filename,tdump); 
+    sprintf(filename,"data/velhyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,102,filename,tdump); 
+    sprintf(filename,"data/prehyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,105,filename,tdump); 
 #endif
+
+    ndumps++;
+  }
 
 
   // ==================================== New timestep
   dtnew=dt;
 #ifdef TESTCOSMO
-  faexp2=f_aexp(tsim,omegam,omegav)/(tsim*tsim);
+#ifdef SUPERCOMOV
+  faexp2=1.0;
+#else
+  faexp2=f_aexp(aexp,omegam,omegav)/(aexp*aexp);
+#endif
 #endif
 
 #ifdef PIC
@@ -1458,19 +1580,33 @@ int main(int argc, char *argv[])
   float dthydro;
   dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
   dtnew=(dthydro<dtnew?dthydro:dtnew);
-  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
+  //if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 #endif
 
+#ifdef SELFGRAV
+  float dtff;
+  dtff=comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt);
+  dtnew=(dtff<dtnew?dtff:dtnew);
+  if(cpu.rank==0) printf("dt=%e dthydro=%e dtpic=%e dtff=%e\n",dtnew,dthydro,dtpic,dtff);
+#endif
 
   // ==================================== Force calculation and velocity update   // predictor step
 #ifdef PIC
   if(cpu.rank==0) printf("Corrector\n");
 
 #ifdef TESTCOSMO
-  faexp=f_aexp(tsim,omegam,omegav);
+#ifdef SUPERCOMOV
+  faexp=1.0;
+#else
+  faexp=f_aexp(aexp,omegam,omegav);
+#endif
 #endif
 
+#ifdef SUPERCOMOV
+  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
+#else
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+#endif
 #endif
 
   // ==================================== Moving Particles + Oct management
@@ -1481,10 +1617,18 @@ int main(int argc, char *argv[])
     // Computing displacement (predictor)
 
 #ifdef TESTCOSMO
-    faexp2=f_aexp(tsim+(dtnew)*0.5,omegam,omegav)/pow(tsim+0.5*(dtnew),2);
+#ifdef SUPERCOMOV
+  faexp2=1.0;
+#else
+  faexp2=f_aexp(tsim+(dtnew)*0.5,omegam,omegav)/pow(tsim+0.5*(dtnew),2);
+#endif
 #endif
     
-    movepart(levelcoarse,levelmax,firstoct,dtnew*faexp2,&cpu);
+#ifdef SUPERCOMOV
+  movepart(levelcoarse,levelmax,firstoct,dtnew,&cpu);
+#else
+  movepart(levelcoarse,levelmax,firstoct,dtnew*faexp2,&cpu);
+#endif
     // Moving particles through cells (3 passes)
     
 #ifdef WGPU
@@ -1600,16 +1744,6 @@ int main(int argc, char *argv[])
 	}
       }
 
-  if(nsteps%(param.ndumps)==0){
-    sprintf(filename,"data/denhyd.%05d.p%05d",nsteps,cpu.rank); 
-    dumpcube(lmap,firstoct,101,filename,tsim+dtnew); 
-    sprintf(filename,"data/velhyd.%05d.p%05d",nsteps,cpu.rank); 
-    dumpcube(lmap,firstoct,102,filename,tsim+dtnew); 
-    sprintf(filename,"data/prehyd.%05d.p%05d",nsteps,cpu.rank); 
-    dumpcube(lmap,firstoct,105,filename,tsim+dtnew); 
-    /* sprintf(filename,"data/denhyd.%05d.p%05d",nsteps,cpu.rank);  */
-    /* dumpcube(lmap,firstoct,101,filename,0.);  */
-  }
   if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);
 
 #endif

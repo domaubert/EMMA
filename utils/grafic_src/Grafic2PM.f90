@@ -187,7 +187,8 @@ program Grafic2Gadget
   write(*,*) 'Generate Zeldovich displacements...'
   
   vfact=fomega(astart,omegam,omegav)*h0*dladt(astart,omegam,omegav)/astart
-  
+
+  write(*,*) 'vfact=',vfact
   do i3=1,np3
      z0=(i3-0.5)*dx!+(ifile-1)*dx*np3/nmult
      do i2=1,np2
@@ -209,18 +210,7 @@ program Grafic2Gadget
   posy=posy/(np2*dx) ! Length units in DX
   posz=posz/(np3*dx)!
 
-  velx=velx/np1
-  vely=vely/np1
-  velz=velz/np1
 
-
-  write(*,*) posx(1,:4,1)
-  write(*,*) '-----------'
-  write(*,*) velx(1,:4,1)
-  write(*,*) '==========='
-  write(*,*) posy(:4,1,1)
-  write(*,*) '-----------'
-  write(*,*) vely(:4,1,1)
            
   
 !!$  ! PERIODIC BC
@@ -270,9 +260,9 @@ program Grafic2Gadget
   do i3=1,np3
      do i2=1,np2
         do i1=1,np1
-           velx(i1,i2,i3)=velx(i1,i2,i3)*astart**1/(dx*h0)
-           vely(i1,i2,i3)=vely(i1,i2,i3)*astart**1/(dx*h0)
-           velz(i1,i2,i3)=velz(i1,i2,i3)*astart**1/(dx*h0)
+           velx(i1,i2,i3)=velx(i1,i2,i3)*astart**1/(np1*dx*h0)/(sqrt(omega0_out)*0.5)
+           vely(i1,i2,i3)=vely(i1,i2,i3)*astart**1/(np2*dx*h0)/(sqrt(omega0_out)*0.5)
+           velz(i1,i2,i3)=velz(i1,i2,i3)*astart**1/(np3*dx*h0)/(sqrt(omega0_out)*0.5)
            sumv=sumv+sqrt(velx(i1,i2,i3)*velx(i1,i2,i3)+vely(i1,i2,i3)*vely(i1,i2,i3)+velz(i1,i2,i3)*velz(i1,i2,i3))
            ii=ii+1.
            count=count+1
@@ -280,6 +270,15 @@ program Grafic2Gadget
      end do
   end do
   
+  write(*,*) posx(:4,1,1)
+  write(*,*) posy(:4,1,1)
+  write(*,*) posz(:4,1,1)
+  write(*,*) '-----------'
+  write(*,*) velx(:4,1,1)
+  write(*,*) '==========='
+  write(*,*) posy(:4,1,1)
+  write(*,*) '-----------'
+  write(*,*) vely(:4,1,1)
 
 !==========================================================================================
 !==========================================================================================

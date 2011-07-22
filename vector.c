@@ -431,6 +431,11 @@ struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int str
 	data->vec_w[ipos+icell*stride]=curoct->cell[icell].w;
 	data->vec_p[ipos+icell*stride]=curoct->cell[icell].p;
 
+	if(curoct->cell[icell].p<0){
+	  printf("Negative Pressure !");
+	  abort();
+	}
+
 #ifdef AXLFORCE
 #ifdef SELFGRAV
 	// we store the gravitational force in the new fields
@@ -630,6 +635,11 @@ struct OCT *scattervechydro(struct OCT *octstart, struct MULTIVECT *data, int st
 	curoct->cell[icell].v=data->vec_vnew[ipos+icell*stride];
 	curoct->cell[icell].w=data->vec_wnew[ipos+icell*stride];
 	curoct->cell[icell].p=data->vec_pnew[ipos+icell*stride];
+	
+	if(data->vec_pnew[ipos+icell*stride]<0){
+	  printf("NEgative pressure scatter\n");
+	  abort();
+	}
 
 /* 	switch(var){ */
 /* 	case 1: */
@@ -715,7 +725,7 @@ void remove_valvec(float *vec, int nval, int stride, float avg, int level, int *
   int i;
   for(icell=0;icell<8;icell++){
     for(i=0;i<stride;i++){
-      vec[i+icell*stride]=(vec[i+icell*stride]-avg)*(level==vecl[i]);
+      vec[i+icell*stride]=(vec[i+icell*stride]-avg)*(level==vecl[i])/avg;
     }
   }
 }
@@ -786,7 +796,11 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 #ifndef TESTCOSMO
       temp=temp-dx*dx*vecden[i+icell*stride]/6.*4.*M_PI;
 #else
+#ifdef SUPERCOMOV
+      temp=temp-dx*dx*vecden[i+icell*stride]/6.*6.0*tsim;
+#else
       temp=temp-dx*dx*vecden[i+icell*stride]/6.*1.5*omegam/tsim;
+#endif
 #endif
 
 
@@ -797,7 +811,11 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 #ifndef TESTCOSMO
       res=res/(dx*dx)-4.0*M_PI*vecden[i+icell*stride];
 #else
+#ifdef SUPERCOMOV
+      res=res/(dx*dx)-6.0*tsim*vecden[i+icell*stride];
+#else
       res=res/(dx*dx)-1.5*omegam/tsim*vecden[i+icell*stride];
+#endif
 #endif
       restot+=res*res;
 

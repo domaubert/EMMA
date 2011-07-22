@@ -5,7 +5,7 @@
 #include "oct.h"
 #include <string.h>
 
-#define NITERMAX 10
+#define NITERMAX 100
 #define ERRTOL 1e-6
 #define CFL 0.8
 
@@ -81,26 +81,82 @@ float froot(float p, struct Wtype1D *WL, struct Wtype1D *WR, float *u)
 
 float findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, float *u)
 {
+
+  float ptr,pts,ppv;
   float p,porg,dp;
   int i;
   float err;
+  float unsurz=(2.0*GAMMA)/(GAMMA-1.0);
+  float AL,AR,BL,BR,GL,GR;
+  float pmin,pmax;
+  int tag;
 
-  p=0.5*(WL->p+WR->p);
-  //p=0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a);
-  p=fmaxf(p,ERRTOL);
+  // hybrid guess for pressure
+
+  AL=2./((GAMMA+1.)*WL->d);
+  AR=2./((GAMMA+1.)*WR->d);
+  
+  BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
+  BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
+
+
+  ppv=fmaxf(ERRTOL,0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a));
+  ptr=fmaxf(ERRTOL,pow((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/pow(WL->p,1./unsurz)+WR->a/pow(WR->p,1./unsurz)),unsurz));
+  
+  GL=sqrt(AL/(ppv+BL));
+  GR=sqrt(AR/(ppv+BR));
+
+  pts=fmaxf(ERRTOL,(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR));
+
+  pmin=fminf(WL->p,WR->p);
+  pmax=fmaxf(WL->p,WR->p);
+
+  if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
+      p=ppv;
+      tag=1;
+    }
+  else{
+    if(ppv<pmin){
+      p=ptr;
+      tag=2;
+    }
+    else{
+      p=pts;
+      tag=3;
+    }
+  }
+
+
+  //p=0.5*(WL->p+WR->p);
+  //p=fmaxf(p,ERRTOL);
 
   *niter=0;
   for(i=0;i<NITERMAX;i++)
     {
       dp=froot(p,WL,WR,u)/frootprime(p,WL,WR);
+      if((isnan(dp))||(p-dp)<0){
+      	printf("froot=%e frootprime=%e\n",froot(p,WL,WR,u),frootprime(p,WL,WR));
+      	abort();
+      }
+
       porg=p;
       p=p-dp;
-      //printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
+      //if(frootprime(p,WL,WR)==0) abort();//printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
       err=2.*fabsf(p-porg)/(fabsf(p+porg));
       *niter=*niter+1;
+      //if(p<=0) p=ERRTOL;
       if(err<ERRTOL) break;
     }
 
+  if(i==NITERMAX){
+    printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err);
+    abort();
+  }
+
+  if(p>6.4e-7){
+    printf("MAX p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err);
+    abort();
+  }
   froot(p,WL,WR,u); // last calculation to get u;
 
   return p;
@@ -272,6 +328,63 @@ void getflux_Z(struct Utype *U, float *f)
   f[4]=GAMMA*U->dw/U->d*U->E-0.5*(GAMMA-1.)*U->dw/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
 }
 
+
+// =================================================================================================================
+
+#ifdef SELFGRAV
+void correct_grav_hydro(struct OCT *octstart, struct CPUINFO *cpu, float dt)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int icell;
+
+  struct Utype Uold,Unew;
+  struct Wtype Wold,Wnew;
+  float fx,fy,fz;
+
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      // filling the values
+      for(icell=0;icell<8;icell++){
+
+	Wold.d=curoct->cell[icell].d;
+	Wold.u=curoct->cell[icell].u;
+	Wold.v=curoct->cell[icell].v;
+	Wold.w=curoct->cell[icell].w;
+	Wold.p=curoct->cell[icell].p;
+	Wold.a=sqrtf(GAMMA*Wold.p/Wold.d);
+
+	W2U(&Wold,&Uold); // primitive -> conservative
+
+	// we store the gravitational force in the new fields
+	fx=curoct->cell[icell].fx;
+	fy=curoct->cell[icell].fy;
+	fz=curoct->cell[icell].fz;
+
+	
+	// implicit update
+	Unew.d  =Uold.d  ;
+	Unew.du =Uold.du +Unew.d*fx*dt*0.5;
+	Unew.dv =Uold.dv +Unew.d*fy*dt*0.5;
+	Unew.dw =Uold.dw +Unew.d*fz*dt*0.5;
+	Unew.E  =Uold.E  +(Unew.du*fx+Unew.dv*fy+Unew.dw*fz)*dt*0.5;
+      
+	U2W(&Unew,&Wnew);
+
+	curoct->cell[icell].u=Wnew.u;
+	curoct->cell[icell].v=Wnew.v;
+	curoct->cell[icell].w=Wnew.w;
+	curoct->cell[icell].p=Wnew.p;
+
+      }
+    }while(nextoct!=NULL);
+  }
+}
+#endif
 
 //============================================================================
 int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stride,float dx, float dt){
@@ -714,10 +827,10 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
 #endif
       //if(Uold.d>0.5) printf("g=%e org=%e\n",fx*Uold.d*dt,Uold.du);
       Unew.d  =Uold.d  +dt/dx*((FL[0]-FR[0])+(GL[0]-GR[0])+(HL[0]-HR[0]));
-      Unew.du =Uold.du +dt/dx*((FL[1]-FR[1])+(GL[1]-GR[1])+(HL[1]-HR[1]))+Uold.d*fx*dt;
-      Unew.dv =Uold.dv +dt/dx*((FL[2]-FR[2])+(GL[2]-GR[2])+(HL[2]-HR[2]))+Uold.d*fy*dt;
-      Unew.dw =Uold.dw +dt/dx*((FL[3]-FR[3])+(GL[3]-GR[3])+(HL[3]-HR[3]))+Uold.d*fz*dt;
-      Unew.E  =Uold.E  +dt/dx*((FL[4]-FR[4])+(GL[4]-GR[4])+(HL[4]-HR[4]))+(Uold.du*fx+Uold.dv*fy+Uold.dw*fz)*dt;
+      Unew.du =Uold.du +dt/dx*((FL[1]-FR[1])+(GL[1]-GR[1])+(HL[1]-HR[1]))+Uold.d*fx*dt*0.5;
+      Unew.dv =Uold.dv +dt/dx*((FL[2]-FR[2])+(GL[2]-GR[2])+(HL[2]-HR[2]))+Uold.d*fy*dt*0.5;
+      Unew.dw =Uold.dw +dt/dx*((FL[3]-FR[3])+(GL[3]-GR[3])+(HL[3]-HR[3]))+Uold.d*fz*dt*0.5;
+      Unew.E  =Uold.E  +dt/dx*((FL[4]-FR[4])+(GL[4]-GR[4])+(HL[4]-HR[4]))+(Uold.du*fx+Uold.dv*fy+Uold.dw*fz)*dt*0.5;
       
       U2W(&Unew,&Wnew);
       
@@ -727,7 +840,12 @@ int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stri
       data->vec_unew[idxR]=Wnew.u;
       data->vec_vnew[idxR]=Wnew.v;
       data->vec_wnew[idxR]=Wnew.w;
-      data->vec_pnew[idxR]=Wnew.p;
+      data->vec_pnew[idxR]=(Wnew.p<0?Wold.p:Wnew.p);
+
+      /* if(Wnew.p<0){ */
+      /* 	printf("negative pressure in hydro\n"); */
+      /* 	abort(); */
+      /* } */
 
       // ready for the next cell
     }
@@ -792,7 +910,53 @@ float comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, float 
     }
 
   // new tstep
- printf("original dt=%f chosen dt=%f\n",tmax,dt);
+  // printf("original dt=%f chosen dt=%f\n",tmax,dt);
+
+
+/* #ifdef WMPI */
+/*   // reducing by taking the smallest time step */
+/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_FLOAT,MPI_MIN,cpu->comm); */
+/* #endif   */
+
+  return dt;
+}
+
+float comptstep_ff(int levelcoarse,int levelmax,struct OCT** firstoct, float aexp, struct CPUINFO* cpu, float tmax){
+  
+  int level;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  float dxcur;
+  int icell;
+  float dtloc;
+  float dt;
+
+  //Smax=fmaxf(Smax,sqrtf(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
+
+  // Computing new timestep
+  dt=tmax;
+  for(level=levelcoarse;level<=levelmax;level++) // looping over levels
+    {
+      // setting the first oct
+      
+      nextoct=firstoct[level-1];
+      
+      if(nextoct==NULL) continue; // in case the level is empty
+      dxcur=pow(0.5,level); // +1 to protect level change
+      do // sweeping through the octs of level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      dtloc=0.1*sqrt(2.*M_PI/(3.*curoct->cell[icell].density*aexp));
+	      dt=fminf(dt,dtloc);
+	    }
+	}while(nextoct!=NULL);
+    }
+
+  // new tstep
+  // printf("original dt=%f chosen dt=%f\n",tmax,dt);
 
 
 /* #ifdef WMPI */

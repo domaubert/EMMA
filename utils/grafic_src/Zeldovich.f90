@@ -161,7 +161,7 @@ program Grafic2Gadget
   open(100+ifile,file='ZEL.PM.0',form='unformatted',status='unknown')
   write(100+ifile) npart_out(1),massarr_out(1),a_out,xLbox_out,omega0_out,omegaL_out,hubble_out
   
-  amp=1./(dplus(across,omega0_out,omegaL_out)*2.*3.14159/np1)
+  amp=1./(dplus(across,omega0_out,omegaL_out)*2.*3.14159/(np1*dx))
 
   !
   ! WRITING POSITIONS IN DX UNITS
@@ -175,7 +175,7 @@ program Grafic2Gadget
         y0=(i2-0.5)*dx
         do i1=1,np1
            x0=(i1-0.5)*dx
-           posx(i1,i2,i3)=x0/(np1*dx)+vfact*amp*sin((i1-0.5)*2.*3.14159/np1)/np1
+           posx(i1,i2,i3)=x0/(np1*dx)+vfact*amp*sin((i1-0.5)*2.*3.14159/np1)/(np1*dx);
            posy(i1,i2,i3)=y0/(np2*dx)
            posz(i1,i2,i3)=z0/(np3*dx)
            !write(*,*) posx(i1,i2,i3),posy(i1,i2,i3),posz(i1,i2,i3)
@@ -241,7 +241,8 @@ program Grafic2Gadget
         y0=(i2-1)*dx
         do i1=1,np1
            x0=(i1-1)*dx
-           velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/np1
+           !velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/(np1*dx) ! KRAVSTSOV STYLE
+           velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/(np1*dx)/(sqrt(omega0_out)*0.5) ! MARTEL STYLE
            vely(i1,i2,i3)=0.
            velz(i1,i2,i3)=0.
            ind(count)=ii

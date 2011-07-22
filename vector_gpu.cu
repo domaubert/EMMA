@@ -93,7 +93,7 @@ __global__ void dev_remove_valvec_GPU(float *vec, int nval, int stride, float av
   ioct=bx*blockDim.x+tx;
 
   for(icell=0;icell<8;icell++){
-      vec[ioct+icell*stride]=(vec[ioct+icell*stride]-avg)*(level==vecl[ioct]);
+      vec[ioct+icell*stride]=(vec[ioct+icell*stride]/avg-1.0)*(level==vecl[ioct]);
   }
 }
 
