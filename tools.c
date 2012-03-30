@@ -52,7 +52,10 @@ float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax,
       nlev=0;
       nlevd=0.;
       noct=0;
-      if(nextoct==NULL) continue;
+      if(nextoct==NULL){
+	vnoct[level-1]=noct;
+	continue;
+      }
       do // sweeping level
 	{
 	  curoct=nextoct;

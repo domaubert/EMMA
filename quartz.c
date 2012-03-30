@@ -29,6 +29,11 @@
 #include "hydro_utils.h"
 #endif
 
+#ifdef WHYDRO2
+#include "hydro_utils.h"
+#endif
+
+
 // ===============================================================================
 
 
@@ -295,6 +300,9 @@ int main(int argc, char *argv[])
 
   //===================================================================================================
 
+
+
+
   // allocating the vectorized tree
   
   struct MULTIVECT vectors;
@@ -316,8 +324,8 @@ int main(int argc, char *argv[])
   vectors.vec_vnew=(float*)calloc(stride*8,sizeof(float));
   vectors.vec_wnew=(float*)calloc(stride*8,sizeof(float));
   vectors.vec_pnew=(float*)calloc(stride*8,sizeof(float));
-
 #endif
+
 
   vectors.vecnei=(int *)calloc(stride*6,sizeof(int));
   vectors.vecl=(int *)calloc(stride,sizeof(int));
@@ -326,6 +334,16 @@ int main(int argc, char *argv[])
   memsize+= stride*32*4;
   if(cpu.rank==0) printf(" vect = %f MB\n",((stride*32)/(1024*1024.))*sizeof(float));
 #endif 
+
+#ifdef WHYDRO2
+  // allocating the 6dim stencil
+  struct HGRID *stencil;
+  printf("stenci=%p\n",stencil);
+  stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
+  printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+  if(stencil==NULL) abort();
+#endif
+
 
 #ifdef WGPU
 
@@ -421,6 +439,10 @@ int main(int argc, char *argv[])
     grid->cell[icell].a=0.;
 #endif
 
+#ifdef WHYDRO2
+    memset(&(grid->cell[icell].field),0,sizeof(struct Wtype));
+#endif
+
   }
 
   grid->cpu=-1;
@@ -474,6 +496,10 @@ int main(int argc, char *argv[])
 	      newoct->cell[icell].w=0.;
 	      newoct->cell[icell].p=0.;
 	      newoct->cell[icell].a=0.;
+#endif
+
+#ifdef WHYDRO2
+	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
 #endif
 	    }
 	    
@@ -1040,8 +1066,7 @@ int main(int argc, char *argv[])
   //===================================================================================================================================
 
 
-
-#ifdef WHYDRO
+#ifdef WHYDRO2
   
 #ifdef GRAFIC
   int ncellhydro;
@@ -1069,10 +1094,10 @@ int main(int argc, char *argv[])
    /* // TEST 1 */
 
   WL.d=1.;
-  WL.u=0.;
+  WL.u=0.75;
   WL.v=0.;
-  WL.w=0.75;
-  WL.p =1.;
+  WL.w=0.;
+  WL.p=1.0;
 
   WR.d=0.125;
   WR.u=0.;
@@ -1081,20 +1106,20 @@ int main(int argc, char *argv[])
   WR.p=0.1;
   X0=0.3;
 
-   /* // SPHERICAL EXPLOSION */
+  /*  /\* // SPHERICAL EXPLOSION *\/ */
 
-  WL.d=10.;
-  WL.u=0.;
-  WL.v=0.;
-  WL.w=0.;
-  WL.p =1.;
+  /* WL.d=10.; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p =1.; */
 
-  WR.d=0.125;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=0.;
-  WR.p=1.;
-  X0=0.2;
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=1.; */
+  /* X0=0.2; */
 
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
@@ -1140,31 +1165,14 @@ int main(int argc, char *argv[])
 	      /* } */
 
 	      
-	      if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){
-	      	curoct->cell[icell].d=WL.d;
-	      	curoct->cell[icell].u=WL.u;
-	      	curoct->cell[icell].v=WL.v;
-	      	curoct->cell[icell].w=WL.w;
-	      	curoct->cell[icell].p=WL.p;
-	      	curoct->cell[icell].a=WL.a;
-
-	      }
-	      else{
-	      	curoct->cell[icell].d=WR.d;
-	      	curoct->cell[icell].u=WR.u;
-	      	curoct->cell[icell].v=WR.v;
-	      	curoct->cell[icell].w=WR.w;
-	      	curoct->cell[icell].p=WR.p;
-	      	curoct->cell[icell].a=WR.a;
-	      }
-	      
-	      /* if(zc<=X0){ */
+	      /* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
 	      /* 	curoct->cell[icell].d=WL.d; */
 	      /* 	curoct->cell[icell].u=WL.u; */
 	      /* 	curoct->cell[icell].v=WL.v; */
 	      /* 	curoct->cell[icell].w=WL.w; */
 	      /* 	curoct->cell[icell].p=WL.p; */
 	      /* 	curoct->cell[icell].a=WL.a; */
+
 	      /* } */
 	      /* else{ */
 	      /* 	curoct->cell[icell].d=WR.d; */
@@ -1174,6 +1182,184 @@ int main(int argc, char *argv[])
 	      /* 	curoct->cell[icell].p=WR.p; */
 	      /* 	curoct->cell[icell].a=WR.a; */
 	      /* } */
+	      
+	      if(xc<=X0){
+
+		memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
+	      }
+	      else{
+		memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+	      }
+	      
+	      if(level==levelcoarse) {
+		dtot+=curoct->cell[icell].field.d;
+		nc++;
+	      }
+
+	    }
+	}while(nextoct!=NULL);
+      
+      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
+    }
+  
+  avgdens+=dtot/nc;
+  printf("avgdens=%e\n",avgdens);
+
+#endif
+
+  sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank); 
+  dumpcube(lmap,firstoct,101,filename,0.); 
+  sprintf(filename,"data/prehydstart.%05d.p%05d",0,cpu.rank); 
+  dumpcube(lmap,firstoct,105,filename,0.); 
+
+
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+#endif
+
+
+#ifdef WHYDRO
+  
+#ifdef GRAFIC
+  int ncellhydro;
+  ncellhydro=read_grafic_hydro(&cpu,omegab);
+  printf("%d hydro cell found in grafic file\n",ncellhydro);
+#else
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+  // initialisation of hydro quantities
+  // Shock Tube
+
+  struct Wtype WL, WR;
+  float X0;
+  if(cpu.rank==0) printf("Init Hydro\n");
+
+   /* // TEST 1 */
+
+  WL.d=1.;
+  WL.u=0.;
+  WL.v=0.;
+  WL.w=0.75;
+  WL.p=1.0;
+
+  WR.d=0.125;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.1;
+  X0=0.3;
+
+  /*  /\* // SPHERICAL EXPLOSION *\/ */
+
+  /* WL.d=10.; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p =1.; */
+
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=1.; */
+  /* X0=0.2; */
+
+  WL.a=sqrtf(GAMMA*WL.p/WL.d);
+  WR.a=sqrtf(GAMMA*WR.p/WR.d);
+
+  // ======================================================
+
+  float dtot=0.;
+  int nc=0;
+  for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
+    {
+      dxcur=pow(0.5,level);
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      xc=curoct->x+( icell&1)*dxcur;
+	      yc=curoct->y+((icell>>1)&1)*dxcur;
+	      zc=curoct->z+((icell>>2))*dxcur;
+
+	      float vrx=(((float)rand())/RAND_MAX)*0.02-0.01;
+	      float vry=(((float)rand())/RAND_MAX)*0.02-0.01;
+	      float vrz=(((float)rand())/RAND_MAX)*0.02-0.01;
+
+	      /* if((zc>0.75)||(zc<0.25)){ */
+	      /* 	curoct->cell[icell].d=1.0; */
+	      /* 	curoct->cell[icell].u=-0.5+vrx; */
+	      /* 	curoct->cell[icell].v=vry; */
+	      /* 	curoct->cell[icell].w=vrz; */
+	      /* 	curoct->cell[icell].p=2.5; */
+	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].d=2.0; */
+	      /* 	curoct->cell[icell].u=0.5+vrx; */
+	      /* 	curoct->cell[icell].v=vry; */
+	      /* 	curoct->cell[icell].w=vrz; */
+	      /* 	curoct->cell[icell].p=2.5; */
+	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
+	      /* } */
+
+	      
+	      /* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
+	      /* 	curoct->cell[icell].d=WL.d; */
+	      /* 	curoct->cell[icell].u=WL.u; */
+	      /* 	curoct->cell[icell].v=WL.v; */
+	      /* 	curoct->cell[icell].w=WL.w; */
+	      /* 	curoct->cell[icell].p=WL.p; */
+	      /* 	curoct->cell[icell].a=WL.a; */
+
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].d=WR.d; */
+	      /* 	curoct->cell[icell].u=WR.u; */
+	      /* 	curoct->cell[icell].v=WR.v; */
+	      /* 	curoct->cell[icell].w=WR.w; */
+	      /* 	curoct->cell[icell].p=WR.p; */
+	      /* 	curoct->cell[icell].a=WR.a; */
+	      /* } */
+	      
+	      if(zc<=X0){
+	      	curoct->cell[icell].d=WL.d;
+	      	curoct->cell[icell].u=WL.u;
+	      	curoct->cell[icell].v=WL.v;
+	      	curoct->cell[icell].w=WL.w;
+	      	curoct->cell[icell].p=WL.p;
+	      	curoct->cell[icell].a=WL.a;
+	      }
+	      else{
+	      	curoct->cell[icell].d=WR.d;
+	      	curoct->cell[icell].u=WR.u;
+	      	curoct->cell[icell].v=WR.v;
+	      	curoct->cell[icell].w=WR.w;
+	      	curoct->cell[icell].p=WR.p;
+	      	curoct->cell[icell].a=WR.a;
+	      }
 	      
 	      if(level==levelcoarse) {
 		dtot+=curoct->cell[icell].d;
@@ -1268,6 +1454,10 @@ int main(int argc, char *argv[])
   tmax=0.21;
 #endif
 
+#ifdef WHYDRO2
+  tmax=0.21;
+#endif
+
   FILE *fegy;
 
   //breakmpi();
@@ -1305,7 +1495,7 @@ int main(int argc, char *argv[])
 
     curoct=refine_cells(levelcoarse,levelmax,firstoct,lastoct,freeoct,&cpu,grid+ngridmax);
     freeoct=curoct;
-  
+    
 #endif
 
 #ifdef WMPI
@@ -1372,7 +1562,7 @@ int main(int argc, char *argv[])
     MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
 #endif
     if(cpu.rank==0){
-      printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
+      if(ltot!=0) printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
     }
   }
 #ifdef WMPI
@@ -1381,7 +1571,6 @@ int main(int argc, char *argv[])
   if(cpu.rank==0){
     printf("grid occupancy=%4.1f \n",(gtot/(1.0*ngridmax))*100.);
   }
-
 
 
 #ifdef SELFGRAV
@@ -1476,6 +1665,7 @@ int main(int argc, char *argv[])
 
 #endif
 
+#ifdef PIC
   // ==================================== Force calculation and velocity update   // Corrector step
   if(cpu.rank==0) printf("Predictor\n");
 #ifdef TESTCOSMO
@@ -1490,6 +1680,7 @@ int main(int argc, char *argv[])
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
 #else
   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+#endif
 #endif
 
 #ifdef SELFGRAV
@@ -1554,6 +1745,19 @@ int main(int argc, char *argv[])
     dumpcube(lmap,firstoct,102,filename,tdump); 
     sprintf(filename,"data/prehyd.%05d.p%05d",ndumps,cpu.rank); 
     dumpcube(lmap,firstoct,105,filename,tdump); 
+    sprintf(filename,"data/lev3d.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,0,filename,tdump); 
+#endif
+
+#ifdef WHYDRO2
+    sprintf(filename,"data/denhyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,101,filename,tdump); 
+    sprintf(filename,"data/velhyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,102,filename,tdump); 
+    sprintf(filename,"data/prehyd.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,105,filename,tdump); 
+    sprintf(filename,"data/lev3d.%05d.p%05d",ndumps,cpu.rank); 
+    dumpcube(lmap,firstoct,0,filename,tdump); 
 #endif
 
     ndumps++;
@@ -1577,6 +1781,13 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO
+  float dthydro;
+  dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+  dtnew=(dthydro<dtnew?dthydro:dtnew);
+  //if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
+#endif
+
+#ifdef WHYDRO2
   float dthydro;
   dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
   dtnew=(dthydro<dtnew?dthydro:dtnew);
@@ -1741,6 +1952,157 @@ int main(int argc, char *argv[])
 	  /* nextoct=scattervec(curoct,vectors.vec_w,40,stride,&cpu,nread);  */
 	  /* nextoct=scattervec(curoct,vectors.vec_p,50,stride,&cpu,nread);  */
 
+	}
+      }
+
+  if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);
+
+#endif
+
+
+
+#ifdef WHYDRO2
+
+    // ================================= performing hydro calculations
+    
+    double t0,t100,t20,t80;
+    if(cpu.rank==0) printf("Start Hydro 2\n");
+    for(level=levelmax;level>=levelcoarse;level--)
+      {
+	dxcur=pow(0.5,level);
+
+	// --------------- setting the first oct of the level
+	curoct=firstoct[level-1];
+	  printf("lev=%d curoct=%p\n",level,curoct);
+	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	  // -------------  cleaning working arrays
+	  
+	  memset(stencil,0,stride*sizeof(struct HGRID));
+  
+	  // ------------ gathering the stencil value values
+	  int nread;
+	  nextoct=gatherstencil(curoct,stencil,stride,&cpu, &nread);
+	  printf("nread=%d\n",nread);
+	  // ------------ solving the hydro
+	  
+	  t20=MPI_Wtime();
+	  hydroS(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
+	  t80=MPI_Wtime();
+	  
+	  
+	  // ------------ scatter back the FLUXES
+	  
+	  nextoct=scatterstencil(curoct,stencil, stride, &cpu);
+
+	  t100=MPI_Wtime();
+
+	}
+
+
+	// ---------------- at this stage we are ready to update the conservative variables
+	int flx;
+	float F[30];
+	float dtsurdx=dtnew/dxcur;
+	float one;
+	struct Utype U;
+	struct Wtype W;
+
+	curoct=firstoct[level-1];
+	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	  nextoct=curoct;
+	  do{
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++){
+	      
+	      if(curoct->cell[icell].child==NULL){ // Leaf cell
+		struct CELL *curcell;
+		curcell=&(curoct->cell[icell]);
+
+		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
+		W2U(&W,&U);
+		
+		memcpy(F,curcell->flux,sizeof(float)*30);// original fluxes
+		// here we have to deal with coarse-fine boundaries
+
+		if(level<levelmax){
+		  int inei;
+		  getcellnei(icell, vnei, vcell);
+		  for(inei=0;inei<6;inei++){
+		    if(vnei[inei]!=6){
+		    
+#ifdef TRANSXP
+		      if(inei==1){
+			if((curoct->nei[inei]->child->x-curoct->x)<0.){
+			  continue;
+			}
+		      }
+#endif
+
+#ifdef TRANSXM
+		      if(inei==0){
+			if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+			  continue;
+			}
+		      }
+#endif
+
+		      if(curoct->nei[vnei[inei]]->child!=NULL){
+			// the neighbor cell is at the same level or refined
+			struct CELL *neicell;
+			neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
+			if(neicell->child!=NULL){
+			  // the neighbor is split : fluxes must be averaged
+			  int fcell[4];
+			  getfcell(inei,fcell);
+			  memset(F+5*inei,0,5*sizeof(float)); // reset the original flux
+			
+			  int iface;
+			  float *Fnei;
+			  int idxfnei[6]={1,0,3,2,5,4};
+			  int j; 
+			  // averaging the flux
+			  for(iface=0;iface<4;iface++){
+			    Fnei=neicell->child->cell[fcell[iface]].flux;
+			    for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]];
+			  }
+			}
+		      }
+
+
+		    }
+		  }
+		}
+
+		// ready to update
+		one=1.;
+		for(flx=0;flx<6;flx++){
+		  U.d +=F[0+flx*5]*dtsurdx*one;
+		  U.du+=F[1+flx*5]*dtsurdx*one;
+		  U.dv+=F[2+flx*5]*dtsurdx*one;
+		  U.dw+=F[3+flx*5]*dtsurdx*one;
+		  U.E +=F[4+flx*5]*dtsurdx*one;
+		  one*=-1.;
+		}
+		U2W(&U,&W);
+		memcpy(&(curcell->field),&W,sizeof(struct Wtype));
+	      }
+	      else{ // split cell
+		struct OCT *child;
+		int i;
+		child=curoct->cell[icell].child;
+		memset(&W,0,sizeof(struct Wtype));
+		for(i=0;i<8;i++){
+		  W.d+=child->cell[i].field.d*0.125;
+		  W.u+=child->cell[i].field.u*0.125;
+		  W.v+=child->cell[i].field.v*0.125;
+		  W.w+=child->cell[i].field.w*0.125;
+		  W.p+=child->cell[i].field.p*0.125;
+		}
+		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
+	      }
+	    }
+	  }while(nextoct!=NULL);
 	}
       }
 

@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "prototypes.h"
 #include "oct.h"
 
@@ -484,6 +485,188 @@ struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int str
 }
 #endif
 
+
+
+#ifdef WHYDRO2
+//=====================================================================================================================
+//=====================================================================================================================
+
+struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int inei;
+  int iread=0;
+  int icell;
+  int ioct[7]={12,14,10,16,4,22,13};
+  
+
+  printf("let's gather\n");
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[6]].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
+
+      //abort();
+      // filling the values in the cardinal octs 
+      for(inei=0;inei<6;inei++)
+	{
+	  // the neighbor oct exists (always true for levelcoarse)
+	  if(curoct->nei[inei]->child!=NULL){ 
+	    for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->nei[inei]->child->cell[icell].field),sizeof(struct Wtype)); //
+	    
+#ifdef TRANSXP
+	    int fxp[8]={1,0,3,2,5,4,7,6};
+	    if(inei==1){
+	    if((curoct->nei[inei]->child->x-curoct->x)<0.){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fxp[icell]].field),sizeof(struct Wtype)); //
+	      //flipcell(&(stencil[iread].oct[ioct[inei]]),0);
+	    }
+	  }
+#endif
+
+#ifdef TRANSXM
+	  int fxm[8]={1,0,3,2,5,4,7,6};
+	  if(inei==0){
+	    if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fxm[icell]].field),sizeof(struct Wtype)); //
+	    }
+	  }
+#endif
+
+#ifdef TRANSYP
+	  int fyp[8]={2,3,0,1,6,7,4,5};
+	  if(inei==3){
+	    if((curoct->nei[inei]->child->y-curoct->y)<0.){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fyp[icell]].field),sizeof(struct Wtype)); //
+	    }
+	  }
+#endif
+
+#ifdef TRANSYM
+	  int fym[8]={2,3,0,1,6,7,4,5};
+	  if(inei==2){
+	    if((curoct->nei[inei]->child->y-curoct->y)>0.5){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fym[icell]].field),sizeof(struct Wtype)); //
+	    }
+	  }
+#endif
+
+#ifdef TRANSZP
+	  int fzp[8]={4,5,6,7,0,1,2,3};
+	  if(inei==5){
+	    if((curoct->nei[inei]->child->z-curoct->z)<0.){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fzp[icell]].field),sizeof(struct Wtype)); //
+	    }
+	  }
+#endif
+
+#ifdef TRANSZM
+	  int fzm[8]={4,5,6,7,0,1,2,3};
+	  if(inei==4){
+	    if((curoct->nei[inei]->child->z-curoct->z)>0.5){
+	      // the neighbor is a periodic mirror
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fzm[icell]].field),sizeof(struct Wtype)); //
+	    }
+	  }
+#endif
+
+
+
+	  }
+	else{ // TODO with coarse-fine boundary
+	  // we need to interpolate values using MINMOD slope limiter
+	  
+	  struct CELL *cell;
+	  struct OCT * oct;
+	  cell=curoct->nei[inei];
+	  oct=cell2oct(cell);
+	  
+	  struct Utype U0;
+	  struct Utype Up;
+	  struct Utype Um;
+	  struct Utype Dp,Dm;
+	  struct Utype D[3];
+	  struct Wtype *W;
+	  struct Wtype Wi;
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+
+	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  
+	  W=&(cell->field);
+	  W2U(W,&U0);
+
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      W=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+	    }
+	    W2U(W,&Um);
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      W=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+	    }
+	    W2U(W,&Up);
+
+	    diffU(&Up,&U0,&Dp); 
+	    diffU(&U0,&Um,&Dm); 
+	    
+	    minmod(&Dm,&Dp,D+dir);
+	  }
+
+	  // Interpolation
+	  int ix,iy,iz;
+
+	  for(iz=0;iz<2;iz++){
+	    for(iy=0;iy<2;iy++){
+	      for(ix=0;ix<2;ix++){
+		icell=ix+iy*2+iz*4;
+		interpminmod(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+		U2W(&Up,&Wi);
+		//printf("%e\n",Wi.d);
+		if(Wi.d==0.){
+		  printf("ouhlà!\n");
+		  abort();
+		}
+		memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(Wi),sizeof(struct Wtype)); //
+		//if((ioct[inei]==12)&&(curoct->level==6)) abort();
+	      }
+	    }
+	  }
+	}
+      }
+
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+#endif
+
+//=====================================================================================================================
+//=====================================================================================================================
+
 struct OCT *gathervec2_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
@@ -626,7 +809,7 @@ struct OCT *scattervechydro(struct OCT *octstart, struct MULTIVECT *data, int st
       nextoct=curoct->next;
       
       //getting the vector element
-     ipos=curoct->vecpos;
+      ipos=curoct->vecpos;
 
       // filling the values
       for(icell=0;icell<8;icell++){
@@ -676,6 +859,42 @@ struct OCT *scattervechydro(struct OCT *octstart, struct MULTIVECT *data, int st
   return nextoct;
 }
 #endif
+
+//=======================================================================================================
+//=======================================================================================================
+
+#ifdef WHYDRO2
+struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos,iread;
+  int icell;
+  int ioct[7]={12,14,10,16,4,22,13};
+  
+  nextoct=octstart;
+  iread=0;
+
+  printf("let's scatter\n");
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++){
+	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(float)*30);
+      }
+
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  return nextoct;
+}
+#endif
+
+//=======================================================================================================
+//=======================================================================================================
 
 struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread, int level)
 {

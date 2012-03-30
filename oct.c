@@ -3,6 +3,101 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "prototypes.h"
+#include <string.h>
+
+
+// returns the cells on a neighbour face given by idx
+
+void getfcell(int idx, int *fcell){
+  
+  switch(idx){
+  case 0:
+    fcell[0]=1;
+    fcell[1]=3;
+    fcell[2]=5;
+    fcell[3]=7;
+    break;
+  case 1:
+    fcell[0]=0;
+    fcell[1]=2;
+    fcell[2]=4;
+    fcell[3]=6;
+    break;
+  case 2:
+    fcell[0]=2;
+    fcell[1]=3;
+    fcell[2]=6;
+    fcell[3]=7;
+    break;
+  case 3:
+    fcell[0]=0;
+    fcell[1]=1;
+    fcell[2]=4;
+    fcell[3]=5;
+    break;
+  case 4:
+    fcell[0]=4;
+    fcell[1]=5;
+    fcell[2]=6;
+    fcell[3]=7;
+    break;
+  case 5:
+    fcell[0]=0;
+    fcell[1]=1;
+    fcell[2]=2;
+    fcell[3]=3;
+    break;
+  }
+}
+
+
+///------------------------------------------------------------------------
+// it flips the cell along a certain direction for transmissive boundary conditions
+void flipcell(struct OCT *oct, int dir){
+  
+  int i;
+  struct CELL temp;
+
+  switch(dir){
+  case 0:
+    {
+      char c1[4]={0,2,4,6};
+      char c2[4]={1,3,5,7};
+      for(i=0;i<4;i++){
+	temp=oct->cell[c1[i]];
+	memcpy(&(oct->cell[c1[i]]),&(oct->cell[c2[i]]),sizeof(struct CELL));
+      memcpy(&(oct->cell[c2[i]]),&temp,sizeof(struct CELL));
+      }
+    }
+    break;
+  case 1:
+    {
+    char c1[4]={0,1,4,5};
+    char c2[4]={2,3,6,7};
+    for(i=0;i<4;i++){
+      temp=oct->cell[c1[i]];
+      memcpy(&(oct->cell[c1[i]]),&(oct->cell[c2[i]]),sizeof(struct CELL));
+      memcpy(&(oct->cell[c2[i]]),&temp,sizeof(struct CELL));
+    }
+    break;
+    }
+  case 2:
+    {
+      char c1[4]={0,1,2,3};
+      char c2[4]={4,5,6,7};
+      for(i=0;i<4;i++){
+	temp=oct->cell[c1[i]];
+	memcpy(&(oct->cell[c1[i]]),&(oct->cell[c2[i]]),sizeof(struct CELL));
+	memcpy(&(oct->cell[c2[i]]),&temp,sizeof(struct CELL));
+      }
+      break;
+    }
+  }
+    
+}
+  
+
+
 
 
 

@@ -212,6 +212,15 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  newoct->cell[ii].fy=0.;
 		  newoct->cell[ii].fz=0.;
 #endif
+
+#ifdef WHYDRO2
+		  newoct->cell[ii].field.d=curoct->cell[icell].field.d;
+		  newoct->cell[ii].field.u=curoct->cell[icell].field.u;
+		  newoct->cell[ii].field.v=curoct->cell[icell].field.v;
+		  newoct->cell[ii].field.w=curoct->cell[icell].field.w;
+		  newoct->cell[ii].field.p=curoct->cell[icell].field.p;
+#endif
+
 		}
 
 
@@ -471,12 +480,82 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    //=========================================================
 			  case 2: // marking cells satisfying user defined criterion marker=3/6
 			    if((curoct->level<=levelmax)&&(ismooth==0)){ // we don't need to test the finest level
+#ifdef PIC
 			      mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->level>=levelcoarse);
 			      //mcell=countpart(curoct->cell[icell].phead);
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
 			      }
+#endif
+
+#ifdef WHYDRO2
+			      float grad=0.;
+			      char ng;
+			      float inval=curoct->cell[icell].field.d/dx;
+			      getcellnei(icell, vnei, vcell);
+			      for(ii=0;ii<1;ii++){ // looking for the gradient in 3 directions
+				ng=0;
+				grad=0.;
+				if(vnei[ii]==6){
+				  grad+=(-curoct->cell[vcell[ii]].field.d);
+				  ng++;
+				}
+				else{
+				  // Note that the neibourgh cell may not exist therefore we have to check
+				  if(curoct->nei[vnei[ii]]->child!=NULL){
+#ifdef TRANSXM
+				    if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.){
+				      // the neighbor is a periodic mirror 
+				      grad+=(-curoct->cell[ii].field.d);
+				    }
+				    else{
+				      grad+=(-curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field.d);
+				    }
+#else
+				    grad+=(-curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field.d);
+#endif
+				    ng++;
+				  }
+				  else{
+				    grad+=(-curoct->nei[vnei[ii]]->field.d);
+				  }
+				}
+
+				if(vnei[2*ii+1]==6){
+				  grad+=(curoct->cell[vcell[2*ii+1]].field.d);
+				  ng++;
+				}
+				else{
+				  // Note that the neibourgh cell may not exist therefore we have to check
+				  if(curoct->nei[vnei[2*ii+1]]->child!=NULL){
+#ifdef TRANSXP
+				    if((curoct->nei[vnei[2*ii+1]]->child->x-curoct->x)<0.){
+				      // the neighbor is a periodic mirror 
+				      grad+=(curoct->cell[ii].field.d);
+				    }
+				    else{
+				      grad+=(curoct->nei[vnei[2*ii+1]]->child->cell[vcell[2*ii+1]].field.d);
+				    }
+#else
+				    grad+=(curoct->nei[vnei[2*ii+1]]->child->cell[vcell[2*ii+1]].field.d);
+#endif
+				      
+				    
+				    ng++;
+				  }
+				  else{
+				    grad+=(curoct->nei[vnei[2*ii+1]]->field.d);
+				  }
+				}
+			      }
+			      mcell=fabsf(grad*0.5/dx);
+			      if((mcell>(threshold*inval))&&(curoct->cell[icell].marked==0)) {
+				curoct->cell[icell].marked=marker;
+				nmark++;
+			      }
+
+#endif
 			    }
 			  }
 			}

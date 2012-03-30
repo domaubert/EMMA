@@ -3,9 +3,7 @@
 #include <mpi.h>
 #endif
 
-#ifdef WHYDRO
-#define GAMMA (1.666667)
-#endif
+#define GAMMA (1.4)
 
 #ifdef SUPERCOMOV
 #define NCOSMOTAB (262144)
@@ -186,7 +184,6 @@ struct PART_MPI // For mpi communications
 //=======================================
 
 
-
 //-------------------------------------
 struct CELL
 {
@@ -218,6 +215,26 @@ struct CELL
   float a; // sound speed
 #endif
 
+#ifdef WHYDRO2
+  struct Wtype field;
+  float flux[30]; // 6 fluxes of 5 variables each
+#endif
+
+
+};
+
+// ----------------------------------------------------------------
+
+struct CELLLIGHT
+{
+  struct OCT *child;
+  float marked; // float for consistency with physical quantities during communications
+  int idx; //index of the cell within the oct
+
+
+#ifdef WHYDRO2
+  struct Wtype field;
+#endif
 
 };
 
@@ -256,6 +273,27 @@ struct OCT
 };
 
 
+// ========================================
+struct OCTLIGHT
+{
+  // the cell properties
+  struct CELLLIGHT cell[8]; // MUSTN'T BE MOVED !!
+};
+
+// ========================================
+struct OCTFLUX
+{
+  // the cell properties
+  struct CELL cell[8]; // MUSTN'T BE MOVED !!
+};
+
+// ========================================
+struct HGRID{
+  struct OCTLIGHT oct[27];
+  struct OCTFLUX new;
+};
+
+// ========================================
 struct MULTIVECT{
   float *vecpot; //contains the potential in "stride" octs
   float *vecpotnew; //contains the potential in "stride" octs
