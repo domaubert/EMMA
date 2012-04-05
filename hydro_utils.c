@@ -7,7 +7,7 @@
 
 #define NITERMAX 100
 #define ERRTOL 1e-6
-#define CFL 0.8
+#define CFL 0.9
 
 
 // ==================== converts U -> W
@@ -36,51 +36,151 @@ void W2U(struct Wtype *W, struct Utype *U)
 
 void diffU(struct Utype *U2, struct Utype *U1, struct Utype *UR){
   
-  UR->d=U2->d-U1->d;
-  UR->du=U2->du-U1->du;
-  UR->dv=U2->dv-U1->dv;
-  UR->dw=U2->dw-U1->dw;
-  UR->E=U2->E-U1->E;
+  UR->d =U2->d - U1->d;
+  UR->du=U2->du- U1->du;
+  UR->dv=U2->dv- U1->dv;
+  UR->dw=U2->dw- U1->dw;
+  UR->E =U2->E - U1->E;
 }
 
 // ================= minmod
 
 void minmod(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
 
+  float beta=1.; // 1. for MINBEE 2. for SUPERBEE
+  // FLUX LIMITER
+
   if(Up->d>0){
-    Ur->d=fmaxf(0.f,fminf(Um->d,Up->d));
+    Ur->d=fmaxf(fmaxf(0.f,fminf(beta*Um->d,Up->d)),fminf(Um->d,beta*Up->d));
   }
   else{
-    Ur->d=fminf(0.f,fmaxf(Um->d,Up->d));
+    Ur->d=fminf(fminf(0.f,fmaxf(beta*Um->d,Up->d)),fmaxf(Um->d,beta*Up->d));
   }
+
 
   if(Up->du>0){
-    Ur->du=fmaxf(0.f,fminf(Um->du,Up->du));
+    Ur->du=fmaxf(fmaxf(0.f,fminf(beta*Um->du,Up->du)),fminf(Um->du,beta*Up->du));
   }
   else{
-    Ur->du=fminf(0.f,fmaxf(Um->du,Up->du));
+    Ur->du=fminf(fminf(0.f,fmaxf(beta*Um->du,Up->du)),fmaxf(Um->du,beta*Up->du));
   }
+
 
   if(Up->dv>0){
-    Ur->dv=fmaxf(0.f,fminf(Um->dv,Up->dv));
+    Ur->dv=fmaxf(fmaxf(0.f,fminf(beta*Um->dv,Up->dv)),fminf(Um->dv,beta*Up->dv));
   }
   else{
-    Ur->dv=fminf(0.f,fmaxf(Um->dv,Up->dv));
+    Ur->dv=fminf(fminf(0.f,fmaxf(beta*Um->dv,Up->dv)),fmaxf(Um->dv,beta*Up->dv));
   }
+
 
   if(Up->dw>0){
-    Ur->dw=fmaxf(0.f,fminf(Um->dw,Up->dw));
+    Ur->dw=fmaxf(fmaxf(0.f,fminf(beta*Um->dw,Up->dw)),fminf(Um->dw,beta*Up->dw));
   }
   else{
-    Ur->dw=fminf(0.f,fmaxf(Um->dw,Up->dw));
+    Ur->dw=fminf(fminf(0.f,fmaxf(beta*Um->dw,Up->dw)),fmaxf(Um->dw,beta*Up->dw));
   }
 
+
   if(Up->E>0){
-    Ur->E=fmaxf(0.f,fminf(Um->E,Up->E));
+    Ur->E=fmaxf(fmaxf(0.f,fminf(beta*Um->E,Up->E)),fminf(Um->E,beta*Up->E));
   }
   else{
-    Ur->E=fminf(0.f,fmaxf(Um->E,Up->E));
+    Ur->E=fminf(fminf(0.f,fmaxf(beta*Um->E,Up->E)),fmaxf(Um->E,beta*Up->E));
   }
+
+
+}
+
+
+void minmod2(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
+  float r;
+  float xi;
+  float w=1.;
+  float beta=1.0;
+  // SLOPE LIMITER
+
+  if(Up->d==0.){
+    xi=0.;}
+  else{
+    r=Um->d/Up->d;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  
+  Ur->d=(0.5*(1.+w)*Um->d+0.5*(1.-w)*Up->d)*xi;
+
+  if(Up->du==0.){
+    xi=0.;}
+  else{
+    r=Um->du/Up->du;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  Ur->du=(0.5*(1.+w)*Um->du+0.5*(1.-w)*Up->du)*xi;
+  
+  if(Up->dv==0.){
+    xi=0.;}
+  else{
+    r=Um->dv/Up->dv;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  Ur->dv=(0.5*(1.+w)*Um->dv+0.5*(1.-w)*Up->dv)*xi;
+ 
+  if(Up->dw==0.){
+    xi=0.;}
+  else{
+    r=Um->dw/Up->dw;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  Ur->dw=(0.5*(1.+w)*Um->dw+0.5*(1.-w)*Up->dw)*xi;
+
+  if(Up->E==0.){
+    xi=0.;}
+  else{
+    r=Um->E/Up->E;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  Ur->E=(0.5*(1.+w)*Um->E+0.5*(1.-w)*Up->E)*xi;
+
 
 }
 
@@ -96,6 +196,92 @@ void interpminmod(struct Utype *U0, struct Utype *Up, struct Utype *Dx, struct U
   Up->E =U0->E  +dx*Dx->E  +dy*Dy->E  +dz*Dz->E;
 
 }
+// ==============================================
+
+void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){ 
+
+
+	  struct OCT * oct;
+	  
+	  struct Utype U0;
+	  struct Utype Up;
+	  struct Utype Um;
+	  struct Utype Dp,Dm;
+	  struct Utype D[3];
+	  struct Wtype *W;
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+
+	  oct=cell2oct(cell);
+	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  
+	  W=&(cell->field);
+	  W2U(W,&U0);
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+	    
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      W=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXM
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+		W=&(cell->field);
+	      }
+#endif
+
+	    }
+	    W2U(W,&Um);
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      W=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXP
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+		W=&(cell->field);
+	      }
+#endif
+	    }
+	    W2U(W,&Up);
+
+
+	    diffU(&Up,&U0,&Dp); 
+	    diffU(&U0,&Um,&Dm); 
+	    
+	    minmod2(&Dm,&Dp,D+dir);
+	    /* if(Um.d!=U0.d){ */
+	    /*   printf("%e %e %e %e %e %e\n",Um.d,U0.d,Up.d,Dm.d,Dp.d,D[0].d); */
+	    /*   abort(); */
+	    /* } */
+	  }
+
+	  // Interpolation
+	  int ix,iy,iz;
+	  int icell;
+
+	  for(iz=0;iz<2;iz++){
+	    for(iy=0;iy<2;iy++){
+	      for(ix=0;ix<2;ix++){
+		icell=ix+iy*2+iz*4;
+		interpminmod(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+		U2W(&Up,Wi+icell);
+	      }
+	    }
+	  }
+
+}
+
+
+
+
 
 // ==================== pressure solver
 
@@ -450,6 +636,94 @@ void correct_grav_hydro(struct OCT *octstart, struct CPUINFO *cpu, float dt)
   }
 }
 #endif
+
+// ==================================================================
+
+void MUSCL_BOUND(struct HGRID *stencil, int ioct, int icell, struct Utype *Ui,float dt,float dx){ 
+
+	  struct OCT * oct;
+	  
+	  struct Utype U0;
+	  struct Utype Up;
+	  struct Utype Um;
+	  struct Utype Dp,Dm;
+	  struct Utype D[3];
+	  struct Wtype *W;
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+
+	  getcellnei(icell, vnei, vcell); // we get the neighbors
+	  
+	  W=&(stencil->oct[ioct].cell[icell].field);
+	  W2U(W,&U0);
+	
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+	    
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      W=&(stencil->oct[ioct].cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(stencil->oct[ioct-(int)pow(3,dir)].cell[vcell[inei2]].field);
+	    }
+	    W2U(W,&Um);
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      W=&(stencil->oct[ioct].cell[vcell[inei2]].field);
+	    }
+	    else{
+	      W=&(stencil->oct[ioct+(int)pow(3,dir)].cell[vcell[inei2]].field);
+	    }
+	    W2U(W,&Up);
+
+	    diffU(&Up,&U0,&Dp); 
+	    diffU(&U0,&Um,&Dm); 
+	    
+	    minmod2(&Dm,&Dp,D+dir);
+	  }
+
+
+	  //Computing the Boundary Extrapolated Values
+
+	  float ix[]={-0.5,0.5,0.0,0.0,0.0,0.0};
+	  float iy[]={0.0,0.0,-0.5,0.5,0.0,0.0};
+	  float iz[]={0.0,0.0,0.0,0.0,-0.5,0.5};
+	  
+	  int idir;
+	  for(idir=0;idir<6;idir++){
+	    interpminmod(&U0,Ui+idir,D,D+1,D+2,ix[idir],iy[idir],iz[idir]); // Up contains the interpolation
+	  }
+
+
+	  // READY TO EVOLVE EXTRAPOLATED VALUE
+
+	  float FL[5],FR[5];
+	  float GL[5],GR[5];
+	  float HL[5],HR[5];
+	  
+	  getflux_X(Ui+0,FL);
+	  getflux_X(Ui+1,FR);
+
+	  getflux_Y(Ui+2,GL);
+	  getflux_Y(Ui+3,GR);
+
+	  getflux_Z(Ui+4,HL);
+	  getflux_Z(Ui+5,HR);
+
+	  for(idir=0;idir<6;idir++){
+	    Ui[idir].d +=((FL[0]-FR[0])+(GL[0]-GR[0])+(HL[0]-HR[0]))*0.5*dt/dx;
+	    Ui[idir].du+=((FL[1]-FR[1])+(GL[1]-GR[1])+(HL[1]-HR[1]))*0.5*dt/dx;
+	    Ui[idir].dv+=((FL[2]-FR[2])+(GL[2]-GR[2])+(HL[2]-HR[2]))*0.5*dt/dx;
+	    Ui[idir].dw+=((FL[3]-FR[3])+(GL[3]-GR[3])+(HL[3]-HR[3]))*0.5*dt/dx;
+	    Ui[idir].E +=((FL[4]-FR[4])+(GL[4]-GR[4])+(HL[4]-HR[4]))*0.5*dt/dx;
+	  }
+	  
+	  
+
+}
 
 //============================================================================
 #ifdef WHYDRO 
@@ -957,7 +1231,7 @@ int hydroS(struct HGRID *stencil, int level, int curcpu, int nread,int stride,fl
   struct Wtype *curcell;
   struct Wtype *neicell;
 
-  printf("let's do some hydro\n");
+  //printf("let's do some hydro\n");
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
     for(i=0;i<nread;i++){ // we scan the octs
@@ -1285,6 +1559,367 @@ int hydroS(struct HGRID *stencil, int level, int curcpu, int nread,int stride,fl
 
   return 0;
 }
+
+
+//============================================================================
+int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,float dx, float dt){
+
+  int inei,icell,icellcoarse;
+  int i;
+  float temp;
+  float res,restot=0.;
+  int vnei[6],vcell[6];
+  int vneic[6],vcellc[6];
+
+  float FL[5],FR[5];
+  float GL[5],GR[5];
+  float HL[5],HR[5];
+
+  memset(FL,0,sizeof(float)*5);
+  memset(FR,0,sizeof(float)*5);
+  memset(HL,0,sizeof(float)*5);
+  memset(HR,0,sizeof(float)*5);
+  memset(GL,0,sizeof(float)*5);
+  memset(GR,0,sizeof(float)*5);
+
+  float Smax;
+  struct Wtype1D WRloc, WLloc;
+  struct Utype Uold,Unew;
+  struct Wtype Wold,Wnew;
+  int idxL,idxR;
+  float pstar,ustar;
+  int n;
+  struct Wtype1D Wtest;
+  struct Wtype   Wtest3D;
+  struct Utype   Utest3D;
+  struct Utype UC[6];
+  struct Utype UT[6];
+  struct Utype UN[6];
+  struct Wtype WN[6];
+  struct Wtype WC[6];
+  int ioct[7]={12,14,10,16,4,22,13};
+  int idxnei[6]={1,0,3,2,5,4};
+
+  struct Wtype *curcell;
+  struct Wtype *neicell;
+
+  //printf("let's do some hydro\n");
+  for(icell=0;icell<8;icell++){ // we scan the cells
+    getcellnei(icell, vnei, vcell); // we get the neighbors
+    for(i=0;i<nread;i++){ // we scan the octs
+      
+      
+      // Getting the original state ===========================
+      
+      curcell=&(stencil[i].oct[ioct[6]].cell[icell].field);
+      
+      Wold.d=curcell->d;
+      Wold.u=curcell->u;;
+      Wold.v=curcell->v;;
+      Wold.w=curcell->w;;
+      Wold.p=curcell->p;;
+      Wold.a=sqrtf(GAMMA*Wold.p/Wold.d);
+
+      W2U(&Wold,&Uold); // primitive -> conservative
+
+
+      // MUSCL STATE RECONSTRUCTION
+
+      MUSCL_BOUND(stencil+i, 13, icell, UC,dt,dx);// central
+      
+      for(inei=0;inei<6;inei++){
+	
+	MUSCL_BOUND(stencil+i, ioct[vnei[inei]], vcell[inei], UT,dt,dx);//
+	memcpy(UN+inei,UT+idxnei[inei],sizeof(struct Utype));
+	U2W(UN+inei,WN+inei);
+	U2W(UC+inei,WC+inei);
+      }
+      
+
+      // X DIRECTION =========================================================================
+      
+      // --------- solving the Riemann Problems LEFT
+
+      // Switching to Split description
+
+
+      WLloc.d=WN[0].d;
+      WLloc.u=WN[0].u;
+      WLloc.p=WN[0].p;
+      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
+
+      WRloc.d=WC[0].d;
+      WRloc.u=WC[0].u;
+      WRloc.p=WC[0].p;
+      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.u=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+      
+      // Passive advection
+      if(ustar>0.)
+	{
+	  Wtest3D.v=WN[0].v;
+	  Wtest3D.w=WN[0].w;
+	}
+      else
+	{
+	  Wtest3D.v=WC[0].v;
+	  Wtest3D.w=WC[0].w;
+	}
+      
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes LEFT
+      getflux_X(&Utest3D,FL);
+
+
+      // --------- solving the Riemann Problems RIGHT
+
+
+      // Switching to Split description
+
+      WRloc.d=WN[1].d;
+      WRloc.u=WN[1].u;
+      WRloc.p=WN[1].p;
+      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
+
+      WLloc.d=WC[1].d;
+      WLloc.u=WC[1].u;
+      WLloc.p=WC[1].p;
+      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.u=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+      
+      // Passive advection
+      if(ustar<0.)
+	{
+	  Wtest3D.v=WN[1].v;
+	  Wtest3D.w=WN[1].w;
+	}
+      else
+	{
+	  Wtest3D.v=WC[1].v;
+	  Wtest3D.w=WC[1].w;
+	}
+      
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes RIGHT
+      getflux_X(&Utest3D,FR);
+
+#if 0
+
+      // Y DIRECTION =========================================================================
+      
+      // --------- solving the Riemann Problems FRONT
+
+      inei=2; // we go to the left
+
+      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
+
+      WLloc.d=neicell->d;
+      WLloc.u=neicell->v;
+      WLloc.p=neicell->p;
+      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
+
+      WRloc.d=Wold.d;
+      WRloc.u=Wold.v;//data->vec_u[idxR];
+      WRloc.p=Wold.p;//data->vec_p[idxR];
+      WRloc.a=Wold.a;//sqrtf(GAMMA*WRloc.p/WRloc.d);
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.v=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+
+      // Passive advection
+      if(ustar>0.)
+	{
+	  Wtest3D.u=neicell->u;
+	  Wtest3D.w=neicell->w;
+	}
+      else
+	{
+	  Wtest3D.u=curcell->u;
+	  Wtest3D.w=curcell->w;
+	}
+      
+      
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes LEFT
+      getflux_Y(&Utest3D,GL);
+
+
+      // --------- solving the Riemann Problems BACK
+
+      inei=3; // we go to the right
+
+      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
+
+      WLloc.d=Wold.d;
+      WLloc.u=Wold.v;
+      WLloc.p=Wold.p;
+      WLloc.a=Wold.a;
+
+      WRloc.d=neicell->d;
+      WRloc.u=neicell->v;
+      WRloc.p=neicell->p;
+      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
+
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.v=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+      
+      // Passive advection
+      if(ustar<0.)
+	{
+	  Wtest3D.u=neicell->u;
+	  Wtest3D.w=neicell->w;
+	}
+      else
+	{
+	  Wtest3D.u=curcell->u;
+	  Wtest3D.w=curcell->w;
+	}
+      
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes RIGHT
+      getflux_Y(&Utest3D,GR);
+
+      // Z DIRECTION =========================================================================
+      
+      // --------- solving the Riemann Problems BOTTOM
+
+      inei=4; // we go to the left
+
+      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
+
+      // Switching to Split description
+
+      WLloc.d=neicell->d;
+      WLloc.u=neicell->w;
+      WLloc.p=neicell->p;
+      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
+
+      WRloc.d=Wold.d;
+      WRloc.u=Wold.w;
+      WRloc.p=Wold.p;
+      WRloc.a=Wold.a;
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.w=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+      
+      // Passive advection
+      if(ustar>0.)
+	{
+	  Wtest3D.u=neicell->u;
+	  Wtest3D.v=neicell->v;
+	}
+      else
+	{
+	  Wtest3D.u=curcell->u;
+	  Wtest3D.v=curcell->v;
+	}
+      
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes LEFT
+      getflux_Z(&Utest3D,HL);
+
+      // --------- solving the Riemann Problems TOP
+
+      inei=5; // we go to the right
+      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
+
+      WLloc.d=Wold.d;
+      WLloc.u=Wold.w;
+      WLloc.p=Wold.p;
+      WLloc.a=Wold.a;
+
+      WRloc.d=neicell->d;
+      WRloc.u=neicell->w;
+      WRloc.p=neicell->p;
+      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
+
+      // Riemann Solver
+      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+      
+      Wtest3D.d=Wtest.d;
+      Wtest3D.w=Wtest.u;
+      Wtest3D.p=Wtest.p;
+      Wtest3D.a=Wtest.a;
+      
+      // Passive advection
+      if(ustar<0.)
+	{
+	  Wtest3D.u=neicell->u;
+	  Wtest3D.v=neicell->v;
+	}
+      else
+	{
+	  Wtest3D.u=curcell->u;
+	  Wtest3D.v=curcell->v;
+	}
+
+      W2U(&Wtest3D,&Utest3D);
+      
+      // Getting the fluxes RIGHT
+      getflux_Z(&Utest3D,HR);
+#endif
+
+      // Updating the data ====================================================================
+      // Unsplit scheme
+      
+      // copy the fluxes
+      memcpy(stencil[i].new.cell[icell].flux+ 0,FL,sizeof(float)*5);
+      memcpy(stencil[i].new.cell[icell].flux+ 5,FR,sizeof(float)*5);
+      memcpy(stencil[i].new.cell[icell].flux+10,GL,sizeof(float)*5);
+      memcpy(stencil[i].new.cell[icell].flux+15,GR,sizeof(float)*5);
+      memcpy(stencil[i].new.cell[icell].flux+20,HL,sizeof(float)*5);
+      memcpy(stencil[i].new.cell[icell].flux+25,HR,sizeof(float)*5);
+
+      // ready for the next cell
+    }
+    //ready for the next oct
+  }
+
+  return 0;
+}
+
 
 
 //============================================================================

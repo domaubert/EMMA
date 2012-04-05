@@ -94,3 +94,34 @@ func plotamr(levmap,color=,width=,lmin=)
   
 }
 
+func ext_amr1D(levmap,field,color=,lmin=)
+{
+  if(is_void(lmin)) lmin=min(levmap);
+  nx=dimsof(levmap)(2);
+  //  ny=dimsof(levmap)(3);
+
+  lmap=int(log(nx)/log(2));
+  lcur=max(levmap);
+  dx=2^(lmap-lcur);
+  imod=1;
+  xi=span(0,1,nx+1)(zcen);
+  y=x=lv=[];
+  while(lcur>=lmin){
+    lcur;
+    www=where(levmap==lcur);
+    if(numberof(www)!=0){
+      xloc=xi(www)(::int(pow(2,max(levmap)-lcur)));
+      yloc=field(www)(::int(pow(2,max(levmap)-lcur)));
+      lvloc=levmap(www)(::int(pow(2,max(levmap)-lcur)));
+      grow,x,xloc;
+      grow,y,yloc;
+      grow,lv,lvloc;
+    }
+    lcur=lcur-1;
+    dx*=2;
+  }
+  s=sort(x);
+  return [x(s),y(s),lv(s)];
+  
+}
+

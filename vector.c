@@ -489,19 +489,155 @@ struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int str
 
 #ifdef WHYDRO2
 //=====================================================================================================================
+//
+//    REFLECHISSONS UN PEU EN FAIT LA RECHERCHE EST RECURSIVE
+//
+
+// Structure de base
+
+void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil){
+
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
+  int icell;
+  int i;
+  int ioct2;
+  int vnei[6],vcell[6];
+  int ineiloc;
+  int face[8]={0,1,2,3,4,5,6,7};
+  float dist;
+
+  struct Wtype Wi[8];
+  struct OCT *oct;
+  struct OCT *neioct;
+  struct CELL *neicell;
+
+  if(order==1){
+    ineiloc=inei;
+  }
+  else if(order==2){
+    ineiloc=inei2;
+  }
+  else if(order==3){
+    ineiloc=inei3;
+
+  }
+
+  if(cell->child!=NULL){
+    // the oct at the right level exists
+    neicell=cell->child->nei[ineiloc];
+  }
+  else{
+    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+    oct=cell2oct(cell);
+    if(vnei[ineiloc]==6){
+      neicell=&(oct->cell[vcell[ineiloc]]);
+    }
+    else{
+      if(oct->nei[ineiloc]->child!=NULL){
+	neicell=&(oct->nei[ineiloc]->child->cell[vcell[ineiloc]]);
+      }
+      else{
+	printf("big problem\n");
+	abort();
+      }
+    }
+  }
+
+
+  oct=cell2oct(cell);
+  neioct=cell2oct(neicell);
+
+  // ============================ TRANSMISSIVE BOUNDARIES ====================
+#ifdef TRANSXP
+    if(ineiloc==1){
+      dist=neioct->x-oct->x;
+      if(dist<0.){
+	neicell=cell;
+	face[0]=1;
+	face[1]=1;
+	face[2]=3;
+	face[3]=3;
+	face[4]=5;
+	face[5]=5;
+	face[6]=7;
+	face[7]=7;
+      }
+    }
+#endif
+      
+#ifdef TRANSXM
+    if(ineiloc==0){
+      dist=neioct->x-oct->x;
+      if(dist>0.5){
+	neicell=cell;
+	face[0]=0;
+	face[1]=0;
+	face[2]=2;
+	face[3]=2;
+	face[4]=4;
+	face[5]=4;
+	face[6]=6;
+	face[7]=6;
+      }
+    }
+#endif
+  // ============================ END TRANSMISSIVE BOUNDARIES ====================
+
+
+  if(neicell->child!=NULL){
+    // optimal case
+    for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
+    }
+  else{
+    coarse2fine_hydro(neicell,Wi);
+  }
+
+
+
+  for(icell=0;icell<8;icell++){
+    memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
+  }
+
+  // next order
+  if(order==1){
+    for(i=0;i<6;i++){
+      if((i/2)==(inei/2)) continue;
+      ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
+      recursive_neighbor_gather_oct(ioct2, inei, i, -1, 2, neicell, stencil);
+    }
+  }
+  else if(order==2) {
+    for(i=0;i<6;i++){
+      if(((i/2)==(inei/2))||((i/2)==(inei2/2))) continue;
+      ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
+      recursive_neighbor_gather_oct(ioct2, inei, inei2, i, 3, neicell, stencil);
+    }
+  }
+}
+#endif
+
+
 //=====================================================================================================================
 
 struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
+  struct CELL *cell;
+
   int inei;
   int iread=0;
   int icell;
-  int ioct[7]={12,14,10,16,4,22,13};
+  //int ioct[7]={12,14,10,16,4,22,13};
   
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
+  int ioct;
 
-  printf("let's gather\n");
+  //printf("let's gather\n");
   nextoct=octstart;
   if(nextoct!=NULL){
     do{ //sweeping levels
@@ -509,23 +645,320 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       nextoct=curoct->next;
 
       // filling the values in the central oct
-      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[6]].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
+      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
+
+      //abort();
+      cell=curoct->parent;
+      for(inei=0;inei<6;inei++)
+	{
+	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
+	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
+	}
+	  
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+
+
+
+	    
+
+//=====================================================================================================================
+
+#if 0
+
+struct OCT *gatherstencilold(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  struct OCT *neioct;
+  struct OCT *neioct2;
+
+  int inei,inei2,inei3;
+  int iread=0;
+  int icell,icell2,icell3;
+  //int ioct[7]={12,14,10,16,4,22,13};
+  
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
+  int ioct,ioct2,ioct3;
+
+  //printf("let's gather\n");
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
 
       //abort();
       // filling the values in the cardinal octs 
       for(inei=0;inei<6;inei++)
 	{
+	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
 	  // the neighbor oct exists (always true for levelcoarse)
-	  if(curoct->nei[inei]->child!=NULL){ 
-	    for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->nei[inei]->child->cell[icell].field),sizeof(struct Wtype)); //
+	  if(curoct->nei[inei]->child!=NULL){  // OCTSEARCH 1
+	    for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct].cell[icell].field),&(curoct->nei[inei]->child->cell[icell].field),sizeof(struct Wtype)); //
+	    
+	    neioct=curoct->nei[inei]->child;
 	    
 #ifdef TRANSXP
-	    int fxp[8]={1,0,3,2,5,4,7,6};
+	    int fxp[8]={1,1,3,3,5,5,7,7};
 	    if(inei==1){
-	    if((curoct->nei[inei]->child->x-curoct->x)<0.){
+	      if((curoct->nei[inei]->child->x-curoct->x)<0.){
+		// the neighbor is a periodic mirror
+		for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct].cell[icell].field),&(curoct->cell[fxp[icell]].field),sizeof(struct Wtype)); //
+		neioct=curoct;
+	      }
+	    }
+#endif
+
+#ifdef TRANSXM
+	    int fxm[8]={0,0,2,2,4,4,6,6};
+	    if(inei==0){
+	      if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+		// the neighbor is a periodic mirror
+		for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct].cell[icell].field),&(curoct->cell[fxm[icell]].field),sizeof(struct Wtype)); //
+		neioct=curoct;
+	      }
+	    }
+#endif
+
+#if 1
+	    // ================= second order neighbors
+	    
+	    for(inei2=0;inei2<6;inei2++){
+	      ioct2=ioct+ix[inei2]+iy[inei2]*3+iz[inei2]*9; // oct position in stencil
+	      if((inei2/2)==(inei/2)) continue;
+
+	      if(neioct->nei[inei2]->child!=NULL){ // OCTSEARCH 11
+		for(icell2=0;icell2<8;icell2++) memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),&(neioct->nei[inei2]->child->cell[icell2].field),sizeof(struct Wtype)); //
+		
+		neioct2=neioct->nei[inei2]->child;
+#ifdef TRANSXP
+		int fxp[8]={1,1,3,3,5,5,7,7};
+		if(inei2==1){
+		  if((neioct->nei[inei2]->child->x-neioct->x)<0.){
+		    // the neighbor is a periodic mirror
+		    for(icell2=0;icell2<8;icell2++) memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),&(neioct->cell[fxp[icell2]].field),sizeof(struct Wtype)); //
+		    neioct2=neioct;
+		  }
+		}
+#endif
+		
+#ifdef TRANSXM
+		int fxm[8]={0,0,2,2,4,4,6,6};
+		if(inei2==0){
+		  if((neioct->nei[inei2]->child->x-neioct->x)>0.5){
+		    // the neighbor is a periodic mirror
+		    for(icell2=0;icell2<8;icell2++) memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),&(neioct->cell[fxm[icell2]].field),sizeof(struct Wtype)); //
+		    neioct2=neioct;
+		  }
+		}
+#endif
+
+		// Corners fill
+
+		for(inei3=0;inei3<6;inei3++){
+		  ioct3=ioct2+ix[inei3]+iy[inei3]*3+iz[inei3]*9; // oct position in stencil
+		  if(((inei3/2)==(inei/2))||((inei3/2)==(inei2/2))) continue;
+		  if(neioct2->nei[inei3]->child!=NULL){ // OCTSEARCH 111
+		    for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct2->nei[inei3]->child->cell[icell3].field),sizeof(struct Wtype)); //
+		    
+#ifdef TRANSXP
+		    int fxp[8]={1,1,3,3,5,5,7,7};
+		    if(inei3==1){
+		      if((neioct2->nei[inei3]->child->x-neioct2->x)<0.){
+			// the neighbor is a periodic mirror
+			for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct2->cell[fxp[icell3]].field),sizeof(struct Wtype)); //
+		      }
+		    }
+#endif
+		
+#ifdef TRANSXM
+		    int fxm[8]={0,0,2,2,4,4,6,6};
+		    if(inei3==0){
+		      if((neioct2->nei[inei3]->child->x-neioct2->x)>0.5){
+		    // the neighbor is a periodic mirror
+			for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct2->cell[fxm[icell3]].field),sizeof(struct Wtype)); //
+		      }
+		    }
+#endif
+		  }
+		  else{ // OCTSEARCH 110
+		    // CORNER DOES NOT EXIST MINMOD INTERPOLATION REQUIRED
+		    	    
+		    struct CELL *cell;
+		    struct Wtype Wi[8];
+		    cell=neioct2->nei[inei3];
+		    neioct3=cell2oct(cell);
+		    int trans=0;
+
+#ifdef TRANSXP
+		    int fxp[8]={1,1,3,3,5,5,7,7};
+		    if(inei3==1){
+		      if((neioct3->x-neioct2->x)<0.){
+			// the neighbor is a periodic mirror
+			for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct2->cell[fxp[icell3]].field),sizeof(struct Wtype)); //
+			trans=1;
+		      }
+		    }
+#endif
+
+#ifdef TRANSXM
+		    int fxm[8]={0,0,2,2,4,4,6,6};
+		    if(inei3==0){
+		      if((neioct3->x-neioct2->x)>0.5){
+			// the neighbor is a periodic mirror
+			for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct2->cell[fxm[icell3]].field),sizeof(struct Wtype)); //
+			trans=1;
+		      }
+		    }
+#endif
+
+
+		    if(!trans){
+		      coarse2fine_hydro(cell,Wi);
+		      for(icell3=0;icell3<8;icell3++){
+			memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),Wi+icell3,sizeof(struct Wtype)); //
+		      }
+		    }
+		  }
+		}
+	      }
+	      else{ // OCTSEARCH 10
+		// second order oct does not exist
+		// we need to interpolate values using MINMOD slope limiter
+		
+		
+		struct CELL *cell;
+		struct Wtype Wi[8];
+		cell=neioct->nei[inei2];
+		neioct2=cell2oct(cell);
+ 		int trans=0;
+
+ #ifdef TRANSXP
+		int fxp[8]={1,1,3,3,5,5,7,7};
+		if(inei2==1){
+		  if((neioct2->x-neioct->x)<0.){
+		    // the neighbor is a periodic mirror
+		    for(icell2=0;icell2<8;icell2++) memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),&(neioct->cell[fxp[icell2]].field),sizeof(struct Wtype)); //
+		    trans=1;
+		  }
+		}
+#endif
+
+#ifdef TRANSXM
+		int fxm[8]={0,0,2,2,4,4,6,6};
+		if(inei2==0){
+		  if((neioct2->x-neioct->x)>0.5){
+		    // the neighbor is a periodic mirror
+		    for(icell2=0;icell2<8;icell2++) memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),&(neioct->cell[fxm[icell2]].field),sizeof(struct Wtype)); //
+		    trans=1;
+		  }
+		}
+#endif
+
+
+		if(!trans){
+		  coarse2fine_hydro(cell,Wi);
+		  for(icell2=0;icell2<8;icell2++){
+		    memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),Wi+icell2,sizeof(struct Wtype)); //
+		  }
+		}
+
+		// corner fill
+		for(inei3=0;inei3<6;inei3++){
+		  ioct3=ioct2+ix[inei3]+iy[inei3]*3+iz[inei3]*9; // oct position in stencil
+		  if(((inei3/2)==(inei/2))||((inei3/2)==(inei2/2))) continue;
+		  getcellnei(cell->icell, vnei3, vcell3); // we get the neighbors
+
+		  if(vnei3[inei3]==6){// OCTSEARCH 100
+		    // the corner belong to the same l-1 oct
+		    struct CELL *cell2;
+		    struct Wtype Wi[8];
+ 		    cell2=neioct2->cell[vcell3[inei3]];
+		    coarse2fine_hydro(cell2,Wi);
+		    for(icell3=0;icell3<8;icell3++){
+		      memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),Wi+icell3,sizeof(struct Wtype)); //
+		    }
+		  }
+		  else{
+		    if(neioct2->nei[vnei3[inei3]]->child!=NULL){
+		      struct OCT* neioct3;
+		      neioct3=neioct2->nei[vnei3[inei3]]->child;
+		      int trans=0;
+#ifdef TRANSXP
+		      int fxp[8]={1,1,3,3,5,5,7,7};
+		      if(inei3==1){
+			if((neioct3->x-neioct2->x)<0.){
+			  // the neighbor is a periodic mirror
+			  // we copy back the oct from previous order
+			  for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(stencil[iread].oct[ioct2].cell[fxp[icell3]].field),sizeof(struct Wtype)); //
+			  trans=1;
+			}
+		      }
+#endif
+
+#ifdef TRANSXM
+		      int fxm[8]={0,0,2,2,4,4,6,6};
+		      if(inei3==0){
+			if((neioct3->x-neioct2->x)>0.5){
+			  // the neighbor is a periodic mirror
+			  // we copy back the oct from previous order
+			  for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(stencil[iread].oct[ioct2].cell[fxp[icell3]].field),sizeof(struct Wtype)); //
+			  trans=1;
+			}
+		      }
+#endif
+		      
+		      if(trans==0){
+			if(neioct3->cell[vcell3[inei3]].child!=NULL){// OCTSEARCH 101
+			  // back at original lavel
+			  for(icell3=0;icell3<8;icell3++) memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),&(neioct3->cell[vcell3[inei3]].child->cell[icell3].field),sizeof(struct Wtype)); //
+			}
+			else{// OCTSEARCH 100
+			  struct CELL *cell2;
+			  struct Wtype Wi[8];
+			  cell2=neioct3->cell[vcell3[inei3]];
+			  coarse2fine_hydro(cell2,Wi);
+			  for(icell3=0;icell3<8;icell3++){
+			    memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),Wi+icell3,sizeof(struct Wtype)); //
+			  }
+			}
+		      }
+		      else{
+			printf("ouhlà\n");
+			abort();
+		      }
+		    } 
+		  }
+		}
+	      }
+#endif
+	  }
+	  else{ // OCTSEARCH 0
+	    // we need to interpolate values using MINMOD slope limiter
+	    
+	  struct CELL *cell;
+	  struct Wtype Wi[8];
+	  cell=curoct->nei[inei];
+	  neioct=cell2oct(cell);
+	  int trans=0;
+
+#ifdef TRANSXP
+	  int fxp[8]={1,0,3,2,5,4,7,6};
+	  if(inei==1){
+	    if((neioct->x-curoct->x)<0.){
 	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fxp[icell]].field),sizeof(struct Wtype)); //
-	      //flipcell(&(stencil[iread].oct[ioct[inei]]),0);
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct].cell[icell].field),&(curoct->cell[fxp[icell]].field),sizeof(struct Wtype)); //
+	      trans=1;
 	    }
 	  }
 #endif
@@ -533,130 +966,129 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 #ifdef TRANSXM
 	  int fxm[8]={1,0,3,2,5,4,7,6};
 	  if(inei==0){
-	    if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+	    if((neioct->x-curoct->x)>0.5){
 	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fxm[icell]].field),sizeof(struct Wtype)); //
-	    }
-	  }
-#endif
-
-#ifdef TRANSYP
-	  int fyp[8]={2,3,0,1,6,7,4,5};
-	  if(inei==3){
-	    if((curoct->nei[inei]->child->y-curoct->y)<0.){
-	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fyp[icell]].field),sizeof(struct Wtype)); //
-	    }
-	  }
-#endif
-
-#ifdef TRANSYM
-	  int fym[8]={2,3,0,1,6,7,4,5};
-	  if(inei==2){
-	    if((curoct->nei[inei]->child->y-curoct->y)>0.5){
-	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fym[icell]].field),sizeof(struct Wtype)); //
-	    }
-	  }
-#endif
-
-#ifdef TRANSZP
-	  int fzp[8]={4,5,6,7,0,1,2,3};
-	  if(inei==5){
-	    if((curoct->nei[inei]->child->z-curoct->z)<0.){
-	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fzp[icell]].field),sizeof(struct Wtype)); //
-	    }
-	  }
-#endif
-
-#ifdef TRANSZM
-	  int fzm[8]={4,5,6,7,0,1,2,3};
-	  if(inei==4){
-	    if((curoct->nei[inei]->child->z-curoct->z)>0.5){
-	      // the neighbor is a periodic mirror
-	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(curoct->cell[fzm[icell]].field),sizeof(struct Wtype)); //
+	      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[ioct].cell[icell].field),&(curoct->cell[fxm[icell]].field),sizeof(struct Wtype)); //
+	      trans=1;
 	    }
 	  }
 #endif
 
 
-
+	  if(!trans){
+	    coarse2fine_hydro(cell,Wi);
+	    for(icell=0;icell<8;icell++){
+	      memcpy(&(stencil[iread].oct[ioct].cell[icell].field),Wi+icell,sizeof(struct Wtype)); //
+	    }
 	  }
-	else{ // TODO with coarse-fine boundary
-	  // we need to interpolate values using MINMOD slope limiter
 	  
-	  struct CELL *cell;
-	  struct OCT * oct;
-	  cell=curoct->nei[inei];
-	  oct=cell2oct(cell);
+	  // second order neighbors
 	  
-	  struct Utype U0;
-	  struct Utype Up;
-	  struct Utype Um;
-	  struct Utype Dp,Dm;
-	  struct Utype D[3];
-	  struct Wtype *W;
-	  struct Wtype Wi;
-	  int inei2;
-	  int vcell[6],vnei[6];
-	  int dir;
+	  for(inei2=0;inei2<6;inei2++){
+	    ioct2=ioct+ix[inei2]+iy[inei2]*3+iz[inei2]*9; // oct position in stencil
+	    if((inei2/2)==(inei/2)) continue;
+	    getcellnei(cell->idx, vnei2, vcell2); // we get the neighbors
+	    if(vnei2[inei2]==6){ // OCTSEARCH 00
+	      // same level same oct
+	      struct CELL *cell2;
+	      struct Wtype Wi[8];
+	      cell2=neioct->cell[vcell2[inei2]];
+	      coarse2fine_hydro(cell2,Wi);
+	      for(icell2=0;icell2<8;icell2++){
+		memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),Wi+icell2,sizeof(struct Wtype)); //
+	      }
 
-	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  
-	  W=&(cell->field);
-	  W2U(W,&U0);
-
-	  // Limited Slopes
-	  for(dir=0;dir<3;dir++){
-
-	    inei2=2*dir;
-	    if(vnei[inei2]==6){
-	      W=&(oct->cell[vcell[inei2]].field);
-	    }
-	    else{
-	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
-	    }
-	    W2U(W,&Um);
-
-	    inei2=2*dir+1;
-	    if(vnei[inei2]==6){
-	      W=&(oct->cell[vcell[inei2]].field);
-	    }
-	    else{
-	      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
-	    }
-	    W2U(W,&Up);
-
-	    diffU(&Up,&U0,&Dp); 
-	    diffU(&U0,&Um,&Dm); 
-	    
-	    minmod(&Dm,&Dp,D+dir);
-	  }
-
-	  // Interpolation
-	  int ix,iy,iz;
-
-	  for(iz=0;iz<2;iz++){
-	    for(iy=0;iy<2;iy++){
-	      for(ix=0;ix<2;ix++){
-		icell=ix+iy*2+iz*4;
-		interpminmod(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
-		U2W(&Up,&Wi);
-		//printf("%e\n",Wi.d);
-		if(Wi.d==0.){
-		  printf("ouhlà!\n");
-		  abort();
+ 	      // third order nighbor corners
+ 	      for(inei3=0;inei3<6;inei3++){
+		ioct3=ioct2+ix[inei3]+iy[inei3]*3+iz[inei3]*9; // oct position in stencil
+		if(((inei3/2)==(inei/2))||((inei3/2)==(inei2/2))) continue;
+		getcellnei(cell2->idx, vnei3, vcell3); // we get the neighbors
+		
+		if(vnei3[inei3]==6){// OCTSEARCH 000
+		  struct CELL *cell3;
+		  struct Wtype Wi[8];
+		  cell3=neioct->cell[vcell3[inei3]];
+		  coarse2fine_hydro(cell3,Wi);
+		  for(icell3=0;icell3<8;icell3++){
+		    memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),Wi+icell2,sizeof(struct Wtype)); //
+		  }
 		}
-		memcpy(&(stencil[iread].oct[ioct[inei]].cell[icell].field),&(Wi),sizeof(struct Wtype)); //
-		//if((ioct[inei]==12)&&(curoct->level==6)) abort();
+		else{ 
+		  		  // we change oct
+		  if(neioct->nei[vnei3[inei3]]->child!=NULL){ 
+		    // the same level exist
+		    // two options : same l-1 level or we recover the original l level
+		    neioct2=neioct->nei[vnei3[inei3]]->child;
+		    if(neioct2->cell[vcell3[inei3]]->child!=NULL){ //OCTSEARCH 001
+		      // recovering original level
+		      for(icell3=0;icell3<8;icell3++){
+			memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),neioct2->cell[vcell3[inei3]]->child->cell[icell3].field,sizeof(struct Wtype)); 
+		      }
+		    }
+		    else{
+		      // interpolation required // OCTSEARCH 000
+		      struct CELL *cell3;
+		      struct Wtype Wi[8];
+		      cell3=neioct2->cell[vcell3[inei3]];
+		      coarse2fine_hydro(cell3,Wi);
+		      for(icell3=0;icell3<8;icell3++){
+			memcpy(&(stencil[iread].oct[ioct3].cell[icell3].field),Wi+icell3,sizeof(struct Wtype)); //
+		      }
+		    }
+		  }
+		}
 	      }
 	    }
+	    else{
+	      // we change oct
+	      if(neioct->nei[vnei2[inei2]]->child!=NULL){ 
+		// the same level exist
+		// two options : same l-1 level or we recover the original l level
+		neioct2=neioct->nei[vnei2[inei2]]->child;
+		if(neioct2->cell[vcell2[inei2]]->child!=NULL){ //OCTSEARCH 01
+		  // recovering original level
+		  for(icell2=0;icell2<8;icell2++){
+		    memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),neioct2->cell[vcell2[inei2]]->child->cell[icell2].field,sizeof(struct Wtype)); 
+		  }
+
+		  // CORNERS
+		  
+		  
+
+
+		}
+		else{
+		  // interpolation required // OCTSEARCH 00
+		  struct CELL *cell2;
+		  struct Wtype Wi[8];
+		  cell2=neioct2->cell[vcell2[inei2]];
+		  coarse2fine_hydro(cell2,Wi);
+		  for(icell2=0;icell2<8;icell2++){
+		    memcpy(&(stencil[iread].oct[ioct2].cell[icell2].field),Wi+icell2,sizeof(struct Wtype)); //
+		  }
+
+
+		  // CORNERS
+
+		  
+		}
+	      }
+	      else{
+		printf("ouhla 2\n");
+		abort();
+	      }
+
+	    }
+	    
+
+
 	  }
+
+
 	}
       }
 
-      iread++;
+       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
   (*nread)=iread;
@@ -875,7 +1307,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
   nextoct=octstart;
   iread=0;
 
-  printf("let's scatter\n");
+  //printf("let's scatter\n");
   if(nextoct!=NULL){
     do{ //sweeping levels
       curoct=nextoct;

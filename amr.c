@@ -199,6 +199,10 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  }
 		}
 
+#ifdef WHYDRO2
+		struct Wtype Wi[8];
+		coarse2fine_hydro(&(curoct->cell[icell]),Wi);
+#endif
 		// filling the cells
 		for(ii=0;ii<8;ii++){
 		  newoct->cell[ii].marked=0;
@@ -214,11 +218,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 #endif
 
 #ifdef WHYDRO2
-		  newoct->cell[ii].field.d=curoct->cell[icell].field.d;
-		  newoct->cell[ii].field.u=curoct->cell[icell].field.u;
-		  newoct->cell[ii].field.v=curoct->cell[icell].field.v;
-		  newoct->cell[ii].field.w=curoct->cell[icell].field.w;
-		  newoct->cell[ii].field.p=curoct->cell[icell].field.p;
+		  memcpy(&(newoct->cell[ii].field),Wi+icell,sizeof(struct Wtype)); 
 #endif
 
 		}
@@ -413,6 +413,21 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				else{
 				  // Note that the neibourgh cell may not exist therefore we have to check
 				  if(curoct->nei[vnei[ii]]->child!=NULL){
+#ifdef TRANSXM
+				    if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.5){
+				      newcell=NULL;
+				      continue;
+				    }
+#endif
+
+#ifdef TRANSXP
+				    if((curoct->nei[vnei[ii]]->child->x-curoct->x)<0.){
+				      newcell=NULL;
+				      continue;
+				    }
+#endif
+
+
 				    newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 				    if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
 				      curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;

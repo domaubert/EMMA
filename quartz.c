@@ -1790,8 +1790,10 @@ int main(int argc, char *argv[])
 #ifdef WHYDRO2
   float dthydro;
   dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
-  dtnew=(dthydro<dtnew?dthydro:dtnew);
-  //if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
+  if(nsteps<5) dthydro/=5.;
+  //  dtnew=(dthydro<dtnew?dthydro:dtnew);
+  dtnew=dthydro;
+  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 #endif
 
 #ifdef SELFGRAV
@@ -1942,7 +1944,7 @@ int main(int argc, char *argv[])
 	  
 	  // ------------ scatter back the result
 	  
-	  nextoct=scattervechydro(curoct,&vectors, stride, &cpu);
+	  nextoct=scattervechydro(curoct,&vectors, nread, &cpu);
 
 	  t100=MPI_Wtime();
 
@@ -1966,46 +1968,54 @@ int main(int argc, char *argv[])
     // ================================= performing hydro calculations
     
     double t0,t100,t20,t80;
+    int nread,nreadtot;;
     if(cpu.rank==0) printf("Start Hydro 2\n");
     for(level=levelmax;level>=levelcoarse;level--)
       {
 	dxcur=pow(0.5,level);
 
 	// --------------- setting the first oct of the level
-	curoct=firstoct[level-1];
-	  printf("lev=%d curoct=%p\n",level,curoct);
-	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
-	  // -------------  cleaning working arrays
+	nextoct=firstoct[level-1];
+	printf("lev=%d curoct=%p\n",level,nextoct);
+	nreadtot=0;
+	do {
+	  curoct=nextoct;
+	  if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	    // -------------  cleaning working arrays
 	  
-	  memset(stencil,0,stride*sizeof(struct HGRID));
+	    memset(stencil,0,stride*sizeof(struct HGRID));
   
-	  // ------------ gathering the stencil value values
-	  int nread;
-	  nextoct=gatherstencil(curoct,stencil,stride,&cpu, &nread);
-	  printf("nread=%d\n",nread);
-	  // ------------ solving the hydro
+	    // ------------ gathering the stencil value values
+	    nextoct=gatherstencil(curoct,stencil,stride,&cpu, &nread);
+	    //printf("nread=%d\n",nread);
+	    // ------------ solving the hydro
+	    
+	    //t20=MPI_Wtime();
+	    //hydroS(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
+	    hydroM(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
+	    //t80=MPI_Wtime();
+	    
 	  
-	  t20=MPI_Wtime();
-	  hydroS(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
-	  t80=MPI_Wtime();
-	  
-	  
-	  // ------------ scatter back the FLUXES
-	  
-	  nextoct=scatterstencil(curoct,stencil, stride, &cpu);
+	    // ------------ scatter back the FLUXES
+	    
+	    nextoct=scatterstencil(curoct,stencil, nread, &cpu);
+	    nreadtot+=nread;
+	    //t100=MPI_Wtime();
+	  }
+	}while(nextoct!=NULL);
 
-	  t100=MPI_Wtime();
-
-	}
-
+	printf("Nhydro=%d \n",nreadtot);
 
 	// ---------------- at this stage we are ready to update the conservative variables
 	int flx;
 	float F[30];
+	float Forg[30];
 	float dtsurdx=dtnew/dxcur;
 	float one;
 	struct Utype U;
 	struct Wtype W;
+	struct Wtype Wnew;
+	struct CELL *neicell;
 
 	curoct=firstoct[level-1];
 	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
@@ -2014,7 +2024,8 @@ int main(int argc, char *argv[])
 	    curoct=nextoct;
 	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++){
-	      
+	      int ref=0;
+
 	      if(curoct->cell[icell].child==NULL){ // Leaf cell
 		struct CELL *curcell;
 		curcell=&(curoct->cell[icell]);
@@ -2023,7 +2034,10 @@ int main(int argc, char *argv[])
 		W2U(&W,&U);
 		
 		memcpy(F,curcell->flux,sizeof(float)*30);// original fluxes
+					  memcpy(Forg,F,sizeof(float)*30);
+
 		// here we have to deal with coarse-fine boundaries
+
 
 		if(level<levelmax){
 		  int inei;
@@ -2031,26 +2045,27 @@ int main(int argc, char *argv[])
 		  for(inei=0;inei<6;inei++){
 		    if(vnei[inei]!=6){
 		    
+		      if(curoct->nei[vnei[inei]]->child!=NULL){
+
 #ifdef TRANSXP
-		      if(inei==1){
-			if((curoct->nei[inei]->child->x-curoct->x)<0.){
-			  continue;
+			if(inei==1){
+			  if((curoct->nei[inei]->child->x-curoct->x)<0.){
+			    continue;
+			  }
 			}
-		      }
 #endif
 
 #ifdef TRANSXM
-		      if(inei==0){
-			if((curoct->nei[inei]->child->x-curoct->x)>0.5){
-			  continue;
+			if(inei==0){
+			  if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+			    continue;
+			  }
 			}
-		      }
 #endif
-
-		      if(curoct->nei[vnei[inei]]->child!=NULL){
+		      
 			// the neighbor cell is at the same level or refined
-			struct CELL *neicell;
 			neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
+			
 			if(neicell->child!=NULL){
 			  // the neighbor is split : fluxes must be averaged
 			  int fcell[4];
@@ -2064,12 +2079,18 @@ int main(int argc, char *argv[])
 			  // averaging the flux
 			  for(iface=0;iface<4;iface++){
 			    Fnei=neicell->child->cell[fcell[iface]].flux;
-			    for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]];
+			    for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]*5];
 			  }
+
+			  /* if((neicell->child->level==6)&&(curoct->level==5)){ */
+			  /*   printf("BOUND\n"); */
+			  /*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
+			  /*   abort(); */
+			  /* } */
+
+
 			}
 		      }
-
-
 		    }
 		  }
 		}
@@ -2084,8 +2105,15 @@ int main(int argc, char *argv[])
 		  U.E +=F[4+flx*5]*dtsurdx*one;
 		  one*=-1.;
 		}
-		U2W(&U,&W);
-		memcpy(&(curcell->field),&W,sizeof(struct Wtype));
+		U2W(&U,&Wnew);
+		
+		if(Wnew.u<0.){
+		  for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]);
+		  printf("level=%d %e", curoct->level,curoct->x);
+		  abort();
+		}
+
+		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	      }
 	      else{ // split cell
 		struct OCT *child;
@@ -2100,6 +2128,7 @@ int main(int argc, char *argv[])
 		  W.p+=child->cell[i].field.p*0.125;
 		}
 		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
+
 	      }
 	    }
 	  }while(nextoct!=NULL);
