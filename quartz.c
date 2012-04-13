@@ -1093,22 +1093,35 @@ int main(int argc, char *argv[])
 
    /* // TEST 1 */
 
-  WL.d=1.;
-  WL.u=0.75;
-  WL.v=0.;
-  WL.w=0.;
-  WL.p=1.0;
+  /* WL.d=1.; */
+  /* WL.u=0.75; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=1.0; */
 
-  WR.d=0.125;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=0.;
-  WR.p=0.1;
-  X0=0.3;
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.1; */
+  /* X0=0.3; */
+
+  /* WL.d=0.125; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=0.1; */
+
+  /* WR.d=1.; */
+  /* WR.u=0.; */
+  /* WR.v=-0.75; */
+  /* WR.w=0.; */
+  /* WR.p=1.0; */
+  /* X0=0.7; */
 
   /*  /\* // SPHERICAL EXPLOSION *\/ */
 
-  /* WL.d=10.; */
+  /* WL.d=1.; */
   /* WL.u=0.; */
   /* WL.v=0.; */
   /* WL.w=0.; */
@@ -1118,8 +1131,27 @@ int main(int argc, char *argv[])
   /* WR.u=0.; */
   /* WR.v=0.; */
   /* WR.w=0.; */
-  /* WR.p=1.; */
+  /* WR.p=0.1; */
   /* X0=0.2; */
+
+
+  /* KH INSTABILITY */
+
+  WL.d=2.;
+  WL.u=-0.5;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p =2.5;
+
+  WR.d=1.;
+  WR.u=0.5;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=2.5;
+  X0=0.2;
+  
+
+
 
   WL.a=sqrtf(GAMMA*WL.p/WL.d);
   WR.a=sqrtf(GAMMA*WR.p/WR.d);
@@ -1143,53 +1175,53 @@ int main(int argc, char *argv[])
 	      yc=curoct->y+((icell>>1)&1)*dxcur;
 	      zc=curoct->z+((icell>>2))*dxcur;
 
-	      float vrx=(((float)rand())/RAND_MAX)*0.02-0.01;
-	      float vry=(((float)rand())/RAND_MAX)*0.02-0.01;
-	      float vrz=(((float)rand())/RAND_MAX)*0.02-0.01;
 
-	      /* if((zc>0.75)||(zc<0.25)){ */
-	      /* 	curoct->cell[icell].d=1.0; */
-	      /* 	curoct->cell[icell].u=-0.5+vrx; */
-	      /* 	curoct->cell[icell].v=vry; */
-	      /* 	curoct->cell[icell].w=vrz; */
-	      /* 	curoct->cell[icell].p=2.5; */
-	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
-	      /* } */
-	      /* else{ */
-	      /* 	curoct->cell[icell].d=2.0; */
-	      /* 	curoct->cell[icell].u=0.5+vrx; */
-	      /* 	curoct->cell[icell].v=vry; */
-	      /* 	curoct->cell[icell].w=vrz; */
-	      /* 	curoct->cell[icell].p=2.5; */
-	      /* 	curoct->cell[icell].a=sqrtf(GAMMA*2.5/1.); */
-	      /* } */
+	      /* KH INSTAB */
 
-	      
-	      /* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
-	      /* 	curoct->cell[icell].d=WL.d; */
-	      /* 	curoct->cell[icell].u=WL.u; */
-	      /* 	curoct->cell[icell].v=WL.v; */
-	      /* 	curoct->cell[icell].w=WL.w; */
-	      /* 	curoct->cell[icell].p=WL.p; */
-	      /* 	curoct->cell[icell].a=WL.a; */
+	      float amp=0.05;
+	      /* float vrx=(((float)rand())/RAND_MAX)*2.*amp-amp; */
+	      /* float vry=(((float)rand())/RAND_MAX)*2.*amp-amp; */
+	      /* float vrz=(((float)rand())/RAND_MAX)*2.*amp-amp; */
 
-	      /* } */
-	      /* else{ */
-	      /* 	curoct->cell[icell].d=WR.d; */
-	      /* 	curoct->cell[icell].u=WR.u; */
-	      /* 	curoct->cell[icell].v=WR.v; */
-	      /* 	curoct->cell[icell].w=WR.w; */
-	      /* 	curoct->cell[icell].p=WR.p; */
-	      /* 	curoct->cell[icell].a=WR.a; */
-	      /* } */
-	      
-	      if(xc<=X0){
+	      float vrx=amp*sin(2.*M_PI*xc);
+	      float vry=amp*sin(2.*M_PI*xc);
+	      float vrz=amp*sin(2.*M_PI*xc);
 
-		memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
+	      if((zc>0.75)||(zc<0.25)){
+	      	curoct->cell[icell].field.d=1.0;
+	      	curoct->cell[icell].field.u=0.5+vrx;
+	      	curoct->cell[icell].field.v=vry;
+	      	curoct->cell[icell].field.w=vrz;
+	      	curoct->cell[icell].field.p=2.5;
+	      	curoct->cell[icell].field.a=sqrtf(GAMMA*2.5/1.);
 	      }
 	      else{
-		memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+	      	curoct->cell[icell].field.d=2.0;
+	      	curoct->cell[icell].field.u=-0.5+vrx;
+	      	curoct->cell[icell].field.v=vry;
+	      	curoct->cell[icell].field.w=vrz;
+	      	curoct->cell[icell].field.p=2.5;
+	      	curoct->cell[icell].field.a=sqrtf(GAMMA*2.5/2.);
 	      }
+
+	      /* SPHERICAL EXPLOSION */
+	      
+	      /* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
+	      /* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
+	      /* } */
+	      /* else{ */
+	      /*  	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
+	      /* } */
+	      
+
+	      /* /\* SHOCK TUBE *\/ */
+	      /* if(xc<=X0){ */
+
+	      /* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
+	      /* } */
+	      /* else{ */
+	      /* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
+	      /* } */
 	      
 	      if(level==levelcoarse) {
 		dtot+=curoct->cell[icell].field.d;
@@ -1455,7 +1487,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  tmax=0.21;
+  tmax=5.0;
 #endif
 
   FILE *fegy;
@@ -2055,9 +2087,41 @@ int main(int argc, char *argv[])
 			}
 #endif
 
+#ifdef TRANSYP
+			if(inei==3){
+			  if((curoct->nei[inei]->child->y-curoct->y)<0.){
+			    continue;
+			  }
+			}
+#endif
+
+#ifdef TRANSZP
+			if(inei==5){
+			  if((curoct->nei[inei]->child->z-curoct->z)<0.){
+			    continue;
+			  }
+			}
+#endif
+
 #ifdef TRANSXM
 			if(inei==0){
 			  if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+			    continue;
+			  }
+			}
+#endif
+
+#ifdef TRANSYM
+			if(inei==2){
+			  if((curoct->nei[inei]->child->y-curoct->y)>0.5){
+			    continue;
+			  }
+			}
+#endif
+
+#ifdef TRANSZM
+			if(inei==4){
+			  if((curoct->nei[inei]->child->z-curoct->z)>0.5){
 			    continue;
 			  }
 			}
@@ -2107,11 +2171,11 @@ int main(int argc, char *argv[])
 		}
 		U2W(&U,&Wnew);
 		
-		if(Wnew.u<0.){
-		  for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]);
-		  printf("level=%d %e", curoct->level,curoct->x);
-		  abort();
-		}
+		/* if(Wnew.u<0.){ */
+		/*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
+		/*   printf("level=%d %e", curoct->level,curoct->x); */
+		/*   abort(); */
+		/* } */
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	      }

@@ -566,6 +566,43 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
       }
     }
 #endif
+
+
+#ifdef TRANSYP
+    if(ineiloc==3){
+      dist=neioct->y-oct->y;
+      if(dist<0.){
+	neicell=cell;
+	face[0]=2;
+	face[1]=3;
+	face[2]=2;
+	face[3]=3;
+	face[4]=7;
+	face[5]=6;
+	face[6]=6;
+	face[7]=7;
+      }
+    }
+#endif
+
+#ifdef TRANSZP
+    if(ineiloc==5){
+      dist=neioct->z-oct->z;
+      if(dist<0.){
+	neicell=cell;
+	face[0]=4;
+	face[1]=5;
+	face[2]=6;
+	face[3]=7;
+	face[4]=4;
+	face[5]=5;
+	face[6]=6;
+	face[7]=7;
+      }
+    }
+#endif
+
+
       
 #ifdef TRANSXM
     if(ineiloc==0){
@@ -583,6 +620,42 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
       }
     }
 #endif
+
+#ifdef TRANSYM
+    if(ineiloc==2){
+      dist=neioct->y-oct->y;
+      if(dist>0.5){
+	neicell=cell;
+	face[0]=0;
+	face[1]=1;
+	face[2]=0;
+	face[3]=1;
+	face[4]=4;
+	face[5]=5;
+	face[6]=4;
+	face[7]=5;
+      }
+    }
+#endif
+
+#ifdef TRANSZM
+    if(ineiloc==4){
+      dist=neioct->z-oct->z;
+      if(dist>0.5){
+	neicell=cell;
+	face[0]=0;
+	face[1]=1;
+	face[2]=2;
+	face[3]=3;
+	face[4]=0;
+	face[5]=1;
+	face[6]=2;
+	face[7]=3;
+      }
+    }
+#endif
+
+
   // ============================ END TRANSMISSIVE BOUNDARIES ====================
 
 

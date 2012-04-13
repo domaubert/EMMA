@@ -14,6 +14,123 @@
 #include "communication.h"
 #include "particle.h"
 
+float comp_grad_hydro(struct OCT *curoct, int icell){
+  float gradd[3]={0.,0.,0.};
+  float gradv[3]={0.,0.,0.};
+  float gradu[3]={0.,0.,0.};
+  float gradw[3]={0.,0.,0.};
+  float gradp[3]={0.,0.,0.};
+
+  int vcell[6],vnei[6];
+  struct Wtype W;
+  struct Wtype Wi[8];
+  int ii;
+
+  float ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
+
+  getcellnei(icell, vnei, vcell);
+  for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
+    if(vnei[ii]==6){
+      memcpy(&W,&(curoct->cell[vcell[ii]].field),sizeof(struct Wtype));
+
+    }
+    else{
+      // Note that the neibourgh cell may not exist therefore we have to check
+      if(curoct->nei[vnei[ii]]->child!=NULL){
+	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field),sizeof(struct Wtype));
+
+#ifdef TRANSZM
+	if(ii==4){
+	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSZP
+	if(ii==5){
+	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSXM
+	if(ii==0){
+	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.5){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSXP
+	if(ii==1){
+	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)<0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSYM
+	if(ii==2){
+	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+    if(vnei[3]>6) abort();
+
+#endif 
+
+#ifdef TRANSYP
+	if(ii==3){
+	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	  }
+	}
+    if(vnei[3]>6) abort();
+#endif 
+ 
+      }
+      else{
+	// the neighbour does not exist we need to interpolate the value at the correct position
+	coarse2fine_hydro(curoct->nei[vnei[ii]],Wi,vnei);
+	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
+
+      }
+    }
+    
+    int ax=ii/2;
+    int fact=((ii%2)==0?-1:1);
+    gradd[ax]+=(W.d*fact);
+    /* gradu[ax]+=(W.u*fact); */
+    /* gradv[ax]+=(W.v*fact); */
+    /* gradw[ax]+=(W.w*fact); */
+    /* gradp[ax]+=(W.p*fact); */
+
+  }
+
+  ratiod=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/curoct->cell[icell].field.d;
+  ratiou=sqrt(pow(gradu[0],2)+pow(gradu[1],2)+pow(gradu[2],2))*0.5/curoct->cell[icell].field.u;
+  ratiov=sqrt(pow(gradv[0],2)+pow(gradv[1],2)+pow(gradv[2],2))*0.5/curoct->cell[icell].field.v;
+  ratiow=sqrt(pow(gradw[0],2)+pow(gradw[1],2)+pow(gradw[2],2))*0.5/curoct->cell[icell].field.w;
+  ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/curoct->cell[icell].field.p;
+
+  ratio=ratiod;
+  ratio=fmaxf(ratio,ratiou);
+  ratio=fmaxf(ratio,ratiov);
+  ratio=fmaxf(ratio,ratiow);
+  ratio=fmaxf(ratio,ratiop);
+
+  return ratio; 
+  
+}
+
 struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit)
 {
   int nref,ndes;
@@ -427,6 +544,20 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				    }
 #endif
 
+#ifdef TRANSYM
+				    if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
+				      newcell=NULL;
+				      continue;
+				    }
+#endif
+
+#ifdef TRANSYP
+				    if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
+				      newcell=NULL;
+				      continue;
+				    }
+#endif
+
 
 				    newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 				    if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
@@ -505,73 +636,17 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 #endif
 
 #ifdef WHYDRO2
-			      float grad=0.;
-			      char ng;
-			      float inval=curoct->cell[icell].field.d/dx;
-			      getcellnei(icell, vnei, vcell);
-			      for(ii=0;ii<1;ii++){ // looking for the gradient in 3 directions
-				ng=0;
-				grad=0.;
-				if(vnei[ii]==6){
-				  grad+=(-curoct->cell[vcell[ii]].field.d);
-				  ng++;
-				}
-				else{
-				  // Note that the neibourgh cell may not exist therefore we have to check
-				  if(curoct->nei[vnei[ii]]->child!=NULL){
-#ifdef TRANSXM
-				    if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.){
-				      // the neighbor is a periodic mirror 
-				      grad+=(-curoct->cell[ii].field.d);
-				    }
-				    else{
-				      grad+=(-curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field.d);
-				    }
-#else
-				    grad+=(-curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field.d);
-#endif
-				    ng++;
-				  }
-				  else{
-				    grad+=(-curoct->nei[vnei[ii]]->field.d);
-				  }
-				}
 
-				if(vnei[2*ii+1]==6){
-				  grad+=(curoct->cell[vcell[2*ii+1]].field.d);
-				  ng++;
-				}
-				else{
-				  // Note that the neibourgh cell may not exist therefore we have to check
-				  if(curoct->nei[vnei[2*ii+1]]->child!=NULL){
-#ifdef TRANSXP
-				    if((curoct->nei[vnei[2*ii+1]]->child->x-curoct->x)<0.){
-				      // the neighbor is a periodic mirror 
-				      grad+=(curoct->cell[ii].field.d);
-				    }
-				    else{
-				      grad+=(curoct->nei[vnei[2*ii+1]]->child->cell[vcell[2*ii+1]].field.d);
-				    }
-#else
-				    grad+=(curoct->nei[vnei[2*ii+1]]->child->cell[vcell[2*ii+1]].field.d);
-#endif
-				      
-				    
-				    ng++;
-				  }
-				  else{
-				    grad+=(curoct->nei[vnei[2*ii+1]]->field.d);
-				  }
-				}
-			      }
-			      mcell=fabsf(grad*0.5/dx);
-			      if((mcell>(threshold*inval))&&(curoct->cell[icell].marked==0)) {
+			      mcell=comp_grad_hydro(curoct, icell);
+
+			      if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
 			      }
-
 #endif
-			    }
+
+
+ 			    }
 			  }
 			}
 		    }while(nextoct!=NULL);
@@ -594,3 +669,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
       }
 
 }
+
+
+
+
