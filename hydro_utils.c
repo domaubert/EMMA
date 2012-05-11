@@ -92,7 +92,34 @@ void minmod(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
 
 }
 
+// =============================================
 
+void minmod2grav(float Um, float Up, float *Ur){
+  float r;
+  float xi;
+  float w=0.;
+  float beta=1.0;
+  // SLOPE LIMITER
+
+  if(Up==0.){
+    xi=0.;}
+  else{
+    r=Um/Up;
+    if(r<=0.){
+      xi=0.;
+    }
+    else if(r<=1.){
+      xi=r;
+    }
+    else{
+      xi=fminf(1.0,2.0*beta/(1.-w+(1.+w)*r));
+    }
+  }
+  
+  *Ur=(0.5*(1.+w)*Um+0.5*(1.-w)*Up)*xi;
+}
+
+//===============================================
 void minmod2(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
   float r;
   float xi;
@@ -196,6 +223,14 @@ void interpminmod(struct Utype *U0, struct Utype *Up, struct Utype *Dx, struct U
   Up->E =U0->E  +dx*Dx->E  +dy*Dy->E  +dz*Dz->E;
 
 }
+
+void interpminmodgrav(float *U0, float *Up, float Dx, float Dy, float Dz,float dx,float dy,float dz){
+  
+  *Up =*U0  +dx*Dx  +dy*Dy  +dz*Dz;
+
+}
+
+
 // ==============================================
 
 void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){ 
@@ -212,6 +247,7 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 	  int inei2;
 	  int vcell[6],vnei[6];
 	  int dir;
+	  float dxcur;
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
@@ -243,6 +279,11 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 #ifdef TRANSZM
 	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
 		W=&(cell->field);
+#ifdef REFZM
+	    W->w*=-1.0;
+	    dxcur=1./pow(2,oct->level);
+	    W->p=W->p+GRAV*W->d*dxcur;
+#endif
 	      }
 #endif
 
@@ -272,15 +313,21 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 #ifdef TRANSZP
 	      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
 		W=&(cell->field);
+#ifdef REFZP
+	    W->w*=-1.0;
+	    dxcur=1./pow(2,oct->level);
+	    W->p=W->p-GRAV*W->d*dxcur;
+#endif
+
 	      }
 #endif
 
 	    }
 	    W2U(W,&Up);
 
-
 	    diffU(&Up,&U0,&Dp); 
 	    diffU(&U0,&Um,&Dm); 
+	    
 	    
 	    minmod2(&Dm,&Dp,D+dir);
 	  }
@@ -295,6 +342,118 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 		icell=ix+iy*2+iz*4;
 		interpminmod(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
 		U2W(&Up,Wi+icell);
+	      }
+	    }
+	  }
+
+}
+
+// ===============================================================
+void coarse2fine_grav(struct CELL *cell, float *pi){ 
+
+
+	  struct OCT * oct;
+	  // we use the same nomenclature as in coarse2fine_hydro
+	  float U0;
+	  float Up;
+	  float Um;
+	  float Dp,Dm;
+	  float D[3];
+	  float W;
+
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+	  float dxcur;
+
+	  oct=cell2oct(cell);
+	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  
+	  U0=cell->pot;
+	
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      W=oct->cell[vcell[inei2]].pot;
+	    }
+	    else{
+	      W=oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].pot;
+#ifdef TRANSXM
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+		W=U0;
+	      }
+#endif
+
+#ifdef TRANSYM
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+		W=U0;
+	      }
+#endif
+
+#ifdef TRANSZM
+	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+		W=U0;
+#ifdef REFZM
+		dxcur=1./pow(2,oct->level);
+		W=W+GRAV*dxcur;
+#endif
+	      }
+#endif
+
+
+	    }
+	    Um=W;
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      W=oct->cell[vcell[inei2]].pot;
+	    }
+	    else{
+	      W=oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].pot;
+	      
+#ifdef TRANSXP
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+		W=U0;
+	      }
+#endif
+
+#ifdef TRANSYP
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+		W=U0;
+	      }
+#endif
+
+#ifdef TRANSZP
+	      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+		W=U0;
+#ifdef REFZP
+	    dxcur=1./pow(2,oct->level);
+	    W=W-GRAV*dxcur;
+#endif
+	      }
+#endif
+
+	    }
+
+	    Up=W;
+
+	    Dp=Up-U0;
+	    Dm=U0-Um;
+	    
+	    minmod2grav(Dm,Dp,D+dir);
+	  }
+
+	  // Interpolation
+	  int ix,iy,iz;
+	  int icell;
+
+	  for(iz=0;iz<2;iz++){
+	    for(iy=0;iy<2;iy++){
+	      for(ix=0;ix<2;ix++){
+		icell=ix+iy*2+iz*4;
+		interpminmodgrav(&U0,&Up,D[0],D[1],D[2],-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+		pi[icell]=Up;
 	      }
 	    }
 	  }
@@ -746,481 +905,6 @@ void MUSCL_BOUND(struct HGRID *stencil, int ioct, int icell, struct Utype *Ui,fl
 }
 
 //============================================================================
-#ifdef WHYDRO 
-int hydrosolve(struct MULTIVECT *data, int level, int curcpu, int nread,int stride,float dx, float dt){
-
-  int inei,icell,icellcoarse;
-  int i;
-  float temp;
-  float res,restot=0.;
-  int vnei[6],vcell[6];
-  int vneic[6],vcellc[6];
-  int idxnei;
-
-  float FL[5],FR[5];
-  float GL[5],GR[5];
-  float HL[5],HR[5];
-  float Smax;
-  struct Wtype1D WRloc, WLloc;
-  struct Utype Uold,Unew;
-  struct Wtype Wold,Wnew;
-  int idxL,idxR;
-  float pstar,ustar;
-  int n;
-  struct Wtype1D Wtest;
-  struct Wtype   Wtest3D;
-  struct Utype   Utest3D;
-
-  for(icell=0;icell<8;icell++){ // we scan the cells
-      getcellnei(icell, vnei, vcell); // we get the neighbors
-      for(i=0;i<stride;i++){ // we scan the octs
-
-      // we skip octs which do not belong to the current cpu
-
-/* #ifdef WMPI */
-/*       if(data->veccpu[i]!=curcpu){ */
-/*       	data->vec_dnew[i+icell*stride]=data->vec_d[i+icell*stride]; */
-/*       	data->vec_unew[i+icell*stride]=data->vec_u[i+icell*stride]; */
-/*       	data->vec_vnew[i+icell*stride]=data->vec_v[i+icell*stride]; */
-/*       	data->vec_wnew[i+icell*stride]=data->vec_w[i+icell*stride]; */
-/*       	data->vec_pnew[i+icell*stride]=data->vec_p[i+icell*stride]; */
-/*       	continue; */
-/*       } */
-/* #endif */
-
-
-      // Getting the original state ===========================
-      idxR=i+icell*stride;
-
-      Wold.d=data->vec_d[idxR];
-      Wold.u=data->vec_u[idxR];
-      Wold.v=data->vec_v[idxR];
-      Wold.w=data->vec_w[idxR];
-      Wold.p=data->vec_p[idxR];
-      Wold.a=sqrtf(GAMMA*Wold.p/Wold.d);
-
-      W2U(&Wold,&Uold); // primitive -> conservative
-
-      // X DIRECTION =========================================================================
-      
-      // --------- solving the Riemann Problems LEFT
-      int vc;
-      inei=0; // we go to the left
-      if(vnei[inei]==6){
-	idxL=i+vcell[inei]*stride;
-      }
-      else{
-	idxL=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSXM
-	if(idxL==i){
-	  // we found a transmissive boundary
-	  vc=vc+((vc&1)==0?1:-1); // flipping the cells (e.g. 2->3 or 7->6)
-	}
-#endif
-	idxL=idxL+vc*stride;
-      }
-      idxR=i+icell*stride;
-
-      // Switching to Split description
-      WLloc.d=data->vec_d[idxL];
-      WLloc.u=data->vec_u[idxL];
-      WLloc.p=data->vec_p[idxL];
-      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
-
-      /* WRloc.d=data->vec_d[idxR]; */
-      /* WRloc.u=data->vec_u[idxR]; */
-      /* WRloc.p=data->vec_p[idxR]; */
-      /* WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d); */
-
-      WRloc.d=Wold.d;
-      WRloc.u=Wold.u;//data->vec_u[idxR];
-      WRloc.p=Wold.p;//data->vec_p[idxR];
-      WRloc.a=Wold.a;//sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.u=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.v=data->vec_v[idxL];
-	  Wtest3D.w=data->vec_w[idxL];
-	}
-      else
-	{
-	  Wtest3D.v=data->vec_v[idxR];
-	  Wtest3D.w=data->vec_w[idxR];
-	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes LEFT
-      getflux_X(&Utest3D,FL);
-
-      // --------- solving the Riemann Problems RIGHT
-
-      inei=1; // we go to the right
-      idxL=i+icell*stride;
-      if(vnei[inei]==6){
-	idxR=i+vcell[inei]*stride;
-      }
-      else{
-	idxR=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSXP	
-	if(idxR==i){
-	  // we found a transmissive boundary
-	  vc=vc+((vc&1)==0?1:-1); // flipping the cells
-	}
-#endif
-	idxR=idxR+vc*stride;
-      }
-
-      // Switching to Split description
-      /* WLloc.d=data->vec_d[idxL]; */
-      /* WLloc.u=data->vec_u[idxL]; */
-      /* WLloc.p=data->vec_p[idxL]; */
-      /* WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d); */
-
-      WLloc.d=Wold.d;
-      WLloc.u=Wold.u;
-      WLloc.p=Wold.p;
-      WLloc.a=Wold.a;
-
-      WRloc.d=data->vec_d[idxR];
-      WRloc.u=data->vec_u[idxR];
-      WRloc.p=data->vec_p[idxR];
-      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.u=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-
-      //if(WLloc.d!=WRloc.d) printf("R== %e %e %e p=%e u=%e niter=%d\n", WLloc.d,WRloc.d,Wtest3D.d,pstar,ustar,n);
-      
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.v=data->vec_v[idxL];
-	  Wtest3D.w=data->vec_w[idxL];
-	}
-      else
-	{
-	  Wtest3D.v=data->vec_v[idxR];
-	  Wtest3D.w=data->vec_w[idxR];
-	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes RIGHT
-      getflux_X(&Utest3D,FR);
-
-      // Y DIRECTION =========================================================================
-      
-      // --------- solving the Riemann Problems FRONT
-
-      inei=2; // we go to the left
-      if(vnei[inei]==6){
-      	idxL=i+vcell[inei]*stride;
-      }
-      else{
-      	idxL=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSYM
-	if(idxL==i){
-	  // we found a transmissive boundary
-	  vc=icell;
-	}
-#endif
-	idxL=idxL+vc*stride;
-      }
-      idxR=i+icell*stride;
-
-      // Switching to Split description
-      WLloc.d=data->vec_d[idxL];
-      WLloc.u=data->vec_v[idxL];
-      WLloc.p=data->vec_p[idxL];
-      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
-
-      /* WRloc.d=data->vec_d[idxR]; */
-      /* WRloc.u=data->vec_v[idxR]; */
-      /* WRloc.p=data->vec_p[idxR]; */
-      /* WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d); */
-
-      WRloc.d=Wold.d;
-      WRloc.u=Wold.v;
-      WRloc.p=Wold.p;
-      WRloc.a=Wold.a;
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-      	{
-      	  Wtest3D.u=data->vec_u[idxL];
-      	  Wtest3D.w=data->vec_w[idxL];
-      	}
-      else
-      	{
-      	  Wtest3D.u=data->vec_u[idxR];
-      	  Wtest3D.w=data->vec_w[idxR];
-      	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes LEFT
-      getflux_Y(&Utest3D,GL);
-
-      //if(WLloc.d!=WRloc.d) printf("%e %e %e %e %e %e %e\n",WLloc.d,WRloc.d,GL[0],WLloc.u,WRloc.u,pstar,ustar);
-
-      // --------- solving the Riemann Problems BACK
-
-      inei=3; // we go to the right
-      idxL=i+icell*stride;
-      if(vnei[inei]==6){
-      	idxR=i+vcell[inei]*stride;
-      }
-      else{
-      	idxR=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSYP
-	if(idxR==i) vc=icell;
-#endif
-	idxR=idxR+vc*stride;
-	
-      }
-
-      // Switching to Split description
-      /* WLloc.d=data->vec_d[idxL]; */
-      /* WLloc.u=data->vec_v[idxL]; */
-      /* WLloc.p=data->vec_p[idxL]; */
-      /* WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d); */
-
-
-      WLloc.d=Wold.d;
-      WLloc.u=Wold.v;
-      WLloc.p=Wold.p;
-      WLloc.a=Wold.a;
-
-      WRloc.d=data->vec_d[idxR];
-      WRloc.u=data->vec_v[idxR];
-      WRloc.p=data->vec_p[idxR];
-      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-      	{
-      	  Wtest3D.u=data->vec_u[idxL];
-      	  Wtest3D.w=data->vec_w[idxL];
-      	}
-      else
-      	{
-      	  Wtest3D.u=data->vec_u[idxR];
-      	  Wtest3D.w=data->vec_w[idxR];
-      	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes RIGHT
-      getflux_Y(&Utest3D,GR);
-
-      // Z DIRECTION =========================================================================
-      
-      // --------- solving the Riemann Problems BOTTOM
-
-      inei=4; // we go to the left
-      if(vnei[inei]==6){
-      	idxL=i+vcell[inei]*stride;
-      }
-      else{
-      	idxL=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSZM
-	if(idxL==i) vc=icell;
-#endif
-	idxL=idxL+vc*stride;
-      }
-      idxR=i+icell*stride;
-
-      // Switching to Split description
-      WLloc.d=data->vec_d[idxL];
-      WLloc.u=data->vec_w[idxL];
-      WLloc.p=data->vec_p[idxL];
-      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
-
-      WRloc.d=Wold.d;
-      WRloc.u=Wold.w;
-      WRloc.p=Wold.p;
-      WRloc.a=Wold.a;
-
-      /* WRloc.d=data->vec_d[idxR]; */
-      /* WRloc.u=data->vec_w[idxR]; */
-      /* WRloc.p=data->vec_p[idxR]; */
-      /* WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d); */
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-      	{
-      	  Wtest3D.u=data->vec_u[idxL];
-      	  Wtest3D.v=data->vec_v[idxL];
-      	}
-      else
-      	{
-      	  Wtest3D.u=data->vec_u[idxR];
-      	  Wtest3D.v=data->vec_v[idxR];
-      	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes LEFT
-      getflux_Z(&Utest3D,HL);
-
-      // --------- solving the Riemann Problems BACK
-
-      inei=5; // we go to the right
-      idxL=i+icell*stride;
-      if(vnei[inei]==6){
-      	idxR=i+vcell[inei]*stride;
-      }
-      else{
-      	idxR=data->vecnei[i+vnei[inei]*stride];
-	vc=vcell[inei];
-#ifdef TRANSZP
-	if(idxR==i) vc=icell;
-#endif
-	idxR=idxR+vc*stride;
-      }
-
-      // Switching to Split description
-      /* WLloc.d=data->vec_d[idxL]; */
-      /* WLloc.u=data->vec_w[idxL]; */
-      /* WLloc.p=data->vec_p[idxL]; */
-      /* WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d); */
-
-      WLloc.d=Wold.d;
-      WLloc.u=Wold.w;
-      WLloc.p=Wold.p;
-      WLloc.a=Wold.a;
-
-      WRloc.d=data->vec_d[idxR];
-      WRloc.u=data->vec_w[idxR];
-      WRloc.p=data->vec_p[idxR];
-      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-      	{
-      	  Wtest3D.u=data->vec_u[idxL];
-      	  Wtest3D.v=data->vec_v[idxL];
-      	}
-      else
-      	{
-      	  Wtest3D.u=data->vec_u[idxR];
-      	  Wtest3D.v=data->vec_v[idxR];
-      	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes RIGHT
-      getflux_Z(&Utest3D,HR);
-
-      // Updating the data ====================================================================
-      // Unsplit scheme
-
-      idxR=i+icell*stride;
-
-      float fx=0.,fy=0.,fz=0.; // @ this stage the forces are stored in the updated vectors
-     
-#ifdef SELFGRAV
-      fx=-data->vec_unew[idxR];
-      fy=-data->vec_vnew[idxR];
-      fz=-data->vec_wnew[idxR];
-#endif
-      //if(Uold.d>0.5) printf("g=%e org=%e\n",fx*Uold.d*dt,Uold.du);
-      Unew.d  =Uold.d  +dt/dx*((FL[0]-FR[0])+(GL[0]-GR[0])+(HL[0]-HR[0]));
-      Unew.du =Uold.du +dt/dx*((FL[1]-FR[1])+(GL[1]-GR[1])+(HL[1]-HR[1]))+Uold.d*fx*dt*0.5;
-      Unew.dv =Uold.dv +dt/dx*((FL[2]-FR[2])+(GL[2]-GR[2])+(HL[2]-HR[2]))+Uold.d*fy*dt*0.5;
-      Unew.dw =Uold.dw +dt/dx*((FL[3]-FR[3])+(GL[3]-GR[3])+(HL[3]-HR[3]))+Uold.d*fz*dt*0.5;
-      Unew.E  =Uold.E  +dt/dx*((FL[4]-FR[4])+(GL[4]-GR[4])+(HL[4]-HR[4]))+(Uold.du*fx+Uold.dv*fy+Uold.dw*fz)*dt*0.5;
-      
-      U2W(&Unew,&Wnew);
-      
-      
-      // sending the data back to the vector
-      data->vec_dnew[idxR]=Wnew.d;
-      data->vec_unew[idxR]=Wnew.u;
-      data->vec_vnew[idxR]=Wnew.v;
-      data->vec_wnew[idxR]=Wnew.w;
-      data->vec_pnew[idxR]=(Wnew.p<0?Wold.p:Wnew.p);
-
-      /* if(Wnew.p<0){ */
-      /* 	printf("negative pressure in hydro\n"); */
-      /* 	abort(); */
-      /* } */
-
-      // ready for the next cell
-    }
-    //ready for the next oct
-  }
-
-  /* // full update */
-  /* memcpy(data->vec_d,data->vec_dnew,sizeof(float)*stride*8); */
-  /* memcpy(data->vec_u,data->vec_unew,sizeof(float)*stride*8); */
-  /* memcpy(data->vec_v,data->vec_vnew,sizeof(float)*stride*8); */
-  /* memcpy(data->vec_w,data->vec_wnew,sizeof(float)*stride*8); */
-  /* memcpy(data->vec_p,data->vec_pnew,sizeof(float)*stride*8); */
-
-  return 0;
-}
-#endif
 
 //============================================================================
 int hydroS(struct HGRID *stencil, int level, int curcpu, int nread,int stride,float dx, float dt){
@@ -1915,189 +1599,8 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,fl
       // Getting the fluxes RIGHT
       getflux_Z(&Utest3D,HR);
 
-#if 0
-
-      // Y DIRECTION =========================================================================
       
-      // --------- solving the Riemann Problems FRONT
-
-      inei=2; // we go to the left
-
-      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
-
-      WLloc.d=neicell->d;
-      WLloc.u=neicell->v;
-      WLloc.p=neicell->p;
-      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
-
-      WRloc.d=Wold.d;
-      WRloc.u=Wold.v;//data->vec_u[idxR];
-      WRloc.p=Wold.p;//data->vec_p[idxR];
-      WRloc.a=Wold.a;//sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.u=neicell->u;
-	  Wtest3D.w=neicell->w;
-	}
-      else
-	{
-	  Wtest3D.u=curcell->u;
-	  Wtest3D.w=curcell->w;
-	}
-      
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes LEFT
-      getflux_Y(&Utest3D,GL);
-
-
-      // --------- solving the Riemann Problems BACK
-
-      inei=3; // we go to the right
-
-      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
-
-      WLloc.d=Wold.d;
-      WLloc.u=Wold.v;
-      WLloc.p=Wold.p;
-      WLloc.a=Wold.a;
-
-      WRloc.d=neicell->d;
-      WRloc.u=neicell->v;
-      WRloc.p=neicell->p;
-      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar<0.)
-	{
-	  Wtest3D.u=neicell->u;
-	  Wtest3D.w=neicell->w;
-	}
-      else
-	{
-	  Wtest3D.u=curcell->u;
-	  Wtest3D.w=curcell->w;
-	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes RIGHT
-      getflux_Y(&Utest3D,GR);
-
-      // Z DIRECTION =========================================================================
-      
-      // --------- solving the Riemann Problems BOTTOM
-
-      inei=4; // we go to the left
-
-      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
-
-      // Switching to Split description
-
-      WLloc.d=neicell->d;
-      WLloc.u=neicell->w;
-      WLloc.p=neicell->p;
-      WLloc.a=sqrtf(GAMMA*WLloc.p/WLloc.d);
-
-      WRloc.d=Wold.d;
-      WRloc.u=Wold.w;
-      WRloc.p=Wold.p;
-      WRloc.a=Wold.a;
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.u=neicell->u;
-	  Wtest3D.v=neicell->v;
-	}
-      else
-	{
-	  Wtest3D.u=curcell->u;
-	  Wtest3D.v=curcell->v;
-	}
-      
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes LEFT
-      getflux_Z(&Utest3D,HL);
-
-      // --------- solving the Riemann Problems TOP
-
-      inei=5; // we go to the right
-      neicell=&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field);
-
-      WLloc.d=Wold.d;
-      WLloc.u=Wold.w;
-      WLloc.p=Wold.p;
-      WLloc.a=Wold.a;
-
-      WRloc.d=neicell->d;
-      WRloc.u=neicell->w;
-      WRloc.p=neicell->p;
-      WRloc.a=sqrtf(GAMMA*WRloc.p/WRloc.d);
-
-      // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar<0.)
-	{
-	  Wtest3D.u=neicell->u;
-	  Wtest3D.v=neicell->v;
-	}
-      else
-	{
-	  Wtest3D.u=curcell->u;
-	  Wtest3D.v=curcell->v;
-	}
-
-      W2U(&Wtest3D,&Utest3D);
-      
-      // Getting the fluxes RIGHT
-      getflux_Z(&Utest3D,HR);
-#endif
-
-      // Updating the data ====================================================================
-      // Unsplit scheme
-      
-      // copy the fluxes
+      //========================= copy the fluxes
       memcpy(stencil[i].new.cell[icell].flux+ 0,FL,sizeof(float)*5);
       memcpy(stencil[i].new.cell[icell].flux+ 5,FR,sizeof(float)*5);
       memcpy(stencil[i].new.cell[icell].flux+10,GL,sizeof(float)*5);

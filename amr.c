@@ -27,6 +27,7 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
   int ii;
 
   float ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
+  float dxcur;
 
   getcellnei(icell, vnei, vcell);
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
@@ -43,7 +44,12 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 	if(ii==4){
 	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
+#ifdef REFZM
+	    W.w*=-1.0;
+	    //dxcur=1./pow(2,curoct->level);
+	    //W.p=W.p+GRAV*W.d*dxcur;
+#endif
 	  }
 	}
 #endif 
@@ -52,7 +58,13 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 	if(ii==5){
 	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
+#ifdef REFZP
+	    W.w*=-1.0;
+	    //dxcur=1./pow(2,curoct->level);
+	    //	    W.p=W.p-GRAV*W.d*dxcur;
+#endif
+
 	  }
 	}
 #endif 
@@ -79,7 +91,7 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 	if(ii==2){
 	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
     if(vnei[3]>6) abort();
@@ -90,7 +102,7 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 	if(ii==3){
 	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
     if(vnei[3]>6) abort();
@@ -101,7 +113,7 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 	// the neighbour does not exist we need to interpolate the value at the correct position
 	coarse2fine_hydro(curoct->nei[vnei[ii]],Wi,vnei);
 	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
-
+	
       }
     }
     
@@ -131,6 +143,127 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
   
 }
 
+
+
+float comp_grad_grav(struct OCT *curoct, int icell){
+  float gradd[3]={0.,0.,0.};
+
+  int vcell[6],vnei[6];
+
+  float ploc;
+  float ploci[8];
+  /* struct Wtype W; */
+  /* struct Wtype Wi[8]; */
+  int ii;
+  float dx;
+
+  dx=1./pow(2,curoct->level);
+
+  getcellnei(icell, vnei, vcell);
+  for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
+    if(vnei[ii]==6){
+      ploc=curoct->cell[vcell[ii]].pot;
+    }
+    else{
+      // Note that the neibourgh cell may not exist therefore we have to check
+      if(curoct->nei[vnei[ii]]->child!=NULL){
+	ploc=curoct->nei[vnei[ii]]->child->cell[vcell[ii]].pot;
+	
+#ifdef TRANSZM
+	if(ii==4){
+	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+#ifdef REFZM
+	    ploc=ploc+GRAV*dx;
+#endif
+	  }
+	}
+#endif 
+
+#ifdef TRANSZP
+	if(ii==5){
+	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+#ifdef REFZP
+	    ploc=ploc-GRAV*dx;
+#endif
+	  }
+	}
+#endif 
+
+#ifdef TRANSXM
+	if(ii==0){
+	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.5){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+	  }
+	}
+#endif 
+
+#ifdef TRANSXP
+	if(ii==1){
+	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)<0.){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+	  }
+	}
+#endif 
+
+#ifdef TRANSYM
+	if(ii==2){
+	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+	  }
+	}
+    if(vnei[3]>6) abort();
+
+#endif 
+
+#ifdef TRANSYP
+	if(ii==3){
+	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
+	    // the neighbor is a periodic mirror 
+	    ploc=curoct->cell[icell].pot;
+	  }
+	}
+    if(vnei[3]>6) abort();
+#endif 
+ 
+      }
+      else{
+	// the neighbour does not exist we need to interpolate the value at the correct position
+	coarse2fine_grav(curoct->nei[vnei[ii]],ploci);
+	ploc=ploci[vcell[ii]];
+	//float ggrav=0.05;
+	//float porg=curoct->nei[vnei[ii]]->pot;
+	//printf("ii=%d org pot=%e p1=%e (%e)  p2=%e (%e)\n",ii,porg,ploci[0],porg-ggrav*dx*0.5,ploci[4],porg+ggrav*dx*0.5);
+      }
+    }
+    
+    int ax=ii/2;
+    int fact=((ii%2)==0?-1:1);
+    gradd[ax]+=(ploc*fact);
+    //if(ax==2) printf("%f\n",ploc);
+  }
+
+  curoct->cell[icell].fx=-gradd[0]/dx*0.5;
+  curoct->cell[icell].fy=-gradd[1]/dx*0.5;
+  curoct->cell[icell].fz=-gradd[2]/dx*0.5;
+
+  
+  /* if(curoct->cell[icell].fz<-5.5e-2) { */
+  /*   printf("ii=%d %e %e %e %e --\n",icell,curoct->cell[icell].fz,curoct->cell[icell].pot,curoct->cell[icell].pot-0.05*dx,curoct->cell[icell].pot+0.05*dx); */
+  /*   abort(); */
+  /* } */
+  return 0; 
+  
+}
+
+
+
 struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit)
 {
   int nref,ndes;
@@ -145,11 +278,16 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
   int ii;
   int vnei[6],vcell[6];
   int ip,xp,yp,zp;
+
   struct PART *curploc;
   struct PART *nexploc;
   struct PART *nexp;
   struct PART *curp;
 
+#ifdef WHYDRO2  
+  struct Wtype Wi[8];
+#endif
+		  
   //if(nsteps==1) abort();
   nref=0;
   ndes=0;
@@ -317,8 +455,9 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		}
 
 #ifdef WHYDRO2
-		struct Wtype Wi[8];
-		coarse2fine_hydro(&(curoct->cell[icell]),Wi);
+		if(cpu->rank==curoct->cpu){
+		  coarse2fine_hydro(&(curoct->cell[icell]),Wi);
+		}
 #endif
 		// filling the cells
 		for(ii=0;ii<8;ii++){
@@ -335,14 +474,18 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 #endif
 
 #ifdef WHYDRO2
-		  memcpy(&(newoct->cell[ii].field),Wi+icell,sizeof(struct Wtype)); 
+		  if(cpu->rank==curoct->cpu){
+		    memcpy(&(newoct->cell[ii].field),Wi+icell,sizeof(struct Wtype)); 
+		  }
+		  else{
+		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
+		  }
 #endif
 
 		}
 
-
+#ifdef PIC
 		// splitting the particles
-#if 1
 		nexp=curoct->cell[icell].phead;
 		if(nexp!=NULL){
 		  do{ //sweeping the particles of the current cell
@@ -397,8 +540,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  printf("cell not emptied after split !\n");
 		  abort();
 		};
-#endif
-		
+#endif		
 		
 		// preparing the next creations on level+1
 		//printf("%p %p\n",freeoct,freeoct->next);
@@ -637,7 +779,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 
 #ifdef WHYDRO2
 
-			      mcell=comp_grad_hydro(curoct, icell);
+			      mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=levelcoarse);
 
 			      if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;

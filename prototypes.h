@@ -4,6 +4,7 @@
 #endif
 
 #define GAMMA (1.4)
+#define GRAV (0.25)
 
 #ifdef SUPERCOMOV
 #define NCOSMOTAB (262144)
@@ -52,6 +53,9 @@ struct PACKET{
 };
 
 
+
+
+
 //=======================================
 
 
@@ -86,7 +90,14 @@ struct CPUINFO{
 
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
+#ifdef PIC
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
+#endif
+ 
+#ifdef WHYDRO2
+  MPI_Datatype *MPI_HYDRO; // the structured type for MPI messages (particles)
+#endif
+
   MPI_Comm comm; // the communicator
 #endif
 
@@ -111,6 +122,17 @@ struct Wtype{
   float p;   // pressure
   float a;   // sound speed
 };
+
+
+struct Wtype_MPI{
+  float d;   // density
+  float u;   // velocity
+  float v;   // velocity
+  float w;   // velocity
+  float p;   // pressure
+  float a;   // sound speed
+};
+
 
 struct Utype{
   float d;    // density
@@ -184,6 +206,15 @@ struct PART_MPI // For mpi communications
 //=======================================
 
 
+
+// this structure is for the communication of Hydro data
+struct HYDRO_MPI{
+  struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
+  long key; // the destination hilbert key
+  int level; // the level of the destination (to remove the key degeneracy)
+};
+
+
 //-------------------------------------
 struct CELL
 {
@@ -235,6 +266,7 @@ struct CELLLIGHT
 #ifdef WHYDRO2
   struct Wtype field;
 #endif
+
 
 };
 
