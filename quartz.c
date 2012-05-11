@@ -1844,6 +1844,7 @@ int main(int argc, char *argv[])
     double t0,t100,t20,t80;
     int nread,nreadtot;;
     if(cpu.rank==0) printf("Start Hydro 2\n");
+    //breakmpi();
     for(level=levelmax;level>=levelcoarse;level--)
       {
 	dxcur=pow(0.5,level);
@@ -1852,15 +1853,15 @@ int main(int argc, char *argv[])
 	nextoct=firstoct[level-1];
 	//printf("lev=%d curoct=%p\n",level,nextoct);
 	nreadtot=0;
-	do {
-	  curoct=nextoct;
-	  nextoct=curoct->next; 
-	  if(curoct->cpu!=cpu.rank) continue;
-	  if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	if((nextoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	  do {
+	    curoct=nextoct;
+	    nextoct=curoct->next; 
+	    if(curoct->cpu!=cpu.rank) continue;
 	    // -------------  cleaning working arrays
-	  
+	    
 	    memset(stencil,0,stride*sizeof(struct HGRID));
-  
+	    
 	    // ------------ gathering the stencil value values
 	    nextoct=gatherstencil(curoct,stencil,stride,&cpu, &nread);
 	    //printf("nread=%d\n",nread);
@@ -1870,189 +1871,189 @@ int main(int argc, char *argv[])
 	    //hydroS(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
 	    hydroM(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
 	    //t80=MPI_Wtime();
-	    
-	  
+	    	    
 	    // ------------ scatter back the FLUXES
 	    
 	    nextoct=scatterstencil(curoct,stencil, nread, &cpu);
 	    nreadtot+=nread;
 	    //t100=MPI_Wtime();
-	  }
-	}while(nextoct!=NULL);
-
+	  }while(nextoct!=NULL);
+	}
 	printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
 
 	// ---------------- at this stage we are ready to update the conservative variables
-	int flx;
-	float F[30];
-	float Forg[30];
-	float dtsurdx=dtnew/dxcur;
-	float one;
-	struct Utype U;
-	struct Utype U0;
-	struct Wtype W;
-	struct Wtype Wnew;
-	struct CELL *neicell;
+	if(nreadtot>0){
+	  int flx;
+	  float F[30];
+	  float Forg[30];
+	  float dtsurdx=dtnew/dxcur;
+	  float one;
+	  struct Utype U;
+	  struct Utype U0;
+	  struct Wtype W;
+	  struct Wtype Wnew;
+	  struct CELL *neicell;
 
-	curoct=firstoct[level-1];
-	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
-	  nextoct=curoct;
-	  do{
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    if(curoct->cpu!=cpu.rank) continue; // we don't update the boundary cells
-	    for(icell=0;icell<8;icell++){
-	      int ref=0;
+	  curoct=firstoct[level-1];
+	  if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	    nextoct=curoct;
+	    do{
+	      curoct=nextoct;
+	      nextoct=curoct->next;
+	      if(curoct->cpu!=cpu.rank) continue; // we don't update the boundary cells
+	      for(icell=0;icell<8;icell++){
+		int ref=0;
 
-	      if(curoct->cell[icell].child==NULL){ // Leaf cell
-		struct CELL *curcell;
-		curcell=&(curoct->cell[icell]);
+		if(curoct->cell[icell].child==NULL){ // Leaf cell
+		  struct CELL *curcell;
+		  curcell=&(curoct->cell[icell]);
 
-		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
-		W2U(&W,&U);
-		memcpy(&U0,&U,sizeof(struct Utype));
-		memcpy(F,curcell->flux,sizeof(float)*30);// original fluxes
-		//		memcpy(Forg,F,sizeof(float)*30);
+		  memcpy(&W,&(curcell->field),sizeof(struct Wtype));
+		  W2U(&W,&U);
+		  memcpy(&U0,&U,sizeof(struct Utype));
+		  memcpy(F,curcell->flux,sizeof(float)*30);// original fluxes
+		  //		memcpy(Forg,F,sizeof(float)*30);
 
-		// here we have to deal with coarse-fine boundaries
+		  // here we have to deal with coarse-fine boundaries
 
 
-		if(level<levelmax){
-		  int inei;
-		  getcellnei(icell, vnei, vcell);
-		  for(inei=0;inei<6;inei++){
-		    if(vnei[inei]!=6){
+		  if(level<levelmax){
+		    int inei;
+		    getcellnei(icell, vnei, vcell);
+		    for(inei=0;inei<6;inei++){
+		      if(vnei[inei]!=6){
 		    
-		      if(curoct->nei[vnei[inei]]->child!=NULL){
+			if(curoct->nei[vnei[inei]]->child!=NULL){
 
 #ifdef TRANSXP
-			if(inei==1){
-			  if((curoct->nei[inei]->child->x-curoct->x)<0.){
-			    continue;
+			  if(inei==1){
+			    if((curoct->nei[inei]->child->x-curoct->x)<0.){
+			      continue;
+			    }
 			  }
-			}
 #endif
 
 #ifdef TRANSYP
-			if(inei==3){
-			  if((curoct->nei[inei]->child->y-curoct->y)<0.){
-			    continue;
+			  if(inei==3){
+			    if((curoct->nei[inei]->child->y-curoct->y)<0.){
+			      continue;
+			    }
 			  }
-			}
 #endif
 
 #ifdef TRANSZP
-			if(inei==5){
-			  if((curoct->nei[inei]->child->z-curoct->z)<0.){
-			    continue;
+			  if(inei==5){
+			    if((curoct->nei[inei]->child->z-curoct->z)<0.){
+			      continue;
+			    }
 			  }
-			}
 #endif
 
 #ifdef TRANSXM
-			if(inei==0){
-			  if((curoct->nei[inei]->child->x-curoct->x)>0.5){
-			    continue;
+			  if(inei==0){
+			    if((curoct->nei[inei]->child->x-curoct->x)>0.5){
+			      continue;
+			    }
 			  }
-			}
 #endif
 
 #ifdef TRANSYM
-			if(inei==2){
-			  if((curoct->nei[inei]->child->y-curoct->y)>0.5){
-			    continue;
+			  if(inei==2){
+			    if((curoct->nei[inei]->child->y-curoct->y)>0.5){
+			      continue;
+			    }
 			  }
-			}
 #endif
 
 #ifdef TRANSZM
-			if(inei==4){
-			  if((curoct->nei[inei]->child->z-curoct->z)>0.5){
-			    continue;
+			  if(inei==4){
+			    if((curoct->nei[inei]->child->z-curoct->z)>0.5){
+			      continue;
+			    }
 			  }
-			}
 #endif
 		      
-			// the neighbor cell is at the same level or refined
-			neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
+			  // the neighbor cell is at the same level or refined
+			  neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
 			
-			if(neicell->child!=NULL){
-			  // the neighbor is split : fluxes must be averaged
-			  int fcell[4];
-			  getfcell(inei,fcell);
-			  memset(F+5*inei,0,5*sizeof(float)); // reset the original flux
+			  if(neicell->child!=NULL){
+			    // the neighbor is split : fluxes must be averaged
+			    int fcell[4];
+			    getfcell(inei,fcell);
+			    memset(F+5*inei,0,5*sizeof(float)); // reset the original flux
 			
-			  int iface;
-			  float *Fnei;
-			  int idxfnei[6]={1,0,3,2,5,4};
-			  int j; 
-			  // averaging the flux
-			  for(iface=0;iface<4;iface++){
-			    Fnei=neicell->child->cell[fcell[iface]].flux;
-			    for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]*5];
+			    int iface;
+			    float *Fnei;
+			    int idxfnei[6]={1,0,3,2,5,4};
+			    int j; 
+			    // averaging the flux
+			    for(iface=0;iface<4;iface++){
+			      Fnei=neicell->child->cell[fcell[iface]].flux;
+			      for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]*5];
+			    }
+
+			    /* if((neicell->child->level==6)&&(curoct->level==5)){ */
+			    /*   printf("BOUND\n"); */
+			    /*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
+			    /*   abort(); */
+			    /* } */
+
+
 			  }
-
-			  /* if((neicell->child->level==6)&&(curoct->level==5)){ */
-			  /*   printf("BOUND\n"); */
-			  /*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
-			  /*   abort(); */
-			  /* } */
-
-
 			}
 		      }
 		    }
 		  }
-		}
 
 		
-		// computing the gradient of the potential
-		comp_grad_grav(curoct,icell);
+		  // computing the gradient of the potential
+		  comp_grad_grav(curoct,icell);
 
-		// ready to update
-		one=1.;
-		for(flx=0;flx<6;flx++){
-		  U.d +=F[0+flx*5]*dtsurdx*one;
-		  U.du+=F[1+flx*5]*dtsurdx*one;
-		  U.dv+=F[2+flx*5]*dtsurdx*one;
-		  U.dw+=F[3+flx*5]*dtsurdx*one;
-		  U.E +=F[4+flx*5]*dtsurdx*one;
-		  one*=-1.;
-		}
+		  // ready to update
+		  one=1.;
+		  for(flx=0;flx<6;flx++){
+		    U.d +=F[0+flx*5]*dtsurdx*one;
+		    U.du+=F[1+flx*5]*dtsurdx*one;
+		    U.dv+=F[2+flx*5]*dtsurdx*one;
+		    U.dw+=F[3+flx*5]*dtsurdx*one;
+		    U.E +=F[4+flx*5]*dtsurdx*one;
+		    one*=-1.;
+		  }
 
-		// grav force correction
-		U.du+=U0.d*curoct->cell[icell].fx*dt;
-		U.dv+=U0.d*curoct->cell[icell].fy*dt;
-		U.dw+=U0.d*curoct->cell[icell].fz*dt;
-		U.E+=(U0.du*curoct->cell[icell].fx+U0.dv*curoct->cell[icell].fy+U0.dw*curoct->cell[icell].fz)*dt;
+		  // grav force correction
+		  U.du+=U0.d*curoct->cell[icell].fx*dt;
+		  U.dv+=U0.d*curoct->cell[icell].fy*dt;
+		  U.dw+=U0.d*curoct->cell[icell].fz*dt;
+		  U.E+=(U0.du*curoct->cell[icell].fx+U0.dv*curoct->cell[icell].fy+U0.dw*curoct->cell[icell].fz)*dt;
 
-		U2W(&U,&Wnew);
+		  U2W(&U,&Wnew);
 		
-		/* if(Wnew.u<0.){ */
-		/*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
-		/*   printf("level=%d %e", curoct->level,curoct->x); */
-		/*   abort(); */
-		/* } */
+		  /* if(Wnew.u<0.){ */
+		  /*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
+		  /*   printf("level=%d %e", curoct->level,curoct->x); */
+		  /*   abort(); */
+		  /* } */
 
-		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
-	      }
-	      else{ // split cell : hydro quantities are averaged
-		struct OCT *child;
-		int i;
-		child=curoct->cell[icell].child;
-		memset(&W,0,sizeof(struct Wtype));
-		for(i=0;i<8;i++){
-		  W.d+=child->cell[i].field.d*0.125;
-		  W.u+=child->cell[i].field.u*0.125;
-		  W.v+=child->cell[i].field.v*0.125;
-		  W.w+=child->cell[i].field.w*0.125;
-		  W.p+=child->cell[i].field.p*0.125;
+		  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 		}
-		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
+		else{ // split cell : hydro quantities are averaged
+		  struct OCT *child;
+		  int i;
+		  child=curoct->cell[icell].child;
+		  memset(&W,0,sizeof(struct Wtype));
+		  for(i=0;i<8;i++){
+		    W.d+=child->cell[i].field.d*0.125;
+		    W.u+=child->cell[i].field.u*0.125;
+		    W.v+=child->cell[i].field.v*0.125;
+		    W.w+=child->cell[i].field.w*0.125;
+		    W.p+=child->cell[i].field.p*0.125;
+		  }
+		  memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
 
+		}
 	      }
-	    }
-	  }while(nextoct!=NULL);
+	    }while(nextoct!=NULL);
+	  }
 	}
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
