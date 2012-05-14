@@ -1857,7 +1857,7 @@ int main(int argc, char *argv[])
 	  do {
 	    curoct=nextoct;
 	    nextoct=curoct->next; 
-	    if(curoct->cpu!=cpu.rank) continue;
+	    //if(curoct->cpu!=cpu.rank) continue;
 	    // -------------  cleaning working arrays
 	    
 	    memset(stencil,0,stride*sizeof(struct HGRID));
@@ -1882,17 +1882,20 @@ int main(int argc, char *argv[])
 	printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
 
 	// ---------------- at this stage we are ready to update the conservative variables
+	int flx;
+	float F[30];
+	float Forg[30];
+	float dtsurdx=dtnew/dxcur;
+	float one;
+	struct Utype U;
+	struct Utype U0;
+	struct Wtype W;
+	struct Wtype Wnew;
+	struct CELL *neicell;
+
+	printf("dtsurdx=%e on proc %d at level=%d\n",dtsurdx,cpu.rank,level);
+
 	if(nreadtot>0){
-	  int flx;
-	  float F[30];
-	  float Forg[30];
-	  float dtsurdx=dtnew/dxcur;
-	  float one;
-	  struct Utype U;
-	  struct Utype U0;
-	  struct Wtype W;
-	  struct Wtype Wnew;
-	  struct CELL *neicell;
 
 	  curoct=firstoct[level-1];
 	  if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
@@ -1915,7 +1918,6 @@ int main(int argc, char *argv[])
 		  //		memcpy(Forg,F,sizeof(float)*30);
 
 		  // here we have to deal with coarse-fine boundaries
-
 
 		  if(level<levelmax){
 		    int inei;
@@ -2056,6 +2058,9 @@ int main(int argc, char *argv[])
 	  }
 	}
 #ifdef WMPI
+	// ================================= exchange current state of hydro quantities 
+	MPI_Barrier(cpu.comm);
+	mpi_exchange_hydro(&cpu, hsendbuffer, hrecvbuffer,1);
 	MPI_Barrier(cpu.comm);
 #endif
       }
