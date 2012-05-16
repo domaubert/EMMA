@@ -146,6 +146,9 @@ int main(int argc, char *argv[])
   struct HYDRO_MPI **hsendbuffer;
   struct HYDRO_MPI **hrecvbuffer;
 
+  struct FLUX_MPI **fsendbuffer;
+  struct FLUX_MPI **frecvbuffer;
+
   struct RUNPARAMS param;
 
   size_t rstat;
@@ -271,6 +274,33 @@ int main(int argc, char *argv[])
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
 
+
+
+  //========= creating a FLUX MPI type =======
+  MPI_Datatype MPI_FLUX;
+
+  /* Setup description of the 8 MPI_WTYPE fields one per oct*/
+  offsets[0] = 0;
+  oldtypes[0] = MPI_FLOAT;
+  blockcounts[0] = 30*8;
+
+  /* Setup description of the 2 MPI_INT fields key, level */
+  /* Need to first figure offset by getting size of MPI_FLOAT */
+  MPI_Type_extent(MPI_FLOAT, &extent);
+  offsets[1] = 30 * 8 * extent;
+  oldtypes[1] = MPI_LONG;
+  blockcounts[1] = 1;
+
+  MPI_Type_extent(MPI_LONG, &extent);
+  offsets[2] = offsets[1]+extent;
+  oldtypes[2] = MPI_INT;
+  blockcounts[2] = 1;
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_FLUX);
+  MPI_Type_commit(&MPI_FLUX);
+
+
   
 #endif
 
@@ -284,6 +314,7 @@ int main(int argc, char *argv[])
 
 #ifdef WHYDRO2
   cpu.MPI_HYDRO=&MPI_HYDRO;
+  cpu.MPI_FLUX=&MPI_FLUX;
 #endif
 
   cpu.comm=MPI_COMM_WORLD;
@@ -600,6 +631,13 @@ int main(int argc, char *argv[])
   for(i=0;i<cpu.nnei;i++) {
     hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
     hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
+  }
+
+  fsendbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*)));
+  frecvbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*)));
+  for(i=0;i<cpu.nnei;i++) {
+    fsendbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI)));
+    frecvbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI)));
   }
 #endif 
 
@@ -1552,7 +1590,6 @@ int main(int argc, char *argv[])
     // ================================= exchange current state of hydro quantities 
     mpi_exchange_hydro(&cpu, hsendbuffer, hrecvbuffer,1);
     MPI_Barrier(cpu.comm);
-
 #endif
 #endif
 
@@ -1773,6 +1810,12 @@ int main(int argc, char *argv[])
   if(cpu.rank==0) printf("dt=%e dthydro=%e dtpic=%e dtff=%e\n",dtnew,dthydro,dtpic,dtff);
 #endif
 
+
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_FLOAT,MPI_MIN,cpu.comm);
+#endif
+
+
   // ==================================== Force calculation and velocity update   // predictor step
 #ifdef PIC
   if(cpu.rank==0) printf("Corrector\n");
@@ -1879,7 +1922,7 @@ int main(int argc, char *argv[])
 	    //t100=MPI_Wtime();
 	  }while(nextoct!=NULL);
 	}
-	printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
+	//printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
 
 	// ---------------- at this stage we are ready to update the conservative variables
 	int flx;
@@ -1893,7 +1936,14 @@ int main(int argc, char *argv[])
 	struct Wtype Wnew;
 	struct CELL *neicell;
 
-	printf("dtsurdx=%e on proc %d at level=%d\n",dtsurdx,cpu.rank,level);
+#ifdef WMPI
+	// ================================= exchange current state of hydro quantities 
+	MPI_Barrier(cpu.comm);
+	mpi_exchange_flux(&cpu, fsendbuffer, frecvbuffer,1);
+	MPI_Barrier(cpu.comm);
+#endif
+
+	//printf("dtsurdx=%e on proc %d at level=%d (dtnew=%e dxcur=%e)\n",dtsurdx,cpu.rank,level,dtnew,dxcur);
 
 	if(nreadtot>0){
 
@@ -2057,12 +2107,6 @@ int main(int argc, char *argv[])
 	    }while(nextoct!=NULL);
 	  }
 	}
-#ifdef WMPI
-	// ================================= exchange current state of hydro quantities 
-	MPI_Barrier(cpu.comm);
-	mpi_exchange_hydro(&cpu, hsendbuffer, hrecvbuffer,1);
-	MPI_Barrier(cpu.comm);
-#endif
       }
     
   if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);

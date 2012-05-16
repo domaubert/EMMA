@@ -96,6 +96,7 @@ struct CPUINFO{
  
 #ifdef WHYDRO2
   MPI_Datatype *MPI_HYDRO; // the structured type for MPI messages (particles)
+  MPI_Datatype *MPI_FLUX; // the structured type for MPI messages (particles)
 #endif
 
   MPI_Comm comm; // the communicator
@@ -210,6 +211,14 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
+  long key; // the destination hilbert key
+  int level; // the level of the destination (to remove the key degeneracy)
+};
+
+
+// this structure is for the communication of Flux data
+struct FLUX_MPI{
+  float data[8*30]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
