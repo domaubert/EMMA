@@ -84,6 +84,48 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
 
 }
 
+
+void dumpgrid(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
+{
+
+  int icur,ii,jj,kk,ic,icell;
+  int level;
+  struct OCT * nextoct;
+  struct OCT oct;
+  FILE *fp;
+  float xc,yc,zc;
+
+
+  fp=fopen(filename,"wb");
+  
+  ic=0;
+  //printf("==> start map \n");
+  for(level=1;level<=lmap;level++) // looping over octs
+    {
+      //printf("level=%d\n",level);
+      // setting the first oct
+
+      nextoct=firstoct[level-1];
+
+      do // sweeping through the octs of level
+	{
+	  if(nextoct==NULL) continue; // in case the level is empty
+	  oct=(*nextoct);
+	  nextoct=oct.next;
+	  
+	  fwrite(&oct,sizeof(struct OCT),1,fp);
+	  if(oct.level==lmap) ic+=8;
+	}while(nextoct!=NULL);
+    }
+
+ 
+  fclose(fp);
+ 
+}
+
+
+//=================================================================================================
+
 void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
 {
   float *map;

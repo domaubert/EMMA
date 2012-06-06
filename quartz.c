@@ -1732,14 +1732,14 @@ int main(int argc, char *argv[])
     tdump=tsim+(dt+dtnew)*0.5*(nsteps!=0);
 #endif
     // ===== Casting rays to fill a map
-    sprintf(filename,"data/pot3d.%05d.p%05d",ndumps,cpu.rank);
-    dumpcube(lmap,firstoct,2,filename,tdump);
+    //sprintf(filename,"data/pot3d.%05d.p%05d",ndumps,cpu.rank);
+    //    dumpcube(lmap,firstoct,2,filename,tdump);
     /* sprintf(filename,"data/lev3d.%05d.p%05d",ndumps,cpu.rank); */
     /* dumpcube(lmap,firstoct,0,filename,tdump); */
-    sprintf(filename,"data/den3d.%05d.p%05d",ndumps,cpu.rank);
-    dumpcube(lmap,firstoct,1,filename,tdump);
-    sprintf(filename,"data/fz.%05d.p%05d",ndumps,cpu.rank);
-    dumpcube(lmap,firstoct,8,filename,tdump);
+    //    sprintf(filename,"data/den3d.%05d.p%05d",ndumps,cpu.rank);
+    //    dumpcube(lmap,firstoct,1,filename,tdump);
+    //    sprintf(filename,"data/fz.%05d.p%05d",ndumps,cpu.rank);
+    //    dumpcube(lmap,firstoct,8,filename,tdump);
     /* sprintf(filename,"data/fy.%05d.p%05d",ndumps,cpu.rank); */
     /* dumpcube(lmap,firstoct,7,filename,tdump); */
     /* sprintf(filename,"data/fz.%05d.p%05d",ndumps,cpu.rank); */
@@ -1771,6 +1771,9 @@ int main(int argc, char *argv[])
     dumpcube(lmap,firstoct,105,filename,tdump); 
     sprintf(filename,"data/lev3d.%05d.p%05d",ndumps,cpu.rank); 
     dumpcube(lmap,firstoct,0,filename,tdump); 
+
+    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+    dumpgrid(lmap,firstoct,0,filename,tdump); 
 #endif
 
     ndumps++;

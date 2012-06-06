@@ -1,11 +1,11 @@
 max_number_of_octs 524288
 max_number_of_part 2097152
-mpi_buffer_size 32768
-output_frequency 500
-max_number_of_steps 50000
-level_coarse 6
-level_max 8
-level_map 8
+mpi_buffer_size 131072
+output_frequency 1
+max_number_of_steps 2
+level_coarse 5
+level_max 7
+level_map 7
 max_number_of_relaxation_poisson 1024
 poisson_accuracy 1e-5
 mgrid_lmin 2
