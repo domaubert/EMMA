@@ -289,6 +289,12 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 #ifdef WHYDRO2  
   struct Wtype Wi[8];
 #endif
+
+#ifdef WGRAV  
+  struct Gtype Gi[8];
+#endif
+
+
 		  
   //if(nsteps==1) abort();
   nref=0;
@@ -461,6 +467,13 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  coarse2fine_hydro(&(curoct->cell[icell]),Wi);
 		}
 #endif
+
+#ifdef WGRAV
+		if(cpu->rank==curoct->cpu){
+		  coarse2fine_grav(&(curoct->cell[icell]),Gi);
+		}
+#endif
+
 		// filling the cells
 		for(ii=0;ii<8;ii++){
 		  newoct->cell[ii].marked=0;
@@ -483,6 +496,18 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
 		  }
 #endif
+
+#ifdef WGRAV
+		  if(cpu->rank==curoct->cpu){
+		    memcpy(&(newoct->cell[ii].gdata),Gi+icell,sizeof(struct Gtype)); 
+		  }
+		  else{
+		    memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
+		  }
+#endif
+
+
+
 
 		}
 
@@ -772,6 +797,18 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    if((curoct->level<=levelmax)&&(ismooth==0)){ // we don't need to test the finest level
 #ifdef PIC
 			      mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->level>=levelcoarse);
+			      //mcell=countpart(curoct->cell[icell].phead);
+			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+				curoct->cell[icell].marked=marker;
+				nmark++;
+			      }
+#endif
+
+#ifdef WGRAV
+			      mcell=curoct->cell[icell].gdata.d*dx*dx*dx*(curoct->level>=levelcoarse);
+			      if(mcell>0){
+				printf("%e\n",mcell);
+			      }
 			      //mcell=countpart(curoct->cell[icell].phead);
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;

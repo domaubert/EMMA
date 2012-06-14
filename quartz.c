@@ -1720,7 +1720,7 @@ int main(int argc, char *argv[])
     float res;
     int igrid;
     //breakmpi();
-    for(level=levelmax;level>=levelcoarse;level--)
+    for(level=levelcoarse;level<=levelmax;level++)
       {
 	if((level==levelcoarse)&&(levelcoarse!=param.mgridlmin)){
 	  for(igrid=0;igrid<param.nvcycles;igrid++){ // V-Cycles
@@ -2173,7 +2173,6 @@ int main(int argc, char *argv[])
     printf("tdum=%f\n",tdump);
     sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
     dumpgrid(levelmax,firstoct,filename,tdump); 
-    abort();
 #endif
 
     ndumps++;

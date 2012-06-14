@@ -548,7 +548,7 @@ float PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  
 
   // Computing the max number for iteration
 
-  if(level==param->mgridlmin){
+  if((level==param->mgridlmin)||(level>param->lcoarse)){
     nitmax=param->niter;
   }
   else{
