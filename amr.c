@@ -14,6 +14,7 @@
 #include "communication.h"
 #include "particle.h"
 
+#ifdef WHYDRO2
 float comp_grad_hydro(struct OCT *curoct, int icell){
   float gradd[3]={0.,0.,0.};
   float gradv[3]={0.,0.,0.};
@@ -144,6 +145,7 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 }
 
 
+#endif
 
 float comp_grad_grav(struct OCT *curoct, int icell){
   float gradd[3]={0.,0.,0.};

@@ -84,25 +84,51 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
 
 }
 
+//====================================================================================================
+//====================================================================================================
 
-void dumpgrid(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
+void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],float tsim)
 {
 
-  int icur,ii,jj,kk,ic,icell;
+  int icur,ii,jj,kk;
   int level;
   struct OCT * nextoct;
   struct OCT oct;
   FILE *fp;
-  float xc,yc,zc;
 
 
   fp=fopen(filename,"wb");
-  
-  ic=0;
+
+  printf("tsim=%f\n",tsim);
+  fwrite(&tsim,sizeof(float),1,fp); 
+
   //printf("==> start map \n");
-  for(level=1;level<=lmap;level++) // looping over octs
+  
+  /* // dumping the offsets and pointers informations */
+
+  /* fwrite(&levelmax,sizeof(int),1,fp); */
+
+  /* for(level=1;level<=levelmax;level++){ */
+  /*   fwrite(firstoct+level-1,sizeof(struct OCT*),1,fp); */
+  /*   printf("%p ",firstoct[level-1]); */
+  /* }   */
+  /* printf("\n"); */
+
+  /* for(level=1;level<=levelmax;level++){ */
+  /*   fwrite(lastoct+level-1,sizeof(struct OCT*),1,fp); */
+  /*   printf("%p ",lastoct[level-1]); */
+  /* } */
+  /* printf("\n"); */
+
+  // dumping the zero oct
+
+  printf("%p\n",firstoct[0]);
+  fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
+
+
+  for(level=1;level<=levelmax;level++) // looping over octs
     {
-      //printf("level=%d\n",level);
+      printf("level=%d\n",level);
       // setting the first oct
 
       nextoct=firstoct[level-1];
@@ -114,16 +140,17 @@ void dumpgrid(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 	  nextoct=oct.next;
 	  
 	  fwrite(&oct,sizeof(struct OCT),1,fp);
-	  if(oct.level==lmap) ic+=8;
 	}while(nextoct!=NULL);
     }
 
+  
+
  
   fclose(fp);
- 
 }
 
 
+//====================================================================================================
 //=================================================================================================
 
 void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
@@ -342,6 +369,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->stride);
       rstat=fscanf(buf,"%s %f",stream,&param->dt);
       rstat=fscanf(buf,"%s %f",stream,&param->amrthresh);
+      rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
       fclose(buf);
     }
 

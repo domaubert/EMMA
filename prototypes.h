@@ -38,6 +38,8 @@ struct RUNPARAMS{
   int mgridlmin;    // coarsest level for multigrid relaxation
   int nvcycles; // number of vcycles for multigrid relaxation
   int nrelax; // number of smoothing cycles
+
+  int nrestart; // the restart snapshot
 };
 
 
@@ -224,6 +226,13 @@ struct FLUX_MPI{
 };
 
 
+//=========================================================
+
+struct Gtype{
+  float d;
+  float p;
+};
+
 //-------------------------------------
 struct CELL
 {
@@ -239,6 +248,13 @@ struct CELL
   float pot;
 
   float temp;
+
+#ifdef WGRAV
+  struct Gtype gdata;
+  float pnew; // new potential
+  float res; // residual
+#endif
+
 
 #ifdef AXLFORCE
   float fx;
@@ -263,6 +279,8 @@ struct CELL
 
 };
 
+
+
 // ----------------------------------------------------------------
 
 struct CELLLIGHT
@@ -273,12 +291,13 @@ struct CELLLIGHT
 
 
 #ifdef WHYDRO2
-  struct Wtype field;
+  struct Wtype field; // hydrodynamical data
 #endif
 
-
+#ifdef WGRAV
+  struct Gtype gdata; // gravitational data 
+#endif
 };
-
 
 
 //-------------------------------------
@@ -333,6 +352,7 @@ struct HGRID{
   struct OCTLIGHT oct[27];
   struct OCTFLUX new;
 };
+
 
 // ========================================
 struct MULTIVECT{

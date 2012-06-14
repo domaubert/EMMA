@@ -25,6 +25,7 @@ void clean_vec(int levelmax,struct OCT **firstoct)
     }
 }
 
+
 void clean_pot(int levelmax,struct OCT **firstoct)
 {
   int level;
@@ -692,6 +693,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #endif
 
 
+
+#ifdef WHYDRO2
 //=====================================================================================================================
 
 struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
@@ -724,6 +727,8 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 
       //abort();
       cell=curoct->parent;
+      
+      //start recursive fill
       for(inei=0;inei<6;inei++)
 	{
 	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
@@ -736,6 +741,10 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   (*nread)=iread;
   return nextoct;
 }
+
+
+#endif
+
 
 
 

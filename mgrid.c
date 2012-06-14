@@ -58,7 +58,6 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
     factdens=1.5*omegam/tsim;
 #endif
 #endif
-
     dx=pow(0.5,level);
   }
   else{
