@@ -158,6 +158,7 @@ float comp_grad_grav(struct OCT *curoct, int icell){
   /* struct Wtype Wi[8]; */
   int ii;
   float dx;
+  int ic;
 
   dx=1./pow(2,curoct->level);
 
@@ -251,9 +252,9 @@ float comp_grad_grav(struct OCT *curoct, int icell){
     //if(ax==2) printf("%f\n",ploc);
   }
 
-  curoct->cell[icell].fx=-gradd[0]/dx*0.5;
-  curoct->cell[icell].fy=-gradd[1]/dx*0.5;
-  curoct->cell[icell].fz=-gradd[2]/dx*0.5;
+  for(ic=0;ic<=3;ic++) curoct->cell[icell].f[ic]=-gradd[ic]/dx*0.5;
+  /* curoct->cell[icell].fy=-gradd[1]/dx*0.5; */
+  /* curoct->cell[icell].fz=-gradd[2]/dx*0.5; */
 
   
   /* if(curoct->cell[icell].fz<-5.5e-2) { */
@@ -280,6 +281,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
   int ii;
   int vnei[6],vcell[6];
   int ip,xp,yp,zp;
+  int ic;
 
   struct PART *curploc;
   struct PART *nexploc;
@@ -482,11 +484,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  newoct->cell[ii].idx=ii;
 		  newoct->cell[ii].phead=NULL;
 		  newoct->cell[ii].temp=0.;
-#ifdef AXLFORCE
-		  newoct->cell[ii].fx=0.;
-		  newoct->cell[ii].fy=0.;
-		  newoct->cell[ii].fz=0.;
-#endif
+		  for(ic=0;ic<3;ic++) newoct->cell[ii].f[ic]=0.;
 
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
@@ -806,9 +804,9 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 
 #ifdef WGRAV
 			      mcell=curoct->cell[icell].gdata.d*dx*dx*dx*(curoct->level>=levelcoarse);
-			      if(mcell>0){
-				printf("%e\n",mcell);
-			      }
+			      /* if(mcell>0){ */
+			      /* 	printf("%e\n",mcell); */
+			      /* } */
 			      //mcell=countpart(curoct->cell[icell].phead);
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
@@ -851,6 +849,29 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 
 }
 
+//=============================================================================
 
-
-
+void clean_marks(int levelmax,struct OCT **firstoct){
+  
+  int level;
+  struct OCT* curoct;
+  struct OCT* nextoct;
+  int icell;
+    
+    for(level=1;level<=levelmax;level++) // looping over levels
+      {
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		curoct->cell[icell].marked=0.;
+	      }
+	  }while(nextoct!=NULL);
+	
+      }
+}
+//=============================================================================

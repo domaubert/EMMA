@@ -441,9 +441,9 @@ struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int str
 #ifdef AXLFORCE
 #ifdef SELFGRAV
 	// we store the gravitational force in the new fields
-	data->vec_unew[ipos+icell*stride]=curoct->cell[icell].fx;
-	data->vec_vnew[ipos+icell*stride]=curoct->cell[icell].fy;
-	data->vec_wnew[ipos+icell*stride]=curoct->cell[icell].fz;
+	data->vec_unew[ipos+icell*stride]=curoct->cell[icell].f[0];
+	data->vec_vnew[ipos+icell*stride]=curoct->cell[icell].f[1];
+	data->vec_wnew[ipos+icell*stride]=curoct->cell[icell].f[2];
 	//if(curoct->cell[icell].d>0.5) printf("fx=%e\n",data->vec_unew[ipos+icell*stride]);
 #endif
 #endif

@@ -221,17 +221,15 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 			      case 5:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].temp;
 				break;
-#ifdef AXLFORCE
 			      case 6:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fx;
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
 				break;
 			      case 7:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fy;
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[1];
 				break;
 			      case 8:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fz;
+				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[2];
 				break;
-#endif
 
 #ifdef WHYDRO2
 			      case 101:

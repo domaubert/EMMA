@@ -649,9 +649,9 @@ void correct_grav_hydro(struct OCT *octstart, struct CPUINFO *cpu, float dt)
 	W2U(&Wold,&Uold); // primitive -> conservative
 
 	// we store the gravitational force in the new fields
-	fx=curoct->cell[icell].fx;
-	fy=curoct->cell[icell].fy;
-	fz=curoct->cell[icell].fz;
+	fx=curoct->cell[icell].f[0];
+	fy=curoct->cell[icell].f[1];
+	fz=curoct->cell[icell].f[2];
 
 	
 	// implicit update

@@ -561,8 +561,12 @@ int main(int argc, char *argv[])
 	      newoct->cell[ii].idx=ii;
 	      newoct->cell[ii].phead=NULL;
 
-#ifdef WHYDRO2
+ #ifdef WHYDRO2
 	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
+#endif
+
+#ifdef WGRAV
+	      memset(&(newoct->cell[icell].gdata),0,sizeof(struct Gtype));
 #endif
 	    }
 	    
@@ -718,7 +722,7 @@ int main(int argc, char *argv[])
       z=0.5;
 
       vx=0.;
-      vy=sqrt((1.-epsilon)/0.1)*.5;
+      vy=sqrt((1.-epsilon)/0.1)*0.8;
       vz=0.;
       
       mass=epsilon;
@@ -1027,7 +1031,6 @@ int main(int argc, char *argv[])
 
   // we set all the "remaining" particles mass to -1
   for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
-
 
   // assigning particles to cells in coarse octs (assuming octs are aligned)
 
@@ -1377,32 +1380,34 @@ int main(int argc, char *argv[])
 
 
 #ifdef WGRAV
+  /* float rc; */
+  /* for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment) */
+  /*   { */
+  /*     dxcur=pow(0.5,level); */
+  /*     nextoct=firstoct[level-1]; */
+  /*     if(nextoct==NULL) continue; */
+  /*     do // sweeping level */
+  /* 	{ */
+  /* 	  curoct=nextoct; */
+  /* 	  nextoct=curoct->next; */
+  /* 	  for(icell=0;icell<8;icell++) // looping over cells in oct */
+  /* 	    { */
+  /* 	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5; */
+  /* 	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5; */
+  /* 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5; */
+	    
+  /* 	      rc=sqrtf(powf(xc-0.5,2)+powf(yc-0.5,2)+powf(zc-0.5,2)); */
+  
+  /* 	      if(rc<=3.*dxcur){ */
+  /* 		curoct->cell[icell].gdata.d=1.; */
+  /* 		curoct->cell[icell].gdata.p=0.; */
+  /* 	      } */
 
-  for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
-    {
-      dxcur=pow(0.5,level);
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-	      
-	      if((fabsf(xc-0.5)<=(2*dxcur))*(fabsf(yc-0.5)<=2*(dxcur))*(fabsf(zc-0.5)<=2*(dxcur))){
-		curoct->cell[icell].gdata.d=1.;
-		curoct->cell[icell].gdata.p=0.;
-	      }
-
-	    }
-	}while(nextoct!=NULL);
+  /* 	    } */
+  /* 	}while(nextoct!=NULL); */
       
-      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
-    }
+  /*     //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd); */
+  /*   } */
 
 #endif
 
@@ -1619,92 +1624,77 @@ int main(int argc, char *argv[])
 
 #ifdef PIC
 #ifdef WMPI
-  //------------- performing the CIC BOUNDARY CORRECTION 
-  mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
-  //------------  Density boundary mpi update 
-  mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
+      //------------- performing the CIC BOUNDARY CORRECTION 
+      mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
+      //------------  Density boundary mpi update 
+      mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
 #endif
 #endif
+      
+      //======================================= cleaning the marks
+      
+      clean_marks(levelmax,firstoct);
+      
+      // ==================================== Check the number of particles and octs
+      mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
+      
 
-  //======================================= cleaning the marks
-  for(level=1;level<=levelmax;level++) // looping over levels
-    {
-      /* float maxd=0.,mind=1e30,avg=0.; */
-      /* int ncell=0; */
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      curoct->cell[icell].marked=0.;
-	    }
-	}while(nextoct!=NULL);
-
-      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
-    }
-
-
-
-  // ==================================== Check the number of particles and octs
-  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-
+      // =========== Grid Census : CLEAN THE NEXT FOLLOWING LINES ========================================
 #ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+      MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
 #endif
-
-  int ltot,gtot=0,nomax,nomin;
-  if(cpu.rank==0){
-    printf("===================================================\n");
-  }
-  for(level=2;level<=levelmax;level++){
-    ltot=cpu.noct[level-1];
-    nomax=ltot;
-    nomin=ltot;
-    gtot+=ltot;
+      
+      int ltot,gtot=0,nomax,nomin;
+      if(cpu.rank==0){
+	printf("===================================================\n");
+      }
+      for(level=2;level<=levelmax;level++){
+	ltot=cpu.noct[level-1];
+	nomax=ltot;
+	nomin=ltot;
+	gtot+=ltot;
 #ifdef WMPI
-    MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu.comm);
-    MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu.comm);
-    MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
+	MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu.comm);
+	MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu.comm);
+	MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
 #endif
-    if(cpu.rank==0){
-      if(ltot!=0) printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
-    }
-  }
+	if(cpu.rank==0){
+	  if(ltot!=0) printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
+	}
+      }
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu.comm);
+      MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu.comm);
 #endif
-  if(cpu.rank==0){
-    printf("grid occupancy=%4.1f \n",(gtot/(1.0*ngridmax))*100.);
-  }
+      if(cpu.rank==0){
+	printf("grid occupancy=%4.1f \n",(gtot/(1.0*ngridmax))*100.);
+      }
 
-
+      // ==========================================================================================
+      
 
 #if 1
-  // FOR RT INSTABILITY ONLY !
-  for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
-    {
-      dxcur=pow(0.5,level);
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
+      // FOR RT INSTABILITY ONLY !
+      for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
 	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	  dxcur=pow(0.5,level);
+	  nextoct=firstoct[level-1];
+	  if(nextoct==NULL) continue;
+	  do // sweeping level
 	    {
-	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-
-	      curoct->cell[icell].pot=GRAV*zc;
-	    }
-	}while(nextoct!=NULL);
-    }
+	      curoct=nextoct;
+	      nextoct=curoct->next;
+	      for(icell=0;icell<8;icell++) // looping over cells in oct
+		{
+		  xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		  yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		  zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+		  
+		  curoct->cell[icell].pot=GRAV*zc;
+		}
+	    }while(nextoct!=NULL);
+	}
 #endif 
-
+      
 
 #ifdef WHYDRO2
 #ifdef WMPI
@@ -1715,10 +1705,19 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WGRAV 
+    //==================================== Getting Density ====================================
+    for(level=levelcoarse;level<=levelmax;level++)
+      {
+	FillDens(level,&param,firstoct,&cpu);
+      }
+
     //===================================== JACOBI Poisson Solver ==============================
     if(cpu.rank==0) printf("Start Poisson Solver \n");
     float res;
     int igrid;
+    struct Gtype Wi[8];
+    struct CELL* curcell;
+    int icell2;
     //breakmpi();
     for(level=levelcoarse;level<=levelmax;level++)
       {
@@ -1732,6 +1731,26 @@ int main(int argc, char *argv[])
 	else{
 	  PoissonJacobi(level,&param,firstoct,&cpu,stencil,stride);
 	}
+	
+	//once done we propagate the solution to level+1
+
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		curcell=&(curoct->cell[icell]);
+		if(curcell->child!=NULL){
+		  coarse2fine_grav(curcell,Wi);
+		  for(icell2=0;icell2<8;icell2++){
+		    memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(float));
+		  }
+		}
+	      }
+	  }while(nextoct!=NULL);
       }
     //==================================== End Poisson Solver ==========================
 #endif
@@ -1748,13 +1767,19 @@ int main(int argc, char *argv[])
   faexp=f_aexp(aexp,omegam,omegav);
 #endif
 #endif
+  // -- force
   
+  for(level=levelcoarse;level<=levelmax;level++)
+    {
+      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
 #ifdef SUPERCOMOV
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+      accelpart(level,firstoct,dt*0.5*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
 #else
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
+      accelpart(level,firstoct,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
 #endif
+    }
 #endif
+
 
 #ifdef SELFGRAV
   // ==================================== hydro update   // Corrector step
@@ -1793,7 +1818,7 @@ int main(int argc, char *argv[])
   dtnew=dthydro;
   if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
 #endif
-
+  
 #ifdef SELFGRAV
   float dtff;
   dtff=comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt);
@@ -1807,10 +1832,9 @@ int main(int argc, char *argv[])
 #endif
 
 
-  // ==================================== Force calculation and velocity update   // predictor step
 #ifdef PIC
-  if(cpu.rank==0) printf("Corrector\n");
-
+  // ==================================== Force calculation and velocity update   // Corrector step
+  if(cpu.rank==0) printf("Correcctor\n");
 #ifdef TESTCOSMO
 #ifdef SUPERCOMOV
   faexp=1.0;
@@ -1819,12 +1843,37 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
+  // -- force
+  
+  for(level=levelcoarse;level<=levelmax;level++)
+    {
+      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
 #ifdef SUPERCOMOV
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
+      accelpart(level,firstoct,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
 #else
-  forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
+      accelpart(level,firstoct,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
 #endif
+    }
 #endif
+
+/*   // ==================================== Force calculation and velocity update   // predictor step */
+/* #ifdef PIC */
+/*   if(cpu.rank==0) printf("Corrector\n"); */
+
+/* #ifdef TESTCOSMO */
+/* #ifdef SUPERCOMOV */
+/*   faexp=1.0; */
+/* #else */
+/*   faexp=f_aexp(aexp,omegam,omegav); */
+/* #endif */
+/* #endif */
+
+/* #ifdef SUPERCOMOV */
+/*   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5,&cpu,sendbuffer,recvbuffer); */
+/* #else */
+/*   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer); */
+/* #endif */
+/* #endif */
 
   // ==================================== Moving Particles + Oct management
 #ifdef PIC
@@ -2060,10 +2109,10 @@ int main(int argc, char *argv[])
 		}
 
 		// grav force correction
-		U.du+=U0.d*curoct->cell[icell].fx*dt;
-		U.dv+=U0.d*curoct->cell[icell].fy*dt;
-		U.dw+=U0.d*curoct->cell[icell].fz*dt;
-		U.E+=(U0.du*curoct->cell[icell].fx+U0.dv*curoct->cell[icell].fy+U0.dw*curoct->cell[icell].fz)*dt;
+		U.du+=U0.d*curoct->cell[icell].f[0]*dt;
+		U.dv+=U0.d*curoct->cell[icell].f[1]*dt;
+		U.dw+=U0.d*curoct->cell[icell].f[2]*dt;
+		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dt;
 
 		U2W(&U,&Wnew);
 		
@@ -2173,6 +2222,7 @@ int main(int argc, char *argv[])
     printf("tdum=%f\n",tdump);
     sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
     dumpgrid(levelmax,firstoct,filename,tdump); 
+    //abort();
 #endif
 
     ndumps++;

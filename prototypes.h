@@ -253,23 +253,15 @@ struct CELL
   struct Gtype gdata;
   float pnew; // new potential
   float res; // residual
+  float f[3]; // the gravitational force component
 #endif
 
 
-#ifdef AXLFORCE
-  float fx;
-  float fy;
-  float fz;
-#endif
-
-#ifdef WHYDRO
-  float d; // gas density
-  float u; // velx
-  float v; // vely
-  float w; // velz
-  float p; // pressure
-  float a; // sound speed
-#endif
+/* #ifdef AXLFORCE */
+/*   float fx; */
+/*   float fy; */
+/*   float fz; */
+/* #endif */
 
 #ifdef WHYDRO2
   struct Wtype field;

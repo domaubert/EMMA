@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
     
     fread(&oct,sizeof(struct OCT),1,fp);
     while(!feof(fp)){
+      if(oct.level<=lmap){
       ic++;
       dxcur=1./pow(2,oct.level);
       for(icell=0;icell<8;icell++) // looping over cells in oct
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].marked;
 			    break;
 			  case 5:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].temp;
+			    //map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fx;
 			    break;
 #ifdef WHYDRO2
 			  case 101:
@@ -155,7 +156,7 @@ int main(int argc, char *argv[])
 		} 
 	    }
 	}
-      
+      }
       fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
       
     }

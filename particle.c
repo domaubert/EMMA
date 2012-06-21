@@ -117,19 +117,15 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
 
-#ifdef AXLFORCE
-		//cell acceleration
-		aa=sqrt(oct.cell[icell].fx*oct.cell[icell].fx+oct.cell[icell].fy*oct.cell[icell].fy+oct.cell[icell].fz*oct.cell[icell].fz)*fa2;
-#else
-		aa=0.;
-#endif
+		aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+		
 		do{ 
 		  curp=nexp; 
 		  nexp=curp->next; 
 
-#ifdef PART2
-		  if(curp->idx==0) continue;
-#endif
+ /* #ifdef PART2 */
+/* 		  if(curp->idx==0) continue; */
+/* #endif */
 		  // particle velocit
 		  va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
 
@@ -1121,116 +1117,154 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
-void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,int stride,float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){
+/* void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,int stride,float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){ */
 
-  int dir;
-  int level;
+/*   int dir; */
+/*   int level; */
+/*   struct OCT *nextoct; */
+/*   struct OCT *curoct; */
+/*   float dx; */
+/*   int icomp,icell; */
+/*   struct PART *curp; */
+/*   struct PART *nexp; */
+/*   int nread; */
+
+/* #ifndef AXLFORCE */
+/*   for(dir=0;dir<3;dir++){ */
+/* #endif */
+/*     //printf("Force Start dir=%d\n",dir); */
+/*     for(level=levelcoarse;level<=levelmax;level++) */
+/*       { */
+/* 	// COARSE LEVEL TREATMENT ============================================ */
+/* 	//if(level==levelcoarse) fixbound_reg(grid,levelcoarse,NBND); */
+/* 	nextoct=firstoct[level-1]; */
+	
+/* 	dx=pow(0.5,level); */
+/* 	if(nextoct==NULL){ */
+/* 	  continue; */
+/* 	} */
+/* 	else{ */
+/* 	  do{  */
+/* 	    curoct=nextoct; */
+/* #ifndef AXLFORCE	     */
+/* 	    // First we gather the potential in all neighbors */
+/* 	    for(icomp=2*dir;icomp<=2*dir+1;icomp++){ */
+/* 	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread); */
+/* 	    } */
+/* 	    // Next we perform the finite difference along x */
+/* 	    grad(vcomp,stride,dx,dir); */
+	  
+/* 	    // Then we scatter back the results in the temp variable */
+/* 	    nextoct=scattercomp(curoct, vcomp[6], 6, 2, stride,cpu); */
+/* #else */
+/* 	    // First we gather the potential in all neighbors */
+/* 	    for(icomp=0;icomp<6;icomp++){ */
+/* 	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread); */
+/* 	    } */
+
+/* 	    // Next we perform the finite difference along x */
+/* 	    grad(vcomp,stride,dx,0); */
+/* 	    // Next we perform the finite difference along y */
+/* 	    grad(vcomp,stride,dx,1); */
+/* 	    // Next we perform the finite difference along z */
+/* 	    grad(vcomp,stride,dx,2); */
+
+/* 	    // Then we scatter back the results in the force variable */
+/* 	    nextoct=scattercomp(curoct, vcomp[6], 6, 3, stride,cpu); */
+/* 	    nextoct=scattercomp(curoct, vcomp[7], 6, 4, stride,cpu); */
+/* 	    nextoct=scattercomp(curoct, vcomp[8], 6, 5, stride,cpu); */
+/* #endif */
+
+
+	  
+/* 	  }while(nextoct!=NULL); */
+	
+/* 	} */
+/*       } */
+
+/* #ifdef WMPI */
+/* #ifndef AXLFORCE */
+/*     mpi_exchange(cpu,sendbuffer,recvbuffer,4,1); // temp field */
+/* #else */
+/*     mpi_exchange(cpu,sendbuffer,recvbuffer,5,1); // fx field */
+/*     mpi_exchange(cpu,sendbuffer,recvbuffer,6,1); // fy field */
+/*     mpi_exchange(cpu,sendbuffer,recvbuffer,7,1); // fz field */
+/* #endif */
+/* #endif */
+  
+/* #ifdef PIC */
+/*     // ==================================== Computing the Velocities */
+/*     // ==================================== performing the INVERSE CIC assignement */
+  
+/*     //printf("start INVERSE CIC\n"); */
+/*     //start INVERSE CIC */
+/*     for(level=levelmax;level>=levelcoarse;level--) */
+/*       { */
+/* 	nextoct=firstoct[level-1]; */
+/* 	if(nextoct==NULL) continue; */
+/* 	do // sweeping level */
+/* 	  { */
+/* 	    curoct=nextoct; */
+/* 	    nextoct=curoct->next; */
+	  
+/* 	    for(icell=0;icell<8;icell++) // looping over cells in oct */
+/* 	      { */
+/* 		nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell *\/ */
+/* 		if(nexp!=NULL){  */
+/* 		  do{   */
+/* 		    curp=nexp;  */
+/* 		    nexp=curp->next;  */
+/* 		    cell2part_cic(curp, curoct, icell,dir,dt);  */
+/* 		  }while(nexp!=NULL);  */
+/* 		} */
+/* 	      } */
+/* 	  }while(nextoct!=NULL); */
+/*       } */
+/* #endif */
+/* #ifndef AXLFORCE */
+/*   } */
+/* #endif */
+/* } */
+
+//------------------------------------------------------------------------
+#ifdef PIC
+void accelpart(int level,struct OCT **firstoct, float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){
+
   struct OCT *nextoct;
   struct OCT *curoct;
-  float dx;
   int icomp,icell;
   struct PART *curp;
   struct PART *nexp;
-  int nread;
-
-#ifndef AXLFORCE
-  for(dir=0;dir<3;dir++){
-#endif
-    //printf("Force Start dir=%d\n",dir);
-    for(level=levelcoarse;level<=levelmax;level++)
-      {
-	// COARSE LEVEL TREATMENT ============================================
-	//if(level==levelcoarse) fixbound_reg(grid,levelcoarse,NBND);
-	nextoct=firstoct[level-1];
-	
-	dx=pow(0.5,level);
-	if(nextoct==NULL){
-	  continue;
-	}
-	else{
-	  do{ 
-	    curoct=nextoct;
-#ifndef AXLFORCE	    
-	    // First we gather the potential in all neighbors
-	    for(icomp=2*dir;icomp<=2*dir+1;icomp++){
-	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
-	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread);
-	    }
-	    // Next we perform the finite difference along x
-	    grad(vcomp,stride,dx,dir);
-	  
-	    // Then we scatter back the results in the temp variable
-	    nextoct=scattercomp(curoct, vcomp[6], 6, 2, stride,cpu);
-#else
-	    // First we gather the potential in all neighbors
-	    for(icomp=0;icomp<6;icomp++){
-	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp;
-	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread);
-	    }
-
-	    // Next we perform the finite difference along x
-	    grad(vcomp,stride,dx,0);
-	    // Next we perform the finite difference along y
-	    grad(vcomp,stride,dx,1);
-	    // Next we perform the finite difference along z
-	    grad(vcomp,stride,dx,2);
-
-	    // Then we scatter back the results in the force variable
-	    nextoct=scattercomp(curoct, vcomp[6], 6, 3, stride,cpu);
-	    nextoct=scattercomp(curoct, vcomp[7], 6, 4, stride,cpu);
-	    nextoct=scattercomp(curoct, vcomp[8], 6, 5, stride,cpu);
-#endif
-
-
-	  
-	  }while(nextoct!=NULL);
-	
-	}
-      }
-
-#ifdef WMPI
-#ifndef AXLFORCE
-    mpi_exchange(cpu,sendbuffer,recvbuffer,4,1); // temp field
-#else
-    mpi_exchange(cpu,sendbuffer,recvbuffer,5,1); // fx field
-    mpi_exchange(cpu,sendbuffer,recvbuffer,6,1); // fy field
-    mpi_exchange(cpu,sendbuffer,recvbuffer,7,1); // fz field
-#endif
-#endif
   
-#ifdef PIC
-    // ==================================== Computing the Velocities
-    // ==================================== performing the INVERSE CIC assignement
+  // ==================================== Computing the Velocities
+  // ==================================== performing the INVERSE CIC assignement
   
-    //printf("start INVERSE CIC\n");
-    //start INVERSE CIC
-    for(level=levelmax;level>=levelcoarse;level--)
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){ 
+    do // sweeping level
       {
-	nextoct=firstoct[level-1];
-	if(nextoct==NULL) continue;
-	do // sweeping level
+	curoct=nextoct;
+	nextoct=curoct->next;
+      
+	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	  
-	    for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
-		nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-		if(nexp!=NULL){ 
-		  do{  
-		    curp=nexp; 
-		    nexp=curp->next; 
-		    cell2part_cic(curp, curoct, icell,dir,dt); 
-		  }while(nexp!=NULL); 
-		}
-	      }
-	  }while(nextoct!=NULL);
-      }
-#endif
-#ifndef AXLFORCE
+	    nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
+	    if(nexp!=NULL){ 
+	      do{  
+		curp=nexp; 
+		nexp=curp->next; 
+		cell2part_cic(curp, curoct, icell,dt); 
+	      }while(nexp!=NULL); 
+	    }
+	  }
+      }while(nextoct!=NULL);
   }
-#endif
+  
 }
+#endif
+
 
 
 //------------------------------------------------------------------------
