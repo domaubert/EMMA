@@ -18,12 +18,12 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 {
 
   int res=-1;
-  float xc,yc,zc;
-  float xc0,yc0,zc0;
+  REAL xc,yc,zc;
+  REAL xc0,yc0,zc0;
   int ix,iy,iz;
   int ii,jj,kk;
   int i,j,k;
-  float dxcur;
+  REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   char first=1;
   int max,min;
@@ -129,7 +129,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 
 unsigned long oct2key(struct OCT *curoct,int level){
   
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   unsigned long keyloc;
@@ -155,7 +155,7 @@ unsigned long oct2key(struct OCT *curoct,int level){
 }
 
 //------------------------------------------------------------------------
-unsigned long pos2key(float xc, float yc, float zc,int level){
+unsigned long pos2key(REAL xc, REAL yc, REAL zc,int level){
   
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
@@ -183,9 +183,9 @@ unsigned long pos2key(float xc, float yc, float zc,int level){
 void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoarse)
 {
 
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int ix,iy,iz;
-  float dxcur;
+  REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   unsigned long keyloc;
   int cpuloc;
@@ -211,11 +211,11 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 
 //------------------------------------------------------------------------
 
-int segment_part(float xc,float yc,float zc, struct CPUINFO *cpu, int levelcoarse)
+int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
 {
 
   int ix,iy,iz;
-  float dxcur;
+  REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   unsigned long keyloc;
   int cpuloc;

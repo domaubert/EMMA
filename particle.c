@@ -56,7 +56,7 @@ int countpart(struct PART* phead)
 
 //------------------------------------------------------------------------
 
-struct PART* modifpospart(struct PART* phead, float len, int dir)
+struct PART* modifpospart(struct PART* phead, REAL len, int dir)
 {
   struct PART* curp;
   struct PART* nexp;
@@ -81,20 +81,20 @@ struct PART* modifpospart(struct PART* phead, float len, int dir)
 //=====================================================================
 //=====================================================================
 
-float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, float fa2, struct CPUINFO* cpu, float tmax){
+REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
   
   int level;
-  float vmax,lmdisp;
+  REAL vmax,lmdisp;
   struct OCT *nextoct;
   struct OCT oct;
-  float dxcur;
+  REAL dxcur;
   int icell;
   struct PART *nexp;
   struct PART *curp;
-  float va;
-  float aa;
-  float dtlev,dtnew=1e9;
-  float dt;
+  REAL va;
+  REAL aa;
+  REAL dtlev,dtnew=1e9;
+  REAL dt;
 
   // Computing new timestep
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
@@ -131,7 +131,7 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 
 		  // loc dt
 		  if((va>0.)&&(aa>0.)){
-		    float EPS=2.0*(FRACDX*dxcur)*aa/(va*va);
+		    REAL EPS=2.0*(FRACDX*dxcur)*aa/(va*va);
 		    if(EPS<1e-1){
 		      dtlev=(FRACDX*dxcur)/va;
 		    }
@@ -174,7 +174,7 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 
 #ifdef WMPI
   // reducing by taking the smallest time step
-  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_FLOAT,MPI_MIN,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm);
 #endif  
 
   dt=(dt>tmax?tmax:dt);
@@ -184,18 +184,18 @@ float comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, float fa, fl
 //=====================================================================
 //=====================================================================
 
-float movepart(int levelcoarse,int levelmax,struct OCT** firstoct, float dt, struct CPUINFO* cpu){
+REAL movepart(int levelcoarse,int levelmax,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu){
   
   int level;
-  float mdisp,lmdisp;
+  REAL mdisp,lmdisp;
   struct OCT *nextoct;
   struct OCT oct;
-  float dxcur;
+  REAL dxcur;
   int icell;
   struct PART *nexp;
   struct PART *curp;
-  float disp;
-  float dtlev,dtnew;
+  REAL disp;
+  REAL dtlev,dtnew;
 
   // === Moving particles
 
@@ -254,12 +254,12 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
   struct OCT *nextoct;
   struct OCT *curoct;
   struct OCT *newoct;
-  float dxcur,dxcur2;
+  REAL dxcur,dxcur2;
   int icell;
   struct PART *curp;
   struct PART *nexp;
   struct PART *part;
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int xp,yp,zp;
   int vnei[6],vcell[6];
   struct CELL *newcell;
@@ -685,12 +685,12 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
   struct OCT *nextoct;
   struct OCT *curoct;
   struct OCT *newoct;
-  float dxcur,dxcur2;
+  REAL dxcur,dxcur2;
   int icell;
   struct PART *curp;
   struct PART *nexp;
   struct PART *part;
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int xp,yp,zp;
   int vnei[6],vcell[6];
   struct CELL *newcell;
@@ -1117,13 +1117,13 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
-/* void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, float **vcomp,int stride,float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){ */
+/* void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, REAL **vcomp,int stride,REAL dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){ */
 
 /*   int dir; */
 /*   int level; */
 /*   struct OCT *nextoct; */
 /*   struct OCT *curoct; */
-/*   float dx; */
+/*   REAL dx; */
 /*   int icomp,icell; */
 /*   struct PART *curp; */
 /*   struct PART *nexp; */
@@ -1149,7 +1149,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 /* #ifndef AXLFORCE	     */
 /* 	    // First we gather the potential in all neighbors */
 /* 	    for(icomp=2*dir;icomp<=2*dir+1;icomp++){ */
-/* 	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 	      memset(vcomp[icomp],0,stride*sizeof(REAL)); // reset the vcomp; */
 /* 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread); */
 /* 	    } */
 /* 	    // Next we perform the finite difference along x */
@@ -1160,7 +1160,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 /* #else */
 /* 	    // First we gather the potential in all neighbors */
 /* 	    for(icomp=0;icomp<6;icomp++){ */
-/* 	      memset(vcomp[icomp],0,stride*sizeof(float)); // reset the vcomp; */
+/* 	      memset(vcomp[icomp],0,stride*sizeof(REAL)); // reset the vcomp; */
 /* 	      nextoct=gathercomp(curoct, vcomp[icomp], icomp, 1, stride,cpu,&nread); */
 /* 	    } */
 
@@ -1230,7 +1230,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 //------------------------------------------------------------------------
 #ifdef PIC
-void accelpart(int level,struct OCT **firstoct, float dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){
+void accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -1269,23 +1269,23 @@ void accelpart(int level,struct OCT **firstoct, float dt, struct CPUINFO *cpu, s
 
 //------------------------------------------------------------------------
 
-float egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO *cpu){
+REAL egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO *cpu){
 
   int dir;
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
-  float dx;
+  REAL dx;
   int icomp,icell;
   struct PART *curp;
   struct PART *nexp;
   int nread;
 
-  float upart, utot=0.; // potential energy
-  float tpart, ttot=0.; // kinetic energy
-  float etot; // total energy
+  REAL upart, utot=0.; // potential energy
+  REAL tpart, ttot=0.; // kinetic energy
+  REAL etot; // total energy
 
-  float vx,vy,vz;
+  REAL vx,vy,vz;
 
   // ==================================== performing the INVERSE CIC assignement
   

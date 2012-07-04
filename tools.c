@@ -22,22 +22,22 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-float  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, int *vnoct){
+REAL  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, int *vnoct){
 
   int ntot;
-  float ntotd;
-  float nlevd;
+  REAL ntotd;
+  REAL nlevd;
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
-  float dx;
+  REAL dx;
   int nlev,noct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
-  float mtot;
+  REAL mtot;
   
-  float xc,yc,zc;
+  REAL xc,yc,zc;
 
 
   if(rank==0) printf("Check\n");

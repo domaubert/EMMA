@@ -10,20 +10,21 @@
 
 int main(int argc, char *argv[])
 {
-  //(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
+  //(int lmap,struct OCT **firstoct,int field,char filename[],REAL tsim)
   int lmap;
   float *map;
   int imap,jmap,kmap;
   int nmap;
-  float dxmap,dxcur;
+  REAL dxmap,dxcur;
   int icur,ii,jj,kk,ic,icell;
   int level;
   struct OCT * nextoct;
   struct OCT oct;
   FILE *fp;
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int field;
-  float tsim=0.;
+  REAL tsim=0.;
+  float tsimf;
   char fname[256];
   char format[256];
   char fname2[256];
@@ -80,8 +81,9 @@ int main(int argc, char *argv[])
     }
 
     // reading the time
-    fread(&tsim,sizeof(float),1,fp);
+    fread(&tsim,sizeof(REAL),1,fp);
     printf("tsim=%e\n",tsim);
+    tsimf=tsim;
     // reading the zerooct
     fread(&zerooct,sizeof(struct OCT *),1,fp);
     printf("0oct=%p\n",zerooct);
@@ -92,7 +94,7 @@ int main(int argc, char *argv[])
     while(!feof(fp)){
       if(oct.level<=lmap){
       ic++;
-      dxcur=1./pow(2,oct.level);
+      dxcur=1./pow(2.,oct.level);
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
 	  if((oct.cell[icell].child==NULL)||(oct.level==lmap))
@@ -121,6 +123,15 @@ int main(int argc, char *argv[])
 			    break;
 			  case 2:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].gdata.p;
+			    break;
+			  case 201:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[0];
+			    break;
+			  case 202:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[1];
+			    break;
+			  case 203:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[2];
 			    break;
 #endif
 			  case 3:
@@ -169,7 +180,7 @@ int main(int argc, char *argv[])
     printf("dumping %s with nmap=%d\n",fname2,nmap);
     fp=fopen(fname2,"wb");
     fwrite(&nmap,1,sizeof(int),fp);
-    fwrite(&tsim,1,sizeof(float),fp);
+    fwrite(&tsimf,1,sizeof(float),fp);
     fwrite(map,nmap*nmap*nmap,sizeof(float),fp);
     fclose(fp);
   }

@@ -14,7 +14,6 @@
 #include "tools.h"
 #include "segment.h"
 #include "communication.h"
-#include "mgrid.h"
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
@@ -55,9 +54,9 @@ void gdb_debug()
  //------------------------------------------------------------------------
 
 #ifdef TESTCOSMO
-float f_aexp(float aexp, float omegam, float omegav)
+REAL f_aexp(REAL aexp, REAL omegam, REAL omegav)
 {
-  return 1./sqrtf(omegam/aexp+omegav*aexp*aexp);
+  return 1./sqrt(omegam/aexp+omegav*aexp*aexp);
 }
 #endif
 
@@ -76,15 +75,15 @@ int main(int argc, char *argv[])
   int i,il,ichild,icell,inext,ii,ip,j;
   int xp,yp,zp;
   int NBND=1,NBND2=2*NBND;
-  float dx;
+  REAL dx;
   int vnei[6],vcell[6]; // arrays to get neighbors
   int vnei2[6],vcell2[6]; // arrays to get neighbors
   int vnei3[6],vcell3[6]; // arrays to get neighbors
   int neip[7]; // contains the index of the six neighbors of the current parent cell +current parent
   int ci,cj,ck;
   int cinext,cjnext,cknext;
-  float threshold;
-  float tsim=0.;
+  REAL threshold;
+  REAL tsim=0.;
   struct OCT oct;
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -93,8 +92,8 @@ int main(int argc, char *argv[])
   struct CELL * newcell;
   struct CELL * newcell2;
   int tag;
-  float dxcur;
-  float *dens;
+  REAL dxcur;
+  REAL *dens;
   int firstoct_currl;
   int nxoct;
   int lmap;
@@ -106,16 +105,16 @@ int main(int argc, char *argv[])
   struct OCT *newoct;
   int nref=0,ndes=0;
 
-  float xc,yc,zc;
+  REAL xc,yc,zc;
   int stride;
-  float **vcomp;
+  REAL **vcomp;
   int ncomp;
-  float acc;
-  float dt;
+  REAL acc;
+  REAL dt;
   int ntot=0,nlev,noct;
-  float ntotd=0.,nlevd=0.;
+  REAL ntotd=0.,nlevd=0.;
 
-  float disp,mdisp;
+  REAL disp,mdisp;
   
   int dir;
 
@@ -128,15 +127,15 @@ int main(int argc, char *argv[])
   struct PART *lastpart;
 
   int curc;
-  float dtnew=0.;
+  REAL dtnew=0.;
   int nbnd;
 
-  float x,y,z;
-  float vx,vy,vz;
-  float mass,mtot;
-  float idx;
-  float faexp, faexp2;
-  float aexp;
+  REAL x,y,z;
+  REAL vx,vy,vz;
+  REAL mass,mtot;
+  REAL idx;
+  REAL faexp, faexp2;
+  REAL aexp;
   unsigned key;
 
   struct CPUINFO cpu;
@@ -158,12 +157,41 @@ int main(int argc, char *argv[])
   size_t rstat;
 
 
-  float omegam,omegav,Hubble,omegab=0.045;
-  float avgdens; 
+  REAL omegam,omegav,Hubble,omegab=0.045;
+  REAL avgdens; 
+  REAL tmax;
 #ifdef PIC
   avgdens=1.;//we assume a unit mass in a unit length box
 #else
   avgdens=0.;
+#endif
+
+
+#ifdef TESTCOSMO
+  double tab_aexp[NCOSMOTAB];
+  double tab_ttilde[NCOSMOTAB];
+  double tab_t[NCOSMOTAB];
+  REAL ainit;
+  REAL amax;
+
+#endif
+
+  //========== RIEMANN CHECK ====================/
+#ifdef WHYDRO2
+  int rtag=0;
+
+#ifdef RIEMANN_EXACT
+  rtag=1;
+#endif
+
+#ifdef RIEMANN_HLL
+  rtag=2;
+#endif
+
+  if(rtag==0){
+    printf("ERROR : RIEMANN SOLVER NOT SELECTED\n");
+    abort();
+  }
 #endif
   //========== TEST ZONE (IF REQUIRED)==========
 
@@ -192,14 +220,14 @@ int main(int argc, char *argv[])
   MPI_Aint    offsets[3], extent;
   
   
-  /* Setup description of the 8 MPI_FLOAT fields data */
+  /* Setup description of the 8 MPI_REAL fields data */
   offsets[0] = 0;
-  oldtypes[0] = MPI_FLOAT;
+  oldtypes[0] = MPI_REAL;
   blockcounts[0] = 8;
   
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_FLOAT */
-  MPI_Type_extent(MPI_FLOAT, &extent);
+  /* Need to first figure offset by getting size of MPI_REAL */
+  MPI_Type_extent(MPI_REAL, &extent);
   offsets[1] = 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
@@ -217,14 +245,14 @@ int main(int argc, char *argv[])
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
-  /* Setup description of the 7 MPI_FLOAT fields x,y,z,vx,vy,vz */
+  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz */
   offsets[0] = 0;
-  oldtypes[0] = MPI_FLOAT;
+  oldtypes[0] = MPI_REAL;
   blockcounts[0] = 7;
   
   /* Setup description of the 4 MPI_INT fields idx key level icell*/
-  /* Need to first figure offset by getting size of MPI_FLOAT */
-  MPI_Type_extent(MPI_FLOAT, &extent);
+  /* Need to first figure offset by getting size of MPI_REAL */
+  MPI_Type_extent(MPI_REAL, &extent);
   offsets[1] = 7 * extent;
   oldtypes[1] = MPI_INT;
   blockcounts[1] = 3;
@@ -244,9 +272,9 @@ int main(int argc, char *argv[])
   //========= creating a WTYPE MPI type =======
   MPI_Datatype MPI_WTYPE;
 
-  /* Setup description of the 6 MPI_FLOAT fields d,u,v,w,p,a */
+  /* Setup description of the 6 MPI_REAL fields d,u,v,w,p,a */
   offsets[0] = 0;
-  oldtypes[0] = MPI_FLOAT;
+  oldtypes[0] = MPI_REAL;
   blockcounts[0] = 6;
 
   /* Now define structured type and commit it */
@@ -263,7 +291,7 @@ int main(int argc, char *argv[])
   blockcounts[0] = 8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_FLOAT */
+  /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_WTYPE, &extent);
   offsets[1] = 8 * extent;
   oldtypes[1] = MPI_LONG;
@@ -285,12 +313,12 @@ int main(int argc, char *argv[])
 
   /* Setup description of the 8 MPI_WTYPE fields one per oct*/
   offsets[0] = 0;
-  oldtypes[0] = MPI_FLOAT;
+  oldtypes[0] = MPI_REAL;
   blockcounts[0] = 30*8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_FLOAT */
-  MPI_Type_extent(MPI_FLOAT, &extent);
+  /* Need to first figure offset by getting size of MPI_REAL */
+  MPI_Type_extent(MPI_REAL, &extent);
   offsets[1] = 30 * 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
@@ -361,7 +389,7 @@ int main(int argc, char *argv[])
   //breakmpi();
   //========== allocations ===================
   
-  //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(float))/(1024.*1024.*1024.));
+  //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
@@ -383,13 +411,13 @@ int main(int argc, char *argv[])
 
   lastpart=part-1; // the last particle points before the first at the very beginning
 
-  vcomp=(float **)calloc(ncomp,sizeof(float*));
+  vcomp=(REAL **)calloc(ncomp,sizeof(REAL*));
   for(i=0;i<ncomp;i++)
     {
-      vcomp[i]=(float *)calloc(stride,sizeof(float));
+      vcomp[i]=(REAL *)calloc(stride,sizeof(REAL));
     }
 
-  memsize+=ncomp*stride*sizeof(float);
+  memsize+=ncomp*stride*sizeof(REAL);
 
 
   //===================================================================================================
@@ -402,9 +430,9 @@ int main(int argc, char *argv[])
   struct MULTIVECT vectors;
   
 #ifdef NEWJACK
-  vectors.vecpot=(float*)calloc(stride*8,sizeof(float));
-  vectors.vecpotnew=(float*)calloc(stride*8,sizeof(float));
-  vectors.vecden=(float*)calloc(stride*8,sizeof(float));
+  vectors.vecpot=(REAL*)calloc(stride*8,sizeof(REAL));
+  vectors.vecpotnew=(REAL*)calloc(stride*8,sizeof(REAL));
+  vectors.vecden=(REAL*)calloc(stride*8,sizeof(REAL));
 
 
 
@@ -413,7 +441,7 @@ int main(int argc, char *argv[])
   vectors.veccpu=(int *)calloc(stride,sizeof(int));
   vectors.vecicoarse=(int *)calloc(stride,sizeof(int));
   memsize+= stride*32*4;
-  if(cpu.rank==0) printf(" vect = %f MB\n",((stride*32)/(1024*1024.))*sizeof(float));
+  if(cpu.rank==0) printf(" vect = %f MB\n",((stride*32)/(1024*1024.))*sizeof(REAL));
 #endif 
   
   // allocating the 6dim stencil
@@ -436,14 +464,14 @@ int main(int argc, char *argv[])
   cudaMalloc((void **)&(vectors.veccpu_d),sizeof(int)*stride);
   cudaMalloc((void **)&(vectors.vecnei_d),sizeof(int)*stride*6);
   cudaMalloc((void **)&(vectors.vecicoarse_d),sizeof(int)*stride);
-  cudaMalloc((void **)&(vectors.vecden_d),sizeof(float)*stride*8);
-  cudaMalloc((void **)&(vectors.vecpot_d),sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecden_d),sizeof(REAL)*stride*8);
+  cudaMalloc((void **)&(vectors.vecpot_d),sizeof(REAL)*stride*8);
 
 
   // temp GPU arrays
-  cudaMalloc((void **)&(vectors.vecpotnew_d),sizeof(float)*stride*8);
-  cudaMalloc((void **)&(vectors.vec2_d),sizeof(float)*stride*8);
-  cudaMalloc((void **)&(vectors.vecsum_d),sizeof(float)*stride*8);
+  cudaMalloc((void **)&(vectors.vecpotnew_d),sizeof(REAL)*stride*8);
+  cudaMalloc((void **)&(vectors.vec2_d),sizeof(REAL)*stride*8);
+  cudaMalloc((void **)&(vectors.vecsum_d),sizeof(REAL)*stride*8);
 
   memgpu=49*stride*4/(1024*1024);
   if(cpu.rank==0) printf("MEM GPU = %d MB allcoated\n",memgpu);
@@ -561,12 +589,13 @@ int main(int argc, char *argv[])
 	      newoct->cell[ii].idx=ii;
 	      newoct->cell[ii].phead=NULL;
 
- #ifdef WHYDRO2
+#ifdef WHYDRO2
 	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
 #endif
 
 #ifdef WGRAV
 	      memset(&(newoct->cell[icell].gdata),0,sizeof(struct Gtype));
+	      memset(newoct->cell[icell].f,0,sizeof(REAL)*3);
 #endif
 	    }
 	    
@@ -700,8 +729,8 @@ int main(int argc, char *argv[])
 
   int ir,nr=2;
   ip=0;
-  float dxcell=1./pow(2.,levelcoarse);
-  float epsilon=0.;
+  REAL dxcell=1./pow(2.,levelcoarse);
+  REAL epsilon=0.;
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
@@ -722,7 +751,7 @@ int main(int argc, char *argv[])
       z=0.5;
 
       vx=0.;
-      vy=sqrt((1.-epsilon)/0.1)*0.8;
+      vy=sqrt((1.-epsilon)/0.1)*0.6;
       vz=0.;
       
       mass=epsilon;
@@ -760,8 +789,8 @@ int main(int argc, char *argv[])
 
   int ir,nr=32768;
   ip=0;
-  float dxcell=1./pow(2.,levelcoarse);
-  float th,ph,r;
+  REAL dxcell=1./pow(2.,levelcoarse);
+  REAL th,ph,r;
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
@@ -778,17 +807,17 @@ int main(int argc, char *argv[])
     else{
 
 
-      th=acos(((float)(rand())/RAND_MAX*2-1.));
-      ph=2*M_PI*(float)(rand())/RAND_MAX;
-      r=(float)(rand())/RAND_MAX*0.3;
+      th=acos(((REAL)(rand())/RAND_MAX*2-1.));
+      ph=2*M_PI*(REAL)(rand())/RAND_MAX;
+      r=(REAL)(rand())/RAND_MAX*0.3;
 
       x=r*sin(th)*cos(ph)+0.5;
       y=r*sin(th)*sin(ph)+0.5;
       z=r*cos(th)+0.5;
 
-      vx=(float)(rand())/RAND_MAX*2.-1.;
-      vy=(float)(rand())/RAND_MAX*2.-1.;
-      vz=(float)(rand())/RAND_MAX*2.-1.;
+      vx=(REAL)(rand())/RAND_MAX*2.-1.;
+      vy=(REAL)(rand())/RAND_MAX*2.-1.;
+      vz=(REAL)(rand())/RAND_MAX*2.-1.;
       
       mass=0.;
     }
@@ -822,7 +851,7 @@ int main(int argc, char *argv[])
 
 #ifdef TESTPLUM
   int dummy;
-  float dummyf;
+  REAL dummyf;
   int npartf;
 
   //breakmpi();
@@ -878,31 +907,17 @@ int main(int argc, char *argv[])
 #else
   int dummy;
 #endif
-  float dummyf;
+  REAL dummyf;
   int npartf;
 
   int nploc;
-  float munit;
-  float ainit;
-  float lbox;
+  REAL munit;
+  REAL lbox;
 
 #ifdef GRAFIC // ==================== read grafic file
 
   lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &omegam, &omegav, &Hubble, &npart,omegab);
-
-#ifdef SUPERCOMOV
-  // at this stage we have to compute the conformal time
-  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
-  
-  // we compute the friedmann tables
-  
-  double tab_aexp[NCOSMOTAB];
-  double tab_ttilde[NCOSMOTAB];
-  double tab_t[NCOSMOTAB];
-  
-  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
-  
-#endif
+  amax=1.;
 
 #else // ============================  explicit read here
 #ifndef ZELDO
@@ -912,12 +927,12 @@ int main(int argc, char *argv[])
 #endif
   rstat=fread(&dummy,sizeof(dummy),1,fd);
   rstat=fread(&nploc,sizeof(int),1,fd);
-  rstat=fread(&munit,sizeof(float),1,fd);
-  rstat=fread(&ainit,sizeof(float),1,fd);
-  rstat=fread(&lbox,sizeof(float),1,fd);
-  rstat=fread(&omegam,sizeof(float),1,fd);
-  rstat=fread(&omegav,sizeof(float),1,fd);
-  rstat=fread(&Hubble,sizeof(float),1,fd);
+  rstat=fread(&munit,sizeof(REAL),1,fd);
+  rstat=fread(&ainit,sizeof(REAL),1,fd);
+  rstat=fread(&lbox,sizeof(REAL),1,fd);
+  rstat=fread(&omegam,sizeof(REAL),1,fd);
+  rstat=fread(&omegav,sizeof(REAL),1,fd);
+  rstat=fread(&Hubble,sizeof(REAL),1,fd);
   rstat=fread(&dummy,sizeof(dummy),1,fd);
 
   if(cpu.rank==0) printf("%f %d %f %f\n",ainit,nploc,omegav,Hubble);
@@ -926,63 +941,58 @@ int main(int argc, char *argv[])
   tsim=ainit;
   aexp=ainit;
 
-#ifdef SUPERCOMOV
   // at this stage we have to compute the conformal time
   tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
 
   // we compute the friedmann tables
 
-  double tab_aexp[NCOSMOTAB];
-  double tab_ttilde[NCOSMOTAB];
-  double tab_t[NCOSMOTAB];
 
   compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
 
-#endif
 
   // ------------------ dealing with particles
 
-  float *pos;
-  float *vel;
+  REAL *pos;
+  REAL *vel;
   int nread=(nploc<2097152?nploc:2097152); // we read by patch of 128^3
   int npatch=nploc/nread;
   int ipatch;
 
-  pos=(float *)malloc(sizeof(float)*3*nread);
-  vel=(float *)malloc(sizeof(float)*3*nread);
+  pos=(REAL *)malloc(sizeof(REAL)*3*nread);
+  vel=(REAL *)malloc(sizeof(REAL)*3*nread);
   int pstart=ftell(fd);
 
   ip=0.;
   for(ipatch=0;ipatch<npatch;ipatch++) {
     //    rstat=fread(&dummy,sizeof(dummy),1,fd); 
     //    fseek(fd,pstart,SEEK_SET);
-    fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(float)+1*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos,sizeof(float),nread,fd);
+    fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(REAL)+1*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos,sizeof(REAL),nread,fd);
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(float)+3*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos+nread,sizeof(float),nread,fd);
+    fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(REAL)+3*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos+nread,sizeof(REAL),nread,fd);
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(float)+5*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos+2*nread,sizeof(float),nread,fd);
+    fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(REAL)+5*sizeof(dummy),SEEK_SET);
+    rstat=fread(pos+2*nread,sizeof(REAL),nread,fd);
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
   
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(float)+7*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel,sizeof(float),nread,fd);
+    fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(REAL)+7*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel,sizeof(REAL),nread,fd);
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(float)+9*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel+nread,sizeof(float),nread,fd);
+    fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(REAL)+9*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel+nread,sizeof(REAL),nread,fd);
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
 
     //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(float)+11*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel+2*nread,sizeof(float),nread,fd);
+    fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(REAL)+11*sizeof(dummy),SEEK_SET);
+    rstat=fread(vel+2*nread,sizeof(REAL),nread,fd);
     //rstat=fread(&dummy,sizeof(dummy),1,fd);
     
     for(i=0;i<nread;i++)
@@ -1157,8 +1167,10 @@ int main(int argc, char *argv[])
   
 #ifdef GRAFIC
   int ncellhydro;
-  ncellhydro=read_grafic_hydro(&cpu,omegab);
-  printf("%d hydro cell found in grafic file\n",ncellhydro);
+  ncellhydro=read_grafic_hydro(&cpu,&ainit, &omegam, &omegav, &Hubble,omegab);
+
+  printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
+  amax=1.0;
 #else
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1175,77 +1187,29 @@ int main(int argc, char *argv[])
   // Shock Tube
 
   struct Wtype WL, WR;
-  float X0;
+  REAL X0;
   if(cpu.rank==0) printf("Init Hydro\n");
 
    /* // TEST 1 */
 
-  /* WL.d=1.; */
-  /* WL.u=0.75; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=1.0; */
-
-  /* WR.d=0.125; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.1; */
-  /* X0=0.3; */
-
-  /* WL.d=0.125; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=0.1; */
-
-  /* WR.d=1.; */
-  /* WR.u=0.; */
-  /* WR.v=-0.75; */
-  /* WR.w=0.; */
-  /* WR.p=1.0; */
-  /* X0=0.7; */
-
-  /*  /\* // SPHERICAL EXPLOSION *\/ */
-
-  /* WL.d=1.; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p =1.; */
-
-  /* WR.d=0.125; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.1; */
-  /* X0=0.2; */
-
-
-  /* KH INSTABILITY */
-
-  WL.d=2.;
-  WL.u=-0.5;
+  WL.d=1.;
+  WL.u=-2.;
   WL.v=0.;
   WL.w=0.;
-  WL.p =2.5;
+  WL.p=0.4;
 
   WR.d=1.;
-  WR.u=0.5;
+  WR.u=2.;
   WR.v=0.;
   WR.w=0.;
-  WR.p=2.5;
-  X0=0.2;
-  
-
-
-
-  WL.a=sqrtf(GAMMA*WL.p/WL.d);
-  WR.a=sqrtf(GAMMA*WR.p/WR.d);
+  WR.p=0.4;
+  X0=0.3;
+  WL.a=sqrt(GAMMA*WL.p/WL.d);
+  WR.a=sqrt(GAMMA*WR.p/WR.d);
 
   // ======================================================
 
-  float dtot=0.;
+  REAL dtot=0.;
   int nc=0;
 
   for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
@@ -1267,43 +1231,43 @@ int main(int argc, char *argv[])
 
  	      /* RT INSTAB */
 
-	      float amp=0.05;
-	      /* float vrx=(((float)rand())/RAND_MAX)*2.*amp-amp; */
-	      /* float vry=(((float)rand())/RAND_MAX)*2.*amp-amp; */
-	      /* float vrz=(((float)rand())/RAND_MAX)*2.*amp-amp; */
+	      /* REAL amp=0.05; */
+	      /* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
 
-	      float vrx=0.;
-	      float vry=0.;
-	      float vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.;
+	      /* REAL vrx=0.; */
+	      /* REAL vry=0.; */
+	      /* REAL vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//\*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.; */
 
-	      curoct->cell[icell].field.u=vrx;
-	      curoct->cell[icell].field.v=vry;
-	      curoct->cell[icell].field.w=vrz;
+	      /* curoct->cell[icell].field.u=vrx; */
+	      /* curoct->cell[icell].field.v=vry; */
+	      /* curoct->cell[icell].field.w=vrz; */
 
 	     
 	      
-	      if(zc>0.75){
-		curoct->cell[icell].field.d=2.;
-	      }
-	      else{
-		curoct->cell[icell].field.d=1.;
+	      /* if(zc>0.75){ */
+	      /* 	curoct->cell[icell].field.d=2.; */
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].field.d=1.; */
 		
-		}
+	      /* 	} */
 	      	
-	      curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9);
-	      curoct->cell[icell].field.a=sqrtf(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+	      /* curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9); */
+	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
 
 
  	      /* /\* KH INSTAB *\/ */
 
-	      /* float amp=0.05; */
-	      /* /\* float vrx=(((float)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* float vry=(((float)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* float vrz=(((float)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* REAL amp=0.05; */
+	      /* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
 
-	      /* float vrx=amp*sin(2.*M_PI*xc); */
-	      /* float vry=amp*sin(2.*M_PI*xc); */
-	      /* float vrz=amp*sin(2.*M_PI*xc); */
+	      /* REAL vrx=amp*sin(2.*M_PI*xc); */
+	      /* REAL vry=amp*sin(2.*M_PI*xc); */
+	      /* REAL vrz=amp*sin(2.*M_PI*xc); */
 
 	      /* if((zc>0.75)||(zc<0.25)){ */
 	      /* 	curoct->cell[icell].field.d=1.0; */
@@ -1311,7 +1275,7 @@ int main(int argc, char *argv[])
 	      /* 	curoct->cell[icell].field.v=vry; */
 	      /* 	curoct->cell[icell].field.w=vrz; */
 	      /* 	curoct->cell[icell].field.p=2.5; */
-	      /* 	curoct->cell[icell].field.a=sqrtf(GAMMA*2.5/1.); */
+	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); */
 	      /* } */
 	      /* else{ */
 	      /* 	curoct->cell[icell].field.d=2.0; */
@@ -1319,7 +1283,7 @@ int main(int argc, char *argv[])
 	      /* 	curoct->cell[icell].field.v=vry; */
 	      /* 	curoct->cell[icell].field.w=vrz; */
 	      /* 	curoct->cell[icell].field.p=2.5; */
-	      /* 	curoct->cell[icell].field.a=sqrtf(GAMMA*2.5/2.); */
+	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); */
 	      /* } */
 
 	      /* SPHERICAL EXPLOSION */
@@ -1332,6 +1296,21 @@ int main(int argc, char *argv[])
 	      /* } */
 	      
 
+
+	      /* ZELDOVICH PANCAKE */
+
+	      REAL ZI=99;
+	      REAL ZC=9;
+	      omegam=1.0;
+	      omegav=0.;
+	      ainit=1./(1.+ZI);
+	      amax=1./(1.+ZC);
+	      curoct->cell[icell].field.d=1.;//+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
+	      curoct->cell[icell].field.u=(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.v=0.;
+	      curoct->cell[icell].field.w=0.;
+	      curoct->cell[icell].field.p=1e-9;
+
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(xc<=X0){ */
 
@@ -1342,8 +1321,8 @@ int main(int argc, char *argv[])
 	      /* } */
 	      
 	      if(level==levelcoarse) {
-		dtot+=curoct->cell[icell].field.d;
-		nc++;
+	      	dtot+=curoct->cell[icell].field.d;
+	      	nc++;
 	      }
 
 	    }
@@ -1363,6 +1342,21 @@ int main(int argc, char *argv[])
   /* dumpcube(lmap,firstoct,105,filename,0.);  */
 
 
+#ifdef TESTCOSMO
+  tsim=ainit;
+  aexp=ainit;
+
+  // at this stage we have to compute the conformal time
+  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
+
+  // we compute the friedmann tables
+
+  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
+
+  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0,omegam,omegav,1e-8);
+#endif
+
+
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1380,7 +1374,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef WGRAV
-  /* float rc; */
+  /* REAL rc; */
   /* for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment) */
   /*   { */
   /*     dxcur=pow(0.5,level); */
@@ -1396,7 +1390,7 @@ int main(int argc, char *argv[])
   /* 	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5; */
   /* 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5; */
 	    
-  /* 	      rc=sqrtf(powf(xc-0.5,2)+powf(yc-0.5,2)+powf(zc-0.5,2)); */
+  /* 	      rc=sqrt(pow(xc-0.5,2)+pow(yc-0.5,2)+pow(zc-0.5,2)); */
   
   /* 	      if(rc<=3.*dxcur){ */
   /* 		curoct->cell[icell].gdata.d=1.; */
@@ -1447,30 +1441,17 @@ int main(int argc, char *argv[])
   int ismooth,nsmooth=2;
   int marker;
 
-  float tmax;
 
 
-#ifdef TESTCOSMO
+#ifndef TESTCOSMO
 #ifdef ZELDO
-#ifdef SUPERCOMOV
   tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(0.5,1.0,omegam,omegav,1e-8);
-#else
-  tmax=0.5;
-#endif
-#else
-#ifdef SUPERCOMOV
-  tmax=0.; // in SC coordinates the maximal conformal time is 0.
-#else
-  tmax=1.;
-#endif
-#endif
 #else
   tmax=1000.;
 #endif
-
-
 #ifdef WHYDRO2
-  tmax=15.0;
+  tmax=0.2;
+#endif
 #endif
 
   FILE *fegy;
@@ -1505,7 +1486,7 @@ int main(int argc, char *argv[])
       }
       
       // reading the time
-      fread(&tsim,sizeof(float),1,fp);
+      fread(&tsim,sizeof(REAL),1,fp);
       printf("tsim=%f\n",tsim);
       // reading the zero oct
       fread(&ozero,sizeof(struct OCT *),1,fp);
@@ -1578,12 +1559,8 @@ int main(int argc, char *argv[])
     for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
     
 #ifdef TESTCOSMO
-#ifdef SUPERCOMOV
       aexp=interp_aexp(tsim,tab_aexp,tab_ttilde);
-#else
-      aexp=tsim;
-#endif
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f ================\n",nsteps,aexp,1./aexp-1.);
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f t=%e tmax=%e================\n",nsteps,aexp,1./aexp-1.,tsim,tmax);
 #else
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
@@ -1641,7 +1618,7 @@ int main(int argc, char *argv[])
 
       // =========== Grid Census : CLEAN THE NEXT FOLLOWING LINES ========================================
 #ifdef WMPI
-      MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+      MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_REAL,MPI_SUM,cpu.comm);
 #endif
       
       int ltot,gtot=0,nomax,nomin;
@@ -1713,7 +1690,7 @@ int main(int argc, char *argv[])
 
     //===================================== JACOBI Poisson Solver ==============================
     if(cpu.rank==0) printf("Start Poisson Solver \n");
-    float res;
+    REAL res;
     int igrid;
     struct Gtype Wi[8];
     struct CELL* curcell;
@@ -1724,12 +1701,12 @@ int main(int argc, char *argv[])
 	if((level==levelcoarse)&&(levelcoarse!=param.mgridlmin)){
 	  for(igrid=0;igrid<param.nvcycles;igrid++){ // V-Cycles
 	    printf("----------------------------------------\n");
-	    res=PoissonMgrid(level,&param,firstoct,&cpu,stencil,stride);
+	    res=PoissonMgrid(level,&param,firstoct,&cpu,stencil,stride,aexp);
 	    if(res<param.poissonacc) break;
 	  }
 	}
 	else{
-	  PoissonJacobi(level,&param,firstoct,&cpu,stencil,stride);
+	  PoissonJacobi(level,&param,firstoct,&cpu,stencil,stride,aexp);
 	}
 	
 	//once done we propagate the solution to level+1
@@ -1746,7 +1723,7 @@ int main(int argc, char *argv[])
 		if(curcell->child!=NULL){
 		  coarse2fine_grav(curcell,Wi);
 		  for(icell2=0;icell2<8;icell2++){
-		    memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(float));
+		    memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
 		  }
 		}
 	      }
@@ -1757,163 +1734,176 @@ int main(int argc, char *argv[])
 
 
 
-#ifdef PIC
   // ==================================== Force calculation and velocity update   // Corrector step
-  if(cpu.rank==0) printf("Predictor\n");
 #ifdef TESTCOSMO
-#ifdef SUPERCOMOV
   faexp=1.0;
-#else
-  faexp=f_aexp(aexp,omegam,omegav);
-#endif
 #endif
   // -- force
   
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
-#ifdef SUPERCOMOV
-      accelpart(level,firstoct,dt*0.5*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
-#else
-      accelpart(level,firstoct,dt*0.5*faexp*(nsteps!=0),&cpu,sendbuffer,recvbuffer);
-#endif
+      //  PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
     }
-#endif
 
 
-#ifdef SELFGRAV
-  // ==================================== hydro update   // Corrector step
-  if(cpu.rank==0) printf("Predictor hydro\n");
+#ifndef NOCOUPLE
+  printf("coupling\n");
+#ifdef WHYDRO2
+  // ================================== Gravitational source correction
+
+  if(nsteps!=0){
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      nextoct=firstoct[level-1];
-      correct_grav_hydro(nextoct, &cpu, dt*(nsteps!=0));
+      struct Utype U0,U;
+      struct Wtype W;
+      struct Wtype Wnew;
+	curoct=firstoct[level-1];
+	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	  nextoct=curoct;
+	  do{
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    if(curoct->cpu!=cpu.rank) continue; // we don't update the boundary cells
+	    for(icell=0;icell<8;icell++){
+	      int ref=0;
+
+	      if(curoct->cell[icell].child==NULL){ // Leaf cell
+		struct CELL *curcell;
+		curcell=&(curoct->cell[icell]);
+
+		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
+		W2U(&W,&U);
+		memcpy(&U0,&U,sizeof(struct Utype));
+		// grav force correction
+
+		U.du+=(U0.d*curoct->cell[icell].f[0]*dt*0.5);
+		U.dv+=(U0.d*curoct->cell[icell].f[1]*dt*0.5);
+		U.dw+=(U0.d*curoct->cell[icell].f[2]*dt*0.5);
+		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dt*0.5;
+		U2W(&U,&Wnew);
+		if(Wnew.p<0){
+		  printf("oulah error in gravity coupling with pressure\n");
+		  abort();
+		}
+
+		if(Wnew.d<0){
+		  printf("oulah error in gravity coupling with pressure\n");
+		  abort();
+		}
+		
+		
+		if((isnan(Wnew.p))||isnan(Wnew.d)){
+		  printf("NAN\n");
+		  abort();
+		}
+
+
+		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
+	      }
+	    }
+	  }while(nextoct!=NULL);
+	}
     }
+  }
+#endif
 #endif
 
+  // ==================================== DUMP AFTER SYNCHRONIZATION
+  
+  if(nsteps%(param.ndumps)==0){
+    if(cpu.rank==0) printf("Dumping .......\n");
+    REAL tdump=tsim;
+    
+    
+#ifdef WMPI
+    if(nsteps==0){
+      sprintf(filename,"data/cpu3d.%05d.p%05d",ndumps,cpu.rank);
+      dumpcube(lmap,firstoct,3,filename,tdump);
+    }
+#endif
+    
+    //==== Gathering particles for dump
+    
+#ifdef PIC
+    sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
+    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
+#endif
+    
+    // === Hydro dump
+    
+#ifdef WHYDRO2
+    printf("tdum=%f\n",tdump);
+    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+    dumpgrid(levelmax,firstoct,filename,tdump); 
+#endif
+    
+
+    // === Gravity dump
+
+#ifdef WGRAV
+    printf("tdum=%f\n",tdump);
+    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+    dumpgrid(levelmax,firstoct,filename,tdump); 
+    //abort();
+#endif
+
+    ndumps++;
+  }
 
 
-  // ==================================== New timestep
+  // ============================================================================================
+  // ==================================== New timestep ==========================================
+  // ============================================================================================
+
   dtnew=dt;
 #ifdef TESTCOSMO
-#ifdef SUPERCOMOV
-  faexp2=1.0;
-#else
-  faexp2=f_aexp(aexp,omegam,omegav)/(aexp*aexp);
-#endif
+  REAL dtcosmo;
+  dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);
+  dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
+  printf("dtcosmo= %e ",dtcosmo);
 #endif
   
 #ifdef PIC
-  float dtpic;
+  REAL dtpic;
   dtpic=comptstep(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
   dtnew=(dtpic<dtnew?dtpic:dtnew);
+  printf("dtpic= %e ",dtpic);
 #endif
-
+  
 
 #ifdef WHYDRO2
-  float dthydro;
+  REAL dthydro;
   dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
-  if(nsteps<5) dthydro/=5.;
-  //  dtnew=(dthydro<dtnew?dthydro:dtnew);
-  dtnew=dthydro;
-  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
-#endif
-  
-#ifdef SELFGRAV
-  float dtff;
+  //if(nsteps<5) dthydro/=5.;
+  dtnew=(dthydro<dtnew?dthydro:dtnew);
+  //dtnew=dthydro;
+  //  if(cpu.rank==0) printf("dt=%e dthydro=%e\n",dtnew,dthydro);
+  printf("dthydro= %e ",dthydro);
+
+#ifdef WGRAV
+  REAL dtff;
   dtff=comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt);
   dtnew=(dtff<dtnew?dtff:dtnew);
-  if(cpu.rank==0) printf("dt=%e dthydro=%e dtpic=%e dtff=%e\n",dtnew,dthydro,dtpic,dtff);
+  printf("dtff= %e ",dtff);
+
+  /* REAL dtforce; */
+  /* comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt); */
+  /* dtnew=(dtff<dtnew?dtff:dtnew); */
+  /* printf("dtff= %e ",dtff); */
+
+
 #endif
+#endif
+
 
 
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_FLOAT,MPI_MIN,cpu.comm);
+  MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_REAL,MPI_MIN,cpu.comm);
 #endif
 
+  printf("dtnew= %e \n",dtnew);
 
-#ifdef PIC
-  // ==================================== Force calculation and velocity update   // Corrector step
-  if(cpu.rank==0) printf("Correcctor\n");
-#ifdef TESTCOSMO
-#ifdef SUPERCOMOV
-  faexp=1.0;
-#else
-  faexp=f_aexp(aexp,omegam,omegav);
-#endif
-#endif
 
-  // -- force
-  
-  for(level=levelcoarse;level<=levelmax;level++)
-    {
-      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
-#ifdef SUPERCOMOV
-      accelpart(level,firstoct,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
-#else
-      accelpart(level,firstoct,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer);
-#endif
-    }
-#endif
-
-/*   // ==================================== Force calculation and velocity update   // predictor step */
-/* #ifdef PIC */
-/*   if(cpu.rank==0) printf("Corrector\n"); */
-
-/* #ifdef TESTCOSMO */
-/* #ifdef SUPERCOMOV */
-/*   faexp=1.0; */
-/* #else */
-/*   faexp=f_aexp(aexp,omegam,omegav); */
-/* #endif */
-/* #endif */
-
-/* #ifdef SUPERCOMOV */
-/*   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5,&cpu,sendbuffer,recvbuffer); */
-/* #else */
-/*   forcevel(levelcoarse,levelmax,firstoct,vcomp,stride,dtnew*0.5*faexp,&cpu,sendbuffer,recvbuffer); */
-/* #endif */
-/* #endif */
-
-  // ==================================== Moving Particles + Oct management
-#ifdef PIC
-  
-#ifndef PARTN
-  if(cpu.rank==0) printf("Moving particles\n");
-    // Computing displacement (predictor)
-
-#ifdef TESTCOSMO
-#ifdef SUPERCOMOV
-  faexp2=1.0;
-#else
-  faexp2=f_aexp(tsim+(dtnew)*0.5,omegam,omegav)/pow(tsim+0.5*(dtnew),2);
-#endif
-#endif
-    
-#ifdef SUPERCOMOV
-  movepart(levelcoarse,levelmax,firstoct,dtnew,&cpu);
-#else
-  movepart(levelcoarse,levelmax,firstoct,dtnew*faexp2,&cpu);
-#endif
-  // Moving particles through cells (3 passes)
-  
-#ifdef WGPU
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#else
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#endif
-  
-#ifdef WMPI
-  
-  // Communication of particles
-  int deltan;
-  deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
-    
-  // Recounting particles
-  npart=npart+deltan;
-#endif
-#endif
-#endif
   
 
 
@@ -1923,10 +1913,14 @@ int main(int argc, char *argv[])
     
   double t0,t100,t20,t80;
   int nread,nreadtot;;
+  REAL deltamax=0.;
   if(cpu.rank==0) printf("Start Hydro 2\n");
   //breakmpi();
   for(level=levelmax;level>=levelcoarse;level--)
     {
+      
+      //nreadtot=compute_hydro_fluxes(level,firstoct,stencil,stride,&cpu,aexp);
+
       dxcur=pow(0.5,level);
 
       // --------------- setting the first oct of the level
@@ -1962,11 +1956,12 @@ int main(int argc, char *argv[])
 
       // ---------------- at this stage we are ready to update the conservative variables
       int flx;
-      float F[30];
-      float Forg[30];
-      float dtsurdx=dtnew/dxcur;
-      float one;
+      REAL F[30];
+      REAL Forg[30];
+      REAL dtsurdx=dtnew/dxcur;
+      REAL one;
       struct Utype U;
+      struct Utype S;
       struct Utype U0;
       struct Wtype W;
       struct Wtype Wnew;
@@ -2000,9 +1995,9 @@ int main(int argc, char *argv[])
 		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
 		W2U(&W,&U);
 		memcpy(&U0,&U,sizeof(struct Utype));
-		memcpy(F,curcell->flux,sizeof(float)*30);// original fluxes
-		//		memcpy(Forg,F,sizeof(float)*30);
-
+		memcpy(F,curcell->flux,sizeof(REAL)*30);// original fluxes
+		//		memcpy(Forg,F,sizeof(REAL)*30);
+		
 		// here we have to deal with coarse-fine boundaries
 
 		if(level<levelmax){
@@ -2068,10 +2063,10 @@ int main(int argc, char *argv[])
 			  // the neighbor is split : fluxes must be averaged
 			  int fcell[4];
 			  getfcell(inei,fcell);
-			  memset(F+5*inei,0,5*sizeof(float)); // reset the original flux
+			  memset(F+5*inei,0,5*sizeof(REAL)); // reset the original flux
 			
 			  int iface;
-			  float *Fnei;
+			  REAL *Fnei;
 			  int idxfnei[6]={1,0,3,2,5,4};
 			  int j; 
 			  // averaging the flux
@@ -2092,10 +2087,12 @@ int main(int argc, char *argv[])
 		    }
 		  }
 		}
-
 		
-		// computing the gradient of the potential
-		comp_grad_grav(curoct,icell);
+		if((isnan(U.d))||isnan(U.E)){
+		  printf("NAN0\n");
+		  abort();
+		}
+		
 
 		// ready to update
 		one=1.;
@@ -2108,14 +2105,42 @@ int main(int argc, char *argv[])
 		  one*=-1.;
 		}
 
-		// grav force correction
-		U.du+=U0.d*curoct->cell[icell].f[0]*dt;
-		U.dv+=U0.d*curoct->cell[icell].f[1]*dt;
-		U.dw+=U0.d*curoct->cell[icell].f[2]*dt;
-		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dt;
-
 		U2W(&U,&Wnew);
+		if(Wnew.p<0){
+		  printf("oulah error before gravity coupling\n");
+		  abort();
+		}
+
+		REAL delta=fabs(Wnew.p-W.p)/W.p;
+		if(delta>deltamax)deltamax=delta;
+
+
+#ifndef NOCOUPLE
+		// grav force correction
+		printf("coupling\n");
+
+		U.du+=(U0.d*curoct->cell[icell].f[0]*dtnew*0.5);
+		U.dv+=(U0.d*curoct->cell[icell].f[1]*dtnew*0.5);
+		U.dw+=(U0.d*curoct->cell[icell].f[2]*dtnew*0.5);
+		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dtnew*0.5;
+#endif		
+		U2W(&U,&Wnew);
+		if(Wnew.p<0){
+		  printf("oulah error in gravity coupling with pressure\n");
+		  abort();
+		}
+
+		if(Wnew.d<0){
+		  printf("oulah error in gravity coupling with pressure\n");
+		  abort();
+		}
 		
+		if(Wnew.p>1e-9) printf("ayayay %e\n",Wnew.p);
+		if((isnan(Wnew.p))||isnan(Wnew.d)){
+		  printf("NAN\n");
+		  abort();
+		}
+
 		/* if(Wnew.u<0.){ */
 		/*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
 		/*   printf("level=%d %e", curoct->level,curoct->x); */
@@ -2144,7 +2169,7 @@ int main(int argc, char *argv[])
 	}
       }
     }
-    
+  printf("deltamax=%e\n",deltamax);
   if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);
 
 #endif
@@ -2152,6 +2177,56 @@ int main(int argc, char *argv[])
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 #endif
+
+#ifdef PIC
+  // ==================================== velocity update   // Predictor step
+  if(cpu.rank==0) printf("Correcctor\n");
+#ifdef TESTCOSMO
+  faexp=1.0;
+#endif
+
+  // -- force
+  
+  for(level=levelcoarse;level<=levelmax;level++)
+    {
+      //PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
+      accelpart(level,firstoct,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
+    }
+#endif
+
+  // ==================================== Moving Particles + Oct management
+#ifdef PIC
+  
+#ifndef PARTN
+  if(cpu.rank==0) printf("Moving particles\n");
+    // Computing displacement (predictor)
+
+#ifdef TESTCOSMO
+  faexp2=1.0;
+#endif
+    
+  movepart(levelcoarse,levelmax,firstoct,dtnew,&cpu);
+  
+  // Moving particles through cells (3 passes)
+  
+#ifdef WGPU
+  partcellreorg(levelcoarse,levelmax,firstoct);
+#else
+  partcellreorg(levelcoarse,levelmax,firstoct);
+#endif
+  
+#ifdef WMPI
+  
+  // Communication of particles
+  int deltan;
+  deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
+    
+  // Recounting particles
+  npart=npart+deltan;
+#endif
+#endif
+#endif
+
 
 #if 1
   // ==================================== Check the number of particles and octs
@@ -2162,11 +2237,11 @@ int main(int argc, char *argv[])
 #ifdef EGYCSV
   // ==================================== Energy Conservation Test
   
-  float egy;
+  REAL egy;
   egy=egypart(levelcoarse,levelmax,firstoct,&cpu);
   
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&egy,1,MPI_FLOAT,MPI_SUM,cpu.comm);
+  MPI_Allreduce(MPI_IN_PLACE,&egy,1,MPI_REAL,MPI_SUM,cpu.comm);
 #endif
 
   if(cpu.rank==0){
@@ -2186,82 +2261,14 @@ int main(int argc, char *argv[])
 #endif
 
 
-  // ==================================== DUMP AFTER SYNCHRONIZATION
-  
-  if(nsteps%(param.ndumps)==0){
-    if(cpu.rank==0) printf("Dumping .......\n");
-    float tdump=tsim;
-    
-    
-#ifdef WMPI
-    if(nsteps==0){
-      sprintf(filename,"data/cpu3d.%05d.p%05d",ndumps,cpu.rank);
-      dumpcube(lmap,firstoct,3,filename,tdump);
-    }
-#endif
-  
-  //==== Gathering particles for dump
-
-#ifdef PIC
-    sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
-    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
-#endif
-
-    // === Hydro dump
-
-#ifdef WHYDRO2
-    printf("tdum=%f\n",tdump);
-    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
-    dumpgrid(levelmax,firstoct,filename,tdump); 
-#endif
-
-
-    // === Gravity dump
-
-#ifdef WGRAV
-    printf("tdum=%f\n",tdump);
-    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
-    dumpgrid(levelmax,firstoct,filename,tdump); 
-    //abort();
-#endif
-
-    ndumps++;
-  }
-
 
   //==================================== timestep completed, looping
   tsim+=dtnew;
   dt=dtnew;
-  }
+    }
 
     if(cpu.rank==0) fclose(fi);
 
-#ifdef NEWJACK
-      free(vectors.vecpot); //contains the potential in "stride" octs
-      free(vectors.vecpotnew); //contains the potential in "stride" octs
-      free(vectors.vecden); //contains the density   in "stride" octs
-
-
-      free(vectors.vecnei);//contains the cell neighbors of the octs
-      free(vectors.vecl); // contains the level of the octs
-      free(vectors.veccpu); // contains the level of the octs
-      free(vectors.vecicoarse); // contains the level of the octs
-
-#ifdef WGPU
-      cudaFree(vectors.vecl_d);
-      cudaFree(vectors.veccpu_d);
-      cudaFree(vectors.vecden_d);
-      cudaFree(vectors.vec2_d);
-      cudaFree(vectors.vecsum_d);
-      cudaFree(vectors.vecpot_d);
-      cudaFree(vectors.vecpotnew_d);
-      cudaFree(vectors.vecnei_d);
-      cudaFree(vectors.vecicoarse_d);
-
-
-#endif
-
-#endif
 
 
 

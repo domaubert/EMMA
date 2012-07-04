@@ -49,7 +49,7 @@ void clean_pot(int levelmax,struct OCT **firstoct)
 
 
 //============================================================================
-struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, float *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervecnei(struct OCT *octstart, int *vecnei, REAL *vec, int var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -309,7 +309,7 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 
 //============================================================================
 
-struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervec(struct OCT *octstart, REAL *vec, char var, int *vecl, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -348,7 +348,7 @@ struct OCT *gathervec(struct OCT *octstart, float *vec, char var, int *vecl, int
 
 //============================================================================
 
-struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, int *vecicoarse, int *veccpu, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervec2(struct OCT *octstart, REAL *vec, char var, int *vecl, int *vecicoarse, int *veccpu, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -390,7 +390,7 @@ struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, in
 	  break;
 	case 50 :
 	  vec[ipos+icell*stride]=curoct->cell[icell].p;
-	  break;
+q	  break;
 #endif
 	}
       }
@@ -404,87 +404,6 @@ struct OCT *gathervec2(struct OCT *octstart, float *vec, char var, int *vecl, in
   (*nread)=iread;
   return nextoct;
 }
-
-#ifdef WHYDRO
-struct OCT *gathervechydro(struct OCT *octstart, struct MULTIVECT *data, int stride, struct CPUINFO *cpu, int *nread)
-{
-  struct OCT* nextoct;
-  struct OCT* curoct;
-  int ipos;
-  int iread=0;
-  int icell;
-  
-  nextoct=octstart;
-  if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;
-      
-      //getting the vector element
-     ipos=curoct->vecpos;
-     if(ipos<0) continue; // for coarseocts not involved in fine level calculations
-
-      // filling the values
-      for(icell=0;icell<8;icell++){
-
-	data->vec_d[ipos+icell*stride]=curoct->cell[icell].d;
-	data->vec_u[ipos+icell*stride]=curoct->cell[icell].u;
-	data->vec_v[ipos+icell*stride]=curoct->cell[icell].v;
-	data->vec_w[ipos+icell*stride]=curoct->cell[icell].w;
-	data->vec_p[ipos+icell*stride]=curoct->cell[icell].p;
-
-	if(curoct->cell[icell].p<0){
-	  printf("Negative Pressure !");
-	  abort();
-	}
-
-#ifdef AXLFORCE
-#ifdef SELFGRAV
-	// we store the gravitational force in the new fields
-	data->vec_unew[ipos+icell*stride]=curoct->cell[icell].f[0];
-	data->vec_vnew[ipos+icell*stride]=curoct->cell[icell].f[1];
-	data->vec_wnew[ipos+icell*stride]=curoct->cell[icell].f[2];
-	//if(curoct->cell[icell].d>0.5) printf("fx=%e\n",data->vec_unew[ipos+icell*stride]);
-#endif
-#endif
-/* 	switch(var){ */
-/* 	case 0: */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].density; */
-/* 	  break; */
-/* 	case 1 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].pot; */
-/* 	  break; */
-/* #ifdef WHYDRO */
-/* 	case 10 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].d; */
-/* 	  break; */
-/* 	case 20 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].u; */
-/* 	  break; */
-/* 	case 30 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].v; */
-/* 	  break; */
-/* 	case 40 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].w; */
-/* 	  break; */
-/* 	case 50 : */
-/* 	  vec[ipos+icell*stride]=curoct->cell[icell].p; */
-/* 	  break; */
-/* #endif */
-/* 	} */
-
-      }
-      
-      data->vecicoarse[ipos]=curoct->parent->idx; // we store the idx of the parent cell of the current oct
-      data->vecl[ipos]=curoct->level; // assigning a level
-      data->veccpu[ipos]=curoct->cpu; // assigning a cpu
-      iread++;
-    }while((nextoct!=NULL)&&(iread<stride));
-  }
-  (*nread)=iread;
-  return nextoct;
-}
-#endif
 
 
 
@@ -507,7 +426,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
-  float dist;
+  REAL dist;
 
   struct Wtype Wi[8];
   struct OCT *oct;
@@ -659,7 +578,6 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   // ============================ END TRANSMISSIVE BOUNDARIES ====================
 
-
   if(neicell->child!=NULL){
     // optimal case
     for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
@@ -668,10 +586,18 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     coarse2fine_hydro(neicell,Wi);
   }
 
+#ifdef WGRAV
+    REAL floc[8*3];
+    for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->child->cell[icell].f,sizeof(REAL)*3);
+#endif
+
 
 
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
+#ifdef WGRAV
+    memcpy(stencil->oct[ioct].cell[icell].f,floc+3*face[icell],sizeof(REAL)*3); //
+#endif
   }
 
   // next order
@@ -722,9 +648,15 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 
       if(curoct->cpu!=cpu->rank) continue;
 
-      // filling the values in the central oct
-      for(icell=0;icell<8;icell++) memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
 
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++){
+	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); //
+#ifdef WGRAV 
+ 	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
+#endif 
+      }
+      
       //abort();
       cell=curoct->parent;
       
@@ -753,7 +685,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 //=====================================================================================================================
 //=====================================================================================================================
 
-struct OCT *gathervec2_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gathervec2_light(struct OCT *octstart, REAL *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -823,7 +755,7 @@ struct OCT *checknei(struct OCT *octstart, int *vecnei, int stride)
 
 //============================================================================
 
-struct OCT *scattervec(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *scattervec(struct OCT *octstart, REAL *vec, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -971,7 +903,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(float)*30);
+	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*30);
       }
 
       iread++;
@@ -984,7 +916,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 //=======================================================================================================
 //=======================================================================================================
 
-struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int stride, struct CPUINFO *cpu, int nread, int level)
+struct OCT *scattervec_light(struct OCT *octstart, REAL *vec, char var, int stride, struct CPUINFO *cpu, int nread, int level)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -1026,7 +958,7 @@ struct OCT *scattervec_light(struct OCT *octstart, float *vec, char var, int str
 
 
 //============================================================================
-void remove_valvec(float *vec, int nval, int stride, float avg, int level, int *vecl)
+void remove_valvec(REAL *vec, int nval, int stride, REAL avg, int level, int *vecl)
 {
   int icell;
   int i;
@@ -1038,11 +970,11 @@ void remove_valvec(float *vec, int nval, int stride, float avg, int level, int *
 }
 
 //============================================================================
-float square_vec(float *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu)
+REAL square_vec(REAL *vec, int nval, int stride, int level, int curcpu, int *vecl, int *veccpu)
 {
   int icell;
   int i;
-  float sum=0.;
+  REAL sum=0.;
   for(icell=0;icell<8;icell++){
     for(i=0;i<stride;i++){
 #ifdef WMPI
@@ -1057,15 +989,15 @@ float square_vec(float *vec, int nval, int stride, int level, int curcpu, int *v
 
 
 //============================================================================
-float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int level, int nread,int stride,float dx,float omegam,float tsim){
+REAL laplacian_vec(REAL *vecden,REAL *vecpot,REAL *vecpotnew,int *vecnei,int *vecl, int level, int nread,int stride,REAL dx,REAL omegam,REAL tsim){
 
   int inei,icell;
   int i;
-  float temp;
-  float res,restot=0.;
+  REAL temp;
+  REAL res,restot=0.;
   int vnei[6],vcell[6];
   int idxnei;
-  float ominterp=0.2;
+  REAL ominterp=0.2;
 
   for(i=0;i<stride;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
@@ -1139,16 +1071,16 @@ float laplacian_vec(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int
 
 
 //============================================================================
-float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens){
+REAL laplacian_vec2(REAL *vecden,REAL *vecpot,REAL *vecpotnew,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,REAL dx,REAL factdens){
 
   int inei,icell,icellcoarse;
   int i;
-  float temp;
-  float res,restot=0.;
+  REAL temp;
+  REAL res,restot=0.;
   int vnei[6],vcell[6];
   int vneic[6],vcellc[6];
   int idxnei;
-  float ominterp=0.2;
+  REAL ominterp=0.2;
 
   for(i=0;i<stride;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
@@ -1215,16 +1147,16 @@ float laplacian_vec2(float *vecden,float *vecpot,float *vecpotnew,int *vecnei,in
 
 
 //============================================================================
-int residual_vec2(float *vecden,float *vecpot,float *vecres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,float dx,float factdens){
+int residual_vec2(REAL *vecden,REAL *vecpot,REAL *vecres,int *vecnei,int *vecl, int *vecicoarse, int *veccpu, int level, int curcpu, int nread,int stride,REAL dx,REAL factdens){
 
   int inei,icell,icellcoarse;
   int i;
-  float temp;
-  float res,restot=0.;
+  REAL temp;
+  REAL res,restot=0.;
   int vnei[6],vcell[6];
   int vneic[6],vcellc[6];
   int idxnei;
-  float ominterp=0.2;
+  REAL ominterp=0.2;
   int count=0;
   
   for(i=0;i<stride;i++){ // we scan the octs
@@ -1288,14 +1220,14 @@ int residual_vec2(float *vecden,float *vecpot,float *vecres,int *vecnei,int *vec
 }
 
 //============================================================================
-struct OCT* gathercomp(struct OCT *octstart, float *vec, char nei, char var, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT* gathercomp(struct OCT *octstart, REAL *vec, char nei, char var, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
   int icell;
   int vnei[6],vcell[6];
   int ioct=0;
-  float ominterp=0.2;
+  REAL ominterp=0.2;
   int iread=0;
   int vvnei[8];
   int vvcell[8];
@@ -1408,7 +1340,7 @@ struct OCT* gathercomp(struct OCT *octstart, float *vec, char nei, char var, int
 //============================================================================
 
 
-struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, int stride, struct CPUINFO *cpu)
+struct OCT* scattercomp(struct OCT *octstart, REAL *vec, char nei, char var, int stride, struct CPUINFO *cpu)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -1540,11 +1472,11 @@ struct OCT* scattercomp(struct OCT *octstart, float *vec, char nei, char var, in
 //------------------------------------------------------------------------
  
 
-float laplacian(float **vcomp, int stride, float dx, int locres){
+REAL laplacian(REAL **vcomp, int stride, REAL dx, int locres){
   int i;
-  float temp;
-  float res,res2=0.;
-  float tt;
+  REAL temp;
+  REAL res,res2=0.;
+  REAL tt;
   for(i=0;i<stride;i++){
     temp=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i])/6.-dx*dx*vcomp[7][i]/6.*4*M_PI;
     res=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i]-6.*vcomp[6][i])/(dx*dx)-4.*M_PI*vcomp[7][i];
@@ -1554,11 +1486,11 @@ float laplacian(float **vcomp, int stride, float dx, int locres){
   return res2;
 }
 
-float laplaciancosmo(float **vcomp, int stride, float dx, int locres, float omegam, float a){
+REAL laplaciancosmo(REAL **vcomp, int stride, REAL dx, int locres, REAL omegam, REAL a){
   int i;
-  float temp;
-  float res,res2=0.;
-  float tt;
+  REAL temp;
+  REAL res,res2=0.;
+  REAL tt;
 
   for(i=0;i<stride;i++){
     temp=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i])/6.-dx*dx*vcomp[7][i]/6.*1.5*omegam/a;
@@ -1571,11 +1503,11 @@ float laplaciancosmo(float **vcomp, int stride, float dx, int locres, float omeg
 
 
 
-void grad(float **vcomp, int stride, float dx, int dir){
+void grad(REAL **vcomp, int stride, REAL dx, int dir){
 
   int i;
-  float temp;
-  float om=1.;
+  REAL temp;
+  REAL om=1.;
   for(i=0;i<stride;i++){
     switch(dir){
     case 0:
@@ -1600,7 +1532,7 @@ void grad(float **vcomp, int stride, float dx, int dir){
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-void remove_avg(float *vcomp, int stride, float avg)
+void remove_avg(REAL *vcomp, int stride, REAL avg)
 {
   int i;
   for(i=0;i<stride;i++){
@@ -1612,21 +1544,21 @@ void remove_avg(float *vcomp, int stride, float avg)
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-float square(float *vcomp, int stride)
+REAL square(REAL *vcomp, int stride)
 {
   int i;
-  float res=0.;
+  REAL res=0.;
   for(i=0;i<stride;i++){
     res+=vcomp[i]*vcomp[i];
   }
   return res;
 }
 
-float square_res(float **vcomp, int stride, float dx)
+REAL square_res(REAL **vcomp, int stride, REAL dx)
 {
   int i;
-  float res=0.;
-  float res2=0.;
+  REAL res=0.;
+  REAL res2=0.;
   for(i=0;i<stride;i++){
     res2=(vcomp[0][i]+vcomp[1][i]+vcomp[2][i]+vcomp[3][i]+vcomp[4][i]+vcomp[5][i]-6.*vcomp[6][i])/(dx*dx)-vcomp[7][i]*4.*M_PI;
     res+=res2*res2;

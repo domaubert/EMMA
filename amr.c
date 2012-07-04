@@ -15,20 +15,20 @@
 #include "particle.h"
 
 #ifdef WHYDRO2
-float comp_grad_hydro(struct OCT *curoct, int icell){
-  float gradd[3]={0.,0.,0.};
-  float gradv[3]={0.,0.,0.};
-  float gradu[3]={0.,0.,0.};
-  float gradw[3]={0.,0.,0.};
-  float gradp[3]={0.,0.,0.};
+REAL comp_grad_hydro(struct OCT *curoct, int icell){
+  REAL gradd[3]={0.,0.,0.};
+  REAL gradv[3]={0.,0.,0.};
+  REAL gradu[3]={0.,0.,0.};
+  REAL gradw[3]={0.,0.,0.};
+  REAL gradp[3]={0.,0.,0.};
 
   int vcell[6],vnei[6];
   struct Wtype W;
   struct Wtype Wi[8];
   int ii;
 
-  float ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
-  float dxcur;
+  REAL ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
+  REAL dxcur;
 
   getcellnei(icell, vnei, vcell);
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
@@ -135,10 +135,10 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
   ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/curoct->cell[icell].field.p;
 
   ratio=ratiod;
-  ratio=fmaxf(ratio,ratiou);
-  ratio=fmaxf(ratio,ratiov);
-  ratio=fmaxf(ratio,ratiow);
-  ratio=fmaxf(ratio,ratiop);
+  ratio=fmax(ratio,ratiou);
+  ratio=fmax(ratio,ratiov);
+  ratio=fmax(ratio,ratiow);
+  ratio=fmax(ratio,ratiop);
 
   return ratio; 
   
@@ -147,17 +147,18 @@ float comp_grad_hydro(struct OCT *curoct, int icell){
 
 #endif
 
-float comp_grad_grav(struct OCT *curoct, int icell){
-  float gradd[3]={0.,0.,0.};
+#ifdef WGRAV
+REAL comp_grad_grav(struct OCT *curoct, int icell){
+  REAL gradd[3]={0.,0.,0.};
 
   int vcell[6],vnei[6];
 
-  float ploc;
-  float ploci[8];
+  REAL ploc;
+  REAL ploci[8];
   /* struct Wtype W; */
   /* struct Wtype Wi[8]; */
   int ii;
-  float dx;
+  REAL dx;
   int ic;
 
   dx=1./pow(2,curoct->level);
@@ -240,8 +241,8 @@ float comp_grad_grav(struct OCT *curoct, int icell){
 	// the neighbour does not exist we need to interpolate the value at the correct position
 	coarse2fine_grav(curoct->nei[vnei[ii]],ploci);
 	ploc=ploci[vcell[ii]];
-	//float ggrav=0.05;
-	//float porg=curoct->nei[vnei[ii]]->pot;
+	//REAL ggrav=0.05;
+	//REAL porg=curoct->nei[vnei[ii]]->pot;
 	//printf("ii=%d org pot=%e p1=%e (%e)  p2=%e (%e)\n",ii,porg,ploci[0],porg-ggrav*dx*0.5,ploci[4],porg+ggrav*dx*0.5);
       }
     }
@@ -264,7 +265,7 @@ float comp_grad_grav(struct OCT *curoct, int icell){
   return 0; 
   
 }
-
+#endif
 
 
 struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit)
@@ -275,7 +276,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
   struct OCT *curoct;
   struct OCT *desoct;
   int level;
-  float dxcur;
+  REAL dxcur;
   int icell;
   int sump,sum2;
   int ii;
@@ -484,7 +485,9 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  newoct->cell[ii].idx=ii;
 		  newoct->cell[ii].phead=NULL;
 		  newoct->cell[ii].temp=0.;
+#ifdef WGRAV
 		  for(ic=0;ic<3;ic++) newoct->cell[ii].f[ic]=0.;
+#endif
 
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
@@ -618,13 +621,13 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 
  //------------------------------------------------------------------------
 
-void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth, float threshold, struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer){
+void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth, REAL threshold, struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer){
 
   int nmark;
   int level;
   int marker;
   int ismooth;
-  float dx;
+  REAL dx;
   int pass;
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -639,7 +642,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
   struct CELL *newcell2;
   struct CELL *newcell3;
   int ichild;
-  float mcell;
+  REAL mcell;
 
   if(cpu->rank==0) printf("==> start marking\n");
     //    for(level=levelmax;level>=levelcoarse;level--) // looping over octs

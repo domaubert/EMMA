@@ -1129,8 +1129,8 @@ hilbert_incr(unsigned nDims, unsigned nBits, bitmask_t coord[])
    loops in hilbert_cmp, with the intention of reusing the cmp code to compare
    more general bitstreams.
 
-   Feb 2000: Implemented almost all the floating point versions of cmp, etc, so
-   that coordinates expressed in terms of double-precision IEEE floating point
+   Feb 2000: Implemented almost all the REALing point versions of cmp, etc, so
+   that coordinates expressed in terms of double-precision IEEE REALing point
    can be ordered.  Still have to do next-in-box, though.
 
    Oct 2001: Learned that some arbitrary coding choices caused some routines

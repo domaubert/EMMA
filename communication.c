@@ -35,7 +35,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   /* mpinei =(int*)calloc(ngridmax,sizeof(int)); */
   /* neicpu =(int*)calloc(ngridmax,sizeof(int)); */
-  flagcpu=(int*) calloc(cpu->nproc,sizeof(float));
+  flagcpu=(int*) calloc(cpu->nproc,sizeof(REAL));
 
   if(cpu->bndoct!=NULL) free(cpu->bndoct);
   cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
@@ -104,7 +104,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
 
   // computing the mpi neighbor list
-  neicpu=(int*) calloc(cpu->nproc,sizeof(float));
+  neicpu=(int*) calloc(cpu->nproc,sizeof(REAL));
   for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
   for(i=0;i<cpu->nproc;i++){ // we scan the list
@@ -361,6 +361,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
 		  break;
+#ifdef WGRAV
 		case 5:
 		  pack->data[icell]=curoct->cell[icell].f[0]; //temp field for force calculation
 		  break;
@@ -370,6 +371,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		case 7:
 		  pack->data[icell]=curoct->cell[icell].f[2]; //temp field for force calculation
 		  break;
+#endif
 		}
 	      }
 	    }
@@ -454,6 +456,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
 		  break;
+#ifdef WGRAV
 		case 5:
 		  pack->data[icell]=curoct->cell[icell].f[0]; //temp field for force calculation
 		  break;
@@ -463,6 +466,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		case 7:
 		  pack->data[icell]=curoct->cell[icell].f[2]; //temp field for force calculation
 		  break;
+#endif
 		}
 	      }
 	    }
@@ -524,11 +528,12 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 		curoct->cell[icell].pot=pack->data[icell]; // potential
 		break;
 	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(float)curoct->cell[icell].marked); // refinement mark
+		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
 		break;
+#ifdef WGRAV
 	      case 5:
 		curoct->cell[icell].f[0]=pack->data[icell]; // temp field for force calculation
 		break;
@@ -538,6 +543,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	      case 7:
 		curoct->cell[icell].f[2]=pack->data[icell]; // temp field for force calculation
 		break;
+#endif
 	      }
 	    }
 	  }
@@ -597,11 +603,12 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		curoct->cell[icell].pot=pack->data[icell]; // potential
 		break;
 	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(float)curoct->cell[icell].marked); // refinement mark
+		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
 		break;
+#ifdef WGRAV
 	      case 5:
 		curoct->cell[icell].f[0]=pack->data[icell]; // temp field for force calculation
 		break;
@@ -611,6 +618,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	      case 7:
 		curoct->cell[icell].f[2]=pack->data[icell]; // temp field for force calculation
 		break;
+#endif
 	      }
 	    }
 	  }
@@ -1062,7 +1070,7 @@ void gather_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer){
 	      curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
-		memcpy(&(pack->data[icell*30]),curoct->cell[icell].flux,sizeof(float)*30);
+		memcpy(&(pack->data[icell*30]),curoct->cell[icell].flux,sizeof(REAL)*30);
 	      }
 	    }
 	    else{
@@ -1161,7 +1169,7 @@ void scatter_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **recvbuffer){
 
 	  if(found){ // the reception oct has been found
 	    for(icell=0;icell<8;icell++){
-	      memcpy(curoct->cell[icell].flux,&(pack->data[icell*30]),30*sizeof(float));
+	      memcpy(curoct->cell[icell].flux,&(pack->data[icell*30]),30*sizeof(REAL));
 	    }
 	  }
 	  else{

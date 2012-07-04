@@ -4,22 +4,23 @@
 #include "prototypes.h"
 #include "friedmann.h"
 #include "segment.h"
+#include <string.h>
 
 //------------------------------------------------------------------------
-void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin, float zmax)
+void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],REAL zmin, REAL zmax)
 {
-  float *map;
+  REAL *map;
   int imap,jmap;
   int nmap=pow(2,lmap);
-  float dxmap=1./nmap,dxcur;
+  REAL dxmap=1./nmap,dxcur;
   int icur,ii,jj,ic,icell;
   int level;
   struct OCT * nextoct;
   struct OCT oct;
   FILE *fp;
-  float xc,yc,zc;
+  REAL xc,yc,zc;
 
-  map=(float *)calloc(nmap*nmap,sizeof(float));
+  map=(REAL *)calloc(nmap*nmap,sizeof(REAL));
 
   //printf("==>  start map \n");
   for(level=1;level<=lmap;level++) // looping over octs
@@ -78,7 +79,7 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
   //printf("dumping %s\n",filename);
   fp=fopen(filename,"wb");
   fwrite(&nmap,1,sizeof(int),fp);
-  fwrite(map,nmap*nmap,sizeof(float),fp);
+  fwrite(map,nmap*nmap,sizeof(REAL),fp);
   fclose(fp);
   free(map);
 
@@ -87,7 +88,7 @@ void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],float zmin
 //====================================================================================================
 //====================================================================================================
 
-void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],float tsim)
+void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
 {
 
   int icur,ii,jj,kk;
@@ -100,7 +101,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],float tsim)
   fp=fopen(filename,"wb");
 
   printf("tsim=%f\n",tsim);
-  fwrite(&tsim,sizeof(float),1,fp); 
+  fwrite(&tsim,sizeof(REAL),1,fp); 
 
   //printf("==> start map \n");
   
@@ -153,20 +154,20 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],float tsim)
 //====================================================================================================
 //=================================================================================================
 
-void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsim)
+void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],REAL tsim)
 {
-  float *map;
+  REAL *map;
   int imap,jmap,kmap;
   int nmap=pow(2,lmap);
-  float dxmap=1./nmap,dxcur;
+  REAL dxmap=1./nmap,dxcur;
   int icur,ii,jj,kk,ic,icell;
   int level;
   struct OCT * nextoct;
   struct OCT oct;
   FILE *fp;
-  float xc,yc,zc;
+  REAL xc,yc,zc;
 
-  map=(float *)calloc(nmap*nmap*nmap,sizeof(float));
+  map=(REAL *)calloc(nmap*nmap*nmap,sizeof(REAL));
 
   //printf("==> start map \n");
   for(level=1;level<=lmap;level++) // looping over octs
@@ -221,6 +222,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 			      case 5:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].temp;
 				break;
+#ifdef WGRAV
 			      case 6:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
 				break;
@@ -230,6 +232,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
 			      case 8:
 				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[2];
 				break;
+#endif
 
 #ifdef WHYDRO2
 			      case 101:
@@ -263,8 +266,8 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
   //printf("dumping %s\n",filename);
   fp=fopen(filename,"wb");
   fwrite(&nmap,1,sizeof(int),fp);
-  fwrite(&tsim,1,sizeof(float),fp);
-  fwrite(map,nmap*nmap*nmap,sizeof(float),fp);
+  fwrite(&tsim,1,sizeof(REAL),fp);
+  fwrite(map,nmap*nmap*nmap,sizeof(REAL),fp);
   fclose(fp);
   free(map);
 
@@ -272,7 +275,7 @@ void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],float tsi
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
-void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax, float tsim){
+void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax, REAL tsim){
 
   FILE *fp;
   float val;
@@ -281,14 +284,15 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
   int level;
   struct OCT *nextoct;
   struct OCT oct;
-  float dxcur;
+  REAL dxcur;
   struct PART *nexp;
   struct PART *curp;
   int icell;
+  float tsimf=tsim;
 
   fp=fopen(filename,"wb");
   fwrite(&npart,1,sizeof(int),fp);
-  fwrite(&tsim,1,sizeof(float),fp);
+  fwrite(&tsimf,1,sizeof(float),fp);
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       //printf("level=%d\n",level);
@@ -321,7 +325,7 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
 		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->fz;fwrite(&val,1,sizeof(float),fp);
 #endif
-		  val=(float)(curp->idx);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->idx);fwrite(&val,1,sizeof(float),fp);
 		  ipart++;
 		}while(nexp!=NULL);
 	      }
@@ -342,6 +346,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   FILE *buf; 
   char stream[256];
   size_t rstat;
+  float dummyf;
 
   buf=fopen(fparam,"r");
   if(buf==NULL)
@@ -360,13 +365,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
       rstat=fscanf(buf,"%s %d",stream,&param->levelmap);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
-      rstat=fscanf(buf,"%s %f",stream,&param->poissonacc);
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
       rstat=fscanf(buf,"%s %d",stream,&param->stride);
-      rstat=fscanf(buf,"%s %f",stream,&param->dt);
-      rstat=fscanf(buf,"%s %f",stream,&param->amrthresh);
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
       fclose(buf);
     }
@@ -380,7 +385,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 //==================================================================================
 //==================================================================================
 
-struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, float *munit, float *ainit, float *omegam, float *omegav, float *Hubble, int *npart, float omegab){
+struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, int *npart, REAL omegab){
   
   FILE *fx, *fy, *fz;
   int np1,np2,np3;
@@ -471,7 +476,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, float *mu
 
   float mass;
 
-#ifdef WHYDRO
+#ifdef WHYDRO2
   mass=(1.-omegab/om)/(np1*np2*np3);
 #else
   mass=1./(np1*np2*np3);
@@ -561,8 +566,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, float *mu
 //==================================================================================
 //==================================================================================
 
-#ifdef WHYDRO
-int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
+#ifdef WHYDRO2
+int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, REAL omegab){
   
   FILE *fx;
   FILE *fy;
@@ -573,6 +578,7 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
   int dummy;
   struct PART *lastpart;
   int ip;
+  struct Wtype W;
 
   fdx=fopen("utils/grafic_src/ic_deltab","rb");
   fx=fopen("utils/grafic_src/ic_velcx","rb");
@@ -662,7 +668,7 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
   int found;
   float z0,y0,x0;
   int ifound=0;
-
+  
 
   deltab=(float*)malloc(sizeof(float)*np1*np2);
   velx=(float*)malloc(sizeof(float)*np1*np2);
@@ -677,8 +683,8 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
   double mu=0.59; // mean molecular weight
   double kboltz=1.3806503e-23; // boltzmann constant SI
   double zstart=1./astart-1.;
-  double temp=550.*((1.0+zstart)*(1.0+zstart)/(201.*201.)); // baryon temperature (to check) in K
-  //double temp=1e4;
+  //double temp=550.*((1.0+zstart)*(1.0+zstart)/(201.*201.)); // baryon temperature (to check) in K
+  double temp=1e4;
 
   // supercomoving unit values
   double rhostar;
@@ -696,7 +702,7 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
   vstar=rstar/tstar;
   pstar=rhostar*vstar*vstar;
 
-  printf("rhoc=%e temperature=%lf rstar=%e pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,pstar,tstar,vstar,rhostar);
+  printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
 
   for(i3=0;i3<np3;i3++){
 
@@ -748,20 +754,30 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
 	  icell=icx+icy*2+icz*4;
 	  /* if(i1>115) printf("x0=%f y0=%f z0=%f key=%d oct=%p deltab=%f icell=%d ix=%f %d\n",x0,y0,z0,key,curoct,deltab[i1+np1*i2],icell,(x0/pow(0.5,6)),(int)(x0*pow(2,6))); */
 
-	  if(curoct->cell[icell].d!=0){
+	  if(curoct->cell[icell].field.d!=0){
+	    printf("euhh\n");
 	    abort();
 	  }
 	
-	  rhob=(deltab[i1+i2*np1]+1.0)*omegab*rhoc/(astart*astart*astart); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*rhob*kboltz*temp/(mu*mp); // physical pressure
+	  rhob=(deltab[i1+i2*np1]+1.0)*omegab*rhoc/pow(astart,3); // comoving baryon density in kg/m3
+	  pressure=(GAMMA-1.0)*1.5*(rhob/(mu*mp))*kboltz*temp; // physical pressure
 
 	  // filling the cells using supercomoving values
-	  curoct->cell[icell].d=(deltab[i1+i2*np1]+1.0)*omegab/om;
-	  curoct->cell[icell].u=(velx[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	  curoct->cell[icell].v=(vely[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	  curoct->cell[icell].w=(velz[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	  curoct->cell[icell].p=pressure*pow(astart,5)/pstar;
+	  
+	  //abort();
+
+	  W.d=(deltab[i1+i2*np1]+1.0)*omegab/om;
+	  W.u=(velx[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
+	  W.v=(vely[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
+	  W.w=(velz[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
+	  W.p=pressure/pstar*pow(astart,5);
+	  W.a=sqrt(GAMMA*W.p/W.d);
+	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
+
 	  ifound++;
+	}
+	else{
+	  printf("euh pas trouve!");
 	}
 
 
@@ -779,6 +795,11 @@ int read_grafic_hydro(struct CPUINFO *cpu, float omegab, float omegam){
   free(velx);
   free(vely);
   free(velz);
+
+  *ainit=astart;
+  *omegam=om;
+  *omegav=ov;
+  *Hubble=h0;
 
   printf("Grafic hydro read ok\n");
   return ifound;

@@ -52,11 +52,7 @@ float poisson_jacob(int level,int levelcoarse,int levelmax, struct OCT **firstoc
 #ifndef TESTCOSMO
     factdens=4.0*M_PI;
 #else
-#ifdef SUPERCOMOV
     factdens=6.0*tsim;
-#else
-    factdens=1.5*omegam/tsim;
-#endif
 #endif
     dx=pow(0.5,level);
   }

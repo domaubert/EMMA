@@ -1,14 +1,16 @@
 
+
+typedef double REAL;
+
+
 #ifdef WMPI
 #include <mpi.h>
 #endif
 
-#define GAMMA (1.4)
+#define GAMMA (5./3.)
 #define GRAV (0.25)
 
-#ifdef SUPERCOMOV
 #define NCOSMOTAB (262144)
-#endif
 
 
 //=======================================
@@ -28,13 +30,13 @@ struct RUNPARAMS{
   
   int stride; // the size of the stencil for vector based computations
 
-  float dt; // the timsestep
+  REAL dt; // the timsestep
 
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   
-  float amrthresh; // the refinement criterion (refine if mcell>amrthresh)
+  REAL amrthresh; // the refinement criterion (refine if mcell>amrthresh)
 
-  float poissonacc; // relaxation accuracy for Poisson equation
+  REAL poissonacc; // relaxation accuracy for Poisson equation
   int mgridlmin;    // coarsest level for multigrid relaxation
   int nvcycles; // number of vcycles for multigrid relaxation
   int nrelax; // number of smoothing cycles
@@ -49,7 +51,7 @@ struct RUNPARAMS{
 // this structure exists for MPI communication protocol
 
 struct PACKET{
-  float data[8]; // the data to be transfered (8 since we transmit data per octs)
+  REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
@@ -69,7 +71,7 @@ struct CPUINFO{
   int kmax;
   int nkeys;
 
-  float load;
+  REAL load;
 
   struct OCT **bndoct; // the list of external boundary octs
 
@@ -118,45 +120,53 @@ struct CPUINFO{
 
 
 struct Wtype{
-  float d;   // density
-  float u;   // velocity
-  float v;   // velocity
-  float w;   // velocity
-  float p;   // pressure
-  float a;   // sound speed
+  REAL d;   // density
+  REAL u;   // velocity
+  REAL v;   // velocity
+  REAL w;   // velocity
+  REAL p;   // pressure
+  REAL a;   // sound speed
 };
 
 
 struct Wtype_MPI{
-  float d;   // density
-  float u;   // velocity
-  float v;   // velocity
-  float w;   // velocity
-  float p;   // pressure
-  float a;   // sound speed
+  REAL d;   // density
+  REAL u;   // velocity
+  REAL v;   // velocity
+  REAL w;   // velocity
+  REAL p;   // pressure
+  REAL a;   // sound speed
 };
 
 
 struct Utype{
-  float d;    // density
-  float du;   // momentum
-  float dv;   // momentum
-  float dw;   // momentum
-  float E;    // Energy
+  REAL d;    // density
+  REAL du;   // momentum
+  REAL dv;   // momentum
+  REAL dw;   // momentum
+  REAL E;    // Energy
 };
 
 
 struct Wtype1D{
-  float d;   // density
-  float u;   // velocity
-  float p;   // pressure
-  float a;   // sound speed
+  REAL d;   // density
+  REAL u;   // velocity
+  REAL p;   // pressure
+  REAL a;   // sound speed
 };
 
+struct Wtype1D_double{
+  double d;   // density
+  double u;   // velocity
+  double p;   // pressure
+  double a;   // sound speed
+};
+
+
 struct Utype1D{
-  float d;    // density
-  float du;   // momentum
-  float E;    // Energy
+  REAL d;    // density
+  REAL du;   // momentum
+  REAL E;    // Energy
 };
 
 
@@ -164,25 +174,25 @@ struct Utype1D{
 
 struct PART
 {
-  float x;
-  float y;
-  float z;
+  REAL x;
+  REAL y;
+  REAL z;
 
-  float vx;
-  float vy;
-  float vz;
+  REAL vx;
+  REAL vy;
+  REAL vz;
 
 #ifndef TESTCOSMO
-  float fx;
-  float fy;
-  float fz;
+  REAL fx;
+  REAL fy;
+  REAL fz;
 #endif
 
 
   struct PART *next;
   struct PART *prev;
 
-  float mass;
+  REAL mass;
 
   int idx;
 
@@ -190,15 +200,15 @@ struct PART
 
 struct PART_MPI // For mpi communications
 {
-  float x;
-  float y;
-  float z;
+  REAL x;
+  REAL y;
+  REAL z;
 
-  float vx;
-  float vy;
-  float vz;
+  REAL vx;
+  REAL vy;
+  REAL vz;
 
-  float mass;
+  REAL mass;
   int idx;
 
   long key; // the destination hilbert key
@@ -220,7 +230,7 @@ struct HYDRO_MPI{
 
 // this structure is for the communication of Flux data
 struct FLUX_MPI{
-  float data[8*30]; // the data to be transfered (8 since we transmit data per octs)
+  REAL data[8*30]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
@@ -229,43 +239,43 @@ struct FLUX_MPI{
 //=========================================================
 
 struct Gtype{
-  float d;
-  float p;
+  REAL d;
+  REAL p;
 };
 
 //-------------------------------------
 struct CELL
 {
   struct OCT *child;
-  float marked; // float for consistency with physical quantities during communications
+  REAL marked; // REAL for consistency with physical quantities during communications
   int idx; //index of the cell within the oct
 
   // the head particle
   struct PART * phead;
 
   // the physical quantities
-  float density; // total density
-  float pot;
+  REAL density; // total density
+  REAL pot;
 
-  float temp;
+  REAL temp;
 
 #ifdef WGRAV
   struct Gtype gdata;
-  float pnew; // new potential
-  float res; // residual
-  float f[3]; // the gravitational force component
+  REAL pnew; // new potential
+  REAL res; // residual
+  REAL f[3]; // the gravitational force component
 #endif
 
 
 /* #ifdef AXLFORCE */
-/*   float fx; */
-/*   float fy; */
-/*   float fz; */
+/*   REAL fx; */
+/*   REAL fy; */
+/*   REAL fz; */
 /* #endif */
 
 #ifdef WHYDRO2
   struct Wtype field;
-  float flux[30]; // 6 fluxes of 5 variables each
+  REAL flux[30]; // 6 fluxes of 5 variables each
 #endif
 
 
@@ -278,7 +288,7 @@ struct CELL
 struct CELLLIGHT
 {
   struct OCT *child;
-  float marked; // float for consistency with physical quantities during communications
+  REAL marked; // REAL for consistency with physical quantities during communications
   int idx; //index of the cell within the oct
 
 
@@ -288,6 +298,7 @@ struct CELLLIGHT
 
 #ifdef WGRAV
   struct Gtype gdata; // gravitational data 
+  REAL f[3];
 #endif
 };
 
@@ -308,9 +319,9 @@ struct OCT
   struct OCT *nexthash; // next oct in the hash list
 
   // the oct position (lowest left corner)
-  float x;
-  float y;
-  float z;
+  REAL x;
+  REAL y;
+  REAL z;
 
   // parallel data
   int cpu; 
@@ -348,23 +359,10 @@ struct HGRID{
 
 // ========================================
 struct MULTIVECT{
-  float *vecpot; //contains the potential in "stride" octs
-  float *vecpotnew; //contains the potential in "stride" octs
-  float *vecden; //contains the density   in "stride" octs
+  REAL *vecpot; //contains the potential in "stride" octs
+  REAL *vecpotnew; //contains the potential in "stride" octs
+  REAL *vecden; //contains the density   in "stride" octs
 
-#ifdef WHYDRO
-  float *vec_d; 
-  float *vec_u; 
-  float *vec_v; 
-  float *vec_w;
-  float *vec_p;
-
-  float *vec_dnew; 
-  float *vec_unew; 
-  float *vec_vnew; 
-  float *vec_wnew;
-  float *vec_pnew;
-#endif
 
   int *vecnei;//contains the cell neighbors of the octs
   int *vecl; // contains the level of the octs
@@ -372,14 +370,14 @@ struct MULTIVECT{
   int *vecicoarse; // contains the level of the octs
 
 #ifdef WGPU
-  float *vecden_d;
+  REAL *vecden_d;
   int *vecl_d;
   int *veccpu_d;
-  float *vec2_d;
-  float *vecsum_d;
+  REAL *vec2_d;
+  REAL *vecsum_d;
 
-  float *vecpot_d; 
-  float *vecpotnew_d; 
+  REAL *vecpot_d; 
+  REAL *vecpotnew_d; 
   int *vecnei_d;
   int *vecicoarse_d; 
 #endif
