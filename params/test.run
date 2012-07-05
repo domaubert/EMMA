@@ -2,7 +2,7 @@ max_number_of_octs 524288
 max_number_of_part 2097152
 mpi_buffer_size 131072
 output_frequency 1
-max_number_of_steps 1
+max_number_of_steps 100
 level_coarse 5
 level_max 5
 level_map 5

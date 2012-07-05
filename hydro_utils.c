@@ -216,8 +216,60 @@ void minmod2(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
 
 }
 
+//===============================================
+//===============================================
+
+void minmod_W(struct Wtype *Wm, struct Wtype *Wp, struct Wtype *Wr){
+
+  REAL beta=1.; // 1. for MINBEE 2. for SUPERBEE
+  // FLUX LIMITER
+
+  if(Wp->d>0){
+    Wr->d=fmax(fmax(0.,fmin(beta*Wm->d,Wp->d)),fmin(Wm->d,beta*Wp->d));
+  }
+  else{
+    Wr->d=fmin(fmin(0.,fmax(beta*Wm->d,Wp->d)),fmax(Wm->d,beta*Wp->d));
+  }
+
+
+  if(Wp->u>0){
+    Wr->u=fmax(fmax(0.,fmin(beta*Wm->u,Wp->u)),fmin(Wm->u,beta*Wp->u));
+  }
+  else{
+    Wr->u=fmin(fmin(0.,fmax(beta*Wm->u,Wp->u)),fmax(Wm->u,beta*Wp->u));
+  }
+
+
+  if(Wp->v>0){
+    Wr->v=fmax(fmax(0.,fmin(beta*Wm->v,Wp->v)),fmin(Wm->v,beta*Wp->v));
+  }
+  else{
+    Wr->v=fmin(fmin(0.,fmax(beta*Wm->v,Wp->v)),fmax(Wm->v,beta*Wp->v));
+  }
+
+
+  if(Wp->w>0){
+    Wr->w=fmax(fmax(0.,fmin(beta*Wm->w,Wp->w)),fmin(Wm->w,beta*Wp->w));
+  }
+  else{
+    Wr->w=fmin(fmin(0.,fmax(beta*Wm->w,Wp->w)),fmax(Wm->w,beta*Wp->w));
+  }
+
+
+  if(Wp->p>0){
+    Wr->p=fmax(fmax(0.,fmin(beta*Wm->p,Wp->p)),fmin(Wm->p,beta*Wp->p));
+  }
+  else{
+    Wr->p=fmin(fmin(0.,fmax(beta*Wm->p,Wp->p)),fmax(Wm->p,beta*Wp->p));
+  }
+
+
+}
+
 
 //===============================================
+//===============================================
+
 void minmod2_W(struct Wtype *Wm, struct Wtype *Wp, struct Wtype *Wr){
   REAL r;
   REAL xi;
@@ -1056,8 +1108,20 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    diffW(Wp,W0,&Dp); 
 	    diffW(W0,Wm,&Dm); 
 	    
-	    minmod2_W(&Dm,&Dp,D+dir);
+	    minmod_W(&Dm,&Dp,D+dir);
+
+	    /* if(dir==0){ */
+	    /*   if(W0->x==(0.015625)){ */
+	    /* 	printf("LEFT DU=%e Dm=%e Dp=%e [%e]\n",D[0].u,Dm.u,Dp.u,Dm.u/Dp.u); */
+	    /*   } */
+	      
+	    /*   if(W0->x==(1.-0.015625)){ */
+	    /* 	printf("RIGHT DU=%e Dm=%e Dp=%e [%e]\n",D[0].u,Dm.u,Dp.u,Dm.u/Dp.u); */
+	    /* 	abort(); */
+	    /*   } */
+	    /* } */
 	  }
+
 
 	  // build jacobian matrix product
 
@@ -1105,13 +1169,25 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    if(Wi[idir].p<0) abort();
 	  }
 	  
-	  
+
 
 	  
 }
 
 
 //============================================================================
+
+void speedestimate(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
+
+  REAL splus;
+  splus=fmax(fabs(WL->u)+WL->a,fabs(WR->u)+WR->a);
+  *SL=-splus;
+  *SR= splus;
+
+}
+
+
+
 int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt){
 
   int inei,icell,icellcoarse;
@@ -1158,12 +1234,14 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
   REAL SL,SR;
   REAL Fr[5],Fl[5];
 #endif
+  int tagr=0,tagl=0;
 
   //printf("let's do some hydro\n");
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
     for(i=0;i<nread;i++){ // we scan the octs
-      
+      tagr=0;
+      tagl=0;
       
       // Getting the original state ===========================
       
@@ -1179,22 +1257,22 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       W2U(&Wold,&Uold); // primitive -> conservative
       
 
-      for(inei=0;inei<6;inei++){
-	memcpy(WC+inei,&Wold,sizeof(struct Wtype));
-	memcpy(WN+inei,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype));
-	W2U(WN+inei,UN+inei);
-      	W2U(WC+inei,UC+inei);
-      }
+      /* for(inei=0;inei<6;inei++){ */
+      /* 	memcpy(WC+inei,&Wold,sizeof(struct Wtype)); */
+      /* 	memcpy(WN+inei,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype)); */
+      /* 	W2U(WN+inei,UN+inei); */
+      /* 	W2U(WC+inei,UC+inei); */
+      /* } */
 
       /* // MUSCL STATE RECONSTRUCTION */
 
-      /* MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central */
-      /* for(inei=0;inei<6;inei++){ */
-      /* 	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);// */
-      /* 	memcpy(WN+inei,WT+idxnei[inei],sizeof(struct Wtype)); */
-      /*  	W2U(WN+inei,UN+inei); */
-      /* 	W2U(WC+inei,UC+inei); */
-      /* } */
+      MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central
+      for(inei=0;inei<6;inei++){
+      	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);//
+      	memcpy(WN+inei,WT+idxnei[inei],sizeof(struct Wtype));
+       	W2U(WN+inei,UN+inei);
+      	W2U(WC+inei,UC+inei);
+      }
 
       
       // X DIRECTION =========================================================================
@@ -1253,8 +1331,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      SL=WN[0].u-WN[0].a;
-      SR=WC[0].u+WC[0].a;
+      speedestimate(&WN[0],&WC[0],&SL,&SR);
+      /* SL=WN[0].u-WN[0].a; */
+      /* SR=WC[0].u+WC[0].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_X(&UN[0],Fl);
@@ -1265,7 +1344,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[0].dv-UN[0].dv))/(SR-SL);
 	FL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[0].dw-UN[0].dw))/(SR-SL);
 	FL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[0].E -UN[0].E ))/(SR-SL);
-
+	tagl=1;
       }
       else{
 	if(SL>=0.){
@@ -1338,8 +1417,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
 
 #ifdef RIEMANN_HLL
-      SL=WC[1].u-WC[1].a;
-      SR=WN[1].u+WN[1].a;
+      speedestimate(&WC[1],&WN[1],&SL,&SR);
+      /* SL=WC[1].u-WC[1].a; */
+      /* SR=WN[1].u+WN[1].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_X(&UC[1],Fl);
@@ -1350,7 +1430,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[1].dv-UC[1].dv))/(SR-SL);
 	FR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[1].dw-UC[1].dw))/(SR-SL);
 	FR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[1].E -UC[1].E ))/(SR-SL);
-
+	tagr=1;
       }
       else{
 	if(SL>=0.){
@@ -1364,6 +1444,17 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       
 #endif
+
+
+      /* if(curcell->x==0.015625){ */
+      /* 	printf("LEFT %e %d || %e %e %e -- %e %e %e ==> %e %e <== %e\n",curcell->x,tagl,WC[1].d,WC[1].u,WC[1].p,WN[1].d,WN[1].u,WN[1].p,FL[4],FR[4],Wold.u); */
+      /* } */
+
+      /* if(curcell->x==(1.-0.015625)){ */
+      /* 	printf("RIGHT %e %d || %e %e %e -- %e %e %e ==> %e %e <== %e \n",curcell->x,tagr,WN[0].d,WN[0].u,WN[0].p,WC[0].d,WC[0].u,WC[0].p,FL[4],FR[4],Wold.u); */
+      /* 	abort(); */
+      /* } */
+
 
        // Y DIRECTION =========================================================================
       
@@ -1418,8 +1509,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      SL=WN[2].v-WN[2].a;
-      SR=WC[2].v+WC[2].a;
+      speedestimate(&WN[2],&WC[2],&SL,&SR);
+      /* SL=WN[2].v-WN[2].a; */
+      /* SR=WC[2].v+WC[2].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_Y(&UN[2],Fl);
@@ -1491,8 +1583,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      SL=WC[3].v-WC[3].a;
-      SR=WN[3].v+WN[3].a;
+      speedestimate(&WC[3],&WN[3],&SL,&SR);
+      /* SL=WC[3].v-WC[3].a; */
+      /* SR=WN[3].v+WN[3].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_Y(&UC[3],Fl);
@@ -1568,8 +1661,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      SL=WN[4].w-WN[4].a;
-      SR=WC[4].w+WC[4].a;
+      speedestimate(&WN[4],&WC[4],&SL,&SR);
+      /* SL=WN[4].w-WN[4].a; */
+      /* SR=WC[4].w+WC[4].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_Z(&UN[4],Fl);
@@ -1644,8 +1738,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      SL=WC[5].w-WC[5].a;
-      SR=WN[5].w+WN[5].a;
+      speedestimate(&WC[5],&WN[5],&SL,&SR);
+      /* SL=WC[5].w-WC[5].a; */
+      /* SR=WN[5].w+WN[5].a; */
 
       if((SL<0.)&&(SR>0)){
 	getflux_Z(&UC[5],Fl);

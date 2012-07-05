@@ -126,6 +126,8 @@ struct Wtype{
   REAL w;   // velocity
   REAL p;   // pressure
   REAL a;   // sound speed
+
+  REAL x,y,z;
 };
 
 

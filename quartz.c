@@ -1306,10 +1306,17 @@ int main(int argc, char *argv[])
 	      ainit=1./(1.+ZI);
 	      amax=1./(1.+ZC);
 	      curoct->cell[icell].field.d=1.;//+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
-	      curoct->cell[icell].field.u=(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
 	      curoct->cell[icell].field.v=0.;
 	      curoct->cell[icell].field.w=0.;
 	      curoct->cell[icell].field.p=1e-9;
+	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+
+
+
+	      curoct->cell[icell].field.x=xc;
+	      curoct->cell[icell].field.y=yc;
+	      curoct->cell[icell].field.z=zc;
 
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(xc<=X0){ */
@@ -2135,17 +2142,14 @@ int main(int argc, char *argv[])
 		  abort();
 		}
 		
-		if(Wnew.p>1e-9) printf("ayayay %e\n",Wnew.p);
 		if((isnan(Wnew.p))||isnan(Wnew.d)){
 		  printf("NAN\n");
 		  abort();
 		}
 
-		/* if(Wnew.u<0.){ */
-		/*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
-		/*   printf("level=%d %e", curoct->level,curoct->x); */
-		/*   abort(); */
-		/* } */
+		Wnew.x=curcell->field.x;
+		Wnew.y=curcell->field.y;
+		Wnew.z=curcell->field.z;
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	      }
