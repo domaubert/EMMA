@@ -314,12 +314,12 @@ int main(int argc, char *argv[])
   /* Setup description of the 8 MPI_WTYPE fields one per oct*/
   offsets[0] = 0;
   oldtypes[0] = MPI_REAL;
-  blockcounts[0] = 30*8;
+  blockcounts[0] = NFLUX*8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_REAL, &extent);
-  offsets[1] = 30 * 8 * extent;
+  offsets[1] = NFLUX * 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
 
@@ -1193,16 +1193,17 @@ int main(int argc, char *argv[])
    /* // TEST 1 */
 
   WL.d=1.;
-  WL.u=-2.;
+  WL.u=0.;
   WL.v=0.;
   WL.w=0.;
-  WL.p=0.4;
+  WL.p=1.0;
 
-  WR.d=1.;
-  WR.u=2.;
+  WR.d=0.125;
+  WR.u=0.;
   WR.v=0.;
   WR.w=0.;
-  WR.p=0.4;
+  WR.p=0.1;
+
   X0=0.3;
   WL.a=sqrt(GAMMA*WL.p/WL.d);
   WR.a=sqrt(GAMMA*WR.p/WR.d);
@@ -1305,8 +1306,8 @@ int main(int argc, char *argv[])
 	      omegav=0.;
 	      ainit=1./(1.+ZI);
 	      amax=1./(1.+ZC);
-	      curoct->cell[icell].field.d=1.;//+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
-	      curoct->cell[icell].field.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5));
+	      curoct->cell[icell].field.u=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
 	      curoct->cell[icell].field.v=0.;
 	      curoct->cell[icell].field.w=0.;
 	      curoct->cell[icell].field.p=1e-9;
@@ -1317,6 +1318,8 @@ int main(int argc, char *argv[])
 	      curoct->cell[icell].field.x=xc;
 	      curoct->cell[icell].field.y=yc;
 	      curoct->cell[icell].field.z=zc;
+
+
 
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(xc<=X0){ */
@@ -1746,16 +1749,16 @@ int main(int argc, char *argv[])
   faexp=1.0;
 #endif
   // -- force
-  
+#ifdef WGRAV  
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      //  PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
+      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
     }
-
+#endif
 
 #ifndef NOCOUPLE
-  printf("coupling\n");
 #ifdef WHYDRO2
+#ifdef WGRAV
   // ================================== Gravitational source correction
 
   if(nsteps!=0){
@@ -1764,7 +1767,7 @@ int main(int argc, char *argv[])
       struct Utype U0,U;
       struct Wtype W;
       struct Wtype Wnew;
-	curoct=firstoct[level-1];
+      curoct=firstoct[level-1];
 	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
 	  nextoct=curoct;
 	  do{
@@ -1778,16 +1781,26 @@ int main(int argc, char *argv[])
 		struct CELL *curcell;
 		curcell=&(curoct->cell[icell]);
 
-		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
-		W2U(&W,&U);
+		memcpy(&Wnew,&(curcell->field),sizeof(struct Wtype));
+
+#ifdef PRIMITIVE
+		Wnew.u+=(-curcell->f[0]*dt*0.5);
+		Wnew.v+=(-curcell->f[1]*dt*0.5);
+		Wnew.w+=(-curcell->f[2]*dt*0.5);
+#endif
+
+#ifdef CONSERVATIVE
+		W2U(&Wnew,&U);
 		memcpy(&U0,&U,sizeof(struct Utype));
 		// grav force correction
 
-		U.du+=(U0.d*curoct->cell[icell].f[0]*dt*0.5);
-		U.dv+=(U0.d*curoct->cell[icell].f[1]*dt*0.5);
-		U.dw+=(U0.d*curoct->cell[icell].f[2]*dt*0.5);
-		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dt*0.5;
+		U.du+=-(U0.d*curoct->cell[icell].f[0]*dt*0.5);
+		U.dv+=-(U0.d*curoct->cell[icell].f[1]*dt*0.5);
+		U.dw+=-(U0.d*curoct->cell[icell].f[2]*dt*0.5);
+		U.E+=-(U.du*curoct->cell[icell].f[0]+U.dv*curoct->cell[icell].f[1]+U.dw*curoct->cell[icell].f[2])*dt*0.5;
 		U2W(&U,&Wnew);
+#endif	
+
 		if(Wnew.p<0){
 		  printf("oulah error in gravity coupling with pressure\n");
 		  abort();
@@ -1803,7 +1816,7 @@ int main(int argc, char *argv[])
 		  printf("NAN\n");
 		  abort();
 		}
-
+		
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	      }
@@ -1812,6 +1825,7 @@ int main(int argc, char *argv[])
 	}
     }
   }
+#endif
 #endif
 #endif
 
@@ -1872,7 +1886,7 @@ int main(int argc, char *argv[])
   
 #ifdef PIC
   REAL dtpic;
-  dtpic=comptstep(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+  dtpic=comptstep(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,1e9);
   dtnew=(dtpic<dtnew?dtpic:dtnew);
   printf("dtpic= %e ",dtpic);
 #endif
@@ -1880,7 +1894,7 @@ int main(int argc, char *argv[])
 
 #ifdef WHYDRO2
   REAL dthydro;
-  dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,param.dt);
+  dthydro=comptstep_hydro(levelcoarse,levelmax,firstoct,faexp2,faexp,&cpu,1e9);
   //if(nsteps<5) dthydro/=5.;
   dtnew=(dthydro<dtnew?dthydro:dtnew);
   //dtnew=dthydro;
@@ -1889,14 +1903,14 @@ int main(int argc, char *argv[])
 
 #ifdef WGRAV
   REAL dtff;
-  dtff=comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt);
+  dtff=comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,1e9);
   dtnew=(dtff<dtnew?dtff:dtnew);
   printf("dtff= %e ",dtff);
 
-  /* REAL dtforce; */
-  /* comptstep_ff(levelcoarse,levelmax,firstoct,aexp,&cpu,param.dt); */
-  /* dtnew=(dtff<dtnew?dtff:dtnew); */
-  /* printf("dtff= %e ",dtff); */
+  REAL dtforce;
+  dtforce=comptstep_force(levelcoarse,levelmax,firstoct,aexp,&cpu,1e9);
+  printf("dtforce= %e ",dtforce);
+  dtnew=(dtforce<dtnew?dtforce:dtnew);
 
 
 #endif
@@ -1963,8 +1977,8 @@ int main(int argc, char *argv[])
 
       // ---------------- at this stage we are ready to update the conservative variables
       int flx;
-      REAL F[30];
-      REAL Forg[30];
+      REAL F[NFLUX];
+      REAL Forg[NFLUX];
       REAL dtsurdx=dtnew/dxcur;
       REAL one;
       struct Utype U;
@@ -1973,6 +1987,10 @@ int main(int argc, char *argv[])
       struct Wtype W;
       struct Wtype Wnew;
       struct CELL *neicell;
+#ifdef DUAL_E
+      REAL p,p0;
+      REAL DE;
+#endif
 
 #ifdef WMPI
       // ================================= exchange current state of hydro quantities 
@@ -1987,6 +2005,8 @@ int main(int argc, char *argv[])
 
 	curoct=firstoct[level-1];
 	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
+
+
 	  nextoct=curoct;
 	  do{
 	    curoct=nextoct;
@@ -1998,18 +2018,26 @@ int main(int argc, char *argv[])
 	      if(curoct->cell[icell].child==NULL){ // Leaf cell
 		struct CELL *curcell;
 		curcell=&(curoct->cell[icell]);
-
 		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
 		W2U(&W,&U);
 		memcpy(&U0,&U,sizeof(struct Utype));
-		memcpy(F,curcell->flux,sizeof(REAL)*30);// original fluxes
-		//		memcpy(Forg,F,sizeof(REAL)*30);
+		
+
+#ifdef DUAL_E
+		DE=W.p/((GAMMA-1.)*U.E);
+		p0=W.p;
+		p=p0;
+#endif
+		
+		memcpy(F,curcell->flux,sizeof(REAL)*NFLUX);// original fluxes
 		
 		// here we have to deal with coarse-fine boundaries
 
 		if(level<levelmax){
 		  int inei;
 		  getcellnei(icell, vnei, vcell);
+
+		  //loop over neighbours
 		  for(inei=0;inei<6;inei++){
 		    if(vnei[inei]!=6){
 		    
@@ -2070,7 +2098,7 @@ int main(int argc, char *argv[])
 			  // the neighbor is split : fluxes must be averaged
 			  int fcell[4];
 			  getfcell(inei,fcell);
-			  memset(F+5*inei,0,5*sizeof(REAL)); // reset the original flux
+			  memset(F+NVAR*inei,0,NVAR*sizeof(REAL)); // reset the original flux
 			
 			  int iface;
 			  REAL *Fnei;
@@ -2079,7 +2107,7 @@ int main(int argc, char *argv[])
 			  // averaging the flux
 			  for(iface=0;iface<4;iface++){
 			    Fnei=neicell->child->cell[fcell[iface]].flux;
-			    for(j=0;j<5;j++) F[j+inei*5]+=0.25*Fnei[j+idxfnei[inei]*5];
+			    for(j=0;j<NVAR;j++) F[j+inei*NVAR]+=0.25*Fnei[j+idxfnei[inei]*NVAR];
 			  }
 
 			  /* if((neicell->child->level==6)&&(curoct->level==5)){ */
@@ -2104,40 +2132,97 @@ int main(int argc, char *argv[])
 		// ready to update
 		one=1.;
 		for(flx=0;flx<6;flx++){
-		  U.d +=F[0+flx*5]*dtsurdx*one;
-		  U.du+=F[1+flx*5]*dtsurdx*one;
-		  U.dv+=F[2+flx*5]*dtsurdx*one;
-		  U.dw+=F[3+flx*5]*dtsurdx*one;
-		  U.E +=F[4+flx*5]*dtsurdx*one;
+		  U.d +=F[0+flx*NVAR]*dtsurdx*one;
+		  U.du+=F[1+flx*NVAR]*dtsurdx*one;
+		  U.dv+=F[2+flx*NVAR]*dtsurdx*one;
+		  U.dw+=F[3+flx*NVAR]*dtsurdx*one;
+		  U.E +=F[4+flx*NVAR]*dtsurdx*one;
+#ifdef DUAL_E
+		  p   +=F[5+flx*NVAR]*dtsurdx*one;
+#endif
 		  one*=-1.;
 		}
 
 		U2W(&U,&Wnew);
-		if(Wnew.p<0){
-		  printf("oulah error before gravity coupling\n");
-		  abort();
+
+		if(Wnew.w!=0.) abort();
+		/* if(Wnew.p<0){ */
+		/*   printf("oulah error before gravity coupling\n"); */
+		/*   abort(); */
+		/* } */
+
+#ifdef DUAL_E
+		REAL divu=0.;
+		REAL pavg=0.;
+		REAL uloc;
+		int inei;
+		if(DE<1e-3){
+		  // finish the pressure fix, needs the divergence of the velocity (1D for the moment)
+		  // DOn't work with refinement !!!!!
+		
+		  getcellnei(icell, vnei, vcell);
+		  
+		  for(inei=0;inei<2;inei++){
+		    // getting the neighbor
+		    if(vnei[inei]!=6){
+		      neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
+		    }
+		    else{
+		      neicell=&(curoct->cell[vcell[inei]]);
+		    }
+		    uloc=neicell->field.u;
+		    //pavg+=neicell->field.p;
+		    divu+=pow(-1.,inei+1)*uloc;
+		  }
+		  divu/=(2.*dxcur);
+		  //pavg/=2.;
+		  pavg=p;
+		  
+		  p=p-(GAMMA-1.)*pavg*divu; // pressure is updated GAMMA OR GAMMA-1 ?
 		}
+#endif
+		
 
-		REAL delta=fabs(Wnew.p-W.p)/W.p;
-		if(delta>deltamax)deltamax=delta;
-
-
+#ifdef WGRAV
 #ifndef NOCOUPLE
-		// grav force correction
-		printf("coupling\n");
+		/* // half gravitational force correction */
 
-		U.du+=(U0.d*curoct->cell[icell].f[0]*dtnew*0.5);
-		U.dv+=(U0.d*curoct->cell[icell].f[1]*dtnew*0.5);
-		U.dw+=(U0.d*curoct->cell[icell].f[2]*dtnew*0.5);
-		U.E+=(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dtnew*0.5;
-#endif		
+#ifdef CONSERVATIVE
+		U.du+=-(U0.d*curoct->cell[icell].f[0]*dtnew*0.5);
+		U.dv+=-(U0.d*curoct->cell[icell].f[1]*dtnew*0.5);
+		U.dw+=-(U0.d*curoct->cell[icell].f[2]*dtnew*0.5);
+		U.E+=-(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dtnew*0.5;
 		U2W(&U,&Wnew);
-		if(Wnew.p<0){
-		  printf("oulah error in gravity coupling with pressure\n");
-		  abort();
+		
+
+#endif
+
+#ifdef PRIMITIVE
+		Wnew.u+=(-curoct->cell[icell].f[0]*dtnew*0.5);
+		Wnew.v+=(-curoct->cell[icell].f[1]*dtnew*0.5);
+		Wnew.w+=(-curoct->cell[icell].f[2]*dtnew*0.5);
+#ifdef DUAL_E
+		if(DE<1e-3){
+		  Wnew.p=p;
+		  Wnew.a=sqrt(GAMMA*Wnew.p/Wnew.d);
 		}
 
-		if(Wnew.d<0){
+#endif
+#endif
+
+		
+
+
+#endif	
+#endif	
+	
+		/* if(Wnew.p<0){ */
+		/*   printf("oulah error in gravity coupling with pressure\n"); */
+		/*   abort(); */
+		/* } */
+
+
+		if(Wnew.p<0){
 		  printf("oulah error in gravity coupling with pressure\n");
 		  abort();
 		}
@@ -2150,8 +2235,11 @@ int main(int argc, char *argv[])
 		Wnew.x=curcell->field.x;
 		Wnew.y=curcell->field.y;
 		Wnew.z=curcell->field.z;
+		
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
+
+
 	      }
 	      else{ // split cell : hydro quantities are averaged
 		struct OCT *child;

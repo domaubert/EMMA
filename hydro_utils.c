@@ -7,7 +7,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-#define CFL 0.8
+#define CFL 0.4
 
 #ifdef WHYDRO2
 
@@ -819,6 +819,7 @@ void getflux_X(struct Utype *U, REAL *f)
   f[2]=U->du*U->dv/U->d;
   f[3]=U->du*U->dw/U->d;
   f[4]=GAMMA*U->du/U->d*U->E-0.5*(GAMMA-1.)*U->du/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
+
 }
 
 // ---------------------------------------------------------------
@@ -989,6 +990,7 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       }
   }
   
+  if(isnan(W[4])) abort();
   // =====  building the B matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -1018,6 +1020,7 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       }
   }
 
+  if(isnan(W[4])) abort();
   // =====  building the C matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -1045,6 +1048,7 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       }
   }
   
+  if(isnan(W[4])) abort();
   // ==== Final correction
   for(i=0;i<5;i++){
     W[i]*=(-dt/dx*0.5);
@@ -1138,24 +1142,36 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 #ifdef WGRAV
 #ifndef NOCOUPLE
 	  memcpy(f,stencil->oct[ioct].cell[icell].f,sizeof(REAL)*3);
+
+#ifdef CONSERVATIVE
 	  S.d =0.;
-	  S.du=W0->d*f[0]*0.5*dt;
-	  S.dv=W0->d*f[1]*0.5*dt;
-	  S.dw=W0->d*f[2]*0.5*dt;
-	  S.E =(W0->d*W0->u*f[0]+W0->d*W0->v*f[1]+W0->d*W0->w*f[2])*dt*0.5;
+	  S.du=-W0->d*f[0]*0.5*dt;
+	  S.dv=-W0->d*f[1]*0.5*dt;
+	  S.dw=-W0->d*f[2]*0.5*dt;
+	  S.E =-(W0->d*W0->u*f[0]+W0->d*W0->v*f[1]+W0->d*W0->w*f[2])*dt*0.5;
+#endif
+
 #endif
 #endif
 
 	  for(idir=0;idir<6;idir++){
 	    Wi[idir].d = W0->d+ix[idir]*D[0].d+iy[idir]*D[1].d+iz[idir]*D[2].d+Wt.d;
-	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;
-	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
-	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
+	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;//-f[0]*0.5*dt;
+	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;//-f[1]*0.5*dt;
+	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;//-f[2]*0.5*dt;
 	    Wi[idir].p = W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p;
 	 
 #ifdef WGRAV
 #ifndef NOCOUPLE
-	    W2U(&Wi[idir],&U);
+
+#ifdef PRIMITIVE
+	    Wi[idir].u+=-f[0]*0.5*dt;
+	    Wi[idir].v+=-f[1]*0.5*dt;
+	    Wi[idir].w+=-f[2]*0.5*dt;
+#endif
+
+#ifdef CONSERVATIVE
+ 	    W2U(&Wi[idir],&U);
 	    U.d  +=S.d;
 	    U.du +=S.du;
 	    U.dv +=S.dv;
@@ -1163,8 +1179,11 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    U.E  +=S.E;
 	    U2W(&U,&Wi[idir]);
 #endif
-#endif
 
+#endif
+#endif
+	    if(isnan(Wi[idir].p)) abort();
+	    
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 	    if(Wi[idir].p<0) abort();
 	  }
@@ -1197,16 +1216,16 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
   int vnei[6],vcell[6];
   int vneic[6],vcellc[6];
 
-  REAL FL[5],FR[5];
-  REAL GL[5],GR[5];
-  REAL HL[5],HR[5];
+  REAL FL[NVAR],FR[NVAR];
+  REAL GL[NVAR],GR[NVAR];
+  REAL HL[NVAR],HR[NVAR];
 
-  memset(FL,0,sizeof(REAL)*5);
-  memset(FR,0,sizeof(REAL)*5);
-  memset(HL,0,sizeof(REAL)*5);
-  memset(HR,0,sizeof(REAL)*5);
-  memset(GL,0,sizeof(REAL)*5);
-  memset(GR,0,sizeof(REAL)*5);
+  memset(FL,0,sizeof(REAL)*NVAR);
+  memset(FR,0,sizeof(REAL)*NVAR);
+  memset(HL,0,sizeof(REAL)*NVAR);
+  memset(HR,0,sizeof(REAL)*NVAR);
+  memset(GL,0,sizeof(REAL)*NVAR);
+  memset(GR,0,sizeof(REAL)*NVAR);
 
   REAL Smax;
   struct Wtype1D_double WRloc, WLloc;
@@ -1232,7 +1251,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
 #ifdef RIEMANN_HLL
   REAL SL,SR;
-  REAL Fr[5],Fl[5];
+  REAL Fr[NVAR],Fl[NVAR];
 #endif
   int tagr=0,tagl=0;
 
@@ -1338,20 +1357,34 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       if((SL<0.)&&(SR>0)){
 	getflux_X(&UN[0],Fl);
 	getflux_X(&UC[0],Fr);
+
 	
 	FL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[0].d -UN[0].d ))/(SR-SL);
 	FL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[0].du-UN[0].du))/(SR-SL);
 	FL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[0].dv-UN[0].dv))/(SR-SL);
 	FL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[0].dw-UN[0].dw))/(SR-SL);
 	FL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[0].E -UN[0].E ))/(SR-SL);
+
+#ifdef DUAL_E
+	Fl[5]=WN[0].p*WN[0].u;
+	Fr[5]=WC[0].p*WC[0].u;
+	FL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[0].p -WN[0].p ))/(SR-SL);
+#endif
+
 	tagl=1;
       }
       else{
 	if(SL>=0.){
 	  getflux_X(&UN[0],FL);
+#ifdef DUAL_E
+	  FL[5]=WN[0].p*WN[0].u;
+#endif
 	}
 	else if(SR<=0.){
 	  getflux_X(&UC[0],FL);
+#ifdef DUAL_E
+	  FL[5]=WC[0].p*WC[0].u;
+#endif
 	}
       }
       
@@ -1430,16 +1463,30 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[1].dv-UC[1].dv))/(SR-SL);
 	FR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[1].dw-UC[1].dw))/(SR-SL);
 	FR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[1].E -UC[1].E ))/(SR-SL);
+
+#ifdef DUAL_E
+	Fl[5]=WC[1].p*WC[1].u;
+	Fr[5]=WN[1].p*WN[1].u;
+	FR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[1].p -WC[1].p))/(SR-SL);
+#endif
+
 	tagr=1;
       }
       else{
 	if(SL>=0.){
 	  getflux_X(&UC[1],FR);
+#ifdef DUAL_E
+	  FR[5]=WC[1].p*WC[1].u;
+#endif
 	}
 	else if(SR<=0.){
 	  getflux_X(&UN[1],FR);
+#ifdef DUAL_E
+	  FR[5]=WN[1].p*WN[1].u;
+#endif
 	}
       }
+      if(isnan(FR[5])) abort();
       
 
       
@@ -1665,7 +1712,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       /* SL=WN[4].w-WN[4].a; */
       /* SR=WC[4].w+WC[4].a; */
 
-      if((SL<0.)&&(SR>0)){
+      if((SL<0.)&&(SR>0.)){
 	getflux_Z(&UN[4],Fl);
 	getflux_Z(&UC[4],Fr);
 	
@@ -1686,7 +1733,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       }
       
 
-      
+
 #endif
 
 
@@ -1762,39 +1809,27 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	}
       }
       
-
+      if(HR[3]==0.) abort();
       
 #endif
 
       
       //========================= copy the fluxes
-      int jj;
-      for(jj=0;jj<5;jj++){
-	if(isnan(FL[jj])){
-	  printf("NAN flux\n");
-	  abort();
-	}
-	if(isnan(GR[jj])){
-	  printf("NAN flux\n");
-	  abort();
-	}
-	if(isnan(HL[jj])){
-	  printf("NAN flux\n");
-	  abort();
-	}
-	if(isnan(FR[jj])){
-	  printf("NAN flux\n");
-	  abort();
-	}
-      }
 
+#ifdef DUAL_E
+      GL[5]=0.;
+      GR[5]=0.;
+      HL[5]=0.;
+      HR[5]=0.;
+#endif
 
-      memcpy(stencil[i].new.cell[icell].flux+ 0,FL,sizeof(REAL)*5);
-      memcpy(stencil[i].new.cell[icell].flux+ 5,FR,sizeof(REAL)*5);
-      memcpy(stencil[i].new.cell[icell].flux+10,GL,sizeof(REAL)*5);
-      memcpy(stencil[i].new.cell[icell].flux+15,GR,sizeof(REAL)*5);
-      memcpy(stencil[i].new.cell[icell].flux+20,HL,sizeof(REAL)*5);
-      memcpy(stencil[i].new.cell[icell].flux+25,HR,sizeof(REAL)*5);
+      memcpy(stencil[i].new.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].new.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].new.cell[icell].flux+2*NVAR,GL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].new.cell[icell].flux+3*NVAR,GR,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].new.cell[icell].flux+4*NVAR,HL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].new.cell[icell].flux+5*NVAR,HR,sizeof(REAL)*NVAR);
+
 
       // ready for the next cell
     }
@@ -1911,6 +1946,79 @@ REAL comptstep_ff(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp,
   return dt;
 }
 
+#ifdef WGRAV
+REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
+  
+  int level;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  REAL dxcur;
+  int icell;
+  REAL dtloc;
+  REAL dt;
+  struct Utype U;
+  struct Wtype W;
+  REAL f[3];
+  REAL DE,V,DV;
+  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
+
+  // Computing new timestep
+  dt=tmax;
+  for(level=levelcoarse;level<=levelmax;level++) // looping over levels
+    {
+      // setting the first oct
+      
+      nextoct=firstoct[level-1];
+      
+      if(nextoct==NULL) continue; // in case the level is empty
+      dxcur=pow(0.5,level); // +1 to protect level change
+      do // sweeping through the octs of level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      memcpy(&W,&curoct->cell[icell].field,sizeof(struct Wtype));
+	      W2U(&W,&U);
+	      memcpy(f,curoct->cell[icell].f,sizeof(REAL)*3);
+	      V=sqrt(pow(U.du,2.)+pow(U.dv,2.)+pow(U.dw,2.));
+	      DV=sqrt(pow(U.d*f[0],2.)+pow(U.d*f[1],2.)+pow(U.d*f[2],2.));
+	      DE=sqrt(pow(U.du*f[0],2.)+pow(U.dv*f[1],2.)+pow(U.dw*f[2],2.));
+									       
+	      if((DE>0.)&&(U.E>0.)){
+		dtloc=0.5*U.E/DE;
+		if(dt!=tmax){
+		  dt=fmin(dt,dtloc);
+		}else{
+		  dt=dtloc;
+		}
+	      }
+
+	      if((DV>0.)&&(V>0.)){
+		dtloc=0.5*V/DV;
+		if(dt!=tmax){
+		  dt=fmin(dt,dtloc);
+		}else{
+		  dt=dtloc;
+		}
+	      }
+
+	    }
+	}while(nextoct!=NULL);
+    }
+
+  // new tstep
+  //printf("original dt=%f chosen dt=%f\n",tmax,dt); 
+  //  abort(); 
+
+/* #ifdef WMPI */
+/*   // reducing by taking the smallest time step */
+/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm); */
+/* #endif   */
+
+  return dt;
+}
+#endif
 
 
 #endif

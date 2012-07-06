@@ -820,6 +820,7 @@ int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 
 #endif
 
+#ifdef WGRAV
 //===================================================================================================================================
 int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu){
   struct OCT *nextoct;
@@ -854,3 +855,4 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
   return 0;
 }
 
+#endif

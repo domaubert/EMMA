@@ -13,6 +13,14 @@ typedef double REAL;
 #define NCOSMOTAB (262144)
 
 
+#ifdef DUAL_E
+#define NVAR (6)
+#else
+#define NVAR (5)
+#endif
+#define NFLUX (6*NVAR)
+
+
 //=======================================
 
 struct RUNPARAMS{
@@ -232,7 +240,7 @@ struct HYDRO_MPI{
 
 // this structure is for the communication of Flux data
 struct FLUX_MPI{
-  REAL data[8*30]; // the data to be transfered (8 since we transmit data per octs)
+  REAL data[8*NFLUX]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
@@ -277,7 +285,7 @@ struct CELL
 
 #ifdef WHYDRO2
   struct Wtype field;
-  REAL flux[30]; // 6 fluxes of 5 variables each
+  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
 #endif
 
 

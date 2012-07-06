@@ -903,7 +903,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*30);
+	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*NFLUX);
       }
 
       iread++;

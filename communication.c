@@ -1070,7 +1070,7 @@ void gather_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer){
 	      curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
-		memcpy(&(pack->data[icell*30]),curoct->cell[icell].flux,sizeof(REAL)*30);
+		memcpy(&(pack->data[icell*NFLUX]),curoct->cell[icell].flux,sizeof(REAL)*NFLUX);
 	      }
 	    }
 	    else{
@@ -1169,7 +1169,7 @@ void scatter_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **recvbuffer){
 
 	  if(found){ // the reception oct has been found
 	    for(icell=0;icell<8;icell++){
-	      memcpy(curoct->cell[icell].flux,&(pack->data[icell*30]),30*sizeof(REAL));
+	      memcpy(curoct->cell[icell].flux,&(pack->data[icell*NFLUX]),NFLUX*sizeof(REAL));
 	    }
 	  }
 	  else{
