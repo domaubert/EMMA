@@ -2152,34 +2152,34 @@ int main(int argc, char *argv[])
 		/* } */
 
 #ifdef DUAL_E
-		REAL divu=0.;
-		REAL pavg=0.;
-		REAL uloc;
-		int inei;
-		if(DE<1e-3){
-		  // finish the pressure fix, needs the divergence of the velocity (1D for the moment)
-		  // DOn't work with refinement !!!!!
+ 		/* REAL divu=0.; */
+		/* REAL pavg=0.; */
+		/* REAL uloc; */
+		/* int inei; */
+		/* if(DE<1e-3){ */
+		/*   // finish the pressure fix, needs the divergence of the velocity (1D for the moment) */
+		/*   // DOn't work with refinement !!!!! */
 		
-		  getcellnei(icell, vnei, vcell);
+		/*   getcellnei(icell, vnei, vcell); */
 		  
-		  for(inei=0;inei<2;inei++){
-		    // getting the neighbor
-		    if(vnei[inei]!=6){
-		      neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
-		    }
-		    else{
-		      neicell=&(curoct->cell[vcell[inei]]);
-		    }
-		    uloc=neicell->field.u;
-		    //pavg+=neicell->field.p;
-		    divu+=pow(-1.,inei+1)*uloc;
-		  }
-		  divu/=(2.*dxcur);
-		  //pavg/=2.;
-		  pavg=p;
+		/*   for(inei=0;inei<2;inei++){ */
+		/*     // getting the neighbor */
+		/*     if(vnei[inei]!=6){ */
+		/*       neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]); */
+		/*     } */
+		/*     else{ */
+		/*       neicell=&(curoct->cell[vcell[inei]]); */
+		/*     } */
+		/*     uloc=neicell->field.u; */
+		/*     //pavg+=neicell->field.p; */
+		/*     divu+=pow(-1.,inei+1)*uloc; */
+		/*   } */
+		/*   divu/=(2.*dxcur); */
+		/*   //pavg/=2.; */
+		/*   pavg=p; */
 		  
-		  p=p-(GAMMA-1.)*pavg*divu; // pressure is updated GAMMA OR GAMMA-1 ?
-		}
+		/*   p=p-(GAMMA-1.)*pavg*divu; // pressure is updated GAMMA OR GAMMA-1 ? */
+		/* } */
 #endif
 		
 

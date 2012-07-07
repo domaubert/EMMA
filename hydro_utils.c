@@ -1388,7 +1388,10 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	}
       }
       
-
+#ifdef DUAL_E
+      // divergence contribution
+      FL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].field.u;
+#endif
       
 #endif
 
@@ -1488,6 +1491,10 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       }
       if(isnan(FR[5])) abort();
       
+#ifdef DUAL_E
+      // we add the divergence component
+      FR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].field.u;
+#endif
 
       
 #endif
