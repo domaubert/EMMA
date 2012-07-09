@@ -759,7 +759,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
 	    abort();
 	  }
 	
-	  rhob=(deltab[i1+i2*np1]+1.0)*omegab*rhoc/pow(astart,3); // comoving baryon density in kg/m3
+	  rhob=(deltab[i1+i2*np1]+1.0)*omegab*rhoc/pow(astart,3); // physical baryon density in kg/m3
 	  pressure=(GAMMA-1.0)*1.5*(rhob/(mu*mp))*kboltz*temp; // physical pressure
 
 	  // filling the cells using supercomoving values

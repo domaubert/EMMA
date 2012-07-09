@@ -1306,11 +1306,11 @@ int main(int argc, char *argv[])
 	      omegav=0.;
 	      ainit=1./(1.+ZI);
 	      amax=1./(1.+ZC);
-	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5));
+	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(yc-0.5));
 	      curoct->cell[icell].field.u=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
 	      curoct->cell[icell].field.v=0.;
 	      curoct->cell[icell].field.w=0.;
-	      curoct->cell[icell].field.p=1e-9;
+	      curoct->cell[icell].field.p=1e-10;
 	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 
 
@@ -1800,7 +1800,7 @@ int main(int argc, char *argv[])
 		U.E+=-(U.du*curoct->cell[icell].f[0]+U.dv*curoct->cell[icell].f[1]+U.dw*curoct->cell[icell].f[2])*dt*0.5;
 		U2W(&U,&Wnew);
 #endif	
-
+		
 		if(Wnew.p<0){
 		  printf("oulah error in gravity coupling with pressure\n");
 		  abort();
@@ -2109,14 +2109,6 @@ int main(int argc, char *argv[])
 			    Fnei=neicell->child->cell[fcell[iface]].flux;
 			    for(j=0;j<NVAR;j++) F[j+inei*NVAR]+=0.25*Fnei[j+idxfnei[inei]*NVAR];
 			  }
-
-			  /* if((neicell->child->level==6)&&(curoct->level==5)){ */
-			  /*   printf("BOUND\n"); */
-			  /*   for(flx=0;flx<6;flx++) printf("%e -> %e ** \n ",Forg[1+flx*5],F[1+flx*5]); */
-			  /*   abort(); */
-			  /* } */
-
-
 			}
 		      }
 		    }
@@ -2145,42 +2137,19 @@ int main(int argc, char *argv[])
 
 		U2W(&U,&Wnew);
 
-		if(Wnew.w!=0.) abort();
-		/* if(Wnew.p<0){ */
-		/*   printf("oulah error before gravity coupling\n"); */
-		/*   abort(); */
+		/* if(curoct->cell[icell].field.x==0.015625){ */
+		/*   if(curoct->cell[icell].field.y==0.015625){ */
+		/*     if(curoct->cell[icell].field.z==0.015625){ */
+		/*       printf("%e\n",U0.dw); */
+		/*       for(flx=0;flx<6;flx++) printf("%e ",F[1+flx*NVAR]); */
+		/*       printf("\n"); */
+		/*       for(flx=0;flx<6;flx++) printf("%e ",F[3+flx*NVAR]); */
+		/*       printf("\n"); */
+		/*       abort(); */
+		/* } */
+		/* } */
 		/* } */
 
-#ifdef DUAL_E
- 		/* REAL divu=0.; */
-		/* REAL pavg=0.; */
-		/* REAL uloc; */
-		/* int inei; */
-		/* if(DE<1e-3){ */
-		/*   // finish the pressure fix, needs the divergence of the velocity (1D for the moment) */
-		/*   // DOn't work with refinement !!!!! */
-		
-		/*   getcellnei(icell, vnei, vcell); */
-		  
-		/*   for(inei=0;inei<2;inei++){ */
-		/*     // getting the neighbor */
-		/*     if(vnei[inei]!=6){ */
-		/*       neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]); */
-		/*     } */
-		/*     else{ */
-		/*       neicell=&(curoct->cell[vcell[inei]]); */
-		/*     } */
-		/*     uloc=neicell->field.u; */
-		/*     //pavg+=neicell->field.p; */
-		/*     divu+=pow(-1.,inei+1)*uloc; */
-		/*   } */
-		/*   divu/=(2.*dxcur); */
-		/*   //pavg/=2.; */
-		/*   pavg=p; */
-		  
-		/*   p=p-(GAMMA-1.)*pavg*divu; // pressure is updated GAMMA OR GAMMA-1 ? */
-		/* } */
-#endif
 		
 
 #ifdef WGRAV
@@ -2220,7 +2189,6 @@ int main(int argc, char *argv[])
 		/*   printf("oulah error in gravity coupling with pressure\n"); */
 		/*   abort(); */
 		/* } */
-
 
 		if(Wnew.p<0){
 		  printf("oulah error in gravity coupling with pressure\n");

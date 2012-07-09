@@ -989,8 +989,7 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       W[i]+=M[i+j*5]*d[j];
       }
   }
-  
-  if(isnan(W[4])) abort();
+
   // =====  building the B matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -1020,7 +1019,6 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       }
   }
 
-  if(isnan(W[4])) abort();
   // =====  building the C matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -1048,7 +1046,6 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
       }
   }
   
-  if(isnan(W[4])) abort();
   // ==== Final correction
   for(i=0;i<5;i++){
     W[i]*=(-dt/dx*0.5);
@@ -1113,17 +1110,6 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    diffW(W0,Wm,&Dm); 
 	    
 	    minmod_W(&Dm,&Dp,D+dir);
-
-	    /* if(dir==0){ */
-	    /*   if(W0->x==(0.015625)){ */
-	    /* 	printf("LEFT DU=%e Dm=%e Dp=%e [%e]\n",D[0].u,Dm.u,Dp.u,Dm.u/Dp.u); */
-	    /*   } */
-	      
-	    /*   if(W0->x==(1.-0.015625)){ */
-	    /* 	printf("RIGHT DU=%e Dm=%e Dp=%e [%e]\n",D[0].u,Dm.u,Dp.u,Dm.u/Dp.u); */
-	    /* 	abort(); */
-	    /*   } */
-	    /* } */
 	  }
 
 
@@ -1156,9 +1142,9 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 
 	  for(idir=0;idir<6;idir++){
 	    Wi[idir].d = W0->d+ix[idir]*D[0].d+iy[idir]*D[1].d+iz[idir]*D[2].d+Wt.d;
-	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;//-f[0]*0.5*dt;
-	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;//-f[1]*0.5*dt;
-	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;//-f[2]*0.5*dt;
+	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;
+	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
+	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
 	    Wi[idir].p = W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p;
 	 
 #ifdef WGRAV
@@ -1182,7 +1168,6 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 
 #endif
 #endif
-	    if(isnan(Wi[idir].p)) abort();
 	    
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 	    if(Wi[idir].p<0) abort();
@@ -1196,13 +1181,30 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 
 //============================================================================
 
-void speedestimate(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
+void speedestimateX(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
 
   REAL splus;
   splus=fmax(fabs(WL->u)+WL->a,fabs(WR->u)+WR->a);
   *SL=-splus;
   *SR= splus;
 
+}
+
+void speedestimateY(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
+
+  REAL splus;
+  splus=fmax(fabs(WL->v)+WL->a,fabs(WR->v)+WR->a);
+  *SL=-splus;
+  *SR= splus;
+
+}
+
+void speedestimateZ(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
+
+  REAL splus;
+  splus=fmax(fabs(WL->w)+WL->a,fabs(WR->w)+WR->a);
+  *SL=-splus;
+  *SR= splus;
 }
 
 
@@ -1350,7 +1352,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WN[0],&WC[0],&SL,&SR);
+      speedestimateX(&WN[0],&WC[0],&SL,&SR);
       /* SL=WN[0].u-WN[0].a; */
       /* SR=WC[0].u+WC[0].a; */
 
@@ -1443,17 +1445,11 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       
       // Getting the fluxes RIGHT
       getflux_X(&Utest3D,FR);
-
-      if(isnan(FL[0])){
-	printf("NAN GL\n");
-	abort();
-      }
-
 #endif
 
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WC[1],&WN[1],&SL,&SR);
+      speedestimateX(&WC[1],&WN[1],&SL,&SR);
       /* SL=WC[1].u-WC[1].a; */
       /* SR=WN[1].u+WN[1].a; */
 
@@ -1472,7 +1468,6 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	Fr[5]=WN[1].p*WN[1].u;
 	FR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[1].p -WC[1].p))/(SR-SL);
 #endif
-
 	tagr=1;
       }
       else{
@@ -1498,18 +1493,6 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       
 #endif
-
-
-      /* if(curcell->x==0.015625){ */
-      /* 	printf("LEFT %e %d || %e %e %e -- %e %e %e ==> %e %e <== %e\n",curcell->x,tagl,WC[1].d,WC[1].u,WC[1].p,WN[1].d,WN[1].u,WN[1].p,FL[4],FR[4],Wold.u); */
-      /* } */
-
-      /* if(curcell->x==(1.-0.015625)){ */
-      /* 	printf("RIGHT %e %d || %e %e %e -- %e %e %e ==> %e %e <== %e \n",curcell->x,tagr,WN[0].d,WN[0].u,WN[0].p,WC[0].d,WC[0].u,WC[0].p,FL[4],FR[4],Wold.u); */
-      /* 	abort(); */
-      /* } */
-
-
        // Y DIRECTION =========================================================================
       
       // --------- solving the Riemann Problems FRONT
@@ -1563,7 +1546,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WN[2],&WC[2],&SL,&SR);
+      speedestimateY(&WN[2],&WC[2],&SL,&SR);
       /* SL=WN[2].v-WN[2].a; */
       /* SR=WC[2].v+WC[2].a; */
 
@@ -1577,15 +1560,35 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	GL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[2].dw-UN[2].dw))/(SR-SL);
 	GL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[2].E -UN[2].E ))/(SR-SL);
 
+#ifdef DUAL_E
+	Fl[5]=WN[2].p*WN[2].v;
+	Fr[5]=WC[2].p*WC[2].v;
+	GL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[2].p -WN[2].p ))/(SR-SL);
+#endif
+
       }
       else{
 	if(SL>=0.){
 	  getflux_Y(&UN[2],GL);
+
+#ifdef DUAL_E
+	  GL[5]=WN[2].p*WN[2].v;
+#endif
+
 	}
 	else if(SR<=0.){
 	  getflux_Y(&UC[2],GL);
+#ifdef DUAL_E
+	  GL[5]=WC[2].p*WC[2].v;
+#endif
+
 	}
       }
+
+#ifdef DUAL_E
+      // divergence contribution
+      GL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].field.v;
+#endif
       
 #endif
 
@@ -1637,7 +1640,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WC[3],&WN[3],&SL,&SR);
+      speedestimateY(&WC[3],&WN[3],&SL,&SR);
       /* SL=WC[3].v-WC[3].a; */
       /* SR=WN[3].v+WN[3].a; */
 
@@ -1651,16 +1654,33 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	GR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[3].dw-UC[3].dw))/(SR-SL);
 	GR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[3].E -UC[3].E ))/(SR-SL);
 
+#ifdef DUAL_E
+	Fl[5]=WC[3].p*WC[3].v;
+	Fr[5]=WN[3].p*WN[3].v;
+	GR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[3].p -WC[3].p))/(SR-SL);
+#endif
+
+
       }
       else{
 	if(SL>=0.){
 	  getflux_Y(&UC[3],GR);
+
+#ifdef DUAL_E
+	  GR[5]=WC[3].p*WC[3].v;
+#endif
+
 	}
 	else if(SR<=0.){
 	  getflux_Y(&UN[3],GR);
+#ifdef DUAL_E
+	  GR[5]=WN[3].p*WN[3].v;
+#endif
 	}
       }
-      
+
+      // we add the divergence component
+      GR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].field.v;
 #endif
 
 
@@ -1715,7 +1735,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WN[4],&WC[4],&SL,&SR);
+      speedestimateZ(&WN[4],&WC[4],&SL,&SR);
       /* SL=WN[4].w-WN[4].a; */
       /* SR=WC[4].w+WC[4].a; */
 
@@ -1729,22 +1749,38 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	HL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[4].dw-UN[4].dw))/(SR-SL);
 	HL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[4].E -UN[4].E ))/(SR-SL);
 
+#ifdef DUAL_E
+	Fl[5]=WN[4].p*WN[4].w;
+	Fr[5]=WC[4].p*WC[4].w;
+	HL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[4].p -WN[4].p ))/(SR-SL);
+#endif
+
       }
       else{
 	if(SL>=0.){
 	  getflux_Z(&UN[4],HL);
+#ifdef DUAL_E
+	  HL[5]=WN[4].p*WN[4].w;
+#endif
 	}
 	else if(SR<=0.){
 	  getflux_Z(&UC[4],HL);
+#ifdef DUAL_E
+	  HL[5]=WC[4].p*WC[4].w;
+#endif
 	}
       }
       
 
+#ifdef DUAL_E
+      // divergence contribution
+      HL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].field.w;
+#endif
 
 #endif
 
 
-      // --------- solving the Riemann Problems Top
+      // --------- solving the Riemann Problems TOP
 
 
       // Switching to Split description
@@ -1792,7 +1828,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #endif
 
 #ifdef RIEMANN_HLL
-      speedestimate(&WC[5],&WN[5],&SL,&SR);
+      speedestimateZ(&WC[5],&WN[5],&SL,&SR);
       /* SL=WC[5].w-WC[5].a; */
       /* SR=WN[5].w+WN[5].a; */
 
@@ -1805,30 +1841,38 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	HR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[5].dv-UC[5].dv))/(SR-SL);
 	HR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[5].dw-UC[5].dw))/(SR-SL);
 	HR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[5].E -UC[5].E ))/(SR-SL);
+
+#ifdef DUAL_E
+	Fl[5]=WC[5].p*WC[5].w;
+	Fr[5]=WN[5].p*WN[5].w;
+	HR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[5].p -WC[5].p))/(SR-SL);
+#endif
 	
       }
       else{
 	if(SL>=0.){
 	  getflux_Z(&UC[5],HR);
+#ifdef DUAL_E
+	  HR[5]=WC[5].p*WC[5].w;
+#endif
 	}
 	else if(SR<=0.){
 	  getflux_Z(&UN[5],HR);
+#ifdef DUAL_E
+	  HR[5]=WN[5].p*WN[5].w;
+#endif
 	}
       }
-      
-      if(HR[3]==0.) abort();
-      
+
+#ifdef DUAL_E
+      // divergence contribution
+      HR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].field.w;
+#endif
 #endif
 
       
       //========================= copy the fluxes
 
-#ifdef DUAL_E
-      GL[5]=0.;
-      GR[5]=0.;
-      HL[5]=0.;
-      HR[5]=0.;
-#endif
 
       memcpy(stencil[i].new.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].new.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
