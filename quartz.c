@@ -188,6 +188,11 @@ int main(int argc, char *argv[])
   rtag=2;
 #endif
 
+#ifdef RIEMANN_HLLC
+  rtag=3;
+#endif
+
+
   if(rtag==0){
     printf("ERROR : RIEMANN SOLVER NOT SELECTED\n");
     abort();
@@ -1190,10 +1195,10 @@ int main(int argc, char *argv[])
   REAL X0;
   if(cpu.rank==0) printf("Init Hydro\n");
 
-   /* // TEST 1 */
+  /*  /\* // TEST 1 *\/ */
 
   WL.d=1.;
-  WL.u=0.;
+  WL.u=0.75;
   WL.v=0.;
   WL.w=0.;
   WL.p=1.0;
@@ -1203,8 +1208,40 @@ int main(int argc, char *argv[])
   WR.v=0.;
   WR.w=0.;
   WR.p=0.1;
+  X0=0.3125;
+  tmax=0.1;
 
-  X0=0.3;
+  /* /\*  /\\* // TEST 123 *\\/ *\/ */
+
+  /* WL.d=1.; */
+  /* WL.u=-2.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=0.4; */
+
+  /* WR.d=1.; */
+  /* WR.u=2.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.4; */
+  /* X0=0.5; */
+  /* tmax=0.15; */
+
+  /*  /\* // REVERSED TEST 1 *\/ */
+
+  /* WL.d=0.125; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=0.1; */
+
+  /* WR.d=1.; */
+  /* WR.u=-0.75; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=1.; */
+  /* X0=0.7; */
+
   WL.a=sqrt(GAMMA*WL.p/WL.d);
   WR.a=sqrt(GAMMA*WR.p/WR.d);
 
@@ -1298,37 +1335,37 @@ int main(int argc, char *argv[])
 	      
 
 
-	      /* ZELDOVICH PANCAKE */
+	      /* /\* ZELDOVICH PANCAKE *\/ */
 
-	      REAL ZI=99;
-	      REAL ZC=9;
-	      omegam=1.0;
-	      omegav=0.;
-	      ainit=1./(1.+ZI);
-	      amax=1./(1.+ZC);
-	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(yc-0.5));
-	      curoct->cell[icell].field.u=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
-	      curoct->cell[icell].field.v=0.;
-	      curoct->cell[icell].field.w=0.;
-	      curoct->cell[icell].field.p=1e-10;
-	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
-
-
-
-	      curoct->cell[icell].field.x=xc;
-	      curoct->cell[icell].field.y=yc;
-	      curoct->cell[icell].field.z=zc;
+	      /* REAL ZI=99; */
+	      /* REAL ZC=9; */
+	      /* omegam=1.0; */
+	      /* omegav=0.; */
+	      /* ainit=1./(1.+ZI); */
+	      /* amax=1./(1.+ZC); */
+	      /* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
+	      /* curoct->cell[icell].field.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
+	      /* curoct->cell[icell].field.v=0.; */
+	      /* curoct->cell[icell].field.w=0.; */
+	      /* curoct->cell[icell].field.p=1e-9; */
+	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
 
 
 
-	      /* /\* SHOCK TUBE *\/ */
-	      /* if(xc<=X0){ */
+	      /* curoct->cell[icell].field.x=xc; */
+	      /* curoct->cell[icell].field.y=yc; */
+	      /* curoct->cell[icell].field.z=zc; */
 
-	      /* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
-	      /* } */
-	      /* else{ */
-	      /* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
-	      /* } */
+
+
+	      /* SHOCK TUBE */
+	      if(xc<=X0){
+
+	      	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
+	      }
+	      else{
+	      	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+	      }
 	      
 	      if(level==levelcoarse) {
 	      	dtot+=curoct->cell[icell].field.d;
@@ -1459,10 +1496,12 @@ int main(int argc, char *argv[])
 #else
   tmax=1000.;
 #endif
+
 #ifdef WHYDRO2
-  tmax=0.2;
+  tmax=0.1;
 #endif
 #endif
+
 
   FILE *fegy;
 
@@ -1561,7 +1600,7 @@ int main(int argc, char *argv[])
     }
 
 
-
+    
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
@@ -1782,6 +1821,7 @@ int main(int argc, char *argv[])
 		curcell=&(curoct->cell[icell]);
 
 		memcpy(&Wnew,&(curcell->field),sizeof(struct Wtype));
+		if(curcell->f[1]!=0.) abort();
 
 #ifdef PRIMITIVE
 		Wnew.u+=(-curcell->f[0]*dt*0.5);
@@ -1801,21 +1841,21 @@ int main(int argc, char *argv[])
 		U2W(&U,&Wnew);
 #endif	
 		
-		if(Wnew.p<0){
-		  printf("oulah error in gravity coupling with pressure\n");
-		  abort();
-		}
+		/* if(Wnew.p<0){ */
+		/*   printf("oulah error in gravity coupling with pressure\n"); */
+		/*   abort(); */
+		/* } */
 
-		if(Wnew.d<0){
-		  printf("oulah error in gravity coupling with pressure\n");
-		  abort();
-		}
+		/* if(Wnew.d<0){ */
+		/*   printf("oulah error in gravity coupling with pressure\n"); */
+		/*   abort(); */
+		/* } */
 		
 		
-		if((isnan(Wnew.p))||isnan(Wnew.d)){
-		  printf("NAN\n");
-		  abort();
-		}
+		/* if((isnan(Wnew.p))||isnan(Wnew.d)){ */
+		/*   printf("NAN\n"); */
+		/*   abort(); */
+		/* } */
 		
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
@@ -1931,11 +1971,17 @@ int main(int argc, char *argv[])
 #ifdef WHYDRO2
 
   // ================================= performing hydro calculations
-    
-  double t0,t100,t20,t80;
+  double t0,t100,t20,t80,t200,t150;
+  double th=0.,tt=0.;
   int nread,nreadtot;;
   REAL deltamax=0.;
-  if(cpu.rank==0) printf("Start Hydro 2\n");
+
+  int nocthydro=0.;
+  for(level=levelcoarse;level<=levelmax;level++){
+    nocthydro+=cpu.noct[level-1];
+  }
+
+  if(cpu.rank==0) printf("Start Hydro on %d octs\n",nocthydro);
   //breakmpi();
   for(level=levelmax;level>=levelcoarse;level--)
     {
@@ -1950,6 +1996,7 @@ int main(int argc, char *argv[])
       nreadtot=0;
       if((nextoct!=NULL)&&(cpu.noct[level-1]!=0)){
 	do {
+	  t0=MPI_Wtime();
 	  curoct=nextoct;
 	  nextoct=curoct->next; 
 	  //if(curoct->cpu!=cpu.rank) continue;
@@ -1962,17 +2009,23 @@ int main(int argc, char *argv[])
 	  //printf("nread=%d\n",nread);
 	  // ------------ solving the hydro
 	    
-	  //t20=MPI_Wtime();
+	  t20=MPI_Wtime();
 	  hydroM(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
-	  //t80=MPI_Wtime();
+	  t80=MPI_Wtime();
 	    	    
 	  // ------------ scatter back the FLUXES
 	    
 	  nextoct=scatterstencil(curoct,stencil, nread, &cpu);
 	  nreadtot+=nread;
-	  //t100=MPI_Wtime();
+	  t100=MPI_Wtime();
+
+	  th+=t80-t20;
+	  tt+=(t100-t0);
+
 	}while(nextoct!=NULL);
       }
+      t150=MPI_Wtime();
+
       //printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
 
       // ---------------- at this stage we are ready to update the conservative variables
@@ -2000,7 +2053,7 @@ int main(int argc, char *argv[])
 #endif
 
       //printf("dtsurdx=%e on proc %d at level=%d (dtnew=%e dxcur=%e)\n",dtsurdx,cpu.rank,level,dtnew,dxcur);
-
+      
       if(nreadtot>0){
 
 	curoct=firstoct[level-1];
@@ -2115,10 +2168,10 @@ int main(int argc, char *argv[])
 		  }
 		}
 		
-		if((isnan(U.d))||isnan(U.E)){
-		  printf("NAN0\n");
-		  abort();
-		}
+		/* if((isnan(U.d))||isnan(U.E)){ */
+		/*   printf("NAN0\n"); */
+		/*   abort(); */
+		/* } */
 		
 
 		// ready to update
@@ -2184,26 +2237,27 @@ int main(int argc, char *argv[])
 
 #endif	
 #endif	
-	
+		/* /\* if(Wnew.p<0){ *\/ */
+		/* /\*   printf("oulah error in gravity coupling with pressure\n"); *\/ */
+		/* /\*   abort(); *\/ */
+		/* /\* } *\/ */
+
 		/* if(Wnew.p<0){ */
 		/*   printf("oulah error in gravity coupling with pressure\n"); */
 		/*   abort(); */
 		/* } */
-
-		if(Wnew.p<0){
-		  printf("oulah error in gravity coupling with pressure\n");
-		  abort();
-		}
 		
-		if((isnan(Wnew.p))||isnan(Wnew.d)){
-		  printf("NAN\n");
-		  abort();
-		}
+		/* if((isnan(Wnew.p))||isnan(Wnew.d)){ */
+		/*   printf("NAN\n"); */
+		/*   abort(); */
+		/* } */
 
-		Wnew.x=curcell->field.x;
-		Wnew.y=curcell->field.y;
-		Wnew.z=curcell->field.z;
+		/* Wnew.x=curcell->field.x; */
+		/* Wnew.y=curcell->field.y; */
+		/* Wnew.z=curcell->field.z; */
 		
+		if(Wnew.d<0){abort();}
+
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 
@@ -2228,9 +2282,11 @@ int main(int argc, char *argv[])
 	  }while(nextoct!=NULL);
 	}
       }
+      t200=MPI_Wtime();
+
     }
   printf("deltamax=%e\n",deltamax);
-  if(cpu.rank==0) printf("Hydro done in %e (%e in hydro) sec\n",t100-t0,t80-t20);
+  if(cpu.rank==0) printf("Timings per oct [total]: tt=%e[%e] th=%e[%e] tf=%e[e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
 
 #endif
 

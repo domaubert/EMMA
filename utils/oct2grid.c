@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     }
     
     fclose(fp);
-    printf("done with %d cells\n",ic);
+    printf("done with %d octs\n",ic);
       
     //============= dump
     

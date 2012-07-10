@@ -522,11 +522,126 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 }
 
 
+// ==============================================
+
+void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){ 
+
+
+	  struct OCT * oct;
+	  
+	  struct Wtype *W0;
+	  struct Wtype *Wp;
+	  struct Wtype *Wm;
+	  struct Wtype Dp,Dm;
+	  struct Wtype D[3];
+	  struct Wtype *W;
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+	  REAL dxcur;
+
+	  oct=cell2oct(cell);
+	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  
+	  W0=&(cell->field);
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+	    
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      Wm=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXM
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+		Wm=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSYM
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+		Wm=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSZM
+	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+		Wm=&(cell->field);
+#ifdef REFZM
+	    Wm->w*=-1.0;
+	    dxcur=1./pow(2,oct->level);
+	    Wm->p=Wm->p+GRAV*Wm->d*dxcur;
+#endif
+	      }
+#endif
+
+
+	    }
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      Wp=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXP
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+		Wp=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSYP
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+		Wp=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSZP
+	      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+		Wp=&(cell->field);
+#ifdef REFZP
+	    Wp->w*=-1.0;
+	    dxcur=1./pow(2,oct->level);
+	    Wp->p=Wp->p-GRAV*Wp->d*dxcur;
+#endif
+
+	      }
+#endif
+
+	    }
+
+	    diffW(Wp,W0,&Dp); 
+	    diffW(W0,Wm,&Dm); 
+	    
+	    
+	    minmod_W(&Dm,&Dp,D+dir);
+	  }
+
+	  // Interpolation
+	  int ix,iy,iz;
+	  int icell;
+
+	  for(iz=0;iz<2;iz++){
+	    for(iy=0;iy<2;iy++){
+	      for(ix=0;ix<2;ix++){
+		icell=ix+iy*2+iz*4;
+		interpminmod_W(W0,Wp,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
+		memcpy(Wi+icell,Wp,sizeof(struct Wtype));
+	      }
+	    }
+	  }
+
+}
+
+
 
 
 // ==================== pressure solver
 
-double frootprime(double p, struct Wtype1D_double *WL, struct Wtype1D_double *WR)
+double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
 {
   
   double fL,fR;
@@ -548,7 +663,7 @@ double frootprime(double p, struct Wtype1D_double *WL, struct Wtype1D_double *WR
 
 // ------------------------------------
 
-double froot(double p, struct Wtype1D_double *WL, struct Wtype1D_double *WR, double *u)
+double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
 {
   
   double fL,fR;
@@ -572,10 +687,60 @@ double froot(double p, struct Wtype1D_double *WL, struct Wtype1D_double *WR, dou
 
 
 
+double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *ustar){
+  double ppvrs;
+  double dbar,abar;
+  double pmax,pmin,pstar;
+  double AL,AR,BL,BR,GL,GR;
+
+  dbar=0.5*(WL->d+WR->d);
+  abar=0.5*(WL->a+WR->a);
+
+  ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
+  pmax=fmax(WL->p,WR->p);
+  pmin=fmin(WL->p,WR->p);
+  pstar=ppvrs;
+  
+  if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
+    // PVRS CASE
+    pstar=ppvrs;
+    *ustar=0.5*((WL->u+WR->u)+(WL->p-WR->p)/(dbar*abar));
+  }
+  else{
+    if(pstar<pmin){
+      //TRRS CASE
+      double z=(GAMMA-1.)/(2.*GAMMA);
+      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),1./z);
+      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
+    }
+    else{
+      //TSRS CASE
+      double p0;
+      p0=fmax(0.,ppvrs);
+      
+      AL=2./((GAMMA+1.)*WL->d);
+      AR=2./((GAMMA+1.)*WR->d);
+      
+      BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
+      BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
+
+      GL=sqrt(AL/(p0+BL));
+      GR=sqrt(AR/(p0+BR));
+
+      pstar=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
+      *ustar=0.5*((WL->u+WR->u)+(pstar-WR->p)*GR-(pstar-WL->p)*GL);
+
+    }
+  }
+  
+  return pstar;
+
+}
+
 
 // --------------------------------------
 
-double findPressure(struct Wtype1D_double *WL, struct Wtype1D_double *WR, int *niter, REAL *u)
+double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 {
 
   double ptr,pts,ppv;
@@ -589,10 +754,10 @@ double findPressure(struct Wtype1D_double *WL, struct Wtype1D_double *WR, int *n
   int tag;
   double u2;
 
-  if((WL->p<0)||(WR->p<0)){
-    printf("ouh!");
-    abort();
-    }
+  pmin=fmin(WL->p,WR->p);
+  pmax=fmax(WL->p,WR->p);
+  
+  // EXACT SOLVER
 
   // hybrid guess for pressure
 
@@ -614,8 +779,6 @@ double findPressure(struct Wtype1D_double *WL, struct Wtype1D_double *WR, int *n
   pts0=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
   pts=fmax(ERRTOL,pts0);
 
-  pmin=fmin(WL->p,WR->p);
-  pmax=fmax(WL->p,WR->p);
 
   if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
       p=ppv;
@@ -646,9 +809,10 @@ double findPressure(struct Wtype1D_double *WL, struct Wtype1D_double *WR, int *n
       	abort();
       }
       
-      /* if((p-dp)<0){ */
-      /* 	dp=p*0.5; */
-      /* } */
+      if(fabs(dp)<ERRTOL) break;
+      while((p-dp)<0){ 
+       	dp=dp*0.5; 
+      } 
 
       porg=p;
       p=p-dp;
@@ -904,15 +1068,6 @@ void MUSCL_BOUND(struct HGRID *stencil, int ioct, int icell, struct Utype *Ui,RE
 	  int idir;
 	  for(idir=0;idir<6;idir++){
 	    interpminmod(&U0,Ui+idir,D,D+1,D+2,ix[idir],iy[idir],iz[idir]); // Up contains the interpolation
-
-	    REAL p;
-	    p=Ui[idir].E-0.5*(Ui[idir].du*Ui[idir].du+Ui[idir].dv*Ui[idir].dv+Ui[idir].dw*Ui[idir].dw)/Ui[idir].d;
-
-	    if(p<0){
-	      printf("ouch !\n");
-	      abort();
-	    }
-
 	  }
 
 
@@ -956,9 +1111,11 @@ void MUSCL_BOUND(struct HGRID *stencil, int ioct, int icell, struct Utype *Ui,RE
 
 void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct Wtype *Wt){
 
-  REAL M[25];
-  REAL W[5]={0.,0.,0.,0.,0.};
-  REAL d[5];
+
+  static REAL M[25];
+  static REAL W[5]={0.,0.,0.,0.,0.};
+  static REAL d[5];
+
   int i,j;
 
   // =====  building the A matrix
@@ -1178,17 +1335,178 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	  
 }
 
+//========================= HLL TOOLS =================================================================/
 
-//============================================================================
+void speedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, REAL *pstar, REAL *ustar){
+  
+  REAL qL,qR;
+  struct Wtype1D WLloc;
+  struct Wtype1D WRloc;
 
-void speedestimateX(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
+  int n;
+
+  WLloc.d=WL->d;
+  WLloc.u=WL->u;
+  WLloc.p=WL->p;
+  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  
+  WRloc.d=WR->d;
+  WRloc.u=WR->u;
+  WRloc.p=WR->p;
+  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+
+  (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
+
+  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  
+  *SL=WL->u-WL->a*qL;
+  *SR=WR->u+WR->a*qR;
+  
+}
+
+
+void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, REAL *pstar, REAL *ustar){
+
+  REAL qL,qR;
+  struct Wtype1D WLloc;
+  struct Wtype1D WRloc;
+  int n;
+
+  WLloc.d=WL->d;
+  WLloc.u=WL->v;
+  WLloc.p=WL->p;
+  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  
+  WRloc.d=WR->d;
+  WRloc.u=WR->v;
+  WRloc.p=WR->p;
+  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+
+  (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
+
+  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  
+  *SL=WL->v-WL->a*qL;
+  *SR=WR->v+WR->a*qR;
+  
+}
+
+void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, REAL *pstar, REAL *ustar){
+
+  REAL qL,qR;
+  struct Wtype1D WLloc;
+  struct Wtype1D WRloc;
+  int n;
+
+  WLloc.d=WL->d;
+  WLloc.u=WL->w;
+  WLloc.p=WL->p;
+  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  
+  WRloc.d=WR->d;
+  WRloc.u=WR->w;
+  WRloc.p=WR->p;
+  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+
+  (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
+
+  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  
+  *SL=WL->w-WL->a*qL;
+  *SR=WR->w+WR->a*qR;
+  
+}
+
+
+void speedestimateX(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){//, REAL *pstar, REAL *ustar){
 
   REAL splus;
   splus=fmax(fabs(WL->u)+WL->a,fabs(WR->u)+WR->a);
   *SL=-splus;
   *SR= splus;
 
+
+  /* REAL qL,qR; */
+  /* REAL pstar,ustar; */
+  
+  /* pstar=0.5*(WL->p+WR->p)-0.5*(WR->u-WL->u)*(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+  /* ustar=0.5*(WL->u+WR->u)-0.5*(WR->p-WL->p)/(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+
+  /* qL=(pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WL->p-1.))); */
+  /* qR=(pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WR->p-1.))); */
+  
+  /* *SL=WL->u-WL->a*qL; */
+  /* *SR=WR->u+WR->a*qR; */
+  
+  /* if(*SL>*SR) abort(); */
+
 }
+
+/* void speedestimateY(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){//, REAL *pstar, REAL *ustar){ */
+
+/*   REAL splus; */
+/*   /\* splus=fmax(fabs(WL->u)+WL->a,fabs(WR->u)+WR->a); *\/ */
+/*   /\* *SL=-splus; *\/ */
+/*   /\* *SR= splus; *\/ */
+
+
+/*   REAL qL,qR; */
+/*   REAL pstar,ustar; */
+  
+/*   pstar=0.5*(WL->p+WR->p)-0.5*(WR->v-WL->v)*(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+/*   ustar=0.5*(WL->v+WR->v)-0.5*(WR->p-WL->p)/(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+
+/*   qL=((pstar)<=WL->p?1:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WL->p-1.))); */
+/*   qR=((pstar)<=WR->p?1:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WR->p-1.))); */
+  
+/*   *SL=WL->v-WL->a*qL; */
+/*   *SR=WR->v+WR->a*qR; */
+  
+/*   if(*SL>*SR) abort(); */
+
+/* } */
+
+/* void speedestimateZ(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){// REAL *pstar, REAL *ustar){ */
+
+/*   REAL splus; */
+/*   /\* splus=fmax(fabs(WL->u)+WL->a,fabs(WR->u)+WR->a); *\/ */
+/*   /\* *SL=-splus; *\/ */
+/*   /\* *SR= splus; *\/ */
+
+
+/* REAL qL,qR; */
+/* REAL pstar,ustar; */
+  
+/*   pstar=0.5*(WL->p+WR->p)-0.5*(WR->w-WL->w)*(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+/*   ustar=0.5*(WL->w+WR->w)-0.5*(WR->p-WL->p)/(0.25*(WL->d+WR->d)*(WL->a+WR->a)); */
+
+/*   qL=((pstar)<=WL->p?1:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WL->p-1.))); */
+/*   qR=((pstar)<=WR->p?1:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((pstar)/WR->p-1.))); */
+  
+/*   *SL=WL->w-WL->a*qL; */
+/*   *SR=WR->w+WR->a*qR; */
+  
+/*   if(*SL>*SR) abort(); */
+
+/* } */
+
+void W2Ustar_x(struct Wtype *W, struct Utype *U, REAL SK, REAL SS){
+  
+  REAL fact=W->d*(SK-W->u)/(SK-SS);
+  REAL EK=0.5*W->d*(W->u*W->u+W->v*W->v+W->w*W->w)+W->p/(GAMMA-1.);
+
+  U->d=fact;
+  U->du=fact*SS;
+  U->dv=fact*W->v;
+  U->dw=fact*W->w;
+  U->E=fact*(EK/W->d+(SS-W->u)*(SS+W->p/(W->d*(SK-W->u))));
+
+}
+
+
 
 void speedestimateY(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
 
@@ -1196,6 +1514,8 @@ void speedestimateY(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
   splus=fmax(fabs(WL->v)+WL->a,fabs(WR->v)+WR->a);
   *SL=-splus;
   *SR= splus;
+
+
 
 }
 
@@ -1251,12 +1571,17 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
   struct Wtype *curcell;
   struct Wtype *neicell;
 
-#ifdef RIEMANN_HLL
   REAL SL,SR;
+#ifdef RIEMANN_HLL
+  
   REAL Fr[NVAR],Fl[NVAR];
 #endif
-  int tagr=0,tagl=0;
 
+
+  int tagr=0,tagl=0;
+  REAL fact;
+
+  
   //printf("let's do some hydro\n");
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -1349,10 +1674,50 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       // Getting the fluxes LEFT
       getflux_X(&Utest3D,FL);
 
+#ifdef DUAL_E
+      FL[5]=Wtest3D.p*Wtest3D.u;
 #endif
 
+#endif
+
+      // =============================================
+
+#ifdef RIEMANN_HLLC
+      speedestimateX_HLLC(&WN[0],&WC[0],&SL,&SR,&pstar,&ustar);
+      if(SL>SR) abort();
+      if(ustar>SR) abort();
+      if(ustar<SL) abort();
+
+      if(SL>=0.){
+	getflux_X(&UN[0],FL);
+      }
+      else if(SR<=0.){
+	getflux_X(&UC[0],FL);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_X(&UN[0],FL);
+	fact=WN[0].d*(SL-WN[0].u)/(SL-ustar);
+	FL[0]+=(fact*1.                                                                      -UN[0].d )*SL;
+	FL[1]+=(fact*ustar                                                                   -UN[0].du)*SL;
+	FL[2]+=(fact*WN[0].v                                                                 -UN[0].dv)*SL;
+	FL[3]+=(fact*WN[0].w                                                                 -UN[0].dw)*SL;
+	FL[4]+=(fact*(UN[0].E/UN[0].d+(ustar-WN[0].u)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].u))))-UN[0].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_X(&UC[0],FL);
+	fact=WC[0].d*(SR-WC[0].u)/(SR-ustar);
+	FL[0]+=(fact*1.                                                                      -UC[0].d )*SR;
+	FL[1]+=(fact*ustar                                                                   -UC[0].du)*SR;
+	FL[2]+=(fact*WC[0].v                                                                 -UC[0].dv)*SR;
+	FL[3]+=(fact*WC[0].w                                                                 -UC[0].dw)*SR;
+	FL[4]+=(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u))))-UC[0].E )*SR;
+      }
+#endif
+
+
+      // =============================================
 #ifdef RIEMANN_HLL
-      speedestimateX(&WN[0],&WC[0],&SL,&SR);
+      speedestimateX(&WN[0],&WC[0],&SL,&SR);//,&pstar,&ustar);
       /* SL=WN[0].u-WN[0].a; */
       /* SR=WC[0].u+WC[0].a; */
 
@@ -1360,7 +1725,14 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	getflux_X(&UN[0],Fl);
 	getflux_X(&UC[0],Fr);
 
-	
+	//W2Ustar_x(&WN[0],&US,SL,SS);
+
+	/* FL[0]=Fl[0]+SL*(US.d -UN[0].d ); */
+	/* FL[1]=Fl[1]+SL*(US.du-UN[0].du); */
+	/* FL[2]=Fl[2]+SL*(US.dv-UN[0].dv); */
+	/* FL[3]=Fl[3]+SL*(US.dw-UN[0].dw); */
+	/* FL[4]=Fl[4]+SL*(US.E -UN[0].E ); */
+
 	FL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[0].d -UN[0].d ))/(SR-SL);
 	FL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[0].du-UN[0].du))/(SR-SL);
 	FL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[0].dv-UN[0].dv))/(SR-SL);
@@ -1368,6 +1740,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[0].E -UN[0].E ))/(SR-SL);
 
 #ifdef DUAL_E
+
+	//FL[5]=pstar*ustar;
+
 	Fl[5]=WN[0].p*WN[0].u;
 	Fr[5]=WC[0].p*WC[0].u;
 	FL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[0].p -WN[0].p ))/(SR-SL);
@@ -1445,11 +1820,46 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       
       // Getting the fluxes RIGHT
       getflux_X(&Utest3D,FR);
+#ifdef DUAL_E
+      FR[5]=Wtest3D.p*Wtest3D.u;
 #endif
 
+#endif
+      // =======================================================================
 
+#ifdef RIEMANN_HLLC
+      speedestimateX_HLLC(&WC[1],&WN[1],&SL,&SR,&pstar,&ustar);
+      if(SL>=0.){
+	getflux_X(&UC[1],FR);
+      }
+      else if(SR<=0.){
+	getflux_X(&UN[1],FR);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_X(&UC[1],FR);
+	fact=WC[1].d*(SL-WC[1].u)/(SL-ustar);
+	FR[0]+=(fact*1.                                                                      -UC[1].d )*SL;
+	FR[1]+=(fact*ustar                                                                   -UC[1].du)*SL;
+	FR[2]+=(fact*WC[1].v                                                                 -UC[1].dv)*SL;
+	FR[3]+=(fact*WC[1].w                                                                 -UC[1].dw)*SL;
+	FR[4]+=(fact*(UC[1].E/UC[1].d+(ustar-WC[1].u)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].u))))-UC[1].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_X(&UN[1],FR);
+	fact=WN[1].d*(SR-WN[1].u)/(SR-ustar);
+	FR[0]+=(fact*1.                                                                      -UN[1].d )*SR;
+	FR[1]+=(fact*ustar                                                                   -UN[1].du)*SR;
+	FR[2]+=(fact*WN[1].v                                                                 -UN[1].dv)*SR;
+	FR[3]+=(fact*WN[1].w                                                                 -UN[1].dw)*SR;
+	FR[4]+=(fact*(UN[1].E/UN[1].d+(ustar-WN[1].u)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].u))))-UN[1].E )*SR;
+      }
+
+
+#endif
+
+      // =======================================================================
 #ifdef RIEMANN_HLL
-      speedestimateX(&WC[1],&WN[1],&SL,&SR);
+      speedestimateX(&WC[1],&WN[1],&SL,&SR);//,&pstar,&ustar);
       /* SL=WC[1].u-WC[1].a; */
       /* SR=WN[1].u+WN[1].a; */
 
@@ -1464,11 +1874,12 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[1].E -UC[1].E ))/(SR-SL);
 
 #ifdef DUAL_E
+
+	//FR[5]=pstar*ustar;
 	Fl[5]=WC[1].p*WC[1].u;
 	Fr[5]=WN[1].p*WN[1].u;
 	FR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[1].p -WC[1].p))/(SR-SL);
 #endif
-	tagr=1;
       }
       else{
 	if(SL>=0.){
@@ -1542,11 +1953,49 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       // Getting the fluxes LEFT
       getflux_Y(&Utest3D,GL);
 
+#ifdef DUAL_E
+      GL[5]=Wtest3D.p*Wtest3D.v;
+#endif
 
 #endif
 
+
+      // =============================================
+
+#ifdef RIEMANN_HLLC
+      speedestimateY_HLLC(&WN[2],&WC[2],&SL,&SR,&pstar,&ustar);
+
+      if(SL>=0.){
+	getflux_Y(&UN[2],GL);
+      }
+      else if(SR<=0.){
+	getflux_Y(&UC[2],GL);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_Y(&UN[2],GL);
+	fact=WN[2].d*(SL-WN[2].v)/(SL-ustar);
+	GL[0]+=(fact*1.                                                                      -UN[2].d )*SL;
+	GL[1]+=(fact*WN[2].u                                                                 -UN[2].du)*SL;
+	GL[2]+=(fact*ustar                                                                   -UN[2].dv)*SL;
+	GL[3]+=(fact*WN[2].w                                                                 -UN[2].dw)*SL;
+	GL[4]+=(fact*(UN[2].E/UN[2].d+(ustar-WN[2].v)*(ustar+WN[2].p/(WN[2].d*(SL-WN[2].v))))-UN[2].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_Y(&UC[2],GL);
+	fact=WC[2].d*(SR-WC[2].v)/(SR-ustar);
+	GL[0]+=(fact*1.                                                                      -UC[2].d )*SR;
+	GL[1]+=(fact*WC[2].u                                                                 -UC[2].du)*SR;
+	GL[2]+=(fact*ustar                                                                   -UC[2].dv)*SR;
+	GL[3]+=(fact*WC[2].w                                                                 -UC[2].dw)*SR;
+	GL[4]+=(fact*(UC[2].E/UC[2].d+(ustar-WC[2].v)*(ustar+WC[2].p/(WC[2].d*(SR-WC[2].v))))-UC[2].E )*SR;
+      }
+#endif
+
+      // =============================================
+
+
 #ifdef RIEMANN_HLL
-      speedestimateY(&WN[2],&WC[2],&SL,&SR);
+      speedestimateY(&WN[2],&WC[2],&SL,&SR);//&pstar,&ustar);
       /* SL=WN[2].v-WN[2].a; */
       /* SR=WC[2].v+WC[2].a; */
 
@@ -1637,10 +2086,46 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       
       // Getting the fluxes RIGHT
       getflux_Y(&Utest3D,GR);
+#ifdef DUAL_E
+      GR[5]=Wtest3D.p*Wtest3D.v;
 #endif
 
+#endif
+      // =============================================
+
+#ifdef RIEMANN_HLLC
+      speedestimateY_HLLC(&WC[3],&WN[3],&SL,&SR,&pstar,&ustar);
+
+      if(SL>=0.){
+	getflux_Y(&UC[3],GR);
+      }
+      else if(SR<=0.){
+	getflux_Y(&UN[3],GR);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_Y(&UC[3],GR);
+	fact=WC[3].d*(SL-WC[3].v)/(SL-ustar);
+	GR[0]+=(fact*1.                                                                      -UC[3].d )*SL;
+	GR[1]+=(fact*WC[3].u                                                                 -UC[3].du)*SL;
+	GR[2]+=(fact*ustar                                                                   -UC[3].dv)*SL;
+	GR[3]+=(fact*WC[3].w                                                                 -UC[3].dw)*SL;
+	GR[4]+=(fact*(UC[3].E/UC[3].d+(ustar-WC[3].v)*(ustar+WC[3].p/(WC[3].d*(SL-WC[3].v))))-UC[3].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_Y(&UN[3],GR);
+	fact=WN[3].d*(SR-WN[3].v)/(SR-ustar);
+	GR[0]+=(fact*1.                                                                      -UN[3].d )*SR;
+	GR[1]+=(fact*WN[3].u                                                                 -UN[3].du)*SR;
+	GR[2]+=(fact*ustar                                                                   -UN[3].dv)*SR;
+	GR[3]+=(fact*WN[3].w                                                                 -UN[3].dw)*SR;
+	GR[4]+=(fact*(UN[3].E/UN[3].d+(ustar-WN[3].v)*(ustar+WN[3].p/(WN[3].d*(SR-WN[3].v))))-UN[3].E )*SR;
+      }
+#endif
+
+      // =============================================
+
 #ifdef RIEMANN_HLL
-      speedestimateY(&WC[3],&WN[3],&SL,&SR);
+      speedestimateY(&WC[3],&WN[3],&SL,&SR);//,&pstar,&ustar);
       /* SL=WC[3].v-WC[3].a; */
       /* SR=WN[3].v+WN[3].a; */
 
@@ -1732,10 +2217,47 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       
       // Getting the fluxes LEFT
       getflux_Z(&Utest3D,HL);
+
+#ifdef DUAL_E
+      HL[5]=Wtest3D.p*Wtest3D.w;
 #endif
 
+#endif
+
+      // ===========================================
+
+#ifdef RIEMANN_HLLC
+      speedestimateZ_HLLC(&WN[4],&WC[4],&SL,&SR,&pstar,&ustar);
+
+      if(SL>=0.){
+	getflux_Z(&UN[4],HL);
+      }
+      else if(SR<=0.){
+	getflux_Z(&UC[4],HL);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_Z(&UN[4],HL);
+	fact=WN[4].d*(SL-WN[4].w)/(SL-ustar);
+	HL[0]+=(fact*1.                                                                      -UN[4].d )*SL;
+	HL[1]+=(fact*WN[4].u                                                                 -UN[4].du)*SL;
+	HL[2]+=(fact*WN[4].v                                                                 -UN[4].dv)*SL;
+	HL[3]+=(fact*ustar                                                                   -UN[4].dw)*SL;
+	HL[4]+=(fact*(UN[4].E/UN[4].d+(ustar-WN[4].w)*(ustar+WN[4].p/(WN[4].d*(SL-WN[4].w))))-UN[4].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_Z(&UC[4],HL);
+	fact=WC[4].d*(SR-WC[4].w)/(SR-ustar);
+	HL[0]+=(fact*1.                                                                      -UC[4].d )*SR;
+	HL[1]+=(fact*WC[4].u                                                                 -UC[4].du)*SR;
+	HL[2]+=(fact*WC[4].v                                                                 -UC[4].dv)*SR;
+	HL[3]+=(fact*ustar                                                                   -UC[4].dw)*SR;
+	HL[4]+=(fact*(UC[4].E/UC[4].d+(ustar-WC[4].w)*(ustar+WC[4].p/(WC[4].d*(SR-WC[4].w))))-UC[4].E )*SR;
+      }
+#endif
+      // ===========================================
+
 #ifdef RIEMANN_HLL
-      speedestimateZ(&WN[4],&WC[4],&SL,&SR);
+      speedestimateZ(&WN[4],&WC[4],&SL,&SR);//,&pstar,&ustar);
       /* SL=WN[4].w-WN[4].a; */
       /* SR=WC[4].w+WC[4].a; */
 
@@ -1801,7 +2323,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	abort();
       }
       // Riemann Solver
-      pstar=findPressure(&WLloc,&WRloc,&n,&ustar);
+      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
       getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
       Wtest3D.d=Wtest.d;
@@ -1825,10 +2347,45 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       
       // Getting the fluxes RIGHT
       getflux_Z(&Utest3D,HR);
+
+#ifdef DUAL_E
+      HR[5]=Wtest3D.p*Wtest3D.w;
 #endif
 
+#endif
+      //=====================================================
+#ifdef RIEMANN_HLLC
+      speedestimateZ_HLLC(&WC[5],&WN[5],&SL,&SR,&pstar,&ustar);
+
+      if(SL>=0.){
+	getflux_Z(&UC[5],HR);
+      }
+      else if(SR<=0.){
+	getflux_Z(&UN[5],HR);
+      }
+      else if((SL<0.)&&(ustar>=0.)){
+	getflux_Z(&UC[5],HR);
+	fact=WC[5].d*(SL-WC[5].w)/(SL-ustar);
+	HR[0]+=(fact*1.                                                                      -UC[5].d )*SL;
+	HR[1]+=(fact*WC[5].u                                                                 -UC[5].du)*SL;
+	HR[2]+=(fact*WC[5].v                                                                 -UC[5].dv)*SL;
+	HR[3]+=(fact*ustar                                                                   -UC[5].dw)*SL;
+	HR[4]+=(fact*(UC[5].E/UC[5].d+(ustar-WC[5].w)*(ustar+WC[5].p/(WC[5].d*(SL-WC[5].w))))-UC[5].E )*SL;
+      }
+      else if((ustar<=0.)&&(SR>0.)){
+	getflux_Z(&UN[5],HR);
+	fact=WN[5].d*(SR-WN[5].w)/(SR-ustar);
+	HR[0]+=(fact*1.                                                                      -UN[5].d )*SR;
+	HR[1]+=(fact*WN[5].u                                                                 -UN[5].du)*SR;
+	HR[2]+=(fact*WN[5].v                                                                 -UN[5].dv)*SR;
+	HR[3]+=(fact*ustar                                                                   -UN[5].dw)*SR;
+	HR[4]+=(fact*(UN[5].E/UN[5].d+(ustar-WN[5].w)*(ustar+WN[5].p/(WN[5].d*(SR-WN[5].w))))-UN[5].E )*SR;
+      }
+#endif
+
+
 #ifdef RIEMANN_HLL
-      speedestimateZ(&WC[5],&WN[5],&SL,&SR);
+      speedestimateZ(&WC[5],&WN[5],&SL,&SR);//,&pstar,&ustar);
       /* SL=WC[5].w-WC[5].a; */
       /* SR=WN[5].w+WN[5].a; */
 
@@ -1872,6 +2429,11 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       
       //========================= copy the fluxes
+      
+      /* memset(GL,0,sizeof(REAL)*NVAR); */
+      /* memset(GR,0,sizeof(REAL)*NVAR); */
+      /* memset(FL,0,sizeof(REAL)*NVAR); */
+      /* memset(FR,0,sizeof(REAL)*NVAR); */
 
 
       memcpy(stencil[i].new.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);

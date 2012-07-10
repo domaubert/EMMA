@@ -581,6 +581,7 @@ int Pot2Force(struct HGRID *stencil, int level, int curcpu, int nread,int stride
       floc[1]=0.5*(stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].gdata.p-stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].gdata.p)/dx;
       floc[2]=0.5*(stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].gdata.p-stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].gdata.p)/dx;
 
+      if(floc[1]!=0.) abort();
       // store the force
       
       memcpy(stencil[i].new.cell[icell].f,floc,3*sizeof(REAL));

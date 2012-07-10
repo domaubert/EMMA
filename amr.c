@@ -112,7 +112,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
       }
       else{
 	// the neighbour does not exist we need to interpolate the value at the correct position
-	coarse2fine_hydro(curoct->nei[vnei[ii]],Wi,vnei);
+	coarse2fine_hydro2(curoct->nei[vnei[ii]],Wi,vnei);
 	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
 	
       }
@@ -121,18 +121,18 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);
-    /* gradu[ax]+=(W.u*fact); */
+    /*gradu[ax]+=(W.u*fact); */
     /* gradv[ax]+=(W.v*fact); */
     /* gradw[ax]+=(W.w*fact); */
-    /* gradp[ax]+=(W.p*fact); */
+    /*gradp[ax]+=(W.p*fact);*/
 
   }
 
-  ratiod=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/curoct->cell[icell].field.d;
-  ratiou=sqrt(pow(gradu[0],2)+pow(gradu[1],2)+pow(gradu[2],2))*0.5/curoct->cell[icell].field.u;
-  ratiov=sqrt(pow(gradv[0],2)+pow(gradv[1],2)+pow(gradv[2],2))*0.5/curoct->cell[icell].field.v;
-  ratiow=sqrt(pow(gradw[0],2)+pow(gradw[1],2)+pow(gradw[2],2))*0.5/curoct->cell[icell].field.w;
-  ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/curoct->cell[icell].field.p;
+  ratiod=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].field.d+1e-10);
+  ratiou=sqrt(pow(gradu[0],2)+pow(gradu[1],2)+pow(gradu[2],2))*0.5/fabs(curoct->cell[icell].field.u+1e-10);
+  ratiov=sqrt(pow(gradv[0],2)+pow(gradv[1],2)+pow(gradv[2],2))*0.5/fabs(curoct->cell[icell].field.v+1e-10);
+  ratiow=sqrt(pow(gradw[0],2)+pow(gradw[1],2)+pow(gradw[2],2))*0.5/fabs(curoct->cell[icell].field.w+1e-10);
+  ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/fabs(curoct->cell[icell].field.p+1e-10);
 
   ratio=ratiod;
   ratio=fmax(ratio,ratiou);
@@ -467,7 +467,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
-		  coarse2fine_hydro(&(curoct->cell[icell]),Wi);
+		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
 		}
 #endif
 
@@ -615,6 +615,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
     printf("octs destroyed = %d\n",ndes);
   }
 
+  if(ndes>0) abort();
   return freeoct;
 
 }

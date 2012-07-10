@@ -7,7 +7,7 @@ typedef double REAL;
 #include <mpi.h>
 #endif
 
-#define GAMMA (5./3.)
+#define GAMMA (1.4)
 #define GRAV (0.25)
 
 #define NCOSMOTAB (262144)
@@ -135,7 +135,7 @@ struct Wtype{
   REAL p;   // pressure
   REAL a;   // sound speed
 
-  REAL x,y,z;
+  //REAL x,y,z;
 };
 
 

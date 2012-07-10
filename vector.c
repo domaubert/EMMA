@@ -583,7 +583,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
     }
   else{
-    coarse2fine_hydro(neicell,Wi);
+    coarse2fine_hydro2(neicell,Wi);
   }
 
 #ifdef WGRAV
