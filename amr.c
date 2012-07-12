@@ -114,16 +114,16 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 	// the neighbour does not exist we need to interpolate the value at the correct position
 	coarse2fine_hydro2(curoct->nei[vnei[ii]],Wi,vnei);
 	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
-	
+    
       }
     }
     
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);
-    /*gradu[ax]+=(W.u*fact); */
-    /* gradv[ax]+=(W.v*fact); */
-    /* gradw[ax]+=(W.w*fact); */
+    /*gradu[ax]+=(W.u*fact);*/
+     gradv[ax]+=(W.v*fact);  
+    /* gradw[ax]+=(W.w*fact);  */
     /*gradp[ax]+=(W.p*fact);*/
 
   }
@@ -615,7 +615,6 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
     printf("octs destroyed = %d\n",ndes);
   }
 
-  if(ndes>0) abort();
   return freeoct;
 
 }
@@ -819,7 +818,6 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 #endif
 
 #ifdef WHYDRO2
-
 			      mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=levelcoarse);
 
 			      if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
@@ -827,10 +825,12 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				nmark++;
 			      }
 #endif
-
+			      
 
  			    }
+			  
 			  }
+
 			}
 		    }while(nextoct!=NULL);
 		  //printf("pass=%d nmark=%d\n",pass,nmark);

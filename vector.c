@@ -584,6 +584,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     }
   else{
     coarse2fine_hydro2(neicell,Wi);
+
   }
 
 #ifdef WGRAV
@@ -600,6 +601,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #endif
   }
 
+   
+  
   // next order
   if(order==1){
     for(i=0;i<6;i++){
@@ -655,6 +658,8 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 #ifdef WGRAV 
  	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
 #endif 
+
+
       }
       
       //abort();

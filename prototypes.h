@@ -393,3 +393,9 @@ struct MULTIVECT{
 #endif
 };
 
+
+// ==========================================
+
+struct OCT *SOCT;
+
+

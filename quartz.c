@@ -631,6 +631,11 @@ int main(int argc, char *argv[])
 	    }
 	    lastoct[level]=newoct;
 
+	    // SOCT STUFF
+	    if(level==(levelcoarse-1)){
+	      if((newoct->x==0.3125)*(newoct->y==0.)*(newoct->z==0.)) SOCT=newoct;
+	    }
+
 
 	    // next oct ready
 	    newoct++; 
@@ -1195,37 +1200,70 @@ int main(int argc, char *argv[])
   REAL X0;
   if(cpu.rank==0) printf("Init Hydro\n");
 
-  /*  /\* // TEST 1 *\/ */
-
-  WL.d=1.;
-  WL.u=0.75;
-  WL.v=0.;
-  WL.w=0.;
-  WL.p=1.0;
-
-  WR.d=0.125;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=0.;
-  WR.p=0.1;
-  X0=0.3125;
-  tmax=0.1;
-
-  /* /\*  /\\* // TEST 123 *\\/ *\/ */
+  /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
   /* WL.d=1.; */
-  /* WL.u=-2.; */
+  /* WL.u=0.75; */
   /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=1.0; */
+
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.1; */
+  /* X0=0.3125; */
+  /* tmax=0.1; */
+
+  /*  /\* // TEST 123 *\/ */
+
+  /* WL.d=1.; */
+  /* WL.u=0.; */
+  /* WL.v=-2.; */
   /* WL.w=0.; */
   /* WL.p=0.4; */
 
   /* WR.d=1.; */
-  /* WR.u=2.; */
-  /* WR.v=0.; */
+  /* WR.u=0.; */
+  /* WR.v=2.; */
   /* WR.w=0.; */
   /* WR.p=0.4; */
   /* X0=0.5; */
   /* tmax=0.15; */
+
+
+  /*  /\* // TEST 5 *\/ */
+
+  /* WL.d=1.; */
+  /* WL.u=-19.59745; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=1000.; */
+
+  /* WR.d=1.; */
+  /* WR.u=-19.59745; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.01; */
+  /* X0=0.8; */
+  /* tmax=0.012; */
+
+  /*  /\* // TEST 4 *\/ */
+
+  WR.d=5.99924;
+  WR.v=-19.5975;
+  WR.u=0.;
+  WR.w=0.;
+  WR.p=460.894;
+
+  WL.d=5.99242;
+  WL.v=6.19633;
+  WL.u=0.;
+  WL.w=0.;
+  WL.p=46.0950;
+  X0=0.6;
+  tmax=0.035;
 
   /*  /\* // REVERSED TEST 1 *\/ */
 
@@ -1359,7 +1397,7 @@ int main(int argc, char *argv[])
 
 
 	      /* SHOCK TUBE */
-	      if(xc<=X0){
+	      if(yc<=X0){
 
 	      	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
 	      }
@@ -1498,7 +1536,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  tmax=0.1;
+  tmax=0.035;
 #endif
 #endif
 
@@ -1692,7 +1730,11 @@ int main(int argc, char *argv[])
       MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu.comm);
 #endif
       if(cpu.rank==0){
-	printf("grid occupancy=%4.1f \n",(gtot/(1.0*ngridmax))*100.);
+	int I;
+	REAL frac=(gtot/(1.0*ngridmax))*100.;
+	printf("grid occupancy=%4.1f [",frac);
+	for(I=0;I<20;I++) printf("%c",(I/20.*100<frac?'*':' '));
+	printf("]\n");
       }
 
       // ==========================================================================================
@@ -2257,7 +2299,7 @@ int main(int argc, char *argv[])
 		/* Wnew.z=curcell->field.z; */
 		
 		if(Wnew.d<0){abort();}
-
+		//if(Wnew.v!=0.) abort();
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 
@@ -2275,6 +2317,7 @@ int main(int argc, char *argv[])
 		  W.w+=child->cell[i].field.w*0.125;
 		  W.p+=child->cell[i].field.p*0.125;
 		}
+		//if(W.v!=0.) abort();
 		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
 
 	      }
@@ -2286,7 +2329,8 @@ int main(int argc, char *argv[])
 
     }
   printf("deltamax=%e\n",deltamax);
-  if(cpu.rank==0) printf("Timings per oct [total]: tt=%e[%e] th=%e[%e] tf=%e[e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
+  if(cpu.rank==0) printf("Timings per oct [total]: tt=%e[%e] th=%e[%e] tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
+
 
 #endif
 

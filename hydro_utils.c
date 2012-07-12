@@ -532,6 +532,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	  struct Wtype *W0;
 	  struct Wtype *Wp;
 	  struct Wtype *Wm;
+	  struct Wtype Wint;
 	  struct Wtype Dp,Dm;
 	  struct Wtype D[3];
 	  struct Wtype *W;
@@ -570,6 +571,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
 		Wm=&(cell->field);
 #ifdef REFZM
+		// !!!!DANGEREUX CA !
 	    Wm->w*=-1.0;
 	    dxcur=1./pow(2,oct->level);
 	    Wm->p=Wm->p+GRAV*Wm->d*dxcur;
@@ -579,6 +581,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 
 
 	    }
+	    
 
 	    inei2=2*dir+1;
 	    if(vnei[inei2]==6){
@@ -618,21 +621,30 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	    
 	    
 	    minmod_W(&Dm,&Dp,D+dir);
+	    
+		  
 	  }
 
 	  // Interpolation
 	  int ix,iy,iz;
 	  int icell;
 
+	  // =================================================
+	  // =================================================
+	  // =================================================
+	  // =================================================
+	  // FAUT PAS METTRE WP ICI !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 	  for(iz=0;iz<2;iz++){
 	    for(iy=0;iy<2;iy++){
 	      for(ix=0;ix<2;ix++){
 		icell=ix+iy*2+iz*4;
-		interpminmod_W(W0,Wp,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
-		memcpy(Wi+icell,Wp,sizeof(struct Wtype));
+		interpminmod_W(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
+		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 	      }
 	    }
 	  }
+
 
 }
 
@@ -710,7 +722,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
     if(pstar<pmin){
       //TRRS CASE
       double z=(GAMMA-1.)/(2.*GAMMA);
-      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),1./z);
+      double iz=(2.*GAMMA)/(GAMMA-1.);
+      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),iz);
       *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
     }
     else{
@@ -732,7 +745,7 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
 
     }
   }
-  
+
   return pstar;
 
 }
@@ -1109,14 +1122,14 @@ void MUSCL_BOUND(struct HGRID *stencil, int ioct, int icell, struct Utype *Ui,RE
 // ===============================================================================================
 
 
-void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct Wtype *Wt){
+void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct Wtype *Dy,struct Wtype *Dz, struct Wtype *Wt){
 
 
-  static REAL M[25];
-  static REAL W[5]={0.,0.,0.,0.,0.};
-  static REAL d[5];
-
+  REAL M[25];
+  REAL W[5]={0.,0.,0.,0.,0.};
+  REAL d[5];
   int i,j;
+
 
   // =====  building the A matrix
 
@@ -1135,11 +1148,11 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
 
   // ===== First Product
 
-  d[0]=D[0].d;
-  d[1]=D[0].u;
-  d[2]=D[0].v;
-  d[3]=D[0].w;
-  d[4]=D[0].p;
+  d[0]=Dx->d;
+  d[1]=Dx->u;
+  d[2]=Dx->v;
+  d[3]=Dx->w;
+  d[4]=Dx->p;
 
   for(j=0;j<5;j++){
     for(i=0;i<5;i++){
@@ -1164,11 +1177,11 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
 
   // ===== Second Product
 
-  d[0]=D[1].d;
-  d[1]=D[1].u;
-  d[2]=D[1].v;
-  d[3]=D[1].w;
-  d[4]=D[1].p;
+  d[0]=Dy->d;
+  d[1]=Dy->u;
+  d[2]=Dy->v;
+  d[3]=Dy->w;
+  d[4]=Dy->p;
 
   for(j=0;j<5;j++){
     for(i=0;i<5;i++){
@@ -1190,13 +1203,13 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
 
   M[3+4*5]=1./W0->d;
 
-  d[0]=D[2].d;
-  d[1]=D[2].u;
-  d[2]=D[2].v;
-  d[3]=D[2].w;
-  d[4]=D[2].p;
+  d[0]=Dz->d;
+  d[1]=Dz->u;
+  d[2]=Dz->v;
+  d[3]=Dz->w;
+  d[4]=Dz->p;
 
-  
+ 
   for(j=0;j<5;j++){
     for(i=0;i<5;i++){
       W[i]+=M[i+j*5]*d[j];
@@ -1213,7 +1226,6 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *D, struct 
   Wt->v=W[2];
   Wt->w=W[3];
   Wt->p=W[4];
-  
   
 }
 
@@ -1271,11 +1283,11 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 
 
 	  // build jacobian matrix product
-
 	  
-	  matrix_jacobian(W0,dt,dx,D,&Wt); // Here Wt contains the evolution of the state
 	  
-
+	  matrix_jacobian(W0,dt,dx,&D[0],&D[1],&D[2],&Wt); // Here Wt contains the evolution of the state
+	  
+	  
 	  // READY TO EVOLVE EXTRAPOLATED VALUE
 
 	  REAL ix[]={-0.5,0.5,0.0,0.0,0.0,0.0};
@@ -1328,6 +1340,8 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 	    if(Wi[idir].p<0) abort();
+	    //if(Wi[idir].w!=0.) abort();
+	    //    if((idir==2)&&(Wi[idir].d>1.)) abort();
 	  }
 	  
 
@@ -1685,8 +1699,8 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 #ifdef RIEMANN_HLLC
       speedestimateX_HLLC(&WN[0],&WC[0],&SL,&SR,&pstar,&ustar);
       if(SL>SR) abort();
-      if(ustar>SR) abort();
-      if(ustar<SL) abort();
+      /* if(ustar>SR) abort(); */
+      /* if(ustar<SL) abort(); */
 
       if(SL>=0.){
 	getflux_X(&UN[0],FL);
@@ -1964,7 +1978,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
 #ifdef RIEMANN_HLLC
       speedestimateY_HLLC(&WN[2],&WC[2],&SL,&SR,&pstar,&ustar);
-
+      REAL pstar2=pstar;
+      REAL SR2=SR,SL2=SL;
+      REAL ustar2=ustar;
       if(SL>=0.){
 	getflux_Y(&UN[2],GL);
       }
@@ -2121,7 +2137,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	GR[4]+=(fact*(UN[3].E/UN[3].d+(ustar-WN[3].v)*(ustar+WN[3].p/(WN[3].d*(SR-WN[3].v))))-UN[3].E )*SR;
       }
 #endif
-
+      /*  if(GR[2]!=GL[2]){ */
+      /* 	abort(); */
+      /* } */
       // =============================================
 
 #ifdef RIEMANN_HLL
