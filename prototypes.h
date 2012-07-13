@@ -397,5 +397,10 @@ struct MULTIVECT{
 // ==========================================
 
 struct OCT *SOCT;
+struct OCT *SOCT2;
 
+struct OCT *SOCTX;
+struct OCT *SOCTX2;
+
+int IR,IR2;
 

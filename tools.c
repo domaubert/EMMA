@@ -40,7 +40,7 @@ REAL  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, 
   REAL xc,yc,zc;
 
 
-  if(rank==0) printf("Check\n");
+  //if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;

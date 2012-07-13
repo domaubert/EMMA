@@ -121,10 +121,10 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);
-    /*gradu[ax]+=(W.u*fact);*/
-     gradv[ax]+=(W.v*fact);  
-    /* gradw[ax]+=(W.w*fact);  */
-    /*gradp[ax]+=(W.p*fact);*/
+    gradu[ax]+=(W.u*fact);
+    /* gradv[ax]+=(W.v*fact);   */
+    /* gradw[ax]+=(W.w*fact); */
+    gradp[ax]+=(W.p*fact);
 
   }
 
@@ -438,6 +438,28 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		newoct->y=curoct->y+((icell/2)%2)*dxcur;
 		newoct->z=curoct->z+( icell   /4)*dxcur;
 		
+		if((newoct->x==0.3046875)*(newoct->y==0.2421875)*(newoct->z==0.)){
+		  printf("SOCT FOUND\n");
+		  SOCT=newoct;
+		}
+
+		if((newoct->x==0.3046875)*(newoct->y==0.25)*(newoct->z==0.)){
+		  printf("SOCT2 FOUND\n");
+		  SOCT2=newoct;
+		}
+		
+
+		/* if((newoct->x==0.296875)*(newoct->y==0.234375)*(newoct->z==0.)){ */
+		/*   printf("SOCT FOUND\n"); */
+		/*   SOCTX=newoct; */
+		/* } */
+
+	
+		/* if((newoct->x==0.296875)*(newoct->y==0.25)*(newoct->z==0.)){ */
+		/*   printf("SOCT2 FOUND\n"); */
+		/*   SOCTX2=newoct; */
+		/* } */
+
 		// the new oct is connected to parent
 		curoct->cell[icell].child=newoct;
 		

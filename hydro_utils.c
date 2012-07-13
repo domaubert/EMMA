@@ -640,12 +640,24 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      for(ix=0;ix<2;ix++){
 		icell=ix+iy*2+iz*4;
 		interpminmod_W(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
+		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
+
+		/* if(SOCTX!=NULL){ */
+		/*   if(oct==SOCTX){ */
+		/*     printf("%e XX ",Wint.d); */
+		/*   } */
+		  
+		/*   if(oct==SOCTX2){ */
+		/*     printf("%e QQ ",Wint.d); */
+		/*   } */
+		/* } */
+		
 	      }
 	    }
 	  }
 
-
+	  //if((SOCTX==oct)||(SOCTX2==oct)) printf("\n");
 }
 
 
@@ -1340,7 +1352,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 	    if(Wi[idir].p<0) abort();
-	    //if(Wi[idir].w!=0.) abort();
+	    if(Wi[idir].v!=0.) abort();
 	    //    if((idir==2)&&(Wi[idir].d>1.)) abort();
 	  }
 	  
@@ -1615,7 +1627,6 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
 
       W2U(&Wold,&Uold); // primitive -> conservative
-      
 
       /* for(inei=0;inei<6;inei++){ */
       /* 	memcpy(WC+inei,&Wold,sizeof(struct Wtype)); */
@@ -1633,7 +1644,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
        	W2U(WN+inei,UN+inei);
       	W2U(WC+inei,UC+inei);
       }
-
+      
+      if((i==IR)&&(icell==2)) printf("M1 %e || %e %e || %e %e || %e %e ==> %e\n",stencil[i].oct[13].cell[2].field.p,stencil[i].oct[12].cell[3].field.p,stencil[i].oct[12].cell[2].field.p,stencil[i].oct[15].cell[1].field.p,stencil[i].oct[12].cell[1].field.p,stencil[i].oct[12].cell[7].field.p,stencil[i].oct[3].cell[7].field.p,WN[0].p);
+      if((i==IR2)&&(icell==0)) printf("M2 %e || %e %e || %e %e || %e %e ==> %e\n",stencil[i].oct[13].cell[0].field.p,stencil[i].oct[12].cell[1].field.p,stencil[i].oct[12].cell[0].field.p,stencil[i].oct[12].cell[3].field.p,stencil[i].oct[9].cell[3].field.p,stencil[i].oct[12].cell[5].field.p,stencil[i].oct[3].cell[5].field.p,WN[0].p);
       
       // X DIRECTION =========================================================================
       
@@ -1727,6 +1740,8 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	FL[4]+=(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u))))-UC[0].E )*SR;
       }
 #endif
+      if((i==IR)&&(icell==2)) printf("H  %e %e SL=%e SR=%e ustar=%e pstar=%e F=%e \n",WN[0].p,WC[0].p,SL,SR,ustar,pstar,FL[0]);
+      if((i==IR2)&&(icell==0)) printf("H2 %e %e SL=%e SR=%e ustar=%e pstar=%e F=%e \n",WN[0].p,WC[0].p,SL,SR,ustar,pstar,FL[0]);
 
 
       // =============================================
@@ -1918,6 +1933,7 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       
 #endif
+
        // Y DIRECTION =========================================================================
       
       // --------- solving the Riemann Problems FRONT
@@ -2137,9 +2153,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 	GR[4]+=(fact*(UN[3].E/UN[3].d+(ustar-WN[3].v)*(ustar+WN[3].p/(WN[3].d*(SR-WN[3].v))))-UN[3].E )*SR;
       }
 #endif
-      /*  if(GR[2]!=GL[2]){ */
-      /* 	abort(); */
-      /* } */
+       if(GR[2]!=GL[2]){
+      	abort();
+      }
       // =============================================
 
 #ifdef RIEMANN_HLL

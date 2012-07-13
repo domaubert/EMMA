@@ -176,6 +176,9 @@ int main(int argc, char *argv[])
 
 #endif
 
+  IR=-1;
+  IR2=-1;
+
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
   int rtag=0;
@@ -633,7 +636,7 @@ int main(int argc, char *argv[])
 
 	    // SOCT STUFF
 	    if(level==(levelcoarse-1)){
-	      if((newoct->x==0.3125)*(newoct->y==0.)*(newoct->z==0.)) SOCT=newoct;
+	      if((newoct->x==0.3046875)*(newoct->y==.2421875)*(newoct->z==0.)) SOCT=newoct;
 	    }
 
 
@@ -1202,19 +1205,19 @@ int main(int argc, char *argv[])
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
-  /* WL.d=1.; */
-  /* WL.u=0.75; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=1.0; */
+  WL.d=1.;
+  WL.u=0.75;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p=1.0;
 
-  /* WR.d=0.125; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.1; */
-  /* X0=0.3125; */
-  /* tmax=0.1; */
+  WR.d=0.125;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.1;
+  X0=0.3125;
+  tmax=0.2;
 
   /*  /\* // TEST 123 *\/ */
 
@@ -1251,19 +1254,19 @@ int main(int argc, char *argv[])
 
   /*  /\* // TEST 4 *\/ */
 
-  WR.d=5.99924;
-  WR.v=-19.5975;
-  WR.u=0.;
-  WR.w=0.;
-  WR.p=460.894;
+  /* WR.d=5.99924; */
+  /* WR.v=-19.5975; */
+  /* WR.u=0.; */
+  /* WR.w=0.; */
+  /* WR.p=460.894; */
 
-  WL.d=5.99242;
-  WL.v=6.19633;
-  WL.u=0.;
-  WL.w=0.;
-  WL.p=46.0950;
-  X0=0.6;
-  tmax=0.035;
+  /* WL.d=5.99242; */
+  /* WL.v=6.19633; */
+  /* WL.u=0.; */
+  /* WL.w=0.; */
+  /* WL.p=46.0950; */
+  /* X0=0.6; */
+  /* tmax=0.035; */
 
   /*  /\* // REVERSED TEST 1 *\/ */
 
@@ -1397,7 +1400,7 @@ int main(int argc, char *argv[])
 
 
 	      /* SHOCK TUBE */
-	      if(yc<=X0){
+	      if(xc<=X0){
 
 	      	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
 	      }
@@ -1536,7 +1539,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  tmax=0.035;
+  tmax=0.2;
 #endif
 #endif
 
@@ -1723,7 +1726,13 @@ int main(int argc, char *argv[])
 	MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
 #endif
 	if(cpu.rank==0){
-	  if(ltot!=0) printf("level=%2d noct=%9d min=%9d max=%9d\n",level,ltot,nomin,nomax);
+	  if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d ",level,ltot,nomin,nomax);
+	    int I;
+	    REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
+	    printf("[",frac);
+	    for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
+	    printf("]\n");
+	  }
 	}
       }
 #ifdef WMPI
@@ -1732,9 +1741,9 @@ int main(int argc, char *argv[])
       if(cpu.rank==0){
 	int I;
 	REAL frac=(gtot/(1.0*ngridmax))*100.;
-	printf("grid occupancy=%4.1f [",frac);
-	for(I=0;I<20;I++) printf("%c",(I/20.*100<frac?'*':' '));
-	printf("]\n");
+	printf("\ngrid occupancy=%4.1f [",frac);
+	for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
+	printf("]\n\n");
       }
 
       // ==========================================================================================
@@ -1913,7 +1922,7 @@ int main(int argc, char *argv[])
 
   // ==================================== DUMP AFTER SYNCHRONIZATION
   
-  if(nsteps%(param.ndumps)==0){
+  if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
     if(cpu.rank==0) printf("Dumping .......\n");
     REAL tdump=tsim;
     
@@ -1935,7 +1944,7 @@ int main(int argc, char *argv[])
     // === Hydro dump
     
 #ifdef WHYDRO2
-    printf("tdum=%f\n",tdump);
+    //printf("tdum=%f\n",tdump);
     sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
     dumpgrid(levelmax,firstoct,filename,tdump); 
 #endif
@@ -1944,7 +1953,7 @@ int main(int argc, char *argv[])
     // === Gravity dump
 
 #ifdef WGRAV
-    printf("tdum=%f\n",tdump);
+    //printf("tdum=%f\n",tdump);
     sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
     dumpgrid(levelmax,firstoct,filename,tdump); 
     //abort();
@@ -2007,8 +2016,32 @@ int main(int argc, char *argv[])
   printf("dtnew= %e \n",dtnew);
 
 
-  
 
+  // ==========================================================================
+  for(level=levelmax;level>=levelcoarse;level--)
+    {
+      struct Wtype W0,Wp;
+      // --------------- setting the first oct of the level
+      nextoct=firstoct[level-1];
+      if((nextoct!=NULL)&&(cpu.noct[level-1]!=0)){
+	do {
+	  curoct=nextoct;
+	  nextoct=curoct->next; 
+	  
+	  memcpy(&W0,&(curoct->cell[2].field),sizeof(struct Wtype));
+	  if(curoct->nei[3]->child!=NULL){
+	    memcpy(&Wp,&(curoct->nei[3]->child->cell[0].field),sizeof(struct Wtype));
+	    if(Wp.u!=W0.u) abort();
+	  }
+	}while(nextoct!=NULL);
+      }
+    }
+
+  if(SOCT!=NULL){
+    printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u);
+  }
+
+  //=========================================================================
 
 #ifdef WHYDRO2
 
@@ -2016,7 +2049,6 @@ int main(int argc, char *argv[])
   double t0,t100,t20,t80,t200,t150;
   double th=0.,tt=0.;
   int nread,nreadtot;;
-  REAL deltamax=0.;
 
   int nocthydro=0.;
   for(level=levelcoarse;level<=levelmax;level++){
@@ -2063,12 +2095,13 @@ int main(int argc, char *argv[])
 
 	  th+=t80-t20;
 	  tt+=(t100-t0);
+	  
 
 	}while(nextoct!=NULL);
       }
       t150=MPI_Wtime();
 
-      //printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
+      printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
 
       // ---------------- at this stage we are ready to update the conservative variables
       int flx;
@@ -2125,6 +2158,20 @@ int main(int argc, char *argv[])
 #endif
 		
 		memcpy(F,curcell->flux,sizeof(REAL)*NFLUX);// original fluxes
+
+		if(curoct==SOCT){
+		  if(icell==2){
+		    for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]);
+		    printf("== 2\n");
+		  }
+		}
+
+		if(curoct==SOCT2){
+		  if(icell==0){
+		    for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]);
+		    printf("== 0\n");
+		  }
+		}
 		
 		// here we have to deal with coarse-fine boundaries
 
@@ -2232,6 +2279,8 @@ int main(int argc, char *argv[])
 
 		U2W(&U,&Wnew);
 
+
+
 		/* if(curoct->cell[icell].field.x==0.015625){ */
 		/*   if(curoct->cell[icell].field.y==0.015625){ */
 		/*     if(curoct->cell[icell].field.z==0.015625){ */
@@ -2299,7 +2348,7 @@ int main(int argc, char *argv[])
 		/* Wnew.z=curcell->field.z; */
 		
 		if(Wnew.d<0){abort();}
-		//if(Wnew.v!=0.) abort();
+		if(Wnew.v!=0.) abort();
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 
@@ -2321,16 +2370,27 @@ int main(int argc, char *argv[])
 		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
 
 	      }
+
 	    }
+	      if((curoct==SOCT)||(curoct==SOCT2)){
+		printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u);
+	      }
+
 	  }while(nextoct!=NULL);
 	}
       }
       t200=MPI_Wtime();
 
     }
-  printf("deltamax=%e\n",deltamax);
-  if(cpu.rank==0) printf("Timings per oct [total]: tt=%e[%e] th=%e[%e] tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
+  if(cpu.rank==0) printf("\n Timings per oct [total]: \n tt=%e[%e] \n th=%e[%e] \n tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
 
+
+  if(SOCT!=NULL){
+    if(SOCT->nei[3]->child!=NULL){
+      printf("NEI EXISTS\n");
+      if(SOCT->cell[2].field.p!=SOCT->nei[3]->child->cell[0].field.p) abort();
+    }
+  }
 
 #endif
 

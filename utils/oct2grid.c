@@ -11,6 +11,8 @@
 int main(int argc, char *argv[])
 {
   //(int lmap,struct OCT **firstoct,int field,char filename[],REAL tsim)
+  int status;
+  int I;
   int lmap;
   float *map;
   int imap,jmap,kmap;
@@ -79,7 +81,8 @@ int main(int argc, char *argv[])
     else{
       printf("Casting Rays on %dx%dx%d cube from %s\n",nmap,nmap,nmap,fname);
     }
-
+    
+    printf("size= %ld\n",nmap*nmap*nmap*sizeof(float)+sizeof(int)*2);
     // reading the time
     fread(&tsim,sizeof(REAL),1,fp);
     printf("tsim=%e\n",tsim);
@@ -177,13 +180,15 @@ int main(int argc, char *argv[])
       
     //============= dump
     
-    printf("dumping %s with nmap=%d\n",fname2,nmap);
+    printf("dumping %s with nmap=%d\n",fname2,nmap*nmap*nmap);
     fp=fopen(fname2,"wb");
     fwrite(&nmap,1,sizeof(int),fp);
     fwrite(&tsimf,1,sizeof(float),fp);
-    fwrite(map,nmap*nmap*nmap,sizeof(float),fp);
+    for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(float),fp);
+    status=ferror(fp);
     fclose(fp);
   }
+  printf("status=%d\n",status);
   free(map);
   
 }

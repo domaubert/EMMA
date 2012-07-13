@@ -100,7 +100,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
 
   fp=fopen(filename,"wb");
 
-  printf("tsim=%f\n",tsim);
+  //printf("tsim=%f\n",tsim);
   fwrite(&tsim,sizeof(REAL),1,fp); 
 
   //printf("==> start map \n");
@@ -123,13 +123,13 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
 
   // dumping the zero oct
 
-  printf("%p\n",firstoct[0]);
+  //printf("%p\n",firstoct[0]);
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
 
 
   for(level=1;level<=levelmax;level++) // looping over octs
     {
-      printf("level=%d\n",level);
+      //printf("level=%d\n",level);
       // setting the first oct
 
       nextoct=firstoct[level-1];
