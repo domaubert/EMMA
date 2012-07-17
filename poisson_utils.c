@@ -862,7 +862,7 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 
 //===================================================================================================================================
 //===================================================================================================================================
-
+#ifdef WGRAV
 int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL aexp){
 
   REAL res;
@@ -909,3 +909,4 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   }
   return 0;
 }
+#endif

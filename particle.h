@@ -7,3 +7,4 @@ void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, REAL **vcomp,i
 REAL egypart(int levelcoarse,int levelmax,struct OCT **firstoct,struct CPUINFO *cpu);
 REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu,REAL);
 void accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer);
+REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax);

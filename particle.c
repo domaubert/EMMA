@@ -181,6 +181,96 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
   return dt;
 }
 
+
+// =================================================================================================================
+// =================================================================================================================
+
+REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+  
+  REAL vmax,lmdisp;
+  struct OCT *nextoct;
+  struct OCT oct;
+  REAL dxcur;
+  int icell;
+  struct PART *nexp;
+  struct PART *curp;
+  REAL va;
+  REAL aa;
+  REAL dtlev,dtnew=1e9;
+  REAL dt;
+
+  // Computing new timestep
+  dtlev=0.;
+  // setting the first oct
+  
+  nextoct=firstoct[level-1];
+  
+  if(nextoct!=NULL){
+    do // sweeping through the octs of level
+      {
+	oct=(*nextoct);
+	dxcur=1./pow(2,oct.level+1); // +1 to protect level change
+	nextoct=oct.next;
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+
+#ifdef PIC
+	    nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	    if(nexp!=NULL){
+	    
+	      aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+	    
+	      do{ 
+		curp=nexp; 
+		nexp=curp->next; 
+	      
+		/* #ifdef PART2 */
+		/* 		  if(curp->idx==0) continue; */
+		/* #endif */
+		// particle velocit
+		va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
+	      
+		// loc dt
+		if((va>0.)&&(aa>0.)){
+		  REAL EPS=2.0*(FRACDX*dxcur)*aa/(va*va);
+		  if(EPS<1e-1){
+		    dtlev=(FRACDX*dxcur)/va;
+		  }
+		  else if(EPS>10.){
+		    dtlev=sqrt(2.0*(FRACDX*dxcur)/aa);
+		  }
+		  else{
+		    dtlev=va/aa*(sqrt(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
+		  }
+		}		 
+		else if((aa==0.)||(va==0.)){
+		  dtlev=1e9;
+		} 
+#ifdef PART2
+		printf("mass=%e aa=%e va=%e dt=%e tmax=%e\n",curp->mass,aa,va,dtlev,tmax);
+#endif
+		if(dtnew>dtlev) dtnew=dtlev;
+	      }while(nexp!=NULL);
+	    }
+#endif
+	  }
+      }while(nextoct!=NULL);
+  }  
+  // new tstep
+  //printf("original dt=%f chosen dt=%f\n",dt,dtnew);
+  dt=dtnew;
+
+
+#ifdef WMPI
+  // reducing by taking the smallest time step
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm);
+#endif  
+
+  dt=(dt>tmax?tmax:dt);
+  return dt;
+}
+
+
 //=====================================================================
 //=====================================================================
 
