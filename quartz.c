@@ -634,10 +634,10 @@ int main(int argc, char *argv[])
 	    }
 	    lastoct[level]=newoct;
 
-	    // SOCT STUFF
-	    if(level==(levelcoarse-1)){
-	      if((newoct->x==0.3046875)*(newoct->y==.2421875)*(newoct->z==0.)) SOCT=newoct;
-	    }
+	    /* // SOCT STUFF */
+	    /* if(level==(levelcoarse-1)){ */
+	    /*   if((newoct->x==0.3046875)*(newoct->y==.2421875)*(newoct->z==0.)) SOCT=newoct; */
+	    /* } */
 
 
 	    // next oct ready
@@ -1206,8 +1206,8 @@ int main(int argc, char *argv[])
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
   WL.d=1.;
-  WL.u=0.75;
-  WL.v=0.;
+  WL.u=0.;
+  WL.v=0.75;
   WL.w=0.;
   WL.p=1.0;
 
@@ -1400,7 +1400,7 @@ int main(int argc, char *argv[])
 
 
 	      /* SHOCK TUBE */
-	      if(xc<=X0){
+	      if(yc<=X0){
 
 	      	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
 	      }
@@ -2037,9 +2037,9 @@ int main(int argc, char *argv[])
       }
     }
 
-  if(SOCT!=NULL){
-    printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u);
-  }
+  /* if(SOCT!=NULL){ */
+  /*   printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u); */
+  /* } */
 
   //=========================================================================
 
@@ -2159,19 +2159,19 @@ int main(int argc, char *argv[])
 		
 		memcpy(F,curcell->flux,sizeof(REAL)*NFLUX);// original fluxes
 
-		if(curoct==SOCT){
-		  if(icell==2){
-		    for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]);
-		    printf("== 2\n");
-		  }
-		}
+		/* if(curoct==SOCT){ */
+		/*   if(icell==2){ */
+		/*     for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]); */
+		/*     printf("== 2\n"); */
+		/*   } */
+		/* } */
 
-		if(curoct==SOCT2){
-		  if(icell==0){
-		    for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]);
-		    printf("== 0\n");
-		  }
-		}
+		/* if(curoct==SOCT2){ */
+		/*   if(icell==0){ */
+		/*     for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]); */
+		/*     printf("== 0\n"); */
+		/*   } */
+		/* } */
 		
 		// here we have to deal with coarse-fine boundaries
 
@@ -2348,7 +2348,6 @@ int main(int argc, char *argv[])
 		/* Wnew.z=curcell->field.z; */
 		
 		if(Wnew.d<0){abort();}
-		if(Wnew.v!=0.) abort();
 
 		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 
@@ -2372,9 +2371,9 @@ int main(int argc, char *argv[])
 	      }
 
 	    }
-	      if((curoct==SOCT)||(curoct==SOCT2)){
-		printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u);
-	      }
+	      /* if((curoct==SOCT)||(curoct==SOCT2)){ */
+	      /* 	printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u); */
+	      /* } */
 
 	  }while(nextoct!=NULL);
 	}
@@ -2385,12 +2384,12 @@ int main(int argc, char *argv[])
   if(cpu.rank==0) printf("\n Timings per oct [total]: \n tt=%e[%e] \n th=%e[%e] \n tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
 
 
-  if(SOCT!=NULL){
-    if(SOCT->nei[3]->child!=NULL){
-      printf("NEI EXISTS\n");
-      if(SOCT->cell[2].field.p!=SOCT->nei[3]->child->cell[0].field.p) abort();
-    }
-  }
+  /* if(SOCT!=NULL){ */
+  /*   if(SOCT->nei[3]->child!=NULL){ */
+  /*     printf("NEI EXISTS\n"); */
+  /*     if(SOCT->cell[2].field.p!=SOCT->nei[3]->child->cell[0].field.p) abort(); */
+  /*   } */
+  /* } */
 
 #endif
 

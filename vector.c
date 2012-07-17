@@ -672,8 +672,8 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
 	}
       
-      if(curoct==SOCT) { printf(" SOCT=%e %e %e %e ir=%d\n",SOCT->cell[2].field.d,stencil[iread].oct[12].cell[3].field.d,stencil[iread].oct[12].cell[3].field.u,stencil[iread].oct[12].cell[3].field.p,iread);IR=iread;} 
-      if(curoct==SOCT2) {printf(" SOCT2=%e %e %e %e ir=%d\n",SOCT2->cell[0].field.d,stencil[iread].oct[12].cell[1].field.d,stencil[iread].oct[12].cell[1].field.u,stencil[iread].oct[12].cell[1].field.p,iread);IR2=iread;} 
+      /* if(curoct==SOCT) { printf(" SOCT=%e %e %e %e ir=%d\n",SOCT->cell[2].field.d,stencil[iread].oct[12].cell[3].field.d,stencil[iread].oct[12].cell[3].field.u,stencil[iread].oct[12].cell[3].field.p,iread);IR=iread;}  */
+      /* if(curoct==SOCT2) {printf(" SOCT2=%e %e %e %e ir=%d\n",SOCT2->cell[0].field.d,stencil[iread].oct[12].cell[1].field.d,stencil[iread].oct[12].cell[1].field.u,stencil[iread].oct[12].cell[1].field.p,iread);IR2=iread;}  */
 
 
       iread++;
@@ -915,13 +915,13 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*NFLUX);
       }
       
-      if(SOCT==curoct){
-       	printf(" F SOCT = %e %e\n",stencil[iread].new.cell[2].flux[0],stencil[iread].new.cell[2].flux[0+NVAR]); 
-      }
-      if(SOCT2==curoct){
-       	printf(" F SOCT2 = %e %e\n",stencil[iread].new.cell[0].flux[0],stencil[iread].new.cell[0].flux[0+NVAR]); 
-	//abort();
-      }
+      /* if(SOCT==curoct){ */
+      /*  	printf(" F SOCT = %e %e\n",stencil[iread].new.cell[2].flux[0],stencil[iread].new.cell[2].flux[0+NVAR]);  */
+      /* } */
+      /* if(SOCT2==curoct){ */
+      /*  	printf(" F SOCT2 = %e %e\n",stencil[iread].new.cell[0].flux[0],stencil[iread].new.cell[0].flux[0+NVAR]);  */
+      /* 	//abort(); */
+      /* } */
 
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
