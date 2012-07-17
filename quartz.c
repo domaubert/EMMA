@@ -1205,18 +1205,18 @@ int main(int argc, char *argv[])
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
-  WL.d=1.;
-  WL.u=0.;
-  WL.v=0.75;
-  WL.w=0.;
-  WL.p=1.0;
-
-  WR.d=0.125;
+  WR.d=1.;
   WR.u=0.;
   WR.v=0.;
-  WR.w=0.;
-  WR.p=0.1;
-  X0=0.3125;
+  WR.w=-0.75;
+  WR.p=1.0;
+
+  WL.d=0.125;
+  WL.u=0.;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p=0.1;
+  X0=1.-0.3125;
   tmax=0.2;
 
   /*  /\* // TEST 123 *\/ */
@@ -1400,7 +1400,7 @@ int main(int argc, char *argv[])
 
 
 	      /* SHOCK TUBE */
-	      if(yc<=X0){
+	      if(zc<=X0){
 
 	      	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
 	      }
@@ -1704,74 +1704,15 @@ int main(int argc, char *argv[])
       
       // ==================================== Check the number of particles and octs
       mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-      
-
-      // =========== Grid Census : CLEAN THE NEXT FOLLOWING LINES ========================================
 #ifdef WMPI
       MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_REAL,MPI_SUM,cpu.comm);
 #endif
       
-      int ltot,gtot=0,nomax,nomin;
-      if(cpu.rank==0){
-	printf("===================================================\n");
-      }
-      for(level=2;level<=levelmax;level++){
-	ltot=cpu.noct[level-1];
-	nomax=ltot;
-	nomin=ltot;
-	gtot+=ltot;
-#ifdef WMPI
-	MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu.comm);
-	MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu.comm);
-	MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu.comm);
-#endif
-	if(cpu.rank==0){
-	  if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d ",level,ltot,nomin,nomax);
-	    int I;
-	    REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
-	    printf("[",frac);
-	    for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
-	    printf("]\n");
-	  }
-	}
-      }
-#ifdef WMPI
-      MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu.comm);
-#endif
-      if(cpu.rank==0){
-	int I;
-	REAL frac=(gtot/(1.0*ngridmax))*100.;
-	printf("\ngrid occupancy=%4.1f [",frac);
-	for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
-	printf("]\n\n");
-      }
 
-      // ==========================================================================================
+      // =========== Grid Census ========================================
       
+      grid_census(&param,&cpu);
 
-#if 1
-      // FOR RT INSTABILITY ONLY !
-      for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
-	{
-	  dxcur=pow(0.5,level);
-	  nextoct=firstoct[level-1];
-	  if(nextoct==NULL) continue;
-	  do // sweeping level
-	    {
-	      curoct=nextoct;
-	      nextoct=curoct->next;
-	      for(icell=0;icell<8;icell++) // looping over cells in oct
-		{
-		  xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-		  yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-		  zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-		  
-		  curoct->cell[icell].pot=GRAV*zc;
-		}
-	    }while(nextoct!=NULL);
-	}
-#endif 
-      
 
 #ifdef WHYDRO2
 #ifdef WMPI
@@ -1789,45 +1730,9 @@ int main(int argc, char *argv[])
       }
 
     //===================================== JACOBI Poisson Solver ==============================
-    if(cpu.rank==0) printf("Start Poisson Solver \n");
-    REAL res;
-    int igrid;
-    struct Gtype Wi[8];
-    struct CELL* curcell;
-    int icell2;
-    //breakmpi();
     for(level=levelcoarse;level<=levelmax;level++)
       {
-	if((level==levelcoarse)&&(levelcoarse!=param.mgridlmin)){
-	  for(igrid=0;igrid<param.nvcycles;igrid++){ // V-Cycles
-	    printf("----------------------------------------\n");
-	    res=PoissonMgrid(level,&param,firstoct,&cpu,stencil,stride,aexp);
-	    if(res<param.poissonacc) break;
-	  }
-	}
-	else{
-	  PoissonJacobi(level,&param,firstoct,&cpu,stencil,stride,aexp);
-	}
-	
-	//once done we propagate the solution to level+1
-
-	nextoct=firstoct[level-1];
-	if(nextoct==NULL) continue;
-	do // sweeping level
-	  {
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
-		curcell=&(curoct->cell[icell]);
-		if(curcell->child!=NULL){
-		  coarse2fine_grav(curcell,Wi);
-		  for(icell2=0;icell2<8;icell2++){
-		    memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
-		  }
-		}
-	      }
-	  }while(nextoct!=NULL);
+	PoissonSolver(level,&param,firstoct,&cpu,stencil,stride,aexp);
       }
     //==================================== End Poisson Solver ==========================
 #endif
@@ -1854,66 +1759,7 @@ int main(int argc, char *argv[])
   if(nsteps!=0){
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      struct Utype U0,U;
-      struct Wtype W;
-      struct Wtype Wnew;
-      curoct=firstoct[level-1];
-	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
-	  nextoct=curoct;
-	  do{
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    if(curoct->cpu!=cpu.rank) continue; // we don't update the boundary cells
-	    for(icell=0;icell<8;icell++){
-	      int ref=0;
-
-	      if(curoct->cell[icell].child==NULL){ // Leaf cell
-		struct CELL *curcell;
-		curcell=&(curoct->cell[icell]);
-
-		memcpy(&Wnew,&(curcell->field),sizeof(struct Wtype));
-		if(curcell->f[1]!=0.) abort();
-
-#ifdef PRIMITIVE
-		Wnew.u+=(-curcell->f[0]*dt*0.5);
-		Wnew.v+=(-curcell->f[1]*dt*0.5);
-		Wnew.w+=(-curcell->f[2]*dt*0.5);
-#endif
-
-#ifdef CONSERVATIVE
-		W2U(&Wnew,&U);
-		memcpy(&U0,&U,sizeof(struct Utype));
-		// grav force correction
-
-		U.du+=-(U0.d*curoct->cell[icell].f[0]*dt*0.5);
-		U.dv+=-(U0.d*curoct->cell[icell].f[1]*dt*0.5);
-		U.dw+=-(U0.d*curoct->cell[icell].f[2]*dt*0.5);
-		U.E+=-(U.du*curoct->cell[icell].f[0]+U.dv*curoct->cell[icell].f[1]+U.dw*curoct->cell[icell].f[2])*dt*0.5;
-		U2W(&U,&Wnew);
-#endif	
-		
-		/* if(Wnew.p<0){ */
-		/*   printf("oulah error in gravity coupling with pressure\n"); */
-		/*   abort(); */
-		/* } */
-
-		/* if(Wnew.d<0){ */
-		/*   printf("oulah error in gravity coupling with pressure\n"); */
-		/*   abort(); */
-		/* } */
-		
-		
-		/* if((isnan(Wnew.p))||isnan(Wnew.d)){ */
-		/*   printf("NAN\n"); */
-		/*   abort(); */
-		/* } */
-		
-
-		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
-	      }
-	    }
-	  }while(nextoct!=NULL);
-	}
+      grav_correction(level,&param,firstoct,&cpu,dt);
     }
   }
 #endif
@@ -2016,380 +1862,16 @@ int main(int argc, char *argv[])
   printf("dtnew= %e \n",dtnew);
 
 
-
-  // ==========================================================================
-  for(level=levelmax;level>=levelcoarse;level--)
-    {
-      struct Wtype W0,Wp;
-      // --------------- setting the first oct of the level
-      nextoct=firstoct[level-1];
-      if((nextoct!=NULL)&&(cpu.noct[level-1]!=0)){
-	do {
-	  curoct=nextoct;
-	  nextoct=curoct->next; 
-	  
-	  memcpy(&W0,&(curoct->cell[2].field),sizeof(struct Wtype));
-	  if(curoct->nei[3]->child!=NULL){
-	    memcpy(&Wp,&(curoct->nei[3]->child->cell[0].field),sizeof(struct Wtype));
-	    if(Wp.u!=W0.u) abort();
-	  }
-	}while(nextoct!=NULL);
-      }
-    }
-
-  /* if(SOCT!=NULL){ */
-  /*   printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u); */
-  /* } */
-
-  //=========================================================================
-
 #ifdef WHYDRO2
-
   // ================================= performing hydro calculations
-  double t0,t100,t20,t80,t200,t150;
-  double th=0.,tt=0.;
-  int nread,nreadtot;;
 
-  int nocthydro=0.;
-  for(level=levelcoarse;level<=levelmax;level++){
-    nocthydro+=cpu.noct[level-1];
+  for(level=levelmax;level>=levelcoarse;level--){
+    if(cpu.noct[level-1]>0){
+      hydro(level,&param,firstoct,&cpu,stencil,stride,dtnew);
+    }
   }
 
-  if(cpu.rank==0) printf("Start Hydro on %d octs\n",nocthydro);
-  //breakmpi();
-  for(level=levelmax;level>=levelcoarse;level--)
-    {
-      
-      //nreadtot=compute_hydro_fluxes(level,firstoct,stencil,stride,&cpu,aexp);
 
-      dxcur=pow(0.5,level);
-
-      // --------------- setting the first oct of the level
-      nextoct=firstoct[level-1];
-      //printf("lev=%d curoct=%p\n",level,nextoct);
-      nreadtot=0;
-      if((nextoct!=NULL)&&(cpu.noct[level-1]!=0)){
-	do {
-	  t0=MPI_Wtime();
-	  curoct=nextoct;
-	  nextoct=curoct->next; 
-	  //if(curoct->cpu!=cpu.rank) continue;
-	  // -------------  cleaning working arrays
-	    
-	  memset(stencil,0,stride*sizeof(struct HGRID));
-	    
-	  // ------------ gathering the stencil value values
-	  nextoct=gatherstencil(curoct,stencil,stride,&cpu, &nread);
-	  //printf("nread=%d\n",nread);
-	  // ------------ solving the hydro
-	    
-	  t20=MPI_Wtime();
-	  hydroM(stencil,level,cpu.rank,nread,stride,dxcur,dtnew);
-	  t80=MPI_Wtime();
-	    	    
-	  // ------------ scatter back the FLUXES
-	    
-	  nextoct=scatterstencil(curoct,stencil, nread, &cpu);
-	  nreadtot+=nread;
-	  t100=MPI_Wtime();
-
-	  th+=t80-t20;
-	  tt+=(t100-t0);
-	  
-
-	}while(nextoct!=NULL);
-      }
-      t150=MPI_Wtime();
-
-      printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu.rank);
-
-      // ---------------- at this stage we are ready to update the conservative variables
-      int flx;
-      REAL F[NFLUX];
-      REAL Forg[NFLUX];
-      REAL dtsurdx=dtnew/dxcur;
-      REAL one;
-      struct Utype U;
-      struct Utype S;
-      struct Utype U0;
-      struct Wtype W;
-      struct Wtype Wnew;
-      struct CELL *neicell;
-#ifdef DUAL_E
-      REAL p,p0;
-      REAL DE;
-#endif
-
-#ifdef WMPI
-      // ================================= exchange current state of hydro quantities 
-      MPI_Barrier(cpu.comm);
-      mpi_exchange_flux(&cpu, fsendbuffer, frecvbuffer,1);
-      MPI_Barrier(cpu.comm);
-#endif
-
-      //printf("dtsurdx=%e on proc %d at level=%d (dtnew=%e dxcur=%e)\n",dtsurdx,cpu.rank,level,dtnew,dxcur);
-      
-      if(nreadtot>0){
-
-	curoct=firstoct[level-1];
-	if((curoct!=NULL)&&(cpu.noct[level-1]!=0)){
-
-
-	  nextoct=curoct;
-	  do{
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    if(curoct->cpu!=cpu.rank) continue; // we don't update the boundary cells
-	    for(icell=0;icell<8;icell++){
-	      int ref=0;
-
-	      if(curoct->cell[icell].child==NULL){ // Leaf cell
-		struct CELL *curcell;
-		curcell=&(curoct->cell[icell]);
-		memcpy(&W,&(curcell->field),sizeof(struct Wtype));
-		W2U(&W,&U);
-		memcpy(&U0,&U,sizeof(struct Utype));
-		
-
-#ifdef DUAL_E
-		DE=W.p/((GAMMA-1.)*U.E);
-		p0=W.p;
-		p=p0;
-#endif
-		
-		memcpy(F,curcell->flux,sizeof(REAL)*NFLUX);// original fluxes
-
-		/* if(curoct==SOCT){ */
-		/*   if(icell==2){ */
-		/*     for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]); */
-		/*     printf("== 2\n"); */
-		/*   } */
-		/* } */
-
-		/* if(curoct==SOCT2){ */
-		/*   if(icell==0){ */
-		/*     for(flx=0;flx<6;flx++) printf("%e ",F[0+flx*NVAR]); */
-		/*     printf("== 0\n"); */
-		/*   } */
-		/* } */
-		
-		// here we have to deal with coarse-fine boundaries
-
-		if(level<levelmax){
-		  int inei;
-		  getcellnei(icell, vnei, vcell);
-
-		  //loop over neighbours
-		  for(inei=0;inei<6;inei++){
-		    if(vnei[inei]!=6){
-		    
-		      if(curoct->nei[vnei[inei]]->child!=NULL){
-			
-#ifdef TRANSXP
-			if(inei==1){
-			  if((curoct->nei[inei]->child->x-curoct->x)<0.){
-			    continue;
-			  }
-			}
-#endif
-
-#ifdef TRANSYP
-			if(inei==3){
-			  if((curoct->nei[inei]->child->y-curoct->y)<0.){
-			    continue;
-			  }
-			}
-#endif
-
-#ifdef TRANSZP
-			if(inei==5){
-			  if((curoct->nei[inei]->child->z-curoct->z)<0.){
-			    continue;
-			  }
-			}
-#endif
-
-#ifdef TRANSXM
-			if(inei==0){
-			  if((curoct->nei[inei]->child->x-curoct->x)>0.5){
-			    continue;
-			  }
-			}
-#endif
-
-#ifdef TRANSYM
-			if(inei==2){
-			  if((curoct->nei[inei]->child->y-curoct->y)>0.5){
-			    continue;
-			  }
-			}
-#endif
-
-#ifdef TRANSZM
-			if(inei==4){
-			  if((curoct->nei[inei]->child->z-curoct->z)>0.5){
-			    continue;
-			  }
-			}
-#endif
-		      
-			// the neighbor cell is at the same level or refined
-			neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
-			
-			if(neicell->child!=NULL){
-			  // the neighbor is split : fluxes must be averaged
-			  int fcell[4];
-			  getfcell(inei,fcell);
-			  memset(F+NVAR*inei,0,NVAR*sizeof(REAL)); // reset the original flux
-			
-			  int iface;
-			  REAL *Fnei;
-			  int idxfnei[6]={1,0,3,2,5,4};
-			  int j; 
-			  // averaging the flux
-			  for(iface=0;iface<4;iface++){
-			    Fnei=neicell->child->cell[fcell[iface]].flux;
-			    for(j=0;j<NVAR;j++) F[j+inei*NVAR]+=0.25*Fnei[j+idxfnei[inei]*NVAR];
-			  }
-			}
-		      }
-		    }
-		  }
-		}
-		
-		/* if((isnan(U.d))||isnan(U.E)){ */
-		/*   printf("NAN0\n"); */
-		/*   abort(); */
-		/* } */
-		
-
-		// ready to update
-		one=1.;
-		for(flx=0;flx<6;flx++){
-		  U.d +=F[0+flx*NVAR]*dtsurdx*one;
-		  U.du+=F[1+flx*NVAR]*dtsurdx*one;
-		  U.dv+=F[2+flx*NVAR]*dtsurdx*one;
-		  U.dw+=F[3+flx*NVAR]*dtsurdx*one;
-		  U.E +=F[4+flx*NVAR]*dtsurdx*one;
-#ifdef DUAL_E
-		  p   +=F[5+flx*NVAR]*dtsurdx*one;
-#endif
-		  one*=-1.;
-		}
-
-		U2W(&U,&Wnew);
-
-
-
-		/* if(curoct->cell[icell].field.x==0.015625){ */
-		/*   if(curoct->cell[icell].field.y==0.015625){ */
-		/*     if(curoct->cell[icell].field.z==0.015625){ */
-		/*       printf("%e\n",U0.dw); */
-		/*       for(flx=0;flx<6;flx++) printf("%e ",F[1+flx*NVAR]); */
-		/*       printf("\n"); */
-		/*       for(flx=0;flx<6;flx++) printf("%e ",F[3+flx*NVAR]); */
-		/*       printf("\n"); */
-		/*       abort(); */
-		/* } */
-		/* } */
-		/* } */
-
-		
-
-#ifdef WGRAV
-#ifndef NOCOUPLE
-		/* // half gravitational force correction */
-
-#ifdef CONSERVATIVE
-		U.du+=-(U0.d*curoct->cell[icell].f[0]*dtnew*0.5);
-		U.dv+=-(U0.d*curoct->cell[icell].f[1]*dtnew*0.5);
-		U.dw+=-(U0.d*curoct->cell[icell].f[2]*dtnew*0.5);
-		U.E+=-(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dtnew*0.5;
-		U2W(&U,&Wnew);
-		
-
-#endif
-
-#ifdef PRIMITIVE
-		Wnew.u+=(-curoct->cell[icell].f[0]*dtnew*0.5);
-		Wnew.v+=(-curoct->cell[icell].f[1]*dtnew*0.5);
-		Wnew.w+=(-curoct->cell[icell].f[2]*dtnew*0.5);
-#ifdef DUAL_E
-		if(DE<1e-3){
-		  Wnew.p=p;
-		  Wnew.a=sqrt(GAMMA*Wnew.p/Wnew.d);
-		}
-
-#endif
-#endif
-
-		
-
-
-#endif	
-#endif	
-		/* /\* if(Wnew.p<0){ *\/ */
-		/* /\*   printf("oulah error in gravity coupling with pressure\n"); *\/ */
-		/* /\*   abort(); *\/ */
-		/* /\* } *\/ */
-
-		/* if(Wnew.p<0){ */
-		/*   printf("oulah error in gravity coupling with pressure\n"); */
-		/*   abort(); */
-		/* } */
-		
-		/* if((isnan(Wnew.p))||isnan(Wnew.d)){ */
-		/*   printf("NAN\n"); */
-		/*   abort(); */
-		/* } */
-
-		/* Wnew.x=curcell->field.x; */
-		/* Wnew.y=curcell->field.y; */
-		/* Wnew.z=curcell->field.z; */
-		
-		if(Wnew.d<0){abort();}
-
-		memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
-
-
-	      }
-	      else{ // split cell : hydro quantities are averaged
-		struct OCT *child;
-		int i;
-		child=curoct->cell[icell].child;
-		memset(&W,0,sizeof(struct Wtype));
-		for(i=0;i<8;i++){
-		  W.d+=child->cell[i].field.d*0.125;
-		  W.u+=child->cell[i].field.u*0.125;
-		  W.v+=child->cell[i].field.v*0.125;
-		  W.w+=child->cell[i].field.w*0.125;
-		  W.p+=child->cell[i].field.p*0.125;
-		}
-		//if(W.v!=0.) abort();
-		memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
-
-	      }
-
-	    }
-	      /* if((curoct==SOCT)||(curoct==SOCT2)){ */
-	      /* 	printf("%e %e\n",SOCT->cell[2].field.u,SOCT2->cell[0].field.u); */
-	      /* } */
-
-	  }while(nextoct!=NULL);
-	}
-      }
-      t200=MPI_Wtime();
-
-    }
-  if(cpu.rank==0) printf("\n Timings per oct [total]: \n tt=%e[%e] \n th=%e[%e] \n tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
-
-
-  /* if(SOCT!=NULL){ */
-  /*   if(SOCT->nei[3]->child!=NULL){ */
-  /*     printf("NEI EXISTS\n"); */
-  /*     if(SOCT->cell[2].field.p!=SOCT->nei[3]->child->cell[0].field.p) abort(); */
-  /*   } */
-  /* } */
 
 #endif
 
@@ -2408,7 +1890,6 @@ int main(int argc, char *argv[])
   
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      //PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
       accelpart(level,firstoct,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
     }
 #endif

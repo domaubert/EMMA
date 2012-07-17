@@ -11,3 +11,5 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
 REAL comptstep_ff(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax);
 void correct_grav_hydro(struct OCT *octstart, struct CPUINFO *cpu, REAL dt);
 REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax);
+void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, struct CPUINFO *cpu, float dt);
+void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, float dtnew);

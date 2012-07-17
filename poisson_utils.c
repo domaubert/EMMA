@@ -822,6 +822,8 @@ int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 #endif
 
 #ifdef WGRAV
+
+//===================================================================================================================================
 //===================================================================================================================================
 int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu){
   struct OCT *nextoct;
@@ -857,3 +859,53 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 }
 
 #endif
+
+//===================================================================================================================================
+//===================================================================================================================================
+
+int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL aexp){
+
+  REAL res;
+  int igrid;
+  struct Gtype Wi[8];
+  struct CELL* curcell;
+  int icell2;
+  struct OCT* curoct;
+  struct OCT* nextoct;
+  int icell;
+  if(cpu->rank==0) printf("Start Poisson Solver \n");
+  //breakmpi();
+
+  if((level==param->lcoarse)&&(param->lcoarse!=param->mgridlmin)){
+    for(igrid=0;igrid<param->nvcycles;igrid++){ // V-Cycles
+      printf("----------------------------------------\n");
+      res=PoissonMgrid(level,param,firstoct,cpu,stencil,stride,aexp);
+      if(res<param->poissonacc) break;
+    }
+  }
+  else{
+    PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
+  }
+	
+  //once done we propagate the solution to level+1
+
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do // sweeping level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    curcell=&(curoct->cell[icell]);
+	    if(curcell->child!=NULL){
+	      coarse2fine_grav(curcell,Wi);
+	      for(icell2=0;icell2<8;icell2++){
+		memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
+	      }
+	    }
+	  }
+      }while(nextoct!=NULL);
+  }
+  return 0;
+}

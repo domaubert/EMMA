@@ -147,3 +147,50 @@ void myradixsort(int *a,int n)
     }		
   free(b);
 }
+
+//============================================================================
+//============================================================================
+
+
+void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+  int level;
+  int ltot,gtot=0,nomax,nomin;
+  
+  if(cpu->rank==0){
+    printf("===================================================\n");
+  }
+  for(level=2;level<=param->lmax;level++){
+    ltot=cpu->noct[level-1];
+    nomax=ltot;
+    nomin=ltot;
+    gtot+=ltot;
+#ifdef WMPI
+    MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu->comm);
+    MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+    if(cpu->rank==0){
+      if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d ",level,ltot,nomin,nomax);
+	int I;
+	REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
+	printf("[",frac);
+	for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
+	printf("]\n");
+      }
+    }
+  }
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu->comm);
+#endif
+  if(cpu->rank==0){
+    int I;
+    REAL frac=(gtot/(1.0*param->ngridmax))*100.;
+    printf("\ngrid occupancy=%4.1f [",frac);
+    for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
+    printf("]\n\n");
+  }
+
+
+}
+
