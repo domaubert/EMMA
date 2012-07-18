@@ -117,6 +117,8 @@ struct CPUINFO{
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
   int levelcoarse; // the levelcoarse
+
+  struct OCT *freeoct; // the location of the first free oct
 };
 
 

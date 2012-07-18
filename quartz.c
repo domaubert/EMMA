@@ -17,6 +17,8 @@
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
+#include "advanceamr.h"
+
 
 #ifdef WGPU
 #include "interface.h"
@@ -1460,55 +1462,6 @@ int main(int argc, char *argv[])
 
 
 
-
-#ifdef WGRAV
-  /* REAL rc; */
-  /* for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment) */
-  /*   { */
-  /*     dxcur=pow(0.5,level); */
-  /*     nextoct=firstoct[level-1]; */
-  /*     if(nextoct==NULL) continue; */
-  /*     do // sweeping level */
-  /* 	{ */
-  /* 	  curoct=nextoct; */
-  /* 	  nextoct=curoct->next; */
-  /* 	  for(icell=0;icell<8;icell++) // looping over cells in oct */
-  /* 	    { */
-  /* 	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5; */
-  /* 	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5; */
-  /* 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5; */
-	    
-  /* 	      rc=sqrt(pow(xc-0.5,2)+pow(yc-0.5,2)+pow(zc-0.5,2)); */
-  
-  /* 	      if(rc<=3.*dxcur){ */
-  /* 		curoct->cell[icell].gdata.d=1.; */
-  /* 		curoct->cell[icell].gdata.p=0.; */
-  /* 	      } */
-
-  /* 	    } */
-  /* 	}while(nextoct!=NULL); */
-      
-  /*     //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd); */
-  /*   } */
-
-#endif
-
-
-
-
-
-  // =============================================== dumping information file
-
-
-  FILE *fi;
-  if(cpu.rank==0){
-    fi=fopen("data/inforun.txt","w");
-    fprintf(fi,"levelcoarse=%d\n",levelcoarse);
-    fprintf(fi,"levelmax=%d\n",levelmax);
-    fprintf(fi,"levelmap=%d\n",lmap);
-    fprintf(fi,"nstepmax=%d\n",param.nsteps);
-    fprintf(fi,"amr threshold=%e\n",threshold);
-  }
   
 
   //================================================================================
@@ -1645,7 +1598,17 @@ int main(int argc, char *argv[])
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
+    
+    // building the array of timesteps
 
+    REAL *adt;
+    adt=(REAL *)malloc(sizeof(REAL)*levelmax);
+    for(level=1;level<=levelmax;level++){
+      adt[level-1]=param.dt;
+    }
+
+
+    // Loop over time
     for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
       
 #ifdef TESTCOSMO
@@ -1655,299 +1618,38 @@ int main(int argc, char *argv[])
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
 
-      
-#if 1
-      if(levelcoarse!=levelmax){
-	
-	// ==================================== marking the cells
-	for(level=levelmax;level>=1;level--) // looping over octs
-	  {
-	    L_mark_cells(level,&param,firstoct,nsmooth,threshold,&cpu,sendbuffer,recvbuffer);
-	  }
 
-	for(level=1;level<levelmax;level++) // looping over levels
-	  {
-	    curoct=L_refine_cells(level,&param,firstoct,lastoct,freeoct,&cpu,grid+ngridmax);
-	    freeoct=curoct;
-	  }
+      //Recursive Calls over levels
+
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,aexp,stride,sendbuffer,recvbuffer);
+      
+
+      // ==================================== dump
   
-	// ==================================== refining (and destroying) the octs
-	
-      }
+      if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
+	if(cpu.rank==0) printf("Dumping .......\n");
+	REAL tdump=tsim;
     
-#endif
-
-#ifdef WMPI
-      // ==================================== after refinement we should remap the boundary cells
-      setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb);
-#endif
-      
-      
-      // ==================================== performing the CIC assignement
-#ifdef PIC
-      call_cic(levelmax,levelcoarse,firstoct,&cpu);
-#endif
-
-#ifdef PIC
-#ifdef WMPI
-      //------------- performing the CIC BOUNDARY CORRECTION 
-      mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
-      //------------  Density boundary mpi update 
-      mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
-#endif
-#endif
-      
-      //======================================= cleaning the marks
-      
-      clean_marks(levelmax,firstoct);
-      
-      // ==================================== Check the number of particles and octs
-      mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-#ifdef WMPI
-      MPI_Allreduce(MPI_IN_PLACE,&mtot,1,MPI_REAL,MPI_SUM,cpu.comm);
-#endif
-      
-
-      // =========== Grid Census ========================================
-      
-      grid_census(&param,&cpu);
-
-
+	// === Hydro dump
+    
 #ifdef WHYDRO2
-#ifdef WMPI
-    // ================================= exchange current state of hydro quantities 
-    mpi_exchange_hydro(&cpu, hsendbuffer, hrecvbuffer,1);
-    MPI_Barrier(cpu.comm);
-#endif
+	//printf("tdum=%f\n",tdump);
+	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+	dumpgrid(levelmax,firstoct,filename,tdump); 
 #endif
 
-#ifdef WGRAV 
-    //==================================== Getting Density ====================================
-    for(level=levelcoarse;level<=levelmax;level++)
-      {
-	FillDens(level,&param,firstoct,&cpu);
+	ndumps++;
       }
 
-    //===================================== JACOBI Poisson Solver ==============================
-    for(level=levelcoarse;level<=levelmax;level++)
-      {
-	PoissonSolver(level,&param,firstoct,&cpu,stencil,stride,aexp);
-      }
-    //==================================== End Poisson Solver ==========================
-#endif
-
-
-
-  // ==================================== Force calculation and velocity update   // Corrector step
-#ifdef TESTCOSMO
-  faexp=1.0;
-#endif
-  // -- force
-#ifdef WGRAV  
-  for(level=levelcoarse;level<=levelmax;level++)
-    {
-      PoissonForce(level,&param,firstoct,&cpu,stencil,stride);
+      //==================================== timestep completed, looping
+      dt=adt[param.lcoarse-1];
+      tsim+=dt;
     }
-#endif
-
-#ifndef NOCOUPLE
-#ifdef WHYDRO2
-#ifdef WGRAV
-  // ================================== Gravitational source correction
-
-  if(nsteps!=0){
-  for(level=levelcoarse;level<=levelmax;level++)
-    {
-      grav_correction(level,&param,firstoct,&cpu,dt);
+    
+    if(cpu.rank==0){
+      printf("Done .....\n");
     }
-  }
-#endif
-#endif
-#endif
-
-  // ==================================== DUMP AFTER SYNCHRONIZATION
-  
-  if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
-    if(cpu.rank==0) printf("Dumping .......\n");
-    REAL tdump=tsim;
     
-    
-#ifdef WMPI
-    if(nsteps==0){
-      sprintf(filename,"data/cpu3d.%05d.p%05d",ndumps,cpu.rank);
-      dumpcube(lmap,firstoct,3,filename,tdump);
-    }
-#endif
-    
-    //==== Gathering particles for dump
-    
-#ifdef PIC
-    sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
-    dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
-#endif
-    
-    // === Hydro dump
-    
-#ifdef WHYDRO2
-    //printf("tdum=%f\n",tdump);
-    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
-    dumpgrid(levelmax,firstoct,filename,tdump); 
-#endif
-    
-
-    // === Gravity dump
-
-#ifdef WGRAV
-    //printf("tdum=%f\n",tdump);
-    sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
-    dumpgrid(levelmax,firstoct,filename,tdump); 
-    //abort();
-#endif
-
-    ndumps++;
-  }
-
-
-  // ============================================================================================
-  // ==================================== New timestep ==========================================
-  // ============================================================================================
-
-  dtnew=dt;
-#ifdef TESTCOSMO
-  REAL dtcosmo;
-  dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);
-  dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-  printf("dtcosmo= %e ",dtcosmo);
-#endif
-  
-  for(level=param.lcoarse;level<=param.lmax;level++){
-#ifdef PIC
-    REAL dtpic;
-    dtpic=L_comptstep(level,&param,firstoct,faexp2,faexp,&cpu,1e9);
-    dtnew=(dtpic<dtnew?dtpic:dtnew);
-    printf("dtpic= %e ",dtpic);
-#endif
-    
-#ifdef WHYDRO2
-    REAL dthydro;
-    dthydro=L_comptstep_hydro(level,&param,firstoct,faexp2,faexp,&cpu,1e9);
-    dtnew=(dthydro<dtnew?dthydro:dtnew);
-    printf("dthydro= %e ",dthydro);
-
-#ifdef WGRAV
-    REAL dtff;
-    dtff=L_comptstep_ff(level,&param,firstoct,aexp,&cpu,1e9);
-    dtnew=(dtff<dtnew?dtff:dtnew);
-    printf("dtff= %e ",dtff);
-#endif
-#endif
-  }
-
-
-#ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_REAL,MPI_MIN,cpu.comm);
-#endif
-
-  printf("dtnew= %e \n",dtnew);
-
-
-#ifdef WHYDRO2
-  // ================================= performing hydro calculations
-
-  for(level=levelmax;level>=levelcoarse;level--){
-    if(cpu.noct[level-1]>0){
-      hydro(level,&param,firstoct,&cpu,stencil,stride,dtnew);
-    }
-  }
-
-#endif
-
-#ifdef WMPI
-	MPI_Barrier(cpu.comm);
-#endif
-
-#ifdef PIC
-  // ==================================== velocity update   // Predictor step
-  if(cpu.rank==0) printf("Correcctor\n");
-#ifdef TESTCOSMO
-  faexp=1.0;
-#endif
-
-  // -- force
-  
-  for(level=levelcoarse;level<=levelmax;level++)
-    {
-      accelpart(level,firstoct,dtnew*0.5,&cpu,sendbuffer,recvbuffer);
-    }
-#endif
-
-  // ==================================== Moving Particles + Oct management
-#ifdef PIC
-  
-#ifndef PARTN
-  if(cpu.rank==0) printf("Moving particles\n");
-    // Computing displacement (predictor)
-
-#ifdef TESTCOSMO
-  faexp2=1.0;
-#endif
-    
-  movepart(levelcoarse,levelmax,firstoct,dtnew,&cpu);
-  
-  // Moving particles through cells (3 passes)
-  
-#ifdef WGPU
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#else
-  partcellreorg(levelcoarse,levelmax,firstoct);
-#endif
-  
-#ifdef WMPI
-  
-  // Communication of particles
-  int deltan;
-  deltan=mpi_exchange_part(&cpu,psendbuffer,precvbuffer,&lastpart);
-    
-  // Recounting particles
-  npart=npart+deltan;
-#endif
-#endif
-#endif
-
-
-#if 1
-  // ==================================== Check the number of particles and octs
-  multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-#endif	 
-
-  // =================================== dumping information
-
-#ifdef PIC
-  if(cpu.rank==0) fprintf(fi,"istep=%d t=%e dt=%e coarseres=%e\n",nsteps,tsim,(dt+dtnew)*0.5,res);
-#endif
-
-  //==================================== timestep completed, looping
-  tsim+=dtnew;
-  dt=dtnew;
-    }
-
-    if(cpu.rank==0) fclose(fi);
-
-
-
-
-  if(cpu.rank==0){
-    printf("Done .....\n");
-  }
-
-#ifdef EGYCSV
-  fclose(fegy);
-#endif
-
-#ifdef WMPI
-  MPI_Finalize();
-#endif
-
-  return 0;
+    return 0;
 }
-      
+
