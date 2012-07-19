@@ -261,25 +261,6 @@ struct OCT *gathervecnei2(struct OCT *octstart, int *vecnei, int stride, struct 
 	    }
 #endif
 
-#ifdef TRANSZP
-	    if(inei==5){
-	      if((curoct->nei[inei]->child->z-curoct->z)<0.){
-		// the neighbor is a periodic mirror
-		//printf("wouhou\n");
-		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
-	      }
-	    }
-#endif
-
-#ifdef TRANSZM
-	    if(inei==4){
-	      if((curoct->nei[inei]->child->z-curoct->z)>0.5){
-		// the neighbor is a periodic mirror
-		//printf("wouhou\n");
-		vecnei[icur+inei*stride]=curoct->vecpos; // the curoct is its own neighbor
-	      }
-	    }
-#endif
 
 	    if(vecnei[icur+inei*stride]>=stride){
 	      printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos);
@@ -426,7 +407,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
-  REAL dist;
+  REAL dxcur;
 
   struct Wtype Wi[8];
   struct OCT *oct;
@@ -468,6 +449,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   oct=cell2oct(cell);
   neioct=cell2oct(neicell);
+  dxcur=pow(0.5,oct->level);
 
   // ============================ TRANSMISSIVE BOUNDARIES ====================
 #ifdef TRANSXP
@@ -507,8 +489,9 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
 #ifdef TRANSZP
     if(ineiloc==5){
-      dist=neioct->z-oct->z;
-      if(dist<0.){
+      /* dist=neioct->z-oct->z; */
+      /* if(dist<0.){ */
+      if((oct->z+2.*dxcur)==1.){
 	neicell=cell;
 	face[0]=4;
 	face[1]=5;
@@ -560,9 +543,10 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
 #ifdef TRANSZM
     if(ineiloc==4){
-      dist=neioct->z-oct->z;
-      if(dist>0.5){
-	neicell=cell;
+      /* dist=neioct->z-oct->z; */
+      /* if(dist>0.5){ */
+      if(oct->z==0.){
+	neicell=cell; 
 	face[0]=0;
 	face[1]=1;
 	face[2]=2;

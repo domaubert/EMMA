@@ -28,7 +28,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   int ii;
 
   REAL ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
-  REAL dxcur;
+  REAL dxcur=pow(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
@@ -43,7 +43,8 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #ifdef TRANSZM
 	if(ii==4){
-	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	  //if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	  if(curoct->z==0.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 #ifdef REFZM
@@ -57,7 +58,8 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #ifdef TRANSZP
 	if(ii==5){
-	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	  //if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	  if((curoct->z+2.*dxcur)==1.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 #ifdef REFZP
@@ -121,10 +123,10 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);
-    gradu[ax]+=(W.u*fact);
-    gradv[ax]+=(W.v*fact); 
-    gradw[ax]+=(W.w*fact); 
-    gradp[ax]+=(W.p*fact);
+    gradu[ax]+=(W.u*fact); 
+    gradv[ax]+=(W.v*fact);  
+    gradw[ax]+=(W.w*fact);  
+    gradp[ax]+=(W.p*fact); 
 
   }
 
@@ -161,7 +163,7 @@ REAL comp_grad_grav(struct OCT *curoct, int icell){
   REAL dx;
   int ic;
 
-  dx=1./pow(2,curoct->level);
+  dx=pow(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
@@ -175,7 +177,8 @@ REAL comp_grad_grav(struct OCT *curoct, int icell){
 	
 #ifdef TRANSZM
 	if(ii==4){
-	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	  //if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
+	  if(curoct->==0.){
 	    // the neighbor is a periodic mirror 
 	    ploc=curoct->cell[icell].pot;
 #ifdef REFZM
@@ -187,7 +190,8 @@ REAL comp_grad_grav(struct OCT *curoct, int icell){
 
 #ifdef TRANSZP
 	if(ii==5){
-	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	  //	  if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
+	  if((curoct->z+2.*dx)==1.){
 	    // the neighbor is a periodic mirror 
 	    ploc=curoct->cell[icell].pot;
 #ifdef REFZP
@@ -797,6 +801,24 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #endif
 
+		// First we check if we don't violate the refinement rule (adaptative time step)
+		int vrule=0;
+		getcellnei(icell, vnei, vcell);
+		for(ii=0;ii<6;ii++){
+		  if(vnei[ii]!=6){
+		    if(curoct->nei[vnei[ii]]!=NULL){	
+		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
+			// refinement rule is violated so skip
+			vrule=1;
+		      }
+		    }
+		  }
+		}
+		if(vrule) continue;
+
+
+
+
 		/* #ifdef WMPI */
 		/* 		if(curoct->cpu!=cpu->rank){ */
 		/* 		  if(curoct->level<levelcoarse){ */
@@ -813,17 +835,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->x=curoct->x+( icell   %2)*dxcur;
 		newoct->y=curoct->y+((icell/2)%2)*dxcur;
 		newoct->z=curoct->z+( icell   /4)*dxcur;
-		
-		if((newoct->x==0.3046875)*(newoct->y==0.2421875)*(newoct->z==0.)){
-		  printf("SOCT FOUND\n");
-		  SOCT=newoct;
-		}
-
-		if((newoct->x==0.3046875)*(newoct->y==0.25)*(newoct->z==0.)){
-		  printf("SOCT2 FOUND\n");
-		  SOCT2=newoct;
-		}
-		
 
 		/* if((newoct->x==0.296875)*(newoct->y==0.234375)*(newoct->z==0.)){ */
 		/*   printf("SOCT FOUND\n"); */
@@ -847,11 +858,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->border=0;
 
 		//the neighbours
-		getcellnei(icell, vnei, vcell);
 		for(ii=0;ii<6;ii++){
 		  if(vnei[ii]!=6){
 		    if(curoct->nei[vnei[ii]]!=NULL){	
 		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
+			// here we refine too much
 			printf("ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 			abort();
 		      }
@@ -1008,7 +1019,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 
   if(cpu->rank==0){
-    printf("octs created   = %d\n",nref);
+    printf("octs created   = %d ",nref);
     printf("octs destroyed = %d\n",ndes);
   }
 
@@ -1043,6 +1054,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
   struct CELL *newcell3;
   int ichild;
   REAL mcell;
+
+  int stat[3];
 
   if(cpu->rank==0) printf("==> start marking\n");
     //    for(level=levelmax;level>=levelcoarse;level--) // looping over octs
@@ -1083,6 +1096,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			    if(smark!=0){
 			      curoct->cell[icell].marked=marker;
 			      nmark++;
+			      stat[0]++;
 			    }
 			    break;
 			    //=========================================================
@@ -1095,6 +1109,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				  if(curoct->cell[vcell[ii]].marked==0){
 				    curoct->cell[vcell[ii]].marked=marker;
 				    nmark++;
+				    stat[1]++;
 				  }
 				}
 				else{
@@ -1133,6 +1148,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				    if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
 				      curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
 				      nmark++;
+				      stat[1]++;
+
 				    }
 				  }
 				  else{
@@ -1151,6 +1168,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 				      if(newoct->cell[vcell2[il]].marked==0){
 					newoct->cell[vcell2[il]].marked=marker;
 					nmark++;
+				      stat[1]++;
+
 				      }
 				    }
 				    else{
@@ -1159,6 +1178,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 					if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
 					  newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
 					  nmark++;
+				      stat[1]++;
+				      
 					}
 				      }
 				      else{
@@ -1176,6 +1197,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 					  if(desoct->cell[vcell3[ip]].marked==0){
 					    desoct->cell[vcell3[ip]].marked=marker;
 					    nmark++;
+					    stat[1]++;
+				      
 					  }
 					}
 					else{
@@ -1183,6 +1206,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 					    if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
 					      desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
 					      nmark++;
+					      stat[1]++;
+
 					    }
 					  }
 					}
@@ -1202,6 +1227,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
+				stat[2]++;
+
 			      }
 #endif
 
@@ -1214,6 +1241,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			      if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
+				stat[2]++;
+
 			      }
 #endif
 
@@ -1223,6 +1252,8 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 			      if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;
+				stat[2]++;
+
 			      }
 #endif
 			      
@@ -1251,6 +1282,7 @@ void mark_cells(int levelcoarse,int levelmax,struct OCT **firstoct, int nsmooth,
 	  }
       }
 
+
 }
 
 //=========================================================================================================================================
@@ -1277,6 +1309,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   struct CELL *newcell3;
   int ichild;
   REAL mcell;
+  
+  int stati[3]={0,0,0};
 
   if(cpu->rank==0) printf("==> start marking\n");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
@@ -1315,6 +1349,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  if(smark!=0){
 			    curoct->cell[icell].marked=marker;
 			    nmark++;
+			    stati[0]++;
 			  }
 			  break;
 			  //=========================================================
@@ -1326,7 +1361,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				newcell=&(curoct->cell[vcell[ii]]);
 				if(curoct->cell[vcell[ii]].marked==0){
 				  curoct->cell[vcell[ii]].marked=marker;
-				  nmark++;
+				  nmark++;stati[1]++;
 				}
 			      }
 			      else{
@@ -1364,7 +1399,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 				  if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
 				    curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
-				    nmark++;
+				    nmark++;stati[1]++;
 				  }
 				}
 				else{
@@ -1382,7 +1417,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				    newcell2=&(newoct->cell[vcell2[il]]);
 				    if(newoct->cell[vcell2[il]].marked==0){
 				      newoct->cell[vcell2[il]].marked=marker;
-				      nmark++;
+				      nmark++;stati[1]++;
 				    }
 				  }
 				  else{
@@ -1390,7 +1425,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				      newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
 				      if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
 					newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
-					nmark++;
+					nmark++;stati[1]++;
 				      }
 				    }
 				    else{
@@ -1407,14 +1442,14 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				      if(vnei3[ip]==6){
 					if(desoct->cell[vcell3[ip]].marked==0){
 					  desoct->cell[vcell3[ip]].marked=marker;
-					  nmark++;
+					  nmark++;stati[1]++;
 					}
 				      }
 				      else{
 					if(desoct->nei[vnei3[ip]]->child!=NULL){
 					  if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
 					    desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
-					    nmark++;
+					    nmark++;stati[1]++;
 					  }
 					}
 				      }
@@ -1433,7 +1468,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    //mcell=countpart(curoct->cell[icell].phead);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
-			      nmark++;
+			      nmark++;stati[2]++;
 			    }
 #endif
 
@@ -1445,7 +1480,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    //mcell=countpart(curoct->cell[icell].phead);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
-			      nmark++;
+			      nmark++;stati[2]++;
 			    }
 #endif
 
@@ -1454,7 +1489,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
-			      nmark++;
+			      nmark++;stati[2]++;
 			    }
 #endif
 			      
@@ -1481,6 +1516,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	    }
 	  //printf("\n");
 	}
+      printf(" STAT MARK 0:%d 1:%d 2:%d\n",stati[0],stati[1],stati[2]);
 
 }
 
@@ -1511,3 +1547,24 @@ void clean_marks(int levelmax,struct OCT **firstoct){
       }
 }
 //=============================================================================
+//=============================================================================
+
+void L_clean_marks(int level,struct OCT **firstoct){
+  
+  struct OCT* curoct;
+  struct OCT* nextoct;
+  int icell;
+    
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do // sweeping level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    curoct->cell[icell].marked=0.;
+	  }
+      }while(nextoct!=NULL);
+  }
+}

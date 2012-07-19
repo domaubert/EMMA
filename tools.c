@@ -174,7 +174,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
       if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d ",level,ltot,nomin,nomax);
 	int I;
 	REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
-	printf("Fill=[",frac);
+	printf("[",frac);
 	for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
 	printf("]\n");
       }

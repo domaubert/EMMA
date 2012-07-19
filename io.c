@@ -373,6 +373,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=dummyf;
       rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
+      rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
       fclose(buf);
     }
 

@@ -6,45 +6,87 @@
 #include "hydro_utils.h"
 #include "friedmann.h"
 
+// ===============================================================
+// ===============================================================
 
-void Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, REAL aexp,struct PACKET **sendbuffer, struct PACKET **recvbuffer){
+void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
   
+  int level;
+  int ndtmax=pow(param->nsubcycles,param->lmax-param->lcoarse+1);
+  int i,j,na;
+
+  printf("\n");
+  for(j=0;j<ndtmax;j++)printf("#");
+  printf("\n");
+
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    na=pow(2,param->lmax-level+1);
+
+    for(j=0;j<ndt[level-1];j++){
+      //one arrow
+      for(i=0;i<(na-1);i++) printf("~");
+      printf(">");
+    }
+    for(j=ndt[level-1];j<ndtmax;j++) printf(" ");
+    printf("\n");
+
+  }
+  
+
+  for(j=0;j<ndtmax;j++)printf("#");
+  printf("\n \n");
+  
+}
+
+// ===============================================================
+// ===============================================================
+
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, REAL aexp,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt){
+ 
+
+  if(cpu->rank==0){
+    printf("\n === entering level =%d\n",level);
+  }
   struct OCT *curoct;
   REAL dtnew;
   REAL dt;
-  REAL dtmax;
+  REAL dtfine;
   int npart=0;
   int mtot;
 
   dt=0.;
-
-  do{
-    // ================= I we refine the current level
-    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-    
-      // marking the cells of the current level
-      L_mark_cells(level,param,firstoct,param->nrelax,param->amrthresh,cpu,sendbuffer,recvbuffer);
-    
-      // refining (and destroying) octs
-      curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax);
-      cpu->freeoct=curoct;
-    }
-    
-    //======================================= cleaning the marks
-    
-    clean_marks(param->lmax,firstoct);
-    
+  int is=0;
+  
+  if(level==param->lcoarse){
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
         
     // =========== Grid Census ========================================
       
     grid_census(param,cpu);
-  
+  }
+
+
+  do{
+    printf("----\n");
+    printf("subscyle #%d subt=%e\n",is,dt);
+    
+
+    // ================= I we refine the current level
+    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+      // refining (and destroying) octs
+      curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax);
+      cpu->freeoct=curoct;
+    }
+    
+    
+    // ==================================== Check the number of particles and octs
+    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
+
     // == Ready to advance
 
     // ================= II We compute the timestep of the current level
-    dtnew=adt[level-1];
+    dtnew=param->dt;
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);
@@ -58,24 +100,57 @@ void Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dthydro<dtnew?dthydro:dtnew);
     printf("dthydro= %e ",dthydro);
 #endif
-    
+    printf("\n");
     adt[level-1]=dtnew;
-    if(level==param->lcoarse) adt[level-2]=dtnew; // we synchronize coarser levels with the coarse one
-    
+
+    if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
+    adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
+
     // ================= III Recursive call to finer level
     
     if(level<param->lmax){
-      if(cpu->noct[level]>0) Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer);
+      if(cpu->noct[level]>0){
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt);
+	// coarse and finer level must be synchronized now
+	adt[level-1]=dtfine;
+	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
+      }
     }
     
-    // finer level must be synchronized now
+
+
     
     // ================= IV advance solution at the current level
     
     hydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
 
-    dt+=fmin(adt[level-1],adt[level-2]-dt);
-  }while(dt<adt[level-2]);
+
+    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+      
+      // cleaning the marks
+      L_clean_marks(level,firstoct);
+      // marking the cells of the current level
+      L_mark_cells(level,param,firstoct,param->nrelax,param->amrthresh,cpu,sendbuffer,recvbuffer);
+    }
+
+    dt+=adt[level-1]; // advance local time
+    is++;
+    ndt[level-1]++;
+
+    // Some Eye candy for timesteps display
+
+    if(cpu->rank==0) dispndt(param,cpu,ndt);
+    
+
+  }while((dt<adt[level-2])&&(is<param->nsubcycles));
   
+  // ================= V Computing the new refinement map
+  
+  if(cpu->rank==0){
+    printf("--\n");
+    printf("exiting level =%d\n",level);
+  }
+
+  return dt;
 
 }

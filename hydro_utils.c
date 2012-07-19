@@ -427,7 +427,8 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  
+	  dxcur=pow(0.5,oct->level);
+
 	  W=&(cell->field);
 	  W2U(W,&U0);
 	  // Limited Slopes
@@ -453,12 +454,13 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 #endif
 
 #ifdef TRANSZM
-	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+	      // if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+	      if((oct->z==0.)&&(inei2==4)){
 		W=&(cell->field);
 #ifdef REFZM
-	    W->w*=-1.0;
-	    dxcur=1./pow(2,oct->level);
-	    W->p=W->p+GRAV*W->d*dxcur;
+		W->w*=-1.0;
+		dxcur=1./pow(2,oct->level);
+		W->p=W->p+GRAV*W->d*dxcur;
 #endif
 	      }
 #endif
@@ -487,7 +489,8 @@ void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi){
 #endif
 
 #ifdef TRANSZP
-	      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+	      // if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 		W=&(cell->field);
 #ifdef REFZP
 	    W->w*=-1.0;
@@ -546,7 +549,8 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  
+	  dxcur=pow(0.5,oct->level);
+
 	  W0=&(cell->field);
 	  // Limited Slopes
 	  for(dir=0;dir<3;dir++){
@@ -571,13 +575,14 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 #endif
 
 #ifdef TRANSZM
-	      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+	      if((oct->z==0.)&&(inei2==4)){
 		Wm=&(cell->field);
 #ifdef REFZM
 		// !!!!DANGEREUX CA !
-	    Wm->w*=-1.0;
-	    dxcur=1./pow(2,oct->level);
-	    Wm->p=Wm->p+GRAV*Wm->d*dxcur;
+		Wm->w*=-1.0;
+		dxcur=1./pow(2,oct->level);
+		Wm->p=Wm->p+GRAV*Wm->d*dxcur;
 #endif
 	      }
 #endif
@@ -606,14 +611,15 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 #endif
 
 #ifdef TRANSZP
-	      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 		Wp=&(cell->field);
 #ifdef REFZP
-	    Wp->w*=-1.0;
-	    dxcur=1./pow(2,oct->level);
-	    Wp->p=Wp->p-GRAV*Wp->d*dxcur;
+		Wp->w*=-1.0;
+		dxcur=1./pow(2,oct->level);
+		Wp->p=Wp->p-GRAV*Wp->d*dxcur;
 #endif
-
+		
 	      }
 #endif
 
@@ -636,7 +642,6 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	  // =================================================
 	  // =================================================
 	  // =================================================
-	  // FAUT PAS METTRE WP ICI !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	  for(iz=0;iz<2;iz++){
 	    for(iy=0;iy<2;iy++){
@@ -2837,8 +2842,7 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   
   int nocthydro=cpu->noct[level-1];
 
-  if(cpu->rank==0) printf("Start Hydro on %d octs\n",nocthydro);
-
+  if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d\n",nocthydro,dtnew,level);
 
   // ===== COMPUTING THE FLUXES
 
@@ -2877,7 +2881,7 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   }
   t150=MPI_Wtime();
 
-  printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu->rank);
+  //printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu->rank);
 
   // ==== UPDATING THE VALUES
 
@@ -2952,7 +2956,8 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
 
 #ifdef TRANSZP
 		    if(inei==5){
-		      if((curoct->nei[inei]->child->z-curoct->z)<0.){
+		      //if((curoct->nei[inei]->child->z-curoct->z)<0.){
+		      if((curoct->z+2.*dxcur)==1.){
 			continue;
 		      }
 		    }
@@ -2976,7 +2981,8 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
 
 #ifdef TRANSZM
 		    if(inei==4){
-		      if((curoct->nei[inei]->child->z-curoct->z)>0.5){
+		      //if((curoct->nei[inei]->child->z-curoct->z)>0.5){
+		      if(curoct->z==0.){
 			continue;
 		      }
 		    }

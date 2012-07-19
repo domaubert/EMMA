@@ -88,6 +88,7 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
   
   oct=cell2oct(cell);
   getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+  dxcur=pow(0.5,oct->level);
   
   W=&(cell->gdata);
   U0=*W;
@@ -114,7 +115,8 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
 #endif
       
 #ifdef TRANSZM
-      if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+      if((oct->z==0.)&&(inei2==4)){
 	W=&(cell->gdata);
       }
 #endif
@@ -143,7 +145,8 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
 #endif
       
 #ifdef TRANSZP
-      if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+      if(((oct->z+2.*dxcur)==1.)&&(inei2==5))
 	W=&(cell->gdata);
       }
 #endif
@@ -185,7 +188,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
-  REAL dist;
+  REAL dxcur;
 
   struct Gtype Wi[8];
   struct OCT *oct;
@@ -227,6 +230,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
   oct=cell2oct(cell);
   neioct=cell2oct(neicell);
+  dxcur=pow(0.5,oct->level);
 
   // ============================ TRANSMISSIVE BOUNDARIES ====================
 #ifdef TRANSXP
@@ -266,8 +270,9 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSZP
     if(ineiloc==5){
-      dist=neioct->z-oct->z;
-      if(dist<0.){
+      /* dist=neioct->z-oct->z; */
+      /* if(dist<0.){ */
+      if((oct->z+2.*dxcur)==1.){
 	neicell=cell;
 	face[0]=4;
 	face[1]=5;
@@ -319,8 +324,9 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSZM
     if(ineiloc==4){
-      dist=neioct->z-oct->z;
-      if(dist>0.5){
+      /* dist=neioct->z-oct->z; */
+      /* if(dist>0.5){ */
+      if(oct->z==0.){
 	neicell=cell;
 	face[0]=0;
 	face[1]=1;

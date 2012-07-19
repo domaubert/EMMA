@@ -50,6 +50,7 @@ struct RUNPARAMS{
   int nrelax; // number of smoothing cycles
 
   int nrestart; // the restart snapshot
+  int nsubcycles; // number of subcyles in AMR advance procedure
 };
 
 

@@ -1603,9 +1603,12 @@ int main(int argc, char *argv[])
 
     REAL *adt;
     adt=(REAL *)malloc(sizeof(REAL)*levelmax);
-    for(level=1;level<=levelmax;level++){
-      adt[level-1]=param.dt;
-    }
+
+    int *ndt;
+    ndt=(int *)malloc(sizeof(int)*levelmax);
+
+    // preparing freeocts
+    cpu.freeoct=freeoct;
 
 
     // Loop over time
@@ -1617,11 +1620,16 @@ int main(int argc, char *argv[])
 #else
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
+      // Resetting the timesteps
 
+      for(level=1;level<=levelmax;level++){
+	adt[level-1]=param.dt;
+	ndt[level-1]=0;
+      }
 
       //Recursive Calls over levels
 
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,aexp,stride,sendbuffer,recvbuffer);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,aexp,stride,sendbuffer,recvbuffer,ndt);
       
 
       // ==================================== dump
