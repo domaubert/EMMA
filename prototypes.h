@@ -120,6 +120,7 @@ struct CPUINFO{
   int levelcoarse; // the levelcoarse
 
   struct OCT *freeoct; // the location of the first free oct
+  int nsteps; // the current coarse step index
 };
 
 
@@ -280,18 +281,16 @@ struct CELL
 #endif
 
 
-/* #ifdef AXLFORCE */
-/*   REAL fx; */
-/*   REAL fy; */
-/*   REAL fz; */
-/* #endif */
-
 #ifdef WHYDRO2
   struct Wtype field;
+
+#ifndef NOFLUX
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
+#else
+  struct Wtype fieldnew;
 #endif
 
-
+#endif
 };
 
 

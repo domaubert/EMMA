@@ -1207,19 +1207,19 @@ int main(int argc, char *argv[])
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
-  WR.d=1.;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=-0.75;
-  WR.p=1.0;
-
-  WL.d=0.125;
+  WL.d=1.;
   WL.u=0.;
   WL.v=0.;
-  WL.w=0.;
-  WL.p=0.1;
-  X0=1.-0.3125;
-  tmax=0.2;
+  WL.w=0.75;
+  WL.p=1.0;
+
+  WR.d=0.125;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.1;
+  X0=0.3125;
+  tmax=0.15;
 
   /*  /\* // TEST 123 *\/ */
 
@@ -1492,7 +1492,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  tmax=0.2;
+  tmax=0.15;
 #endif
 #endif
 
@@ -1613,6 +1613,8 @@ int main(int argc, char *argv[])
 
     // Loop over time
     for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
+
+      cpu.nsteps=nsteps;
       
 #ifdef TESTCOSMO
       aexp=interp_aexp(tsim,tab_aexp,tab_ttilde);
