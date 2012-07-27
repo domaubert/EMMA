@@ -1201,6 +1201,7 @@ int main(int argc, char *argv[])
   // Shock Tube
 
   struct Wtype WL, WR;
+  struct Utype UL, UR;
   REAL X0;
   if(cpu.rank==0) printf("Init Hydro\n");
 
@@ -1217,8 +1218,11 @@ int main(int argc, char *argv[])
   WR.v=0.;
   WR.w=0.;
   WR.p=0.1;
+ 
   X0=0.3125;
   tmax=0.15;
+
+
   /*  /\* // TEST 123 *\/ */
 
   /* WL.d=1.; */

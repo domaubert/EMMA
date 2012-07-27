@@ -94,7 +94,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // == Ready to advance
 
     // ================= II We compute the timestep of the current level
-    dtnew=param->dt*(cpu->nsteps>2);
+    dtnew=param->dt;//*(cpu->nsteps>2);
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);

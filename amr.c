@@ -22,6 +22,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   REAL gradw[3]={0.,0.,0.};
   REAL gradp[3]={0.,0.,0.};
 
+
   int vcell[6],vnei[6];
   struct Wtype W;
   struct Wtype Wi[8];
@@ -122,11 +123,11 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-     /* gradd[ax]+=(W.d*fact);  */
-    /* gradu[ax]+=(W.u*fact);  */
-    /* gradv[ax]+=(W.v*fact);  */
-    gradw[ax]+=(W.w*fact);   
-    /* gradp[ax]+=(W.p*fact);  */
+    gradd[ax]+=(W.d*fact);  
+    /* gradu[ax]+=(W.u*fact); */
+    /* gradv[ax]+=(W.v*fact); */
+    /* gradw[ax]+=(W.w*fact); */
+    /* gradp[ax]+=(W.p*fact); */
 
   }
 

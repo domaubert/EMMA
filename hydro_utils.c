@@ -3167,7 +3167,7 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
       
       //if(((W0.w==0.)&&(W.w>0.))&&(W.w<3e-12)) abort(); 
       //if(W.p<0.1) abort();
-      if((W.d==0.125)&&(W.p<0.1)) abort();
+      //if((W.d==0.125)&&(W.p<0.1)) abort();
       
       memcpy(&(stencil[i].new.cell[icell].field),&W,sizeof(struct Wtype));
     }
@@ -3268,24 +3268,17 @@ void advancehydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 	  struct OCT *child;
 	  int i;
 	  child=curoct->cell[icell].child;
-	  memset(&U,0,sizeof(struct Utype));
+	  memset(&W,0,sizeof(struct Wtype));
 	  for(i=0;i<8;i++){
-	    /* W.d+=child->cell[i].field.d*0.125; */
-	    /* W.u+=child->cell[i].field.u*0.125; */
-	    /* W.v+=child->cell[i].field.v*0.125; */
-	    /* W.w+=child->cell[i].field.w*0.125; */
-	    /* W.p+=child->cell[i].field.p*0.125; */
-	    
-	    W2U(&(child->cell[i].field),&UL);
-	    U.d +=UL.d*0.125;
-	    U.du+=UL.du*0.125;
-	    U.dv+=UL.dv*0.125;
-	    U.dw+=UL.dw*0.125;
-	    U.E +=UL.E*0.125;
+	    W.d+=child->cell[i].field.d*0.125;
+	    W.u+=child->cell[i].field.u*0.125;
+	    W.v+=child->cell[i].field.v*0.125;
+	    W.w+=child->cell[i].field.w*0.125;
+	    W.p+=child->cell[i].field.p*0.125;
 
 	  }
 	  //if(W.v!=0.) abort();
-	  U2W(&U,&W);
+	  //U2W(&U,&W);
 	  memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
 	}
 
