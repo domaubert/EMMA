@@ -14,6 +14,28 @@
 
 #ifdef WHYDRO2
 
+/* // ==================== converts U -> W */
+/* void U2W(struct Utype *U, struct Wtype *W) */
+/* { */
+/*   W->d=U->d; */
+/*   W->u=U->du/U->d; */
+/*   W->v=U->dv/U->d; */
+/*   W->w=U->dw/U->d; */
+/*   W->p=(GAMMA-1.)*(U->E-(pow(W->u,2)+pow(W->v,2)+pow(W->w,2))*0.5*U->d); */
+/*   W->a=sqrt(GAMMA*W->p/W->d); */
+/* } */
+
+/* // ==================== converts W -> U */
+/* void W2U(struct Wtype *W, struct Utype *U) */
+/* { */
+/*   U->d=W->d; */
+/*   U->du=W->d*W->u; */
+/*   U->dv=W->d*W->v; */
+/*   U->dw=W->d*W->w; */
+/*   U->E=W->d*(0.5*(pow(W->u,2)+pow(W->v,2)+pow(W->w,2))+W->p/((GAMMA-1.)*W->d)); */
+/* } */
+
+
 // ==================== converts U -> W
 void U2W(struct Utype *U, struct Wtype *W)
 {
@@ -1574,12 +1596,6 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
   REAL GL[NVAR],GR[NVAR];
   REAL HL[NVAR],HR[NVAR];
 
-  memset(FL,0,sizeof(REAL)*NVAR);
-  memset(FR,0,sizeof(REAL)*NVAR);
-  memset(HL,0,sizeof(REAL)*NVAR);
-  memset(HR,0,sizeof(REAL)*NVAR);
-  memset(GL,0,sizeof(REAL)*NVAR);
-  memset(GR,0,sizeof(REAL)*NVAR);
 
   REAL Smax;
   struct Wtype1D_double WRloc, WLloc;
@@ -1609,6 +1625,8 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
   REAL Fr[NVAR],Fl[NVAR];
 #endif
 
+  int ffact[6]={0,0,0,0,0,0};
+
 
   int tagr=0,tagl=0;
   REAL fact;
@@ -1621,6 +1639,13 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       tagr=0;
       tagl=0;
       
+      memset(FL,0,sizeof(REAL)*NVAR);
+      memset(FR,0,sizeof(REAL)*NVAR);
+      memset(HL,0,sizeof(REAL)*NVAR);
+      memset(HR,0,sizeof(REAL)*NVAR);
+      memset(GL,0,sizeof(REAL)*NVAR);
+      memset(GR,0,sizeof(REAL)*NVAR);
+
       // Getting the original state ===========================
       
       curcell=&(stencil[i].oct[ioct[6]].cell[icell].field);
@@ -1642,6 +1667,10 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       /* } */
 
       /* // MUSCL STATE RECONSTRUCTION */
+#ifdef NOFLUX
+      memset(ffact,0,sizeof(REAL)*6);
+#endif
+
 
       MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central
       for(inei=0;inei<6;inei++){
@@ -1649,562 +1678,552 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       	memcpy(WN+inei,WT+idxnei[inei],sizeof(struct Wtype));
        	W2U(WN+inei,UN+inei);
       	W2U(WC+inei,UC+inei);
+
+#ifdef NOFLUX
+	if(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].child!=NULL){
+	  ffact[inei]=1; // we cancel the contriubtion of split neighbors
+	}
+#endif
+
       }
-      
-      /* if((i==IR)&&(icell==2)) printf("M1 %e || %e %e || %e %e || %e %e ==> %e\n",stencil[i].oct[13].cell[2].field.p,stencil[i].oct[12].cell[3].field.p,stencil[i].oct[12].cell[2].field.p,stencil[i].oct[15].cell[1].field.p,stencil[i].oct[12].cell[1].field.p,stencil[i].oct[12].cell[7].field.p,stencil[i].oct[3].cell[7].field.p,WN[0].p); */
-      /* if((i==IR2)&&(icell==0)) printf("M2 %e || %e %e || %e %e || %e %e ==> %e\n",stencil[i].oct[13].cell[0].field.p,stencil[i].oct[12].cell[1].field.p,stencil[i].oct[12].cell[0].field.p,stencil[i].oct[12].cell[3].field.p,stencil[i].oct[9].cell[3].field.p,stencil[i].oct[12].cell[5].field.p,stencil[i].oct[3].cell[5].field.p,WN[0].p); */
       
       // X DIRECTION =========================================================================
       
       // --------- solving the Riemann Problems LEFT
-
       // Switching to Split description
-      
+      if(!ffact[0]){      
 #ifdef RIEMANN_EXACT
 
-      WLloc.d=WN[0].d;
-      WLloc.u=WN[0].u;
-      WLloc.p=WN[0].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WN[0].d;
+	WLloc.u=WN[0].u;
+	WLloc.p=WN[0].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      WRloc.d=WC[0].d;
-      WRloc.u=WC[0].u;
-      WRloc.p=WC[0].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WC[0].d;
+	WRloc.u=WC[0].u;
+	WRloc.p=WC[0].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      // Riemann Solver
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      Wtest3D.d=Wtest.d;
-      Wtest3D.u=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      if(isnan(Wtest.p)){
-	printf("ouhla NAN\n");
-	abort();
-      }
-
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.v=WN[0].v;
-	  Wtest3D.w=WN[0].w;
+	// Riemann Solver
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.v=WC[0].v;
-	  Wtest3D.w=WC[0].w;
+
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.u=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
+      
+	if(isnan(Wtest.p)){
+	  printf("ouhla NAN\n");
+	  abort();
 	}
+
+	// Passive advection
+	if(ustar>0.)
+	  {
+	    Wtest3D.v=WN[0].v;
+	    Wtest3D.w=WN[0].w;
+	  }
+	else
+	  {
+	    Wtest3D.v=WC[0].v;
+	    Wtest3D.w=WC[0].w;
+	  }
       
-      W2U(&Wtest3D,&Utest3D);
+	W2U(&Wtest3D,&Utest3D);
       
-      // Getting the fluxes LEFT
-      getflux_X(&Utest3D,FL);
+	// Getting the fluxes LEFT
+	getflux_X(&Utest3D,FL);
 
 #ifdef DUAL_E
-      FL[5]=Wtest3D.p*Wtest3D.u;
+	FL[5]=Wtest3D.p*Wtest3D.u;
 #endif
 
 #endif
 
-      // =============================================
+	// =============================================
 
 #ifdef RIEMANN_HLLC
-      speedestimateX_HLLC(&WN[0],&WC[0],&SL,&SR,&pstar,&ustar);
-      if(SL>SR) abort();
-      /* if(ustar>SR) abort(); */
-      /* if(ustar<SL) abort(); */
+	speedestimateX_HLLC(&WN[0],&WC[0],&SL,&SR,&pstar,&ustar);
+	if(SL>SR) abort();
+	/* if(ustar>SR) abort(); */
+	/* if(ustar<SL) abort(); */
 
-      if(SL>=0.){
-	getflux_X(&UN[0],FL);
-      }
-      else if(SR<=0.){
-	getflux_X(&UC[0],FL);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_X(&UN[0],FL);
-	fact=WN[0].d*(SL-WN[0].u)/(SL-ustar);
-	FL[0]+=(fact*1.                                                                      -UN[0].d )*SL;
-	FL[1]+=(fact*ustar                                                                   -UN[0].du)*SL;
-	FL[2]+=(fact*WN[0].v                                                                 -UN[0].dv)*SL;
-	FL[3]+=(fact*WN[0].w                                                                 -UN[0].dw)*SL;
-	FL[4]+=(fact*(UN[0].E/UN[0].d+(ustar-WN[0].u)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].u))))-UN[0].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_X(&UC[0],FL);
-	fact=WC[0].d*(SR-WC[0].u)/(SR-ustar);
-	FL[0]+=(fact*1.                                                                      -UC[0].d )*SR;
-	FL[1]+=(fact*ustar                                                                   -UC[0].du)*SR;
-	FL[2]+=(fact*WC[0].v                                                                 -UC[0].dv)*SR;
-	FL[3]+=(fact*WC[0].w                                                                 -UC[0].dw)*SR;
-	FL[4]+=(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u))))-UC[0].E )*SR;
-      }
-#endif
-      /* if((i==IR)&&(icell==2)) printf("H  %e %e SL=%e SR=%e ustar=%e pstar=%e F=%e \n",WN[0].p,WC[0].p,SL,SR,ustar,pstar,FL[0]); */
-      /* if((i==IR2)&&(icell==0)) printf("H2 %e %e SL=%e SR=%e ustar=%e pstar=%e F=%e \n",WN[0].p,WC[0].p,SL,SR,ustar,pstar,FL[0]); */
-
-
-      // =============================================
-#ifdef RIEMANN_HLL
-      speedestimateX(&WN[0],&WC[0],&SL,&SR);//,&pstar,&ustar);
-      /* SL=WN[0].u-WN[0].a; */
-      /* SR=WC[0].u+WC[0].a; */
-
-      if((SL<0.)&&(SR>0)){
-	getflux_X(&UN[0],Fl);
-	getflux_X(&UC[0],Fr);
-
-	//W2Ustar_x(&WN[0],&US,SL,SS);
-
-	/* FL[0]=Fl[0]+SL*(US.d -UN[0].d ); */
-	/* FL[1]=Fl[1]+SL*(US.du-UN[0].du); */
-	/* FL[2]=Fl[2]+SL*(US.dv-UN[0].dv); */
-	/* FL[3]=Fl[3]+SL*(US.dw-UN[0].dw); */
-	/* FL[4]=Fl[4]+SL*(US.E -UN[0].E ); */
-
-	FL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[0].d -UN[0].d ))/(SR-SL);
-	FL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[0].du-UN[0].du))/(SR-SL);
-	FL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[0].dv-UN[0].dv))/(SR-SL);
-	FL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[0].dw-UN[0].dw))/(SR-SL);
-	FL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[0].E -UN[0].E ))/(SR-SL);
-
-#ifdef DUAL_E
-
-	//FL[5]=pstar*ustar;
-
-	Fl[5]=WN[0].p*WN[0].u;
-	Fr[5]=WC[0].p*WC[0].u;
-	FL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[0].p -WN[0].p ))/(SR-SL);
-#endif
-
-	tagl=1;
-      }
-      else{
 	if(SL>=0.){
 	  getflux_X(&UN[0],FL);
-#ifdef DUAL_E
-	  FL[5]=WN[0].p*WN[0].u;
-#endif
 	}
 	else if(SR<=0.){
 	  getflux_X(&UC[0],FL);
-#ifdef DUAL_E
-	  FL[5]=WC[0].p*WC[0].u;
-#endif
 	}
-      }
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_X(&UN[0],FL);
+	  fact=WN[0].d*(SL-WN[0].u)/(SL-ustar);
+	  FL[0]+=(fact*1.                                                                      -UN[0].d )*SL;
+	  FL[1]+=(fact*ustar                                                                   -UN[0].du)*SL;
+	  FL[2]+=(fact*WN[0].v                                                                 -UN[0].dv)*SL;
+	  FL[3]+=(fact*WN[0].w                                                                 -UN[0].dw)*SL;
+	  FL[4]+=(fact*(UN[0].E/UN[0].d+(ustar-WN[0].u)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].u))))-UN[0].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_X(&UC[0],FL);
+	  fact=WC[0].d*(SR-WC[0].u)/(SR-ustar);
+	  FL[0]+=(fact*1.                                                                      -UC[0].d )*SR;
+	  FL[1]+=(fact*ustar                                                                   -UC[0].du)*SR;
+	  FL[2]+=(fact*WC[0].v                                                                 -UC[0].dv)*SR;
+	  FL[3]+=(fact*WC[0].w                                                                 -UC[0].dw)*SR;
+	  FL[4]+=(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u))))-UC[0].E )*SR;
+	}
+#endif
+
+	// =============================================
+#ifdef RIEMANN_HLL
+	speedestimateX(&WN[0],&WC[0],&SL,&SR);//,&pstar,&ustar);
+
+	if((SL<0.)&&(SR>0)){
+	  getflux_X(&UN[0],Fl);
+	  getflux_X(&UC[0],Fr);
+
+	  FL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[0].d -UN[0].d ))/(SR-SL);
+	  FL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[0].du-UN[0].du))/(SR-SL);
+	  FL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[0].dv-UN[0].dv))/(SR-SL);
+	  FL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[0].dw-UN[0].dw))/(SR-SL);
+	  FL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[0].E -UN[0].E ))/(SR-SL);
+
+#ifdef DUAL_E
+
+	  //FL[5]=pstar*ustar;
+
+	  Fl[5]=WN[0].p*WN[0].u;
+	  Fr[5]=WC[0].p*WC[0].u;
+	  FL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[0].p -WN[0].p ))/(SR-SL);
+#endif
+
+	  tagl=1;
+	}
+	else{
+	  if(SL>=0.){
+	    getflux_X(&UN[0],FL);
+#ifdef DUAL_E
+	    FL[5]=WN[0].p*WN[0].u;
+#endif
+	  }
+	  else if(SR<=0.){
+	    getflux_X(&UC[0],FL);
+#ifdef DUAL_E
+	    FL[5]=WC[0].p*WC[0].u;
+#endif
+	  }
+	}
       
 #ifdef DUAL_E
-      // divergence contribution
-      FL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].field.u;
+	// divergence contribution
+	FL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].field.u;
 #endif
       
 #endif
-
-
+      }
 
       // --------- solving the Riemann Problems RIGHT
 
-
-      // Switching to Split description
+      if(!ffact[1]){
+	// Switching to Split description
 
 #ifdef RIEMANN_EXACT
-      WRloc.d=WN[1].d;
-      WRloc.u=WN[1].u;
-      WRloc.p=WN[1].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WN[1].d;
+	WRloc.u=WN[1].u;
+	WRloc.p=WN[1].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      WLloc.d=WC[1].d;
-      WLloc.u=WC[1].u;
-      WLloc.p=WC[1].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WC[1].d;
+	WLloc.u=WC[1].u;
+	WLloc.p=WC[1].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-
-      // Riemann Solver
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.u=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar<0.)
-	{
-	  Wtest3D.v=WN[1].v;
-	  Wtest3D.w=WN[1].w;
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.v=WC[1].v;
-	  Wtest3D.w=WC[1].w;
-	}
+
+	// Riemann Solver
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
-      W2U(&Wtest3D,&Utest3D);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.u=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
       
-      // Getting the fluxes RIGHT
-      getflux_X(&Utest3D,FR);
+	// Passive advection
+	if(ustar<0.)
+	  {
+	    Wtest3D.v=WN[1].v;
+	    Wtest3D.w=WN[1].w;
+	  }
+	else
+	  {
+	    Wtest3D.v=WC[1].v;
+	    Wtest3D.w=WC[1].w;
+	  }
+      
+	W2U(&Wtest3D,&Utest3D);
+      
+	// Getting the fluxes RIGHT
+	getflux_X(&Utest3D,FR);
 #ifdef DUAL_E
-      FR[5]=Wtest3D.p*Wtest3D.u;
+	FR[5]=Wtest3D.p*Wtest3D.u;
 #endif
 
 #endif
-      // =======================================================================
+	// =======================================================================
 
 #ifdef RIEMANN_HLLC
-      speedestimateX_HLLC(&WC[1],&WN[1],&SL,&SR,&pstar,&ustar);
-      if(SL>=0.){
-	getflux_X(&UC[1],FR);
-      }
-      else if(SR<=0.){
-	getflux_X(&UN[1],FR);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_X(&UC[1],FR);
-	fact=WC[1].d*(SL-WC[1].u)/(SL-ustar);
-	FR[0]+=(fact*1.                                                                      -UC[1].d )*SL;
-	FR[1]+=(fact*ustar                                                                   -UC[1].du)*SL;
-	FR[2]+=(fact*WC[1].v                                                                 -UC[1].dv)*SL;
-	FR[3]+=(fact*WC[1].w                                                                 -UC[1].dw)*SL;
-	FR[4]+=(fact*(UC[1].E/UC[1].d+(ustar-WC[1].u)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].u))))-UC[1].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_X(&UN[1],FR);
-	fact=WN[1].d*(SR-WN[1].u)/(SR-ustar);
-	FR[0]+=(fact*1.                                                                      -UN[1].d )*SR;
-	FR[1]+=(fact*ustar                                                                   -UN[1].du)*SR;
-	FR[2]+=(fact*WN[1].v                                                                 -UN[1].dv)*SR;
-	FR[3]+=(fact*WN[1].w                                                                 -UN[1].dw)*SR;
-	FR[4]+=(fact*(UN[1].E/UN[1].d+(ustar-WN[1].u)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].u))))-UN[1].E )*SR;
-      }
-
-
-#endif
-
-      // =======================================================================
-#ifdef RIEMANN_HLL
-      speedestimateX(&WC[1],&WN[1],&SL,&SR);//,&pstar,&ustar);
-      /* SL=WC[1].u-WC[1].a; */
-      /* SR=WN[1].u+WN[1].a; */
-
-      if((SL<0.)&&(SR>0)){
-	getflux_X(&UC[1],Fl);
-	getflux_X(&UN[1],Fr);
-	
-	FR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[1].d -UC[1].d ))/(SR-SL);
-	FR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[1].du-UC[1].du))/(SR-SL);
-	FR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[1].dv-UC[1].dv))/(SR-SL);
-	FR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[1].dw-UC[1].dw))/(SR-SL);
-	FR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[1].E -UC[1].E ))/(SR-SL);
-
-#ifdef DUAL_E
-
-	//FR[5]=pstar*ustar;
-	Fl[5]=WC[1].p*WC[1].u;
-	Fr[5]=WN[1].p*WN[1].u;
-	FR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[1].p -WC[1].p))/(SR-SL);
-#endif
-      }
-      else{
+	speedestimateX_HLLC(&WC[1],&WN[1],&SL,&SR,&pstar,&ustar);
 	if(SL>=0.){
 	  getflux_X(&UC[1],FR);
-#ifdef DUAL_E
-	  FR[5]=WC[1].p*WC[1].u;
-#endif
 	}
 	else if(SR<=0.){
 	  getflux_X(&UN[1],FR);
+	}
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_X(&UC[1],FR);
+	  fact=WC[1].d*(SL-WC[1].u)/(SL-ustar);
+	  FR[0]+=(fact*1.                                                                      -UC[1].d )*SL;
+	  FR[1]+=(fact*ustar                                                                   -UC[1].du)*SL;
+	  FR[2]+=(fact*WC[1].v                                                                 -UC[1].dv)*SL;
+	  FR[3]+=(fact*WC[1].w                                                                 -UC[1].dw)*SL;
+	  FR[4]+=(fact*(UC[1].E/UC[1].d+(ustar-WC[1].u)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].u))))-UC[1].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_X(&UN[1],FR);
+	  fact=WN[1].d*(SR-WN[1].u)/(SR-ustar);
+	  FR[0]+=(fact*1.                                                                      -UN[1].d )*SR;
+	  FR[1]+=(fact*ustar                                                                   -UN[1].du)*SR;
+	  FR[2]+=(fact*WN[1].v                                                                 -UN[1].dv)*SR;
+	  FR[3]+=(fact*WN[1].w                                                                 -UN[1].dw)*SR;
+	  FR[4]+=(fact*(UN[1].E/UN[1].d+(ustar-WN[1].u)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].u))))-UN[1].E )*SR;
+	}
+
+
+#endif
+
+	// =======================================================================
+#ifdef RIEMANN_HLL
+	speedestimateX(&WC[1],&WN[1],&SL,&SR);//,&pstar,&ustar);
+	/* SL=WC[1].u-WC[1].a; */
+	/* SR=WN[1].u+WN[1].a; */
+
+	if((SL<0.)&&(SR>0)){
+	  getflux_X(&UC[1],Fl);
+	  getflux_X(&UN[1],Fr);
+	
+	  FR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[1].d -UC[1].d ))/(SR-SL);
+	  FR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[1].du-UC[1].du))/(SR-SL);
+	  FR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[1].dv-UC[1].dv))/(SR-SL);
+	  FR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[1].dw-UC[1].dw))/(SR-SL);
+	  FR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[1].E -UC[1].E ))/(SR-SL);
+
 #ifdef DUAL_E
-	  FR[5]=WN[1].p*WN[1].u;
+
+	  //FR[5]=pstar*ustar;
+	  Fl[5]=WC[1].p*WC[1].u;
+	  Fr[5]=WN[1].p*WN[1].u;
+	  FR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[1].p -WC[1].p))/(SR-SL);
 #endif
 	}
-      }
-      if(isnan(FR[5])) abort();
+	else{
+	  if(SL>=0.){
+	    getflux_X(&UC[1],FR);
+#ifdef DUAL_E
+	    FR[5]=WC[1].p*WC[1].u;
+#endif
+	  }
+	  else if(SR<=0.){
+	    getflux_X(&UN[1],FR);
+#ifdef DUAL_E
+	    FR[5]=WN[1].p*WN[1].u;
+#endif
+	  }
+	}
+	if(isnan(FR[5])) abort();
       
 #ifdef DUAL_E
-      // we add the divergence component
-      FR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].field.u;
+	// we add the divergence component
+	FR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].field.u;
 #endif
 
       
 #endif
-
+      }
        // Y DIRECTION =========================================================================
       
       // --------- solving the Riemann Problems FRONT
 
+     
       // Switching to Split description
 
-
+      if(!ffact[2]){
 #ifdef RIEMANN_EXACT
-      WLloc.d=WN[2].d;
-      WLloc.u=WN[2].v;
-      WLloc.p=WN[2].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WN[2].d;
+	WLloc.u=WN[2].v;
+	WLloc.p=WN[2].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      WRloc.d=WC[2].d;
-      WRloc.u=WC[2].v;
-      WRloc.p=WC[2].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WC[2].d;
+	WRloc.u=WC[2].v;
+	WRloc.p=WC[2].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      // Riemann Solver
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.u=WN[2].u;
-	  Wtest3D.w=WN[2].w;
+	// Riemann Solver
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.u=WC[2].u;
-	  Wtest3D.w=WC[2].w;
-	}
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
-      W2U(&Wtest3D,&Utest3D);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.v=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
       
-      // Getting the fluxes LEFT
-      getflux_Y(&Utest3D,GL);
+	// Passive advection
+	if(ustar>0.)
+	  {
+	    Wtest3D.u=WN[2].u;
+	    Wtest3D.w=WN[2].w;
+	  }
+	else
+	  {
+	    Wtest3D.u=WC[2].u;
+	    Wtest3D.w=WC[2].w;
+	  }
+      
+	W2U(&Wtest3D,&Utest3D);
+      
+	// Getting the fluxes LEFT
+	getflux_Y(&Utest3D,GL);
 
 #ifdef DUAL_E
-      GL[5]=Wtest3D.p*Wtest3D.v;
+	GL[5]=Wtest3D.p*Wtest3D.v;
 #endif
 
 #endif
 
 
-      // =============================================
+	// =============================================
 
 #ifdef RIEMANN_HLLC
-      speedestimateY_HLLC(&WN[2],&WC[2],&SL,&SR,&pstar,&ustar);
-      REAL pstar2=pstar;
-      REAL SR2=SR,SL2=SL;
-      REAL ustar2=ustar;
-      if(SL>=0.){
-	getflux_Y(&UN[2],GL);
-      }
-      else if(SR<=0.){
-	getflux_Y(&UC[2],GL);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_Y(&UN[2],GL);
-	fact=WN[2].d*(SL-WN[2].v)/(SL-ustar);
-	GL[0]+=(fact*1.                                                                      -UN[2].d )*SL;
-	GL[1]+=(fact*WN[2].u                                                                 -UN[2].du)*SL;
-	GL[2]+=(fact*ustar                                                                   -UN[2].dv)*SL;
-	GL[3]+=(fact*WN[2].w                                                                 -UN[2].dw)*SL;
-	GL[4]+=(fact*(UN[2].E/UN[2].d+(ustar-WN[2].v)*(ustar+WN[2].p/(WN[2].d*(SL-WN[2].v))))-UN[2].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_Y(&UC[2],GL);
-	fact=WC[2].d*(SR-WC[2].v)/(SR-ustar);
-	GL[0]+=(fact*1.                                                                      -UC[2].d )*SR;
-	GL[1]+=(fact*WC[2].u                                                                 -UC[2].du)*SR;
-	GL[2]+=(fact*ustar                                                                   -UC[2].dv)*SR;
-	GL[3]+=(fact*WC[2].w                                                                 -UC[2].dw)*SR;
-	GL[4]+=(fact*(UC[2].E/UC[2].d+(ustar-WC[2].v)*(ustar+WC[2].p/(WC[2].d*(SR-WC[2].v))))-UC[2].E )*SR;
-      }
-#endif
-
-      // =============================================
-
-
-#ifdef RIEMANN_HLL
-      speedestimateY(&WN[2],&WC[2],&SL,&SR);//&pstar,&ustar);
-      /* SL=WN[2].v-WN[2].a; */
-      /* SR=WC[2].v+WC[2].a; */
-
-      if((SL<0.)&&(SR>0)){
-	getflux_Y(&UN[2],Fl);
-	getflux_Y(&UC[2],Fr);
-	
-	GL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[2].d -UN[2].d ))/(SR-SL);
-	GL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[2].du-UN[2].du))/(SR-SL);
-	GL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[2].dv-UN[2].dv))/(SR-SL);
-	GL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[2].dw-UN[2].dw))/(SR-SL);
-	GL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[2].E -UN[2].E ))/(SR-SL);
-
-#ifdef DUAL_E
-	Fl[5]=WN[2].p*WN[2].v;
-	Fr[5]=WC[2].p*WC[2].v;
-	GL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[2].p -WN[2].p ))/(SR-SL);
-#endif
-
-      }
-      else{
+	speedestimateY_HLLC(&WN[2],&WC[2],&SL,&SR,&pstar,&ustar);
+	REAL pstar2=pstar;
+	REAL SR2=SR,SL2=SL;
+	REAL ustar2=ustar;
 	if(SL>=0.){
 	  getflux_Y(&UN[2],GL);
-
-#ifdef DUAL_E
-	  GL[5]=WN[2].p*WN[2].v;
-#endif
-
 	}
 	else if(SR<=0.){
 	  getflux_Y(&UC[2],GL);
+	}
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_Y(&UN[2],GL);
+	  fact=WN[2].d*(SL-WN[2].v)/(SL-ustar);
+	  GL[0]+=(fact*1.                                                                      -UN[2].d )*SL;
+	  GL[1]+=(fact*WN[2].u                                                                 -UN[2].du)*SL;
+	  GL[2]+=(fact*ustar                                                                   -UN[2].dv)*SL;
+	  GL[3]+=(fact*WN[2].w                                                                 -UN[2].dw)*SL;
+	  GL[4]+=(fact*(UN[2].E/UN[2].d+(ustar-WN[2].v)*(ustar+WN[2].p/(WN[2].d*(SL-WN[2].v))))-UN[2].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_Y(&UC[2],GL);
+	  fact=WC[2].d*(SR-WC[2].v)/(SR-ustar);
+	  GL[0]+=(fact*1.                                                                      -UC[2].d )*SR;
+	  GL[1]+=(fact*WC[2].u                                                                 -UC[2].du)*SR;
+	  GL[2]+=(fact*ustar                                                                   -UC[2].dv)*SR;
+	  GL[3]+=(fact*WC[2].w                                                                 -UC[2].dw)*SR;
+	  GL[4]+=(fact*(UC[2].E/UC[2].d+(ustar-WC[2].v)*(ustar+WC[2].p/(WC[2].d*(SR-WC[2].v))))-UC[2].E )*SR;
+	}
+#endif
+
+	// =============================================
+
+
+#ifdef RIEMANN_HLL
+	speedestimateY(&WN[2],&WC[2],&SL,&SR);//&pstar,&ustar);
+	/* SL=WN[2].v-WN[2].a; */
+	/* SR=WC[2].v+WC[2].a; */
+
+	if((SL<0.)&&(SR>0)){
+	  getflux_Y(&UN[2],Fl);
+	  getflux_Y(&UC[2],Fr);
+	
+	  GL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[2].d -UN[2].d ))/(SR-SL);
+	  GL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[2].du-UN[2].du))/(SR-SL);
+	  GL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[2].dv-UN[2].dv))/(SR-SL);
+	  GL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[2].dw-UN[2].dw))/(SR-SL);
+	  GL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[2].E -UN[2].E ))/(SR-SL);
+
 #ifdef DUAL_E
-	  GL[5]=WC[2].p*WC[2].v;
+	  Fl[5]=WN[2].p*WN[2].v;
+	  Fr[5]=WC[2].p*WC[2].v;
+	  GL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[2].p -WN[2].p ))/(SR-SL);
 #endif
 
 	}
-      }
+	else{
+	  if(SL>=0.){
+	    getflux_Y(&UN[2],GL);
 
 #ifdef DUAL_E
-      // divergence contribution
-      GL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].field.v;
+	    GL[5]=WN[2].p*WN[2].v;
+#endif
+
+	  }
+	  else if(SR<=0.){
+	    getflux_Y(&UC[2],GL);
+#ifdef DUAL_E
+	    GL[5]=WC[2].p*WC[2].v;
+#endif
+
+	  }
+	}
+
+#ifdef DUAL_E
+	// divergence contribution
+	GL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].field.v;
 #endif
       
 #endif
-
+      }
       // --------- solving the Riemann Problems BACK
 
 
       // Switching to Split description
-
+      if(!ffact[3]){
 #ifdef RIEMANN_EXACT
-      WRloc.d=WN[3].d;
-      WRloc.u=WN[3].v;
-      WRloc.p=WN[3].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WN[3].d;
+	WRloc.u=WN[3].v;
+	WRloc.p=WN[3].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      WLloc.d=WC[3].d;
-      WLloc.u=WC[3].v;
-      WLloc.p=WC[3].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WC[3].d;
+	WLloc.u=WC[3].v;
+	WLloc.p=WC[3].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-      // Riemann Solver
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.v=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar<0.)
-	{
-	  Wtest3D.u=WN[3].u;
-	  Wtest3D.w=WN[3].w;
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.u=WC[3].u;
-	  Wtest3D.w=WC[3].w;
-	}
+	// Riemann Solver
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
-      W2U(&Wtest3D,&Utest3D);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.v=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
       
-      // Getting the fluxes RIGHT
-      getflux_Y(&Utest3D,GR);
+	// Passive advection
+	if(ustar<0.)
+	  {
+	    Wtest3D.u=WN[3].u;
+	    Wtest3D.w=WN[3].w;
+	  }
+	else
+	  {
+	    Wtest3D.u=WC[3].u;
+	    Wtest3D.w=WC[3].w;
+	  }
+      
+	W2U(&Wtest3D,&Utest3D);
+      
+	// Getting the fluxes RIGHT
+	getflux_Y(&Utest3D,GR);
 #ifdef DUAL_E
-      GR[5]=Wtest3D.p*Wtest3D.v;
+	GR[5]=Wtest3D.p*Wtest3D.v;
 #endif
 
 #endif
-      // =============================================
+	// =============================================
 
 #ifdef RIEMANN_HLLC
-      speedestimateY_HLLC(&WC[3],&WN[3],&SL,&SR,&pstar,&ustar);
+	speedestimateY_HLLC(&WC[3],&WN[3],&SL,&SR,&pstar,&ustar);
 
-      if(SL>=0.){
-	getflux_Y(&UC[3],GR);
-      }
-      else if(SR<=0.){
-	getflux_Y(&UN[3],GR);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_Y(&UC[3],GR);
-	fact=WC[3].d*(SL-WC[3].v)/(SL-ustar);
-	GR[0]+=(fact*1.                                                                      -UC[3].d )*SL;
-	GR[1]+=(fact*WC[3].u                                                                 -UC[3].du)*SL;
-	GR[2]+=(fact*ustar                                                                   -UC[3].dv)*SL;
-	GR[3]+=(fact*WC[3].w                                                                 -UC[3].dw)*SL;
-	GR[4]+=(fact*(UC[3].E/UC[3].d+(ustar-WC[3].v)*(ustar+WC[3].p/(WC[3].d*(SL-WC[3].v))))-UC[3].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_Y(&UN[3],GR);
-	fact=WN[3].d*(SR-WN[3].v)/(SR-ustar);
-	GR[0]+=(fact*1.                                                                      -UN[3].d )*SR;
-	GR[1]+=(fact*WN[3].u                                                                 -UN[3].du)*SR;
-	GR[2]+=(fact*ustar                                                                   -UN[3].dv)*SR;
-	GR[3]+=(fact*WN[3].w                                                                 -UN[3].dw)*SR;
-	GR[4]+=(fact*(UN[3].E/UN[3].d+(ustar-WN[3].v)*(ustar+WN[3].p/(WN[3].d*(SR-WN[3].v))))-UN[3].E )*SR;
-      }
-#endif
-      // =============================================
-
-#ifdef RIEMANN_HLL
-      speedestimateY(&WC[3],&WN[3],&SL,&SR);//,&pstar,&ustar);
-      /* SL=WC[3].v-WC[3].a; */
-      /* SR=WN[3].v+WN[3].a; */
-
-      if((SL<0.)&&(SR>0)){
-	getflux_Y(&UC[3],Fl);
-	getflux_Y(&UN[3],Fr);
-	
-	GR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[3].d -UC[3].d ))/(SR-SL);
-	GR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[3].du-UC[3].du))/(SR-SL);
-	GR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[3].dv-UC[3].dv))/(SR-SL);
-	GR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[3].dw-UC[3].dw))/(SR-SL);
-	GR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[3].E -UC[3].E ))/(SR-SL);
-
-#ifdef DUAL_E
-	Fl[5]=WC[3].p*WC[3].v;
-	Fr[5]=WN[3].p*WN[3].v;
-	GR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[3].p -WC[3].p))/(SR-SL);
-#endif
-
-
-      }
-      else{
 	if(SL>=0.){
 	  getflux_Y(&UC[3],GR);
-
-#ifdef DUAL_E
-	  GR[5]=WC[3].p*WC[3].v;
-#endif
-
 	}
 	else if(SR<=0.){
 	  getflux_Y(&UN[3],GR);
-#ifdef DUAL_E
-	  GR[5]=WN[3].p*WN[3].v;
-#endif
 	}
-      }
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_Y(&UC[3],GR);
+	  fact=WC[3].d*(SL-WC[3].v)/(SL-ustar);
+	  GR[0]+=(fact*1.                                                                      -UC[3].d )*SL;
+	  GR[1]+=(fact*WC[3].u                                                                 -UC[3].du)*SL;
+	  GR[2]+=(fact*ustar                                                                   -UC[3].dv)*SL;
+	  GR[3]+=(fact*WC[3].w                                                                 -UC[3].dw)*SL;
+	  GR[4]+=(fact*(UC[3].E/UC[3].d+(ustar-WC[3].v)*(ustar+WC[3].p/(WC[3].d*(SL-WC[3].v))))-UC[3].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_Y(&UN[3],GR);
+	  fact=WN[3].d*(SR-WN[3].v)/(SR-ustar);
+	  GR[0]+=(fact*1.                                                                      -UN[3].d )*SR;
+	  GR[1]+=(fact*WN[3].u                                                                 -UN[3].du)*SR;
+	  GR[2]+=(fact*ustar                                                                   -UN[3].dv)*SR;
+	  GR[3]+=(fact*WN[3].w                                                                 -UN[3].dw)*SR;
+	  GR[4]+=(fact*(UN[3].E/UN[3].d+(ustar-WN[3].v)*(ustar+WN[3].p/(WN[3].d*(SR-WN[3].v))))-UN[3].E )*SR;
+	}
+#endif
+	// =============================================
 
-      // we add the divergence component
-      GR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].field.v;
+#ifdef RIEMANN_HLL
+	speedestimateY(&WC[3],&WN[3],&SL,&SR);//,&pstar,&ustar);
+	/* SL=WC[3].v-WC[3].a; */
+	/* SR=WN[3].v+WN[3].a; */
+
+	if((SL<0.)&&(SR>0)){
+	  getflux_Y(&UC[3],Fl);
+	  getflux_Y(&UN[3],Fr);
+	
+	  GR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[3].d -UC[3].d ))/(SR-SL);
+	  GR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[3].du-UC[3].du))/(SR-SL);
+	  GR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[3].dv-UC[3].dv))/(SR-SL);
+	  GR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[3].dw-UC[3].dw))/(SR-SL);
+	  GR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[3].E -UC[3].E ))/(SR-SL);
+
+#ifdef DUAL_E
+	  Fl[5]=WC[3].p*WC[3].v;
+	  Fr[5]=WN[3].p*WN[3].v;
+	  GR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[3].p -WC[3].p))/(SR-SL);
 #endif
 
+
+	}
+	else{
+	  if(SL>=0.){
+	    getflux_Y(&UC[3],GR);
+
+#ifdef DUAL_E
+	    GR[5]=WC[3].p*WC[3].v;
+#endif
+
+	  }
+	  else if(SR<=0.){
+	    getflux_Y(&UN[3],GR);
+#ifdef DUAL_E
+	    GR[5]=WN[3].p*WN[3].v;
+#endif
+	  }
+	}
+
+	// we add the divergence component
+	GR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].field.v;
+#endif
+      }
 
       // Z DIRECTION =========================================================================
       
@@ -2212,266 +2231,264 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       // Switching to Split description
 
-
+      if(!ffact[4]){
 #ifdef RIEMANN_EXACT
-      WLloc.d=WN[4].d;
-      WLloc.u=WN[4].w;
-      WLloc.p=WN[4].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WN[4].d;
+	WLloc.u=WN[4].w;
+	WLloc.p=WN[4].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      WRloc.d=WC[4].d;
-      WRloc.u=WC[4].w;
-      WRloc.p=WC[4].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WC[4].d;
+	WRloc.u=WC[4].w;
+	WRloc.p=WC[4].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-      // Riemann Solver
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar>0.)
-	{
-	  Wtest3D.u=WN[4].u;
-	  Wtest3D.v=WN[4].v;
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.u=WC[4].u;
-	  Wtest3D.v=WC[4].v;
-	}
+	// Riemann Solver
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
-      W2U(&Wtest3D,&Utest3D);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.w=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
       
-      // Getting the fluxes LEFT
-      getflux_Z(&Utest3D,HL);
+	// Passive advection
+	if(ustar>0.)
+	  {
+	    Wtest3D.u=WN[4].u;
+	    Wtest3D.v=WN[4].v;
+	  }
+	else
+	  {
+	    Wtest3D.u=WC[4].u;
+	    Wtest3D.v=WC[4].v;
+	  }
+      
+	W2U(&Wtest3D,&Utest3D);
+      
+	// Getting the fluxes LEFT
+	getflux_Z(&Utest3D,HL);
 
 #ifdef DUAL_E
-      HL[5]=Wtest3D.p*Wtest3D.w;
+	HL[5]=Wtest3D.p*Wtest3D.w;
 #endif
 
 #endif
 
-      // ===========================================
+	// ===========================================
 
 #ifdef RIEMANN_HLLC
-      speedestimateZ_HLLC(&WN[4],&WC[4],&SL,&SR,&pstar,&ustar);
+	speedestimateZ_HLLC(&WN[4],&WC[4],&SL,&SR,&pstar,&ustar);
 
-      if(SL>=0.){
-	getflux_Z(&UN[4],HL);
-      }
-      else if(SR<=0.){
-	getflux_Z(&UC[4],HL);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_Z(&UN[4],HL);
-	fact=WN[4].d*(SL-WN[4].w)/(SL-ustar);
-	HL[0]+=(fact*1.                                                                      -UN[4].d )*SL;
-	HL[1]+=(fact*WN[4].u                                                                 -UN[4].du)*SL;
-	HL[2]+=(fact*WN[4].v                                                                 -UN[4].dv)*SL;
-	HL[3]+=(fact*ustar                                                                   -UN[4].dw)*SL;
-	HL[4]+=(fact*(UN[4].E/UN[4].d+(ustar-WN[4].w)*(ustar+WN[4].p/(WN[4].d*(SL-WN[4].w))))-UN[4].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_Z(&UC[4],HL);
-	fact=WC[4].d*(SR-WC[4].w)/(SR-ustar);
-	HL[0]+=(fact*1.                                                                      -UC[4].d )*SR;
-	HL[1]+=(fact*WC[4].u                                                                 -UC[4].du)*SR;
-	HL[2]+=(fact*WC[4].v                                                                 -UC[4].dv)*SR;
-	HL[3]+=(fact*ustar                                                                   -UC[4].dw)*SR;
-	HL[4]+=(fact*(UC[4].E/UC[4].d+(ustar-WC[4].w)*(ustar+WC[4].p/(WC[4].d*(SR-WC[4].w))))-UC[4].E )*SR;
-      }
-#endif
-      // ===========================================
-
-#ifdef RIEMANN_HLL
-      speedestimateZ(&WN[4],&WC[4],&SL,&SR);//,&pstar,&ustar);
-      /* SL=WN[4].w-WN[4].a; */
-      /* SR=WC[4].w+WC[4].a; */
-
-      if((SL<0.)&&(SR>0.)){
-	getflux_Z(&UN[4],Fl);
-	getflux_Z(&UC[4],Fr);
-	
-	HL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[4].d -UN[4].d ))/(SR-SL);
-	HL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[4].du-UN[4].du))/(SR-SL);
-	HL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[4].dv-UN[4].dv))/(SR-SL);
-	HL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[4].dw-UN[4].dw))/(SR-SL);
-	HL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[4].E -UN[4].E ))/(SR-SL);
-
-#ifdef DUAL_E
-	Fl[5]=WN[4].p*WN[4].w;
-	Fr[5]=WC[4].p*WC[4].w;
-	HL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[4].p -WN[4].p ))/(SR-SL);
-#endif
-
-      }
-      else{
 	if(SL>=0.){
 	  getflux_Z(&UN[4],HL);
-#ifdef DUAL_E
-	  HL[5]=WN[4].p*WN[4].w;
-#endif
 	}
 	else if(SR<=0.){
 	  getflux_Z(&UC[4],HL);
-#ifdef DUAL_E
-	  HL[5]=WC[4].p*WC[4].w;
-#endif
 	}
-      }
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_Z(&UN[4],HL);
+	  fact=WN[4].d*(SL-WN[4].w)/(SL-ustar);
+	  HL[0]+=(fact*1.                                                                      -UN[4].d )*SL;
+	  HL[1]+=(fact*WN[4].u                                                                 -UN[4].du)*SL;
+	  HL[2]+=(fact*WN[4].v                                                                 -UN[4].dv)*SL;
+	  HL[3]+=(fact*ustar                                                                   -UN[4].dw)*SL;
+	  HL[4]+=(fact*(UN[4].E/UN[4].d+(ustar-WN[4].w)*(ustar+WN[4].p/(WN[4].d*(SL-WN[4].w))))-UN[4].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_Z(&UC[4],HL);
+	  fact=WC[4].d*(SR-WC[4].w)/(SR-ustar);
+	  HL[0]+=(fact*1.                                                                      -UC[4].d )*SR;
+	  HL[1]+=(fact*WC[4].u                                                                 -UC[4].du)*SR;
+	  HL[2]+=(fact*WC[4].v                                                                 -UC[4].dv)*SR;
+	  HL[3]+=(fact*ustar                                                                   -UC[4].dw)*SR;
+	  HL[4]+=(fact*(UC[4].E/UC[4].d+(ustar-WC[4].w)*(ustar+WC[4].p/(WC[4].d*(SR-WC[4].w))))-UC[4].E )*SR;
+	}
+#endif
+	// ===========================================
+
+#ifdef RIEMANN_HLL
+	speedestimateZ(&WN[4],&WC[4],&SL,&SR);//,&pstar,&ustar);
+	/* SL=WN[4].w-WN[4].a; */
+	/* SR=WC[4].w+WC[4].a; */
+
+	if((SL<0.)&&(SR>0.)){
+	  getflux_Z(&UN[4],Fl);
+	  getflux_Z(&UC[4],Fr);
+	
+	  HL[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UC[4].d -UN[4].d ))/(SR-SL);
+	  HL[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UC[4].du-UN[4].du))/(SR-SL);
+	  HL[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UC[4].dv-UN[4].dv))/(SR-SL);
+	  HL[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UC[4].dw-UN[4].dw))/(SR-SL);
+	  HL[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UC[4].E -UN[4].E ))/(SR-SL);
+
+#ifdef DUAL_E
+	  Fl[5]=WN[4].p*WN[4].w;
+	  Fr[5]=WC[4].p*WC[4].w;
+	  HL[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WC[4].p -WN[4].p ))/(SR-SL);
+#endif
+
+	}
+	else{
+	  if(SL>=0.){
+	    getflux_Z(&UN[4],HL);
+#ifdef DUAL_E
+	    HL[5]=WN[4].p*WN[4].w;
+#endif
+	  }
+	  else if(SR<=0.){
+	    getflux_Z(&UC[4],HL);
+#ifdef DUAL_E
+	    HL[5]=WC[4].p*WC[4].w;
+#endif
+	  }
+	}
       
 
 #ifdef DUAL_E
-      // divergence contribution
-      HL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].field.w;
+	// divergence contribution
+	HL[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].field.w;
 #endif
 
 #endif
 
-
+      }
       // --------- solving the Riemann Problems TOP
 
 
       // Switching to Split description
 
+      if(!ffact[5]){
 #ifdef RIEMANN_EXACT
-      WRloc.d=WN[5].d;
-      WRloc.u=WN[5].w;
-      WRloc.p=WN[5].p;
-      WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+	WRloc.d=WN[5].d;
+	WRloc.u=WN[5].w;
+	WRloc.p=WN[5].p;
+	WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
 
-      WLloc.d=WC[5].d;
-      WLloc.u=WC[5].w;
-      WLloc.p=WC[5].p;
-      WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+	WLloc.d=WC[5].d;
+	WLloc.u=WC[5].w;
+	WLloc.p=WC[5].p;
+	WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
 
-      if((WLloc.p<0)||(WRloc.p<0)){
-	printf("hajzehr\n");
-	abort();
-      }
-      // Riemann Solver
-      pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
-      getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
-      
-      Wtest3D.d=Wtest.d;
-      Wtest3D.w=Wtest.u;
-      Wtest3D.p=Wtest.p;
-      Wtest3D.a=Wtest.a;
-      
-      // Passive advection
-      if(ustar<0.)
-	{
-	  Wtest3D.u=WN[5].u;
-	  Wtest3D.v=WN[5].v;
+	if((WLloc.p<0)||(WRloc.p<0)){
+	  printf("hajzehr\n");
+	  abort();
 	}
-      else
-	{
-	  Wtest3D.u=WC[5].u;
-	  Wtest3D.v=WC[5].v;
-	}
+	// Riemann Solver
+	pstar=(REAL)findPressure(&WLloc,&WRloc,&n,&ustar);
+	getW(&Wtest,0., &WLloc, &WRloc, pstar, ustar);
       
-      W2U(&Wtest3D,&Utest3D);
+	Wtest3D.d=Wtest.d;
+	Wtest3D.w=Wtest.u;
+	Wtest3D.p=Wtest.p;
+	Wtest3D.a=Wtest.a;
       
-      // Getting the fluxes RIGHT
-      getflux_Z(&Utest3D,HR);
+	// Passive advection
+	if(ustar<0.)
+	  {
+	    Wtest3D.u=WN[5].u;
+	    Wtest3D.v=WN[5].v;
+	  }
+	else
+	  {
+	    Wtest3D.u=WC[5].u;
+	    Wtest3D.v=WC[5].v;
+	  }
+      
+	W2U(&Wtest3D,&Utest3D);
+      
+	// Getting the fluxes RIGHT
+	getflux_Z(&Utest3D,HR);
 
 #ifdef DUAL_E
-      HR[5]=Wtest3D.p*Wtest3D.w;
+	HR[5]=Wtest3D.p*Wtest3D.w;
 #endif
 
 #endif
-      //=====================================================
+	//=====================================================
 #ifdef RIEMANN_HLLC
-      speedestimateZ_HLLC(&WC[5],&WN[5],&SL,&SR,&pstar,&ustar);
+	speedestimateZ_HLLC(&WC[5],&WN[5],&SL,&SR,&pstar,&ustar);
 
-      if(SL>=0.){
-	getflux_Z(&UC[5],HR);
-      }
-      else if(SR<=0.){
-	getflux_Z(&UN[5],HR);
-      }
-      else if((SL<0.)&&(ustar>=0.)){
-	getflux_Z(&UC[5],HR);
-	fact=WC[5].d*(SL-WC[5].w)/(SL-ustar);
-	HR[0]+=(fact*1.                                                                      -UC[5].d )*SL;
-	HR[1]+=(fact*WC[5].u                                                                 -UC[5].du)*SL;
-	HR[2]+=(fact*WC[5].v                                                                 -UC[5].dv)*SL;
-	HR[3]+=(fact*ustar                                                                   -UC[5].dw)*SL;
-	HR[4]+=(fact*(UC[5].E/UC[5].d+(ustar-WC[5].w)*(ustar+WC[5].p/(WC[5].d*(SL-WC[5].w))))-UC[5].E )*SL;
-      }
-      else if((ustar<=0.)&&(SR>0.)){
-	getflux_Z(&UN[5],HR);
-	fact=WN[5].d*(SR-WN[5].w)/(SR-ustar);
-	HR[0]+=(fact*1.                                                                      -UN[5].d )*SR;
-	HR[1]+=(fact*WN[5].u                                                                 -UN[5].du)*SR;
-	HR[2]+=(fact*WN[5].v                                                                 -UN[5].dv)*SR;
-	HR[3]+=(fact*ustar                                                                   -UN[5].dw)*SR;
-	HR[4]+=(fact*(UN[5].E/UN[5].d+(ustar-WN[5].w)*(ustar+WN[5].p/(WN[5].d*(SR-WN[5].w))))-UN[5].E )*SR;
-      }
+	if(SL>=0.){
+	  getflux_Z(&UC[5],HR);
+	}
+	else if(SR<=0.){
+	  getflux_Z(&UN[5],HR);
+	}
+	else if((SL<0.)&&(ustar>=0.)){
+	  getflux_Z(&UC[5],HR);
+	  fact=WC[5].d*(SL-WC[5].w)/(SL-ustar);
+	  HR[0]+=(fact*1.                                                                      -UC[5].d )*SL;
+	  HR[1]+=(fact*WC[5].u                                                                 -UC[5].du)*SL;
+	  HR[2]+=(fact*WC[5].v                                                                 -UC[5].dv)*SL;
+	  HR[3]+=(fact*ustar                                                                   -UC[5].dw)*SL;
+	  HR[4]+=(fact*(UC[5].E/UC[5].d+(ustar-WC[5].w)*(ustar+WC[5].p/(WC[5].d*(SL-WC[5].w))))-UC[5].E )*SL;
+	}
+	else if((ustar<=0.)&&(SR>0.)){
+	  getflux_Z(&UN[5],HR);
+	  fact=WN[5].d*(SR-WN[5].w)/(SR-ustar);
+	  HR[0]+=(fact*1.                                                                      -UN[5].d )*SR;
+	  HR[1]+=(fact*WN[5].u                                                                 -UN[5].du)*SR;
+	  HR[2]+=(fact*WN[5].v                                                                 -UN[5].dv)*SR;
+	  HR[3]+=(fact*ustar                                                                   -UN[5].dw)*SR;
+	  HR[4]+=(fact*(UN[5].E/UN[5].d+(ustar-WN[5].w)*(ustar+WN[5].p/(WN[5].d*(SR-WN[5].w))))-UN[5].E )*SR;
+	}
 #endif
 
 
 #ifdef RIEMANN_HLL
-      speedestimateZ(&WC[5],&WN[5],&SL,&SR);//,&pstar,&ustar);
-      /* SL=WC[5].w-WC[5].a; */
-      /* SR=WN[5].w+WN[5].a; */
+	speedestimateZ(&WC[5],&WN[5],&SL,&SR);//,&pstar,&ustar);
+	/* SL=WC[5].w-WC[5].a; */
+	/* SR=WN[5].w+WN[5].a; */
 
-      if((SL<0.)&&(SR>0)){
-	getflux_Z(&UC[5],Fl);
-	getflux_Z(&UN[5],Fr);
+	if((SL<0.)&&(SR>0)){
+	  getflux_Z(&UC[5],Fl);
+	  getflux_Z(&UN[5],Fr);
 	
-	HR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[5].d -UC[5].d ))/(SR-SL);
-	HR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[5].du-UC[5].du))/(SR-SL);
-	HR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[5].dv-UC[5].dv))/(SR-SL);
-	HR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[5].dw-UC[5].dw))/(SR-SL);
-	HR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[5].E -UC[5].E ))/(SR-SL);
+	  HR[0]=(SR*Fl[0]-SL*Fr[0]+SL*SR*(UN[5].d -UC[5].d ))/(SR-SL);
+	  HR[1]=(SR*Fl[1]-SL*Fr[1]+SL*SR*(UN[5].du-UC[5].du))/(SR-SL);
+	  HR[2]=(SR*Fl[2]-SL*Fr[2]+SL*SR*(UN[5].dv-UC[5].dv))/(SR-SL);
+	  HR[3]=(SR*Fl[3]-SL*Fr[3]+SL*SR*(UN[5].dw-UC[5].dw))/(SR-SL);
+	  HR[4]=(SR*Fl[4]-SL*Fr[4]+SL*SR*(UN[5].E -UC[5].E ))/(SR-SL);
 
 #ifdef DUAL_E
-	Fl[5]=WC[5].p*WC[5].w;
-	Fr[5]=WN[5].p*WN[5].w;
-	HR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[5].p -WC[5].p))/(SR-SL);
+	  Fl[5]=WC[5].p*WC[5].w;
+	  Fr[5]=WN[5].p*WN[5].w;
+	  HR[5]=(SR*Fl[5]-SL*Fr[5]+SL*SR*(WN[5].p -WC[5].p))/(SR-SL);
 #endif
 	
-      }
-      else{
-	if(SL>=0.){
-	  getflux_Z(&UC[5],HR);
-#ifdef DUAL_E
-	  HR[5]=WC[5].p*WC[5].w;
-#endif
 	}
-	else if(SR<=0.){
-	  getflux_Z(&UN[5],HR);
+	else{
+	  if(SL>=0.){
+	    getflux_Z(&UC[5],HR);
 #ifdef DUAL_E
-	  HR[5]=WN[5].p*WN[5].w;
+	    HR[5]=WC[5].p*WC[5].w;
 #endif
+	  }
+	  else if(SR<=0.){
+	    getflux_Z(&UN[5],HR);
+#ifdef DUAL_E
+	    HR[5]=WN[5].p*WN[5].w;
+#endif
+	  }
 	}
-      }
 
 #ifdef DUAL_E
-      // divergence contribution
-      HR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].field.w;
+	// divergence contribution
+	HR[5]+=0.5*Wold.p*(GAMMA-1.)/dt*stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].field.w;
 #endif
 #endif
+      }
 
       
       //========================= copy the fluxes
-      
-      /* memset(GL,0,sizeof(REAL)*NVAR); */
-      /* memset(GR,0,sizeof(REAL)*NVAR); */
-      /* memset(FL,0,sizeof(REAL)*NVAR); */
-      /* memset(FR,0,sizeof(REAL)*NVAR); */
 
+      //if((ffact[4])&&(!ffact[3])) abort();
 
       memcpy(stencil[i].new.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].new.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
@@ -2480,6 +2497,9 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
       memcpy(stencil[i].new.cell[icell].flux+4*NVAR,HL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].new.cell[icell].flux+5*NVAR,HR,sizeof(REAL)*NVAR);
 
+      /* if(((HL[3]-HR[3])<1e-10)&&(HL[3]!=HR[3])){ */
+      /* 	if(HR[3]<0.1) abort(); */
+      /* } */
 
       // ready for the next cell
     }
@@ -2759,7 +2779,7 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
 // ==============================================================================================
 // ==============================================================================================
 #ifdef WGRAV
-void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, struct CPUINFO *cpu, float dt)
+void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, struct CPUINFO *cpu, REAL dt)
 {
   
   struct Utype U0,U;
@@ -2813,7 +2833,8 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 // ==============================================================================================
 // ==============================================================================================
 
-void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, float dtnew){
+#ifndef NOFLUX
+void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dtnew){
 
   double t0,t100,t20,t80,t200,t150;
   double th=0.,tt=0.;
@@ -2869,7 +2890,7 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
 	    	    
       // ------------ scatter back the FLUXES
 	    
-      nextoct=scatterstencil(curoct,stencil, nread, cpu);
+      nextoct=scatterstencil(curoct,stencil, nread, cpu,0.,0.);
       nreadtot+=nread;
       t100=MPI_Wtime();
 
@@ -3091,11 +3112,75 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   if(cpu->rank==0) printf("\n Timings per oct [total]: \n tt=%e[%e] \n th=%e[%e] \n tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
   
 }
+#endif
+
+// =========================================================================================
+// =========================================================================================
+#ifdef NOFLUX
+void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
+{
+  int i,icell;
+  struct Wtype W,W0,Wi;
+  struct Utype U,U0,Ui;
+  REAL one;
+  int flx;
+  REAL dtsurdx=dtnew/dxcur;
+  REAL F[NFLUX];
+#ifdef DUAL_E
+  REAL DE,p0,p;
+#endif
+  
+  for(i=0;i<nread;i++){ // we scan the octs
+    for(icell=0;icell<8;icell++){ // we scan the cells
+      
+      if(stencil[i].oct[13].cell[icell].child!=NULL) continue;
+      memcpy(&W,&(stencil[i].new.cell[icell].field),sizeof(struct Wtype));// getting the original state (already contained in the new field)
+      W2U(&W,&U);
+      memcpy(F,stencil[i].new.cell[icell].flux,sizeof(REAL)*NFLUX);// original fluxes
+
+      memcpy(&Ui,&U,sizeof(struct Utype));
+      memcpy(&Wi,&W,sizeof(struct Wtype));
+      memcpy(&W0,&(stencil[i].oct[13].cell[icell].field),sizeof(struct Wtype));// getting the original state (already contained in the new field)
+      W2U(&W0,&U0);
+
+#ifdef DUAL_E
+      DE=W.p/((GAMMA-1.)*U.E);
+      p0=W.p;
+      p=p0;
+#endif
+      
+      // ==== updating
+      one=1.;
+      for(flx=0;flx<6;flx++){
+	U.d +=F[0+flx*NVAR]*dtsurdx*one;
+	U.du+=F[1+flx*NVAR]*dtsurdx*one;
+	U.dv+=F[2+flx*NVAR]*dtsurdx*one;
+	U.dw+=F[3+flx*NVAR]*dtsurdx*one;
+	U.E +=F[4+flx*NVAR]*dtsurdx*one;
+#ifdef DUAL_E
+	p   +=F[5+flx*NVAR]*dtsurdx*one;
+#endif
+	one*=-1.;
+      }
+      // scatter back in the new value within the stencil
+      U2W(&U,&W);
+      
+      //if(((W0.w==0.)&&(W.w>0.))&&(W.w<3e-12)) abort(); 
+      //if(W.p<0.1) abort();
+      if((W.d==0.125)&&(W.p<0.1)) abort();
+      
+      memcpy(&(stencil[i].new.cell[icell].field),&W,sizeof(struct Wtype));
+    }
+  }
+
+}
+#endif
 
 // =========================================================================================
 // =========================================================================================
 
-void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, float dtnew){
+#ifdef NOFLUX
+void advancehydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dtnew){
 
   double t0,t100,t20,t80,t200,t150;
   double th=0.,tt=0.;
@@ -3110,10 +3195,10 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   REAL dxcur=pow(0.5,level);
   REAL dtsurdx=dtnew/dxcur;
   REAL one;
-  struct Utype U;
+  struct Utype U,UL;
   struct Utype S;
   struct Utype U0;
-  struct Wtype W;
+  struct Wtype W,WL;
   struct Wtype Wnew;
   struct CELL *neicell;
   int icell;
@@ -3124,8 +3209,8 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   
   int nocthydro=cpu->noct[level-1];
 
-  if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d\n",nocthydro,dtnew,level);
-
+  if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
+  
   // ===== COMPUTING THE FLUXES
 
   // --------------- setting the first oct of the level
@@ -3142,20 +3227,20 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
 	    
       // ------------ gathering the stencil value values
       nextoct= gatherstencil(curoct,stencil,stride,cpu, &nread);
-	  
+      
       // ------------ solving the hydro
 	    
       t20=MPI_Wtime();
       hydroM(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
       t80=MPI_Wtime();
-	    	    
       // ------------ updating values within the stencil
 
-      updatefield(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+      updatefield(curoct,stencil,nread,stride,cpu,dxcur,dtnew);
       
       // ------------ scatter back the FLUXES
 	    
-      nextoct=scatterstencil(curoct,stencil, nread, cpu);
+      nextoct=scatterstencil(curoct,stencil, nread, cpu,dxcur,dtnew);
+
       nreadtot+=nread;
       t100=MPI_Wtime();
 
@@ -3167,216 +3252,75 @@ void hydro(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CP
   }
   t150=MPI_Wtime();
 
-  //printf("level=%d Nhydro=%d on proc %d\n",level,nreadtot,cpu->rank);
-
-  // ==== UPDATING THE VALUES
-
-  // ---------------- at this stage we are ready to update the conservative variables
-  
-#ifdef WMPI
-  // ================================= exchange current state of hydro quantities 
-  MPI_Barrier(cpu->comm);
-  mpi_exchange_flux(cpu, fsendbuffer, frecvbuffer,1);
-  MPI_Barrier(cpu->comm);
-#endif
-
-  //printf("dtsurdx=%e on proc %d at level=%d (dtnew=%e dxcur=%e)\n",dtsurdx,cpu->rank,level,dtnew,dxcur);
-      
+  // FINAL UPDATE OF THE VALUES
   if(nreadtot>0){
-    curoct=firstoct[level-1];
-    if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
-
-
-      nextoct=curoct;
-      do{
-	curoct=nextoct;
-	nextoct=curoct->next;
-	if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
-	for(icell=0;icell<8;icell++){
-	  int ref=0;
-
-	  if(curoct->cell[icell].child==NULL){ // Leaf cell
-	    struct CELL *curcell;
-	    curcell=&(curoct->cell[icell]);
-	    memcpy(&W,&(curcell->field),sizeof(struct Wtype));
-	    W2U(&W,&U);
-	    memcpy(&U0,&U,sizeof(struct Utype));
-		
-
-#ifdef DUAL_E
-	    DE=W.p/((GAMMA-1.)*U.E);
-	    p0=W.p;
-	    p=p0;
-#endif
-		
-	    memcpy(F,curcell->flux,sizeof(REAL)*NFLUX);// original fluxes
-
-	    // here we have to deal with coarse-fine boundaries
-
-	    if(level<param->lmax){
-	      int inei;
-	      getcellnei(icell, vnei, vcell);
-
-	      //loop over neighbours
-	      for(inei=0;inei<6;inei++){
-		if(vnei[inei]!=6){
-		    
-		  if(curoct->nei[vnei[inei]]->child!=NULL){
-
-		    // ==BC STUFF=======================================			
-#ifdef TRANSXP
-		    if(inei==1){
-		      if((curoct->nei[inei]->child->x-curoct->x)<0.){
-			continue;
-		      }
-		    }
-#endif
-
-#ifdef TRANSYP
-		    if(inei==3){
-		      if((curoct->nei[inei]->child->y-curoct->y)<0.){
-			continue;
-		      }
-		    }
-#endif
-
-#ifdef TRANSZP
-		    if(inei==5){
-		      //if((curoct->nei[inei]->child->z-curoct->z)<0.){
-		      if((curoct->z+2.*dxcur)==1.){
-			continue;
-		      }
-		    }
-#endif
-
-#ifdef TRANSXM
-		    if(inei==0){
-		      if((curoct->nei[inei]->child->x-curoct->x)>0.5){
-			continue;
-		      }
-		    }
-#endif
-
-#ifdef TRANSYM
-		    if(inei==2){
-		      if((curoct->nei[inei]->child->y-curoct->y)>0.5){
-			continue;
-		      }
-		    }
-#endif
-
-#ifdef TRANSZM
-		    if(inei==4){
-		      //if((curoct->nei[inei]->child->z-curoct->z)>0.5){
-		      if(curoct->z==0.){
-			continue;
-		      }
-		    }
-#endif
-		    // == END BC STUFF=======================================			
-		    
-		    // the neighbor cell is at the same level or refined
-		    neicell=&(curoct->nei[vnei[inei]]->child->cell[vcell[inei]]);
-		    
-		    if(neicell->child!=NULL){
-		      // the neighbor is split : fluxes must be averaged
-		      int fcell[4];
-		      getfcell(inei,fcell);
-		      memset(F+NVAR*inei,0,NVAR*sizeof(REAL)); // reset the original flux
-			
-		      int iface;
-		      REAL *Fnei;
-		      int idxfnei[6]={1,0,3,2,5,4};
-		      int j; 
-		      // averaging the flux
-		      for(iface=0;iface<4;iface++){
-			Fnei=neicell->child->cell[fcell[iface]].flux;
-			for(j=0;j<NVAR;j++) F[j+inei*NVAR]+=0.25*Fnei[j+idxfnei[inei]*NVAR];
-		      }
-		    }
-		  }
-		}
-	      }
-	    }
-
-	    // ready to update
-	    one=1.;
-	    for(flx=0;flx<6;flx++){
-	      U.d +=F[0+flx*NVAR]*dtsurdx*one;
-	      U.du+=F[1+flx*NVAR]*dtsurdx*one;
-	      U.dv+=F[2+flx*NVAR]*dtsurdx*one;
-	      U.dw+=F[3+flx*NVAR]*dtsurdx*one;
-	      U.E +=F[4+flx*NVAR]*dtsurdx*one;
-#ifdef DUAL_E
-	      p   +=F[5+flx*NVAR]*dtsurdx*one;
-#endif
-	      one*=-1.;
-	    }
-
-	    U2W(&U,&Wnew);
-
-#ifdef WGRAV
-#ifndef NOCOUPLE
-	    /* // half gravitational force correction */
-
-#ifdef CONSERVATIVE
-	    U.du+=-(U0.d*curoct->cell[icell].f[0]*dtnew*0.5);
-	    U.dv+=-(U0.d*curoct->cell[icell].f[1]*dtnew*0.5);
-	    U.dw+=-(U0.d*curoct->cell[icell].f[2]*dtnew*0.5);
-	    U.E+=-(U0.du*curoct->cell[icell].f[0]+U0.dv*curoct->cell[icell].f[1]+U0.dw*curoct->cell[icell].f[2])*dtnew*0.5;
-	    U2W(&U,&Wnew);
-		
-
-#endif
-
-#ifdef PRIMITIVE
-	    Wnew.u+=(-curoct->cell[icell].f[0]*dtnew*0.5);
-	    Wnew.v+=(-curoct->cell[icell].f[1]*dtnew*0.5);
-	    Wnew.w+=(-curoct->cell[icell].f[2]*dtnew*0.5);
-#ifdef DUAL_E
-	    if(DE<1e-3){
-	      Wnew.p=p;
-	      Wnew.a=sqrt(GAMMA*Wnew.p/Wnew.d);
-	    }
-
-#endif
-#endif
-
-
-#endif	
-#endif	
-	    if(Wnew.d<0){abort();}
-		
-	    memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
-		
-		
-	  }
-	  else{ // split cell : hydro quantities are averaged
-	    struct OCT *child;
-	    int i;
-	    child=curoct->cell[icell].child;
-	    memset(&W,0,sizeof(struct Wtype));
-	    for(i=0;i<8;i++){
-	      W.d+=child->cell[i].field.d*0.125;
-	      W.u+=child->cell[i].field.u*0.125;
-	      W.v+=child->cell[i].field.v*0.125;
-	      W.w+=child->cell[i].field.w*0.125;
-	      W.p+=child->cell[i].field.p*0.125;
-	    }
-	    //if(W.v!=0.) abort();
-	    memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
-	    
-	  }
-	  
+    nextoct=firstoct[level-1];
+    do {
+      curoct=nextoct;
+      nextoct=curoct->next; 
+      for(icell=0;icell<8;icell++){
+	if(curoct->cell[icell].child==NULL){
+	  // unsplit case
+	  memcpy(&(curoct->cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype));
 	}
-      }while(nextoct!=NULL);
-    }
+	else{
+	  // split case : -> quantities are averaged
+	  struct OCT *child;
+	  int i;
+	  child=curoct->cell[icell].child;
+	  memset(&U,0,sizeof(struct Utype));
+	  for(i=0;i<8;i++){
+	    /* W.d+=child->cell[i].field.d*0.125; */
+	    /* W.u+=child->cell[i].field.u*0.125; */
+	    /* W.v+=child->cell[i].field.v*0.125; */
+	    /* W.w+=child->cell[i].field.w*0.125; */
+	    /* W.p+=child->cell[i].field.p*0.125; */
+	    
+	    W2U(&(child->cell[i].field),&UL);
+	    U.d +=UL.d*0.125;
+	    U.du+=UL.du*0.125;
+	    U.dv+=UL.dv*0.125;
+	    U.dw+=UL.dw*0.125;
+	    U.E +=UL.E*0.125;
+
+	  }
+	  //if(W.v!=0.) abort();
+	  U2W(&U,&W);
+	  memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
+	}
+
+
+	//if(curoct->cell[icell].field.w <0.) abort();
+
+      }
+    }while(nextoct!=NULL);
   }
-  t200=MPI_Wtime();
+
+
 
   if(cpu->rank==0) printf("\n Timings per oct [total]: \n tt=%e[%e] \n th=%e[%e] \n tf=%e[%e]\n",tt/nocthydro,tt,th/nocthydro,th,(t200-t150)/nocthydro,t200-t150);
   
 }
 
+void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu){
+
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  // --------------- setting the first oct of the level
+  nextoct=firstoct[level-1];
+  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    do {
+      curoct=nextoct;
+      nextoct=curoct->next; 
+
+      //for(icell=0;icell<8;icell++) memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
+      for(icell=0;icell<8;icell++) memcpy(&(curoct->cell[icell].fieldnew),&(curoct->cell[icell].field),sizeof(struct Wtype));
+      
+    }while(nextoct!=NULL);
+  }
+}
+#endif
 
 #endif

@@ -283,14 +283,45 @@ struct CELL
 
 #ifdef WHYDRO2
   struct Wtype field;
-
 #ifndef NOFLUX
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
 #else
   struct Wtype fieldnew;
 #endif
-
 #endif
+};
+
+
+//-------------------------------------
+struct CELLFLUX
+{
+  struct OCT *child;
+  REAL marked; // REAL for consistency with physical quantities during communications
+  int idx; //index of the cell within the oct
+
+  // the head particle
+  struct PART * phead;
+
+  // the physical quantities
+  REAL density; // total density
+  REAL pot;
+
+  REAL temp;
+
+#ifdef WGRAV
+  struct Gtype gdata;
+  REAL pnew; // new potential
+  REAL res; // residual
+  REAL f[3]; // the gravitational force component
+#endif
+
+
+#ifdef WHYDRO2
+  struct Wtype field;
+  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
+  struct Wtype fieldnew;
+#endif
+
 };
 
 
@@ -312,6 +343,8 @@ struct CELLLIGHT
   struct Gtype gdata; // gravitational data 
   REAL f[3];
 #endif
+  
+
 };
 
 
@@ -359,7 +392,7 @@ struct OCTLIGHT
 struct OCTFLUX
 {
   // the cell properties
-  struct CELL cell[8]; // MUSTN'T BE MOVED !!
+  struct CELLFLUX cell[8]; // MUSTN'T BE MOVED !!
 };
 
 // ========================================

@@ -410,6 +410,10 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   REAL dxcur;
 
   struct Wtype Wi[8];
+#ifdef NOFLUX
+  struct OCT *child[8];
+#endif
+
   struct OCT *oct;
   struct OCT *neioct;
   struct CELL *neicell;
@@ -564,22 +568,40 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   if(neicell->child!=NULL){
     // optimal case
-    for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
+    for(icell=0;icell<8;icell++){
+      memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
+      //if(icell==0) if(ioct==24) if(neicell->child->cell[icell].field.p==0.099999999999999978) abort();
+      
+      
+#ifdef NOFLUX
+      child[icell]=neicell->child->cell[icell].child;
+#endif
     }
+  }
   else{
     coarse2fine_hydro2(neicell,Wi);
-
+#ifdef NOFLUX
+    for(icell=0;icell<8;icell++){
+      child[icell]=NULL;
+    }
+#endif
   }
 
 #ifdef WGRAV
-    REAL floc[8*3];
-    for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->child->cell[icell].f,sizeof(REAL)*3);
+  REAL floc[8*3];
+  for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->child->cell[icell].f,sizeof(REAL)*3);
 #endif
 
 
 
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
+
+#ifdef NOFLUX
+    stencil->oct[ioct].cell[icell].child=child[icell];
+#endif
+    //if(icell==0) if(ioct==24) if(stencil->oct[ioct].cell[icell].field.p==0.099999999999999978) abort();
+
 #ifdef WGRAV
     memcpy(stencil->oct[ioct].cell[icell].f,floc+3*face[icell],sizeof(REAL)*3); //
 #endif
@@ -610,6 +632,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #ifdef WHYDRO2
 //=====================================================================================================================
 
+#ifndef NOFLUX
 struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
@@ -655,10 +678,6 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
 	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
 	}
-      
-      /* if(curoct==SOCT) { printf(" SOCT=%e %e %e %e ir=%d\n",SOCT->cell[2].field.d,stencil[iread].oct[12].cell[3].field.d,stencil[iread].oct[12].cell[3].field.u,stencil[iread].oct[12].cell[3].field.p,iread);IR=iread;}  */
-      /* if(curoct==SOCT2) {printf(" SOCT2=%e %e %e %e ir=%d\n",SOCT2->cell[0].field.d,stencil[iread].oct[12].cell[1].field.d,stencil[iread].oct[12].cell[1].field.u,stencil[iread].oct[12].cell[1].field.p,iread);IR2=iread;}  */
-
 
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -666,7 +685,59 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   (*nread)=iread;
   return nextoct;
 }
+#else
 
+struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  struct CELL *cell;
+
+  int inei;
+  int iread=0;
+  int icell;
+  //int ioct[7]={12,14,10,16,4,22,13};
+  
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
+  int ioct;
+
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      if(curoct->cpu!=cpu->rank) continue;
+
+
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++){
+	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
+	memcpy(&(stencil[iread].new.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
+
+#ifdef WGRAV 
+ 	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
+#endif 
+	stencil[iread].oct[13].cell[icell].child=curoct->cell[icell].child;
+      }
+      
+      cell=curoct->parent;
+      
+      //start recursive fill
+      for(inei=0;inei<6;inei++)
+	{
+	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
+	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
+	}
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  (*nread)=iread;
+  return nextoct;
+}
+#endif
 
 #endif
 
@@ -875,7 +946,9 @@ struct OCT *scattervechydro(struct OCT *octstart, struct MULTIVECT *data, int st
 //=======================================================================================================
 
 #ifdef WHYDRO2
-struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu)
+
+#ifndef NOFLUX
+struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -899,20 +972,131 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*NFLUX);
       }
       
-      /* if(SOCT==curoct){ */
-      /*  	printf(" F SOCT = %e %e\n",stencil[iread].new.cell[2].flux[0],stencil[iread].new.cell[2].flux[0+NVAR]);  */
-      /* } */
-      /* if(SOCT2==curoct){ */
-      /*  	printf(" F SOCT2 = %e %e\n",stencil[iread].new.cell[0].flux[0],stencil[iread].new.cell[0].flux[0+NVAR]);  */
-      /* 	//abort(); */
-      /* } */
 
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
   return nextoct;
 }
+
+#else
+
+struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos,iread;
+  int icell;
+  int ioct[7]={12,14,10,16,4,22,13};
+  int vnei[6],vcell[6],inei;
+  
+  nextoct=octstart;
+  iread=0;
+
+  struct Wtype W,W0,Wi;
+  struct Utype U,U0,Ui;
+
+#ifdef DUAL_E
+  REAL DE,p0,p;
 #endif
+  REAL dtsurdx=dtnew/dxcur;
+  int one;
+  REAL F[NVAR];
+
+  //printf("let's scatter\n");
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      if(curoct->cpu!=cpu->rank) continue;
+
+      // filling the values in the central oct
+      for(icell=0;icell<8;icell++){
+	//we scatter the values in the central cell
+	memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].new.cell[icell].field),sizeof(struct Wtype));
+	
+	
+	// let us deal with coarser neighbors
+	getcellnei(icell, vnei, vcell); // we get the neighbors
+	
+	for(inei=0;inei<6;inei++){
+
+#ifdef TRANSZM
+	  if((curoct->z==0.)&&(inei==4)){
+	    continue;
+	  }
+#endif
+	  
+#ifdef TRANSZP
+	  if(((curoct->z+2.*dxcur)==1.)&&(inei==5)){
+	    continue;
+	  }
+#endif
+
+
+	  if(vnei[inei]!=6){
+	    if(curoct->nei[vnei[inei]]->child==NULL){
+	      // the neighbor cell is unsplit we update its value with fluxes
+	      
+
+	      // initial data from the new value
+	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
+	      W2U(&W,&U);
+
+	      memcpy(&Ui,&U,sizeof(struct Utype));
+	      memcpy(&Wi,&W,sizeof(struct Wtype));
+	      memcpy(&W0,&(curoct->nei[vnei[inei]]->field),sizeof(struct Wtype));
+	      W2U(&W0,&U0);
+
+
+#ifdef DUAL_E
+	      DE=W.p/((GAMMA-1.)*U.E);
+	      p0=W.p;
+	      p=p0;
+#endif
+
+	      // getting the flux
+	      memcpy(F,stencil[iread].new.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
+	      
+	      // update
+	      one=pow(-1.,inei+1);
+	      U.d +=F[0]*dtsurdx*one*0.125;
+	      U.du+=F[1]*dtsurdx*one*0.125;
+	      U.dv+=F[2]*dtsurdx*one*0.125;
+	      U.dw+=F[3]*dtsurdx*one*0.125;
+	      U.E +=F[4]*dtsurdx*one*0.125;
+#ifdef DUAL_E
+	      p   +=F[5]*dtsurdx*one*0.125;
+#endif
+	      
+	      
+	      //scatter back
+	      U2W(&U,&W);
+	      /* if((SOCTX==curoct)&&(inei==5)) if(Ui.E==0.24999999999999994) abort(); */
+	      /* if((U.d=0.125)&&(U.E==0.24999999999999994)) abort(); */
+	      /* if(inei==5){ */
+	      /* 	if(W0.d==0.125){ */
+	      /* 	  if(U0.E!=U.E) abort(); */
+	      /* 	} */
+	      /* } */
+	      memcpy(&(curoct->nei[vnei[inei]]->fieldnew),&W,sizeof(struct Wtype));
+	      
+	    }
+	  }
+	}
+
+      }
+
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  return nextoct;
+}
+
+#endif
+#endif
+
 
 //=======================================================================================================
 //=======================================================================================================

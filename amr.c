@@ -122,11 +122,11 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-    gradd[ax]+=(W.d*fact);
-    gradu[ax]+=(W.u*fact); 
-    gradv[ax]+=(W.v*fact);  
-    gradw[ax]+=(W.w*fact);  
-    gradp[ax]+=(W.p*fact); 
+     /* gradd[ax]+=(W.d*fact);  */
+    /* gradu[ax]+=(W.u*fact);  */
+    /* gradv[ax]+=(W.v*fact);  */
+    gradw[ax]+=(W.w*fact);   
+    /* gradp[ax]+=(W.p*fact);  */
 
   }
 
@@ -135,6 +135,8 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   ratiov=sqrt(pow(gradv[0],2)+pow(gradv[1],2)+pow(gradv[2],2))*0.5/fabs(curoct->cell[icell].field.v+1e-10);
   ratiow=sqrt(pow(gradw[0],2)+pow(gradw[1],2)+pow(gradw[2],2))*0.5/fabs(curoct->cell[icell].field.w+1e-10);
   ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/fabs(curoct->cell[icell].field.p+1e-10);
+
+  //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
   ratio=ratiod;
   ratio=fmax(ratio,ratiou);
@@ -450,10 +452,6 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  SOCT=newoct;
 		}
 
-		if((newoct->x==0.3046875)*(newoct->y==0.25)*(newoct->z==0.)){
-		  printf("SOCT2 FOUND\n");
-		  SOCT2=newoct;
-		}
 		
 
 		/* if((newoct->x==0.296875)*(newoct->y==0.234375)*(newoct->z==0.)){ */
@@ -525,6 +523,10 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
 		  }
+#ifdef NOFLUX
+		  memcpy(&(newoct->cell[ii].fieldnew),&(newoct->cell[ii].field),sizeof(struct Wtype)); 	  
+#endif
+
 #endif
 
 #ifdef WGRAV
@@ -836,10 +838,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->y=curoct->y+((icell/2)%2)*dxcur;
 		newoct->z=curoct->z+( icell   /4)*dxcur;
 
-		/* if((newoct->x==0.296875)*(newoct->y==0.234375)*(newoct->z==0.)){ */
-		/*   printf("SOCT FOUND\n"); */
-		/*   SOCTX=newoct; */
-		/* } */
 
 	
 		/* if((newoct->x==0.296875)*(newoct->y==0.25)*(newoct->z==0.)){ */
@@ -915,11 +913,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
 		  }
 #endif
-
-
-
-
 		}
+
+
 
 #ifdef PIC
 		// splitting the particles
@@ -936,10 +932,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		    //ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 		    
-		    if((ip<0)||(ip>7)){
-		      printf("ip=%d idx=%d\n",ip,curp->idx);
-		      abort();
-		    }
 		    
 		    if(newoct->cell[ip].phead==NULL)
 		      {
@@ -1314,10 +1306,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
   if(cpu->rank==0) printf("==> start marking\n");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
-      marker=0;
-      nmark=0;
-      for(ismooth=0;ismooth<nsmooth;ismooth++)
-	{
+  marker=0;
+  nmark=0;
+  for(ismooth=0;ismooth<nsmooth;ismooth++)
+    {
 	  //printf("level=%d ",level);
 	  dx=1./pow(2,level);
 	    
@@ -1336,6 +1328,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 		    if(curoct->cpu!=cpu->rank) continue;
 		    for(icell=0;icell<8;icell++) // looping over cells in oct
 		      {
+			if((pass==0)&&(ismooth==0)){
+			  if(curoct->cell[icell].marked>0) abort();
+			}
+			
 			switch(pass){
 			  //=========================================================
 			case 0: // marking cell already refined or marked marker=1/4

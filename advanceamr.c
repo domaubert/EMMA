@@ -45,7 +45,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  
 
   if(cpu->rank==0){
-    printf("\n === entering level =%d\n",level);
+    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,aexp);
   }
   struct OCT *curoct;
   REAL dtnew;
@@ -83,10 +83,18 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
 
+
+#ifdef WHYDRO2
+#ifdef NOFLUX
+    // =============================== cleaning the updated values of hydro quantities
+    clean_new_hydro(level,param,firstoct,cpu);
+#endif
+#endif
+
     // == Ready to advance
 
     // ================= II We compute the timestep of the current level
-    dtnew=param->dt;
+    dtnew=param->dt*(cpu->nsteps>2);
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);
@@ -100,7 +108,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dthydro<dtnew?dthydro:dtnew);
     printf("dthydro= %e ",dthydro);
 #endif
-    printf("\n");
+    printf("sum=%e\n",adt[level-1]+dtnew);
     adt[level-1]=dtnew;
 
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -122,8 +130,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
     // ================= IV advance solution at the current level
     
+#ifndef NOFLUX
     hydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-
+#else
+    advancehydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
+#endif
 
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       

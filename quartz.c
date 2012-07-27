@@ -17,7 +17,6 @@
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
-#include "advanceamr.h"
 
 
 #ifdef WGPU
@@ -35,6 +34,8 @@
 #ifdef WGRAV
 #include "poisson_utils.h"
 #endif
+
+#include "advanceamr.h"
 
 void gdb_debug()
 {
@@ -109,7 +110,6 @@ int main(int argc, char *argv[])
 
   REAL xc,yc,zc;
   int stride;
-  REAL **vcomp;
   int ncomp;
   REAL acc;
   REAL dt;
@@ -421,13 +421,6 @@ int main(int argc, char *argv[])
 
   lastpart=part-1; // the last particle points before the first at the very beginning
 
-  vcomp=(REAL **)calloc(ncomp,sizeof(REAL*));
-  for(i=0;i<ncomp;i++)
-    {
-      vcomp[i]=(REAL *)calloc(stride,sizeof(REAL));
-    }
-
-  memsize+=ncomp*stride*sizeof(REAL);
 
 
   //===================================================================================================
@@ -456,7 +449,7 @@ int main(int argc, char *argv[])
   
   // allocating the 6dim stencil
   struct HGRID *stencil;
-  printf("stenci=%p\n",stencil);
+  printf("stencil=%p with stride=%d\n",stencil,stride);
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
   if(stencil==NULL) abort();
@@ -636,11 +629,17 @@ int main(int argc, char *argv[])
 	    }
 	    lastoct[level]=newoct;
 
-	    /* // SOCT STUFF */
-	    /* if(level==(levelcoarse-1)){ */
-	    /*   if((newoct->x==0.3046875)*(newoct->y==.2421875)*(newoct->z==0.)) SOCT=newoct; */
-	    /* } */
+	    // SOCT STUFF
+	    if(level==(levelcoarse-1)){
+	      if((newoct->x==0.)*(newoct->y==0.)*(newoct->z==0.5)){
+		SOCTX=newoct;
+	      }
+	    }
 
+		/* if((newoct->x==0.)*(newoct->y==0.)*(newoct->z==0.46875)){ */
+		/*   printf("SOCT FOUND\n"); */
+		/*   SOCTX=newoct; */
+		/* } */
 
 	    // next oct ready
 	    newoct++; 
@@ -1220,7 +1219,6 @@ int main(int argc, char *argv[])
   WR.p=0.1;
   X0=0.3125;
   tmax=0.15;
-
   /*  /\* // TEST 123 *\/ */
 
   /* WL.d=1.; */
@@ -1630,8 +1628,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,aexp,stride,sendbuffer,recvbuffer,ndt);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt);
       
 
       // ==================================== dump
