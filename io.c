@@ -6,84 +6,6 @@
 #include "segment.h"
 #include <string.h>
 
-//------------------------------------------------------------------------
-void dumpmap(int lmap,struct OCT **firstoct,int field,char filename[],REAL zmin, REAL zmax)
-{
-  REAL *map;
-  int imap,jmap;
-  int nmap=pow(2,lmap);
-  REAL dxmap=1./nmap,dxcur;
-  int icur,ii,jj,ic,icell;
-  int level;
-  struct OCT * nextoct;
-  struct OCT oct;
-  FILE *fp;
-  REAL xc,yc,zc;
-
-  map=(REAL *)calloc(nmap*nmap,sizeof(REAL));
-
-  //printf("==>  start map \n");
-  for(level=1;level<=lmap;level++) // looping over octs
-    {
-      //printf("level=%d\n",level);
-      // setting the first oct
-
-      nextoct=firstoct[level-1];
-
-      do // sweeping through the octs of level
-	{
-	  if(nextoct==NULL) continue; // in case the level is empty
-	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
-	  nextoct=oct.next;
-	  //	  printf("%f %f %f\n",oct.x,oct.y,oct.z);
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      if((oct.cell[icell].child==NULL)||(oct.level==lmap))
-		{
-		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
-		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
-		  zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
-		  imap=xc/dxmap;
-		  jmap=yc/dxmap;
-		  
-		  if((zc>zmax)||(zc<zmin)) continue;
-
-		  //if(grid[icur].level==lmap) printf("%d %f %f %d %d %f\n",icell,xc,yc,imap,jmap,grid[icur].dens[icell]);
-		  for(jj=0;jj<pow(2,lmap-oct.level);jj++)
-		    {
-		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
-			{
-
-			  switch(field){
-			  case 0:
-			    map[(imap+ii)+(jmap+jj)*nmap]=fmax(oct.level,map[(imap+ii)+(jmap+jj)*nmap]);
-			    break;
-			  case 1:
-			    map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].density*pow(2,lmap-oct.level);
-			    break;
-			  case 2:
-			    map[(imap+ii)+(jmap+jj)*nmap]+=oct.cell[icell].pot*pow(2,lmap-oct.level);
-			    break;
-			  }
-			}
-		    }
-		}
-	    }
-	}while(nextoct!=NULL);
-    }
-  
-  
-  //============= dump
-
-  //printf("dumping %s\n",filename);
-  fp=fopen(filename,"wb");
-  fwrite(&nmap,1,sizeof(int),fp);
-  fwrite(map,nmap*nmap,sizeof(REAL),fp);
-  fclose(fp);
-  free(map);
-
-}
 
 //====================================================================================================
 //====================================================================================================
@@ -154,127 +76,10 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
 //====================================================================================================
 //=================================================================================================
 
-void dumpcube(int lmap,struct OCT **firstoct,int field,char filename[],REAL tsim)
-{
-  REAL *map;
-  int imap,jmap,kmap;
-  int nmap=pow(2,lmap);
-  REAL dxmap=1./nmap,dxcur;
-  int icur,ii,jj,kk,ic,icell;
-  int level;
-  struct OCT * nextoct;
-  struct OCT oct;
-  FILE *fp;
-  REAL xc,yc,zc;
-
-  map=(REAL *)calloc(nmap*nmap*nmap,sizeof(REAL));
-
-  //printf("==> start map \n");
-  for(level=1;level<=lmap;level++) // looping over octs
-    {
-      //printf("level=%d\n",level);
-      // setting the first oct
-
-      nextoct=firstoct[level-1];
-
-      do // sweeping through the octs of level
-	{
-	  if(nextoct==NULL) continue; // in case the level is empty
-	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
-	  nextoct=oct.next;
-	  //	  printf("%f %f %f\n",oct.x,oct.y,oct.z);
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      if((oct.cell[icell].child==NULL)||(oct.level==lmap))
-		{
-		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
-		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
-		  zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
-		  imap=xc/dxmap;
-		  jmap=yc/dxmap;
-		  kmap=zc/dxmap;
-		  
-		  //if(grid[icur].level==lmap) printf("%d %f %f %d %d %f\n",icell,xc,yc,imap,jmap,grid[icur].dens[icell]);
-		  for(kk=0;kk<pow(2,lmap-oct.level);kk++)
-		    {
-		      for(jj=0;jj<pow(2,lmap-oct.level);jj++)
-			{
-			  for(ii=0;ii<pow(2,lmap-oct.level);ii++)
-			    {
-			      
-			      switch(field){
-			      case 0:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.level;
-				break;
-			      case 1:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].density;
-				break;
-			      case 2:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].pot;
-				break;
-			      case 3:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cpu;
-				break;
-			      case 4:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].marked;
-				break;
-			      case 5:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].temp;
-				break;
-#ifdef WGRAV
-			      case 6:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
-				break;
-			      case 7:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[1];
-				break;
-			      case 8:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[2];
-				break;
-#endif
-
-#ifdef WHYDRO2
-			      case 101:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.d;
-				break;
-			      case 102:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.u;
-				break;
-			      case 103:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.v;
-				break;
-			      case 104:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.w;
-				break;
-			      case 105:
-				map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.p;
-				break;
-
-#endif
-			      }
-			    }
-			}
-		    }
-		}
-	    }
-	}while(nextoct!=NULL);
-    }
-  
-  //============= dump
-  
-  //printf("dumping %s\n",filename);
-  fp=fopen(filename,"wb");
-  fwrite(&nmap,1,sizeof(int),fp);
-  fwrite(&tsim,1,sizeof(REAL),fp);
-  fwrite(map,nmap*nmap*nmap,sizeof(REAL),fp);
-  fclose(fp);
-  free(map);
-
-}
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
+#ifdef PIC
 void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax, REAL tsim){
 
   FILE *fp;
@@ -335,6 +140,8 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
   fclose(fp);
   printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
+#endif
+
   //------------------------------------------------------------------------
   //------------------------------------------------------------------------
   //------------------------------------------------------------------------

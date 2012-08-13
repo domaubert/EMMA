@@ -65,13 +65,14 @@ REAL  multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, 
 	    {
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
-	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
 	      
 	      xc=curoct->x+(icell%2)*dx+dx*0.5;
 	      yc=curoct->y+((icell/2)%2)*dx+dx*0.5;
 	      zc=curoct->z+(icell/4)*dx+dx*0.5;
 #ifdef PIC
+	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
+	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
+
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 
@@ -187,6 +188,14 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     int I;
     REAL frac=(gtot/(1.0*param->ngridmax))*100.;
     printf("\ngrid occupancy=%4.1f [",frac);
+    for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
+    printf("]\n\n");
+  }
+
+  if(cpu->rank==0){
+    int I;
+    REAL frac=(gtot/(1.0*pow(2,(param->lmax-1)*3)))*100.;
+    printf("\ncompression factor=%4.1f [",frac);
     for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
     printf("]\n\n");
   }

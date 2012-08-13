@@ -14,7 +14,7 @@
 
 #define FRACDX 0.4
 
-
+#ifdef PIC
 //------------------------------------------------------------------------
 
 struct PART* findlastpart(struct PART* phead)
@@ -1418,3 +1418,4 @@ REAL egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO 
     etot=utot*0.5+ttot;
     return etot;
 }
+#endif

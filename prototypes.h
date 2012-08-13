@@ -264,14 +264,15 @@ struct CELL
   REAL marked; // REAL for consistency with physical quantities during communications
   int idx; //index of the cell within the oct
 
+#ifdef PIC
   // the head particle
   struct PART * phead;
 
   // the physical quantities
   REAL density; // total density
   REAL pot;
-
   REAL temp;
+#endif
 
 #ifdef WGRAV
   struct Gtype gdata;

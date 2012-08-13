@@ -11,8 +11,7 @@
 
 #ifdef WMPI
 #include <mpi.h>
-#endif 
-
+#endif
 
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
@@ -176,6 +175,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     cpu->dict[cpu->mpinei[i]]=i;
   }
 }
+#ifdef WMPI
 
 //======================================================================================
 void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
@@ -1515,3 +1515,4 @@ int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct
 #endif
 
 #endif
+#endif 

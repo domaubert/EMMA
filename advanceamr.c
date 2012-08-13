@@ -136,6 +136,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     advancehydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
 #endif
 
+
+
+  // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       
       // cleaning the marks
@@ -144,6 +147,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       L_mark_cells(level,param,firstoct,param->nrelax,param->amrthresh,cpu,sendbuffer,recvbuffer);
     }
 
+
+    // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     is++;
     ndt[level-1]++;
@@ -152,10 +157,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0) dispndt(param,cpu,ndt);
     
+    // === Loop
 
   }while((dt<adt[level-2])&&(is<param->nsubcycles));
   
-  // ================= V Computing the new refinement map
   
   if(cpu->rank==0){
     printf("--\n");

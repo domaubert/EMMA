@@ -191,7 +191,7 @@ void getcellnei(int cindex, int *neip, int *cell)
 //==================================================================
 //------------------------------------------------------------------------
 
-
+#ifdef PIC
 void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
 {
   struct PART *nexp;
@@ -215,3 +215,4 @@ void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
   }
 }
 
+#endif

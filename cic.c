@@ -4,6 +4,7 @@
 #include "prototypes.h"
 #include "oct.h"
 
+#ifdef PIC
 
 //==================================================================
 
@@ -1399,3 +1400,4 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 
 
 
+#endif

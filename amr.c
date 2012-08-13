@@ -126,7 +126,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     gradd[ax]+=(W.d*fact);  
     /* gradu[ax]+=(W.u*fact); */
     /* gradv[ax]+=(W.v*fact); */
-    /* gradw[ax]+=(W.w*fact); */
+    /* gradw[ax]+=(W.w*fact);  */
     /* gradp[ax]+=(W.p*fact); */
 
   }
@@ -343,11 +343,13 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 	      	if(cpu->rank==curoct->cpu) ndes++;
 		
 		desoct=curoct->cell[icell].child; // the oct to destroy
-		
+#ifdef PIC		
 		if(curoct->cell[icell].phead!=NULL){
 	      	  printf("non void split cell !\n");
 	      	  abort();
 	      	}
+#endif
+
 		// we remove the child from the refined cell
 	      	curoct->cell[icell].child=NULL;
 		
@@ -391,9 +393,9 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		desoct->next=freeoct;
 		freeoct=desoct;
 		
+#ifdef PIC		
 	      	//======== dealing with particles
 	      	// we gather the particles of the oct to be destroyed in the parent cell
-		
 	      	curploc=findlastpart(curoct->cell[icell].phead); // we get the last particle from the parent cell (should be nil in principle)
 	      	sump=0;
 		sum2=0;
@@ -415,6 +417,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 	      	  printf("sum2=%d sump=%d\n",sum2,sump);
 	      	  abort();
 	      	}
+#endif
 	      }
 #endif	      
 	      // creation of a new oct ==================
@@ -509,10 +512,13 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 		for(ii=0;ii<8;ii++){
 		  newoct->cell[ii].marked=0;
 		  newoct->cell[ii].child=NULL;
+#ifdef PIC
 		  newoct->cell[ii].density=curoct->cell[icell].density;
-		  newoct->cell[ii].idx=ii;
 		  newoct->cell[ii].phead=NULL;
 		  newoct->cell[ii].temp=0.;
+#endif
+		  newoct->cell[ii].idx=ii;
+	
 #ifdef WGRAV
 		  for(ic=0;ic<3;ic++) newoct->cell[ii].f[ic]=0.;
 #endif
@@ -716,11 +722,12 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		if(cpu->rank==curoct->cpu) ndes++;
 		
 		desoct=curoct->cell[icell].child; // the oct to destroy
-		
+#ifdef PIC		
 		if(curoct->cell[icell].phead!=NULL){
 		  printf("non void split cell !\n");
 		  abort();
 		}
+#endif
 		// we remove the child from the refined cell
 		curoct->cell[icell].child=NULL;
 		
@@ -764,6 +771,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		desoct->next=freeoct;
 		freeoct=desoct;
 		
+#ifdef PIC
 		//======== dealing with particles
 		// we gather the particles of the oct to be destroyed in the parent cell
 		
@@ -788,6 +796,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  printf("sum2=%d sump=%d\n",sum2,sump);
 		  abort();
 		}
+#endif
 	      }
 #endif	      
 	      // creation of a new oct ==================
@@ -889,10 +898,14 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		for(ii=0;ii<8;ii++){
 		  newoct->cell[ii].marked=0;
 		  newoct->cell[ii].child=NULL;
-		  newoct->cell[ii].density=curoct->cell[icell].density;
 		  newoct->cell[ii].idx=ii;
+
+#ifdef PIC
+		  newoct->cell[ii].density=curoct->cell[icell].density;
 		  newoct->cell[ii].phead=NULL;
 		  newoct->cell[ii].temp=0.;
+#endif
+
 #ifdef WGRAV
 		  for(ic=0;ic<3;ic++) newoct->cell[ii].f[ic]=0.;
 #endif

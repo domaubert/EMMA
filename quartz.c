@@ -535,9 +535,9 @@ int main(int argc, char *argv[])
 
   // setting the densities in the cells and the index
   for(icell=0;icell<8;icell++){ 
-    grid->cell[icell].density=0.;
-    grid->cell[icell].pot=0.;
-    grid->cell[icell].temp=0.;
+    /* grid->cell[icell].density=0.; */
+    /* grid->cell[icell].pot=0.; */
+    /* grid->cell[icell].temp=0.; */
     grid->cell[icell].idx=icell;
 
 
@@ -588,9 +588,11 @@ int main(int argc, char *argv[])
 	    for(ii=0;ii<8;ii++){
 	      newoct->cell[ii].marked=0;
 	      newoct->cell[ii].child=NULL;
-	      newoct->cell[ii].density=0.;
+	      /* newoct->cell[ii].density=0.; */
 	      newoct->cell[ii].idx=ii;
+#ifdef PIC
 	      newoct->cell[ii].phead=NULL;
+#endif
 
 #ifdef WHYDRO2
 	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
@@ -1207,37 +1209,53 @@ int main(int argc, char *argv[])
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
-  WL.d=1.;
-  WL.u=0.;
-  WL.v=0.;
-  WL.w=0.75;
-  WL.p=1.0;
+  /* WL.d=1.; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.75; */
+  /* WL.p=1.0; */
 
-  WR.d=0.125;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=0.;
-  WR.p=0.1;
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.1; */
  
-  X0=0.3125;
-  tmax=0.15;
+  /* X0=0.3125; */
+  /* tmax=0.15; */
 
 
   /*  /\* // TEST 123 *\/ */
 
   /* WL.d=1.; */
   /* WL.u=0.; */
-  /* WL.v=-2.; */
-  /* WL.w=0.; */
+  /* WL.v=0.; */
+  /* WL.w=-2.0; */
   /* WL.p=0.4; */
 
   /* WR.d=1.; */
   /* WR.u=0.; */
-  /* WR.v=2.; */
-  /* WR.w=0.; */
+  /* WR.v=0.; */
+  /* WR.w=2.0; */
   /* WR.p=0.4; */
   /* X0=0.5; */
   /* tmax=0.15; */
+
+  /*  /\* // TEST 3 *\/ */
+
+  WL.d=1.;
+  WL.u=0.;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p=1000.;
+
+  WR.d=1.;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.01;
+  X0=0.5;
+  tmax=0.012;
 
 
   /*  /\* // TEST 5 *\/ */
@@ -1310,7 +1328,7 @@ int main(int argc, char *argv[])
 	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 
-	      curoct->cell[icell].pot=GRAV*zc;
+	      /* curoct->cell[icell].pot=GRAV*zc; */
 
  	      /* RT INSTAB */
 
@@ -1494,7 +1512,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  tmax=0.15;
+  tmax=0.012;
 #endif
 #endif
 
