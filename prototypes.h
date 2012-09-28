@@ -7,7 +7,7 @@ typedef double REAL;
 #include <mpi.h>
 #endif
 
-#define GAMMA (1.4)
+#define GAMMA (5./3.)
 #define GRAV (0.25)
 
 #define NCOSMOTAB (262144)

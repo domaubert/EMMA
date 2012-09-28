@@ -41,7 +41,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, REAL aexp,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, REAL aexp,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 
   if(cpu->rank==0){
@@ -108,6 +108,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dthydro<dtnew?dthydro:dtnew);
     printf("dthydro= %e ",dthydro);
 #endif
+
+
+#ifdef WGRAV
+    REAL dtff;
+    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
+    dtnew=(dtff<dtnew?dtff:dtnew);
+    printf("dtff= %e ",dtff);
+#endif
+
     printf("sum=%e\n",adt[level-1]+dtnew);
     adt[level-1]=dtnew;
 
@@ -118,13 +127,27 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
       }
     }
     
+
+#ifdef WGRAV 
+    printf("ndt=%d\n",ndt[param->lcoarse-1]);
+    /* //==================================== Getting Density ==================================== */
+    FillDens(level,param,firstoct,cpu); 
+
+    /* //====================================  Poisson Solver ========================== */
+    PoissonSolver(level,param,firstoct,cpu,stencil,stride,aexp); 
+
+    /* //====================================  Force Field ========================== */
+    PoissonForce(level,param,firstoct,cpu,stencil,stride); 
+
+    
+#endif
 
 
     
@@ -136,7 +159,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     advancehydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
 #endif
 
-
+#ifdef WGRAV
+// ================================= gravitational correction for Hydro
+    grav_correction(level,param,firstoct,cpu,adt[level-1]);
+#endif
 
   // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){

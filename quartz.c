@@ -1312,7 +1312,7 @@ int main(int argc, char *argv[])
 
   REAL dtot=0.;
   int nc=0;
-
+  REAL dmax=0.;
   for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
     {
       dxcur=pow(0.5,level);
@@ -1359,33 +1359,54 @@ int main(int argc, char *argv[])
 	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
 
 
- 	      /* KH INSTAB */
+	      /* /\* EVRARD ADIABATIC COLLAPSE *\/ */
+	      
+	      /* UR.d=1./sqrt((yc-0.5)*(yc-0.5)); */
+	      /* UR.du=0.; */
+	      /* UR.dv=0.; */
+	      /* UR.dw=0.; */
+	      /* UR.E=0.05; */
+	      
+	      /* U2W(&UR,&WR); */
 
-	      REAL amp=0.05;
-	      /* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; */
-	      /* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; */
-	      /* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; */
 
-	      REAL vrx=amp*sin(2.*M_PI*xc);
-	      REAL vry=amp*sin(2.*M_PI*xc);
-	      REAL vrz=amp*sin(2.*M_PI*xc);
+	      WR.d=1./sqrt((yc-0.5)*(yc-0.5));
+	      WR.u=0.;
+	      WR.v=0.;
+	      WR.w=0.;
+	      WR.p=1e-1;
+	      WR.a=sqrt(GAMMA*WR.p/WR.d);
 
-	      if((zc>0.75)||(zc<0.25)){
-	      	curoct->cell[icell].field.d=1.0;
-	      	curoct->cell[icell].field.u=0.5+vrx;
-	      	curoct->cell[icell].field.v=vry;
-	      	curoct->cell[icell].field.w=vrz;
-	      	curoct->cell[icell].field.p=2.5;
-	      	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.);
-	      }
-	      else{
-	      	curoct->cell[icell].field.d=2.0;
-	      	curoct->cell[icell].field.u=-0.5+vrx;
-	      	curoct->cell[icell].field.v=vry;
-	      	curoct->cell[icell].field.w=vrz;
-	      	curoct->cell[icell].field.p=2.5;
-	      	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.);
-	      }
+
+	      memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); 
+	      
+ 	      /* /\* KH INSTAB *\/ */
+
+	      /* REAL amp=0.05; */
+	      /* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+	      /* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+
+	      /* REAL vrx=amp*sin(2.*M_PI*xc); */
+	      /* REAL vry=amp*sin(2.*M_PI*xc); */
+	      /* REAL vrz=amp*sin(2.*M_PI*xc); */
+
+	      /* if((zc>0.75)||(zc<0.25)){ */
+	      /* 	curoct->cell[icell].field.d=1.0; */
+	      /* 	curoct->cell[icell].field.u=0.5+vrx; */
+	      /* 	curoct->cell[icell].field.v=vry; */
+	      /* 	curoct->cell[icell].field.w=vrz; */
+	      /* 	curoct->cell[icell].field.p=2.5; */
+	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); */
+	      /* } */
+	      /* else{ */
+	      /* 	curoct->cell[icell].field.d=2.0; */
+	      /* 	curoct->cell[icell].field.u=-0.5+vrx; */
+	      /* 	curoct->cell[icell].field.v=vry; */
+	      /* 	curoct->cell[icell].field.w=vrz; */
+	      /* 	curoct->cell[icell].field.p=2.5; */
+	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); */
+	      /* } */
 
 	      /* SPHERICAL EXPLOSION */
 	      
@@ -1443,7 +1464,7 @@ int main(int argc, char *argv[])
   
   avgdens+=dtot/nc;
   printf("avgdens=%e\n",avgdens);
-
+  printf("dmax=%e\n",dmax);
 #endif
 
   /* sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank);  */
@@ -1650,7 +1671,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump
