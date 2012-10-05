@@ -124,10 +124,10 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);  
-    /* gradu[ax]+=(W.u*fact); */
+    gradu[ax]+=(W.u*fact); 
     /* gradv[ax]+=(W.v*fact); */
     /* gradw[ax]+=(W.w*fact);  */
-    /* gradp[ax]+=(W.p*fact); */
+    gradp[ax]+=(W.p*fact);
 
   }
 

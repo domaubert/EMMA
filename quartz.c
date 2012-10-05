@@ -1361,21 +1361,21 @@ int main(int argc, char *argv[])
 
 	      /* /\* EVRARD ADIABATIC COLLAPSE *\/ */
 	      
-	      /* UR.d=1./sqrt((yc-0.5)*(yc-0.5)); */
-	      /* UR.du=0.; */
-	      /* UR.dv=0.; */
-	      /* UR.dw=0.; */
-	      /* UR.E=0.05; */
+	      UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5));
+	      UR.du=0.;
+	      UR.dv=0.;
+	      UR.dw=0.;
+	      UR.E=0.05;
 	      
-	      /* U2W(&UR,&WR); */
+	      U2W(&UR,&WR);
 
 
-	      WR.d=1./sqrt((yc-0.5)*(yc-0.5));
-	      WR.u=0.;
-	      WR.v=0.;
-	      WR.w=0.;
-	      WR.p=1e-1;
-	      WR.a=sqrt(GAMMA*WR.p/WR.d);
+	      /* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); */
+	      /* WR.u=0.; */
+	      /* WR.v=0.; */
+	      /* WR.w=0.; */
+	      /* WR.p=1e-1; */
+	      /* WR.a=sqrt(GAMMA*WR.p/WR.d); */
 
 
 	      memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); 
@@ -1421,25 +1421,21 @@ int main(int argc, char *argv[])
 
 	      /* /\* ZELDOVICH PANCAKE *\/ */
 
-	      /* REAL ZI=99; */
-	      /* REAL ZC=9; */
-	      /* omegam=1.0; */
-	      /* omegav=0.; */
-	      /* ainit=1./(1.+ZI); */
-	      /* amax=1./(1.+ZC); */
-	      /* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
-	      /* curoct->cell[icell].field.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
-	      /* curoct->cell[icell].field.v=0.; */
-	      /* curoct->cell[icell].field.w=0.; */
-	      /* curoct->cell[icell].field.p=1e-9; */
-	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
+	      REAL ZI=99;
+	      REAL ZC=9;
+	      omegam=1.0;
+	      omegav=0.;
+	      param.omegam=omegam;
+	      param.omegav=omegav;
 
-
-
-	      /* curoct->cell[icell].field.x=xc; */
-	      /* curoct->cell[icell].field.y=yc; */
-	      /* curoct->cell[icell].field.z=zc; */
-
+	      ainit=1./(1.+ZI);
+	      amax=1./(1.+ZC);
+	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
+	      curoct->cell[icell].field.u=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.v=0.;
+	      curoct->cell[icell].field.w=0.;
+	      curoct->cell[icell].field.p=1e-9;
+	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 
 
 	      /* /\* SHOCK TUBE *\/ */

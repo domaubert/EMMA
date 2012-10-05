@@ -51,6 +51,13 @@ struct RUNPARAMS{
 
   int nrestart; // the restart snapshot
   int nsubcycles; // number of subcyles in AMR advance procedure
+
+#ifdef TESTCOSMO
+  REAL omegam;
+  REAL omegav;
+  REAL H0;
+#endif
+
 };
 
 
@@ -139,7 +146,7 @@ struct Wtype{
   REAL p;   // pressure
   REAL a;   // sound speed
 
-  //REAL x,y,z;
+
 };
 
 
@@ -159,6 +166,11 @@ struct Utype{
   REAL dv;   // momentum
   REAL dw;   // momentum
   REAL E;    // Energy
+
+#ifdef DUAL_E
+  REAL eint; // internal energy
+#endif
+
 };
 
 

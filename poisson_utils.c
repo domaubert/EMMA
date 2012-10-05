@@ -103,19 +103,18 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
       W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
       
 #ifdef TRANSXM
-      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
-		W=&(cell->gdata);
+      if((oct->x==0.)&&(inei2==0)){
+	W=&(cell->gdata);
       }
 #endif
       
 #ifdef TRANSYM
-      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+      if((oct->y==0.)&&(inei2==2)){
 	W=&(cell->gdata);
       }
 #endif
       
 #ifdef TRANSZM
-      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
       if((oct->z==0.)&&(inei2==4)){
 	W=&(cell->gdata);
       }
@@ -133,20 +132,20 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
       W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
       
 #ifdef TRANSXP
-      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 	W=&(cell->gdata);
       }
 #endif
       
 #ifdef TRANSYP
-      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
 	W=&(cell->gdata);
       }
 #endif
       
 #ifdef TRANSZP
       //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
-      if(((oct->z+2.*dxcur)==1.)&&(inei2==5))
+      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 	W=&(cell->gdata);
       }
 #endif
@@ -159,13 +158,13 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
     
     
     minmod2grav(&Dm,&Dp,D+dir);
-  }
+}
   
   // Interpolation
   int ix,iy,iz;
   int icell;
   
-  for(iz=0;iz<2;iz++){
+for(iz=0;iz<2;iz++){
     for(iy=0;iy<2;iy++){
       for(ix=0;ix<2;ix++){
 	icell=ix+iy*2+iz*4;
@@ -235,8 +234,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   // ============================ TRANSMISSIVE BOUNDARIES ====================
 #ifdef TRANSXP
     if(ineiloc==1){
-      dist=neioct->x-oct->x;
-      if(dist<0.){
+      if((oct->x+2.*dxcur)==1.){
 	neicell=cell;
 	face[0]=1;
 	face[1]=1;
@@ -253,8 +251,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSYP
     if(ineiloc==3){
-      dist=neioct->y-oct->y;
-      if(dist<0.){
+      if((oct->y+2.*dxcur)==1.){
 	neicell=cell;
 	face[0]=2;
 	face[1]=3;
@@ -290,8 +287,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
       
 #ifdef TRANSXM
     if(ineiloc==0){
-      dist=neioct->x-oct->x;
-      if(dist>0.5){
+      if(oct->x==0.){
 	neicell=cell;
 	face[0]=0;
 	face[1]=0;
@@ -307,8 +303,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSYM
     if(ineiloc==2){
-      dist=neioct->y-oct->y;
-      if(dist>0.5){
+      if(oct->y==0.){
 	neicell=cell;
 	face[0]=0;
 	face[1]=1;
@@ -637,6 +632,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     nitmax=param->nrelax;
   }
   
+  if(level==7) nitmax=0;
   dxcur=pow(0.5,level);
   
   for(iter=0;iter<nitmax;iter++){
@@ -853,7 +849,7 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){	
-	locdens=0.f;
+	locdens=0.;
 #ifdef PIC
 	locdens+=curoct->cell[icell].density;
 #endif
@@ -870,18 +866,18 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
   avgdens/=nc;
 
   // contrast
-  /* curoct=firstoct[level-1]; */
-  /* if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){ */
-  /*   nextoct=curoct; */
-  /*   do{ */
-  /*     curoct=nextoct; */
-  /*     nextoct=curoct->next; */
-  /*     if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells */
-  /*     for(icell=0;icell<8;icell++){	 */
-  /* 	curoct->cell[icell].gdata.d-=avgdens; */
-  /*     } */
-  /*   }while(nextoct!=NULL); */
-  /* } */
+  curoct=firstoct[level-1];
+  if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    nextoct=curoct;
+    do{
+      curoct=nextoct;
+      nextoct=curoct->next;
+      if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
+      for(icell=0;icell<8;icell++){
+  	curoct->cell[icell].gdata.d-=avgdens;
+      }
+    }while(nextoct!=NULL);
+  }
 
   return 0;
 }

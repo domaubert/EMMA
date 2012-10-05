@@ -95,9 +95,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // ================= II We compute the timestep of the current level
     dtnew=param->dt;//*(cpu->nsteps>2);
+
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(omegam)*integ_da_dt_tilde(aexp*1.1,aexp,omegam,omegav,1e-8);
+    dtcosmo=-0.5*sqrt(param->omegam)*integ_da_dt_tilde(aexp*1.1,aexp,param->omegam,param->omegav,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
 #endif
@@ -124,17 +125,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
 
     // ================= III Recursive call to finer level
-    
-    if(level<param->lmax){
-      if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
-	// coarse and finer level must be synchronized now
-	adt[level-1]=dtfine;
-	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
-      }
-    }
-    
-
 #ifdef WGRAV 
     printf("ndt=%d\n",ndt[param->lcoarse-1]);
     /* //==================================== Getting Density ==================================== */
@@ -145,9 +135,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     /* //====================================  Force Field ========================== */
     PoissonForce(level,param,firstoct,cpu,stencil,stride); 
-
-    
 #endif
+
+    if(level<param->lmax){
+      if(cpu->noct[level]>0){
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
+	// coarse and finer level must be synchronized now
+	adt[level-1]=dtfine;
+	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
+      }
+    }
+    
 
 
     
