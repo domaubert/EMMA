@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
 			  case 2:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].gdata.p;
 			    break;
+			  case 6:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].res;
+			    break;
 			  case 201:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[0];
 			    break;

@@ -402,9 +402,9 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct HGRID *stencil, int s
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].gdata),&(curoct->cell[icell].gdata),sizeof(struct Gtype)); //
-#ifdef TESTCOSMO
-	stencil[iread].oct[13].cell[icell].gdata.d-=1.0;
-#endif
+/* #ifdef TESTCOSMO */
+	//stencil[iread].oct[13].cell[icell].gdata.d-=1.0; 
+/* #endif */
       }
 
       //abort();
@@ -527,8 +527,8 @@ int PoissonJacobi_single(struct HGRID *stencil, int level, int curcpu, int nread
       res=temp;
       
       // we finish the laplacian
-      temp=temp/6.0f;
-      temp=temp-dx*dx*curcell->d/6.0f*factdens;
+      temp=temp/6.0;
+      temp=temp-dx*dx*curcell->d/6.0*factdens;
 
       // we finsih the residual
       res=res-6.0*curcell->p;
@@ -632,7 +632,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     nitmax=param->nrelax;
   }
   
-  if(level==7) nitmax=0;
   dxcur=pow(0.5,level);
   
   for(iter=0;iter<nitmax;iter++){
@@ -668,12 +667,14 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       if(iter==0){
 	fnorm=0.;
 	residualold=0.;
+	residual=0.;
       }
       else{
 	residual=0.;
       }
 
       curoct=firstoct[level-1];
+      int ic=0;
       if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
 	nextoct=curoct;
 	do{
@@ -688,19 +689,24 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	    else{
 	      residual+=pow(curoct->cell[icell].res,2);
 	    }
+	    ic++;
 	  }
 	}while(nextoct!=NULL);
       }
     }
+    
     if(iter>0){
       dres=sqrt(fabs(residual-residualold)/fnorm);
+      //dres=sqrt(fabs(residual));
       //dres=sqrt(fabs(residual-residualold)/fabs(residual+residualold)*0.5);
    
       residualold=residual;
-      if(dres<param->poissonacc) break;
+      if((dres)<param->poissonacc){
+	break;
+      }
     }
   }
-  printf("level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+  printf("level=%d iter=%d fnorm=%e rel. res=%e\n",level,iter,sqrt(fnorm),dres);
   return dres;
 }
 
@@ -857,6 +863,7 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 	locdens+=curoct->cell[icell].field.d;
 #endif
 	curoct->cell[icell].gdata.d=locdens;
+	//curoct->cell[icell].gdata.p=0.;
 	avgdens+=locdens;
 	nc++;
       }
@@ -874,7 +881,8 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){
-  	curoct->cell[icell].gdata.d-=avgdens;
+  	curoct->cell[icell].gdata.d/=avgdens;
+  	curoct->cell[icell].gdata.d-=1.;
       }
     }while(nextoct!=NULL);
   }
