@@ -681,21 +681,10 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 
-		/* if(SOCTX!=NULL){ */
-		/*   if(oct==SOCTX){ */
-		/*     printf("%e XX ",Wint.d); */
-		/*   } */
-		  
-		/*   if(oct==SOCTX2){ */
-		/*     printf("%e QQ ",Wint.d); */
-		/*   } */
-		/* } */
-		
 	      }
 	    }
 	  }
 
-	  //if((SOCTX==oct)||(SOCTX2==oct)) printf("\n");
 }
 
 

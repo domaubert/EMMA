@@ -124,19 +124,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
     adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
 
-    // ================= III Recursive call to finer level
+
+    // ================= IV advance solution at the current level
 #ifdef WGRAV 
     printf("ndt=%d\n",ndt[param->lcoarse-1]);
-    /* //==================================== Getting Density ==================================== */
+ /* //==================================== Getting Density ==================================== */
     FillDens(level,param,firstoct,cpu); 
-
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,stencil,stride,aexp); 
 
     /* //====================================  Force Field ========================== */
     PoissonForce(level,param,firstoct,cpu,stencil,stride); 
 #endif
-
+ 
+   // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
 	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
@@ -149,7 +150,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     
-    // ================= IV advance solution at the current level
+ 
     
 #ifndef NOFLUX
     hydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
@@ -161,7 +162,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 // ================================= gravitational correction for Hydro
     grav_correction(level,param,firstoct,cpu,adt[level-1]);
 #endif
-
   // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       
