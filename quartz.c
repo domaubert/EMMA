@@ -455,31 +455,12 @@ int main(int argc, char *argv[])
   if(stencil==NULL) abort();
   
 
-#ifdef WGPU
-
-  // assigning a GPU to each CPU
-  int ngpu;
-  int memgpu;
-  initlocaldevice(cpu.rank,2);
-
-  // main Tree data on GPU
-  cudaMalloc((void **)&(vectors.vecl_d),sizeof(int)*stride);
-  cudaMalloc((void **)&(vectors.veccpu_d),sizeof(int)*stride);
-  cudaMalloc((void **)&(vectors.vecnei_d),sizeof(int)*stride*6);
-  cudaMalloc((void **)&(vectors.vecicoarse_d),sizeof(int)*stride);
-  cudaMalloc((void **)&(vectors.vecden_d),sizeof(REAL)*stride*8);
-  cudaMalloc((void **)&(vectors.vecpot_d),sizeof(REAL)*stride*8);
-
-
-  // temp GPU arrays
-  cudaMalloc((void **)&(vectors.vecpotnew_d),sizeof(REAL)*stride*8);
-  cudaMalloc((void **)&(vectors.vec2_d),sizeof(REAL)*stride*8);
-  cudaMalloc((void **)&(vectors.vecsum_d),sizeof(REAL)*stride*8);
-
-  memgpu=49*stride*4/(1024*1024);
-  if(cpu.rank==0) printf("MEM GPU = %d MB allcoated\n",memgpu);
-
-
+#ifdef GPUAXL
+  countdevices(0);
+  initlocaldevice(0,1);
+  checkdevice(0);
+  create_stencil_GPU(&cpu,stride);
+  printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
     
   if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
@@ -1481,6 +1462,14 @@ int main(int argc, char *argv[])
   compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
 
   tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0,omegam,omegav,1e-8);
+  
+  struct COSMOPARAM cosmo;
+  
+  cosmo.aexp=aexp;
+  cosmo.om=omegam;
+  cosmo.ov=omegav;
+  cosmo.tab_aexp=tab_aexp;
+  cosmo.tab_ttilde=tab_ttilde;
 #endif
 
 
@@ -1654,8 +1643,9 @@ int main(int argc, char *argv[])
       cpu.nsteps=nsteps;
       
 #ifdef TESTCOSMO
-      aexp=interp_aexp(tsim,tab_aexp,tab_ttilde);
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f t=%e tmax=%e================\n",nsteps,aexp,1./aexp-1.,tsim,tmax);
+      cosmo.aexp=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
+      cosmo.tsim=tsim;
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f t=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #endif
@@ -1667,7 +1657,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump

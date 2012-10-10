@@ -123,10 +123,10 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-    /* gradd[ax]+=(W.d*fact);   */
+    gradd[ax]+=(W.d*fact);   
     /* gradu[ax]+=(W.u*fact); */
     /* gradv[ax]+=(W.v*fact);  */
-    gradw[ax]+=(W.w*fact);  
+    /* gradw[ax]+=(W.w*fact);    */
     /* gradp[ax]+=(W.p*fact); */
 
   }
@@ -404,7 +404,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
-		    memcpy(&(newoct->cell[ii].field),Wi+icell,sizeof(struct Wtype)); 
+		    memcpy(&(newoct->cell[ii].field),Wi+ii,sizeof(struct Wtype)); 
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
@@ -417,7 +417,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 
 #ifdef WGRAV
 		  if(cpu->rank==curoct->cpu){
-		    memcpy(&(newoct->cell[ii].gdata),Gi+icell,sizeof(struct Gtype)); 
+		    memcpy(&(newoct->cell[ii].gdata),Gi+ii,sizeof(struct Gtype)); 
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
@@ -802,6 +802,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WGRAV
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].gdata),Gi+ii,sizeof(struct Gtype)); 
+		    //memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
@@ -1363,7 +1364,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #ifdef WGRAV
-			    mcell=curoct->cell[icell].gdata.d*dx*dx*dx*(curoct->level>=param->lcoarse);
+			    mcell=curoct->cell[icell].field.d*dx*dx*dx*(curoct->level>=param->lcoarse);
 			    /* if(mcell>0){ */
 			    /* 	printf("%e\n",mcell); */
 			    /* } */
@@ -1374,14 +1375,14 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 #endif
 
-#ifdef WHYDRO2
-			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
+/* #ifdef WHYDRO2 */
+/* 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse); */
 
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-#endif
+/* 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) { */
+/* 			      curoct->cell[icell].marked=marker; */
+/* 			      nmark++;stati[2]++; */
+/* 			    } */
+/* #endif */
 			      
 
 			  }

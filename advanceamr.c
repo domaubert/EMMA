@@ -41,11 +41,11 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, REAL aexp,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 
   if(cpu->rank==0){
-    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,aexp);
+    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,cosmo->aexp);
   }
   struct OCT *curoct;
   REAL dtnew;
@@ -56,7 +56,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   dt=0.;
   int is=0;
-  
+  REAL tloc=cosmo->tsim;
   if(level==param->lcoarse){
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
@@ -71,6 +71,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("----\n");
     printf("subscyle #%d subt=%e\n",is,dt);
     
+#ifdef TESTCOSMO
+    cosmo->aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    
+#endif
+
 
     // ================= I we refine the current level
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
@@ -98,7 +103,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(param->omegam)*integ_da_dt_tilde(aexp*1.1,aexp,param->omegam,param->omegav,1e-8);
+    dtcosmo=-0.5*sqrt(param->omegam)*integ_da_dt_tilde(cosmo->aexp*1.1,cosmo->aexp,param->omegam,param->omegav,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
 #endif
@@ -113,7 +118,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WGRAV
     REAL dtff;
-    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
+    dtff=L_comptstep_ff(level,param,firstoct,cosmo->aexp,cpu,1e9);
     dtnew=(dtff<dtnew?dtff:dtnew);
     printf("dtff= %e ",dtff);
 #endif
@@ -128,19 +133,21 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // ================= IV advance solution at the current level
 #ifdef WGRAV 
     printf("ndt=%d\n",ndt[param->lcoarse-1]);
- /* //==================================== Getting Density ==================================== */
+    
+    /* //==================================== Getting Density ==================================== */
     FillDens(level,param,firstoct,cpu); 
     /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(level,param,firstoct,cpu,stencil,stride,aexp); 
-
+    PoissonSolver(level,param,firstoct,cpu,stencil,stride,cosmo->aexp); 
+    
     /* //====================================  Force Field ========================== */
-    PoissonForce(level,param,firstoct,cpu,stencil,stride); 
+    PoissonForce(level,param,firstoct,cpu,stencil,stride,cosmo->aexp);
+    
 #endif
  
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,aexp,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,cosmo,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -150,18 +157,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     
- 
-    
+    //if(!((dthydro<dtcosmo)&&(level==6))){
 #ifndef NOFLUX
     hydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
 #else
     advancehydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
 #endif
-
+    
 #ifdef WGRAV
-// ================================= gravitational correction for Hydro
+    // ================================= gravitational correction for Hydro
     grav_correction(level,param,firstoct,cpu,adt[level-1]);
 #endif
+
+    //}
   // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       
@@ -174,6 +182,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
+    tloc+=adt[level-1]; // advance local time
     is++;
     ndt[level-1]++;
 

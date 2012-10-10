@@ -57,7 +57,7 @@ int countdevices(int rank)
 {
   int count;
   cudaGetDeviceCount(&count);
-  //printf("%d device(s) found locally by proc %d\n",count,rank);
+  printf("%d device(s) found locally by proc %d\n",count,rank);
   return count;
 }
 

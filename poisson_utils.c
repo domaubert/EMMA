@@ -4,6 +4,12 @@
 #include "prototypes.h"
 #include "oct.h"
 #include <string.h>
+#include <mpi.h>
+
+#ifdef GPUAXL
+#include "poisson_utils_gpu.h"
+#endif
+
 
 #ifdef WGRAV
 //================================================================
@@ -38,7 +44,7 @@ void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
       xi=fmin(1.0,2.0*beta/(1.-w+(1.+w)*r));
     }
   }
-  
+  xi=1.;
   Ur->d=(0.5*(1.+w)*Um->d+0.5*(1.-w)*Up->d)*xi;
 
   if(Up->p==0.){
@@ -55,6 +61,7 @@ void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
       xi=fmin(1.0,2.0*beta/(1.-w+(1.+w)*r));
     }
   }
+  xi=1.;
   Ur->p=(0.5*(1.+w)*Um->p+0.5*(1.-w)*Up->p)*xi;
 }
 
@@ -176,17 +183,17 @@ for(iz=0;iz<2;iz++){
 
 }
 //================================================================
-void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil){
+void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
-  int ix[6]={-1,1,0,0,0,0};
-  int iy[6]={0,0,-1,1,0,0};
-  int iz[6]={0,0,0,0,-1,1};
+  static int ix[6]={-1,1,0,0,0,0};
+  static int iy[6]={0,0,-1,1,0,0};
+  static int iz[6]={0,0,0,0,-1,1};
   int icell;
   int i;
   int ioct2;
   int vnei[6],vcell[6];
   int ineiloc;
-  int face[8]={0,1,2,3,4,5,6,7};
+  static int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
   struct Gtype Wi[8];
@@ -227,9 +234,9 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   }
 
 
-  oct=cell2oct(cell);
-  neioct=cell2oct(neicell);
-  dxcur=pow(0.5,oct->level);
+  /* oct=cell2oct(cell);  */
+  /* neioct=cell2oct(neicell); */
+  /* dxcur=pow(0.5,oct->level); */
 
   // ============================ TRANSMISSIVE BOUNDARIES ====================
 #ifdef TRANSXP
@@ -267,8 +274,6 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSZP
     if(ineiloc==5){
-      /* dist=neioct->z-oct->z; */
-      /* if(dist<0.){ */
       if((oct->z+2.*dxcur)==1.){
 	neicell=cell;
 	face[0]=4;
@@ -319,8 +324,6 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 #ifdef TRANSZM
     if(ineiloc==4){
-      /* dist=neioct->z-oct->z; */
-      /* if(dist>0.5){ */
       if(oct->z==0.){
 	neicell=cell;
 	face[0]=0;
@@ -341,32 +344,37 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
   if(neicell->child!=NULL){
     // optimal case
-    for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->child->cell[icell].gdata),sizeof(struct Gtype));
+    //for(icell=0;icell<8;icell++) memcpy(&(stencil->oct[ioct].cell[icell].gdata),&(neicell->child->cell[face[icell]].gdata),sizeof(struct Gtype));
+    //    for(icell=0;icell<8;icell++) memcpy(&(stencil->oct[ioct].cell[icell].gdata.p),&(neicell->child->cell[face[icell]].gdata.p),sizeof(REAL));
+    for(icell=0;icell<8;icell++) stencil->oct[ioct].cell[icell].gdata.p=neicell->child->cell[face[icell]].gdata.p;
   }
   else{
     coarse2fine_grav(neicell,Wi);
-    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(neicell->gdata),sizeof(struct Gtype));
+    for(icell=0;icell<8;icell++){
+      memcpy(&(stencil->oct[ioct].cell[icell].gdata),Wi+face[icell],sizeof(struct Gtype)); //
+    }
   }
 
 
 
-  for(icell=0;icell<8;icell++){
-    memcpy(&(stencil->oct[ioct].cell[icell].gdata),Wi+face[icell],sizeof(struct Gtype)); //
-  }
 
   // next order
   if(order==1){
     for(i=0;i<6;i++){
-      if((i/2)==(inei/2)) continue;
+      if((i>>1)==(inei>>1)) continue;
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
-      recursive_neighbor_gather_oct_grav(ioct2, inei, i, -1, 2, neicell, stencil);
+      if(visit[ioct2]) continue;
+      visit[ioct2]=1;
+      recursive_neighbor_gather_oct_grav(ioct2, inei, i, -1, 2, neicell, stencil,visit);
     }
   }
   else if(order==2) {
     for(i=0;i<6;i++){
-      if(((i/2)==(inei/2))||((i/2)==(inei2/2))) continue;
+      if(((i>>1)==(inei>>1))||((i>>1)==(inei2>>1))) continue;
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
-      recursive_neighbor_gather_oct_grav(ioct2, inei, inei2, i, 3, neicell, stencil);
+      if(visit[ioct2]) continue;
+      visit[ioct2]=1;
+      recursive_neighbor_gather_oct_grav(ioct2, inei, inei2, i, 3, neicell, stencil,visit);
     }
   }
 }
@@ -385,9 +393,10 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct HGRID *stencil, int s
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
   
-  int ix[6]={-1,1,0,0,0,0};
-  int iy[6]={0,0,-1,1,0,0};
-  int iz[6]={0,0,0,0,-1,1};
+  static int ix[6]={-1,1,0,0,0,0};
+  static int iy[6]={0,0,-1,1,0,0};
+  static int iz[6]={0,0,0,0,-1,1};
+  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
   int ioct;
 
   //printf("let's gather\n");
@@ -401,25 +410,24 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct HGRID *stencil, int s
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(&(stencil[iread].oct[13].cell[icell].gdata),&(curoct->cell[icell].gdata),sizeof(struct Gtype)); //
-/* #ifdef TESTCOSMO */
-	//stencil[iread].oct[13].cell[icell].gdata.d-=1.0; 
-/* #endif */
+	stencil[iread].oct[13].cell[icell].gdata.d=curoct->cell[icell].gdata.d;
+	stencil[iread].oct[13].cell[icell].gdata.p=curoct->cell[icell].gdata.p;
       }
+      visit[13]=1;
 
-      //abort();
       cell=curoct->parent;
       
       //start recursive fill
       for(inei=0;inei<6;inei++)
 	{
 	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
-	  recursive_neighbor_gather_oct_grav(ioct, inei, -1, -1, 1, cell, stencil+iread);
+	  visit[ioct]=1;
+	  recursive_neighbor_gather_oct_grav(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
-	  
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
+  
   (*nread)=iread;
   return nextoct;
 }
@@ -448,8 +456,8 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct HGRID *stencil, int 
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(&(curoct->cell[icell].pnew),&(stencil[iread].new.cell[icell].pnew),sizeof(REAL));
-	memcpy(&(curoct->cell[icell].res),&(stencil[iread].new.cell[icell].res),sizeof(REAL));
+	memcpy(&(curoct->cell[icell].pnew),&(stencil[iread].New.cell[icell].pnew),sizeof(REAL));
+	memcpy(&(curoct->cell[icell].res),&(stencil[iread].New.cell[icell].res),sizeof(REAL));
       }
 
       iread++;
@@ -482,7 +490,7 @@ struct OCT *scatterstencilforce(struct OCT *octstart, struct HGRID *stencil, int
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(curoct->cell[icell].f,stencil[iread].new.cell[icell].f,sizeof(REAL)*3);
+	memcpy(curoct->cell[icell].f,stencil[iread].New.cell[icell].f,sizeof(REAL)*3);
       }
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -539,16 +547,14 @@ int PoissonJacobi_single(struct HGRID *stencil, int level, int curcpu, int nread
       res=res/(dx*dx)-factdens*curcell->d;
 
       // we store the new value of the potential
-      stencil[i].new.cell[icell].pnew=temp;
+      stencil[i].New.cell[icell].pnew=temp;
 
       // we store the local residual
       if(flag) {
-	stencil[i].new.cell[icell].res=factdens*curcell->d;
-	/* if(level==6){printf("%e %e %e %e\n",res,factdens*curcell->d,curcell->p,temp2); */
-	/*   abort();} */
+	stencil[i].New.cell[icell].res=factdens*curcell->d;
       }
       else{
-	stencil[i].new.cell[icell].res=res;
+	stencil[i].New.cell[icell].res=res;
       }
 
       // ready for the next cell
@@ -561,7 +567,7 @@ int PoissonJacobi_single(struct HGRID *stencil, int level, int curcpu, int nread
 
 
 //============================================================================
-int Pot2Force(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx){
+int Pot2Force(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL tsim){
 
   int inei,icell;
   int i;
@@ -584,14 +590,14 @@ int Pot2Force(struct HGRID *stencil, int level, int curcpu, int nread,int stride
 
       // computing the gradient
 
-      floc[0]=0.5*(stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].gdata.p-stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].gdata.p)/dx;
-      floc[1]=0.5*(stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].gdata.p-stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].gdata.p)/dx;
-      floc[2]=0.5*(stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].gdata.p-stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].gdata.p)/dx;
+      floc[0]=0.5*(stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].gdata.p-stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].gdata.p)/dx*tsim;
+      floc[1]=0.5*(stencil[i].oct[ioct[vnei[3]]].cell[vcell[3]].gdata.p-stencil[i].oct[ioct[vnei[2]]].cell[vcell[2]].gdata.p)/dx*tsim;
+      floc[2]=0.5*(stencil[i].oct[ioct[vnei[5]]].cell[vcell[5]].gdata.p-stencil[i].oct[ioct[vnei[4]]].cell[vcell[4]].gdata.p)/dx*tsim;
 
       
       // store the force
       
-      memcpy(stencil[i].new.cell[icell].f,floc,3*sizeof(REAL));
+      memcpy(stencil[i].New.cell[icell].f,floc,3*sizeof(REAL));
 
       // ready for the next cell
     }
@@ -622,7 +628,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #ifndef TESTCOSMO
     factdens=4.0*M_PI;
 #else
-    factdens=6.0*tsim;
+    //    factdens=6.0*tsim; WARNING JUST TESTING WITHOUT TSIM!!!
+    factdens=6.0;
 #endif
   }
   else{
@@ -637,35 +644,48 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   else{
     nitmax=param->nrelax;
   }
-  
+
   dxcur=pow(0.5,level);
   
   for(iter=0;iter<nitmax;iter++){
     // --------------- setting the first oct of the level
     nextoct=firstoct[level-1];
     nreadtot=0;
+
+    double temps[10];
+    double tall=0.,tcal=0.,tscat=0.,tgat=0.;
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
 	curoct=nextoct;
 	nextoct=curoct->next; 
 	// -------------  cleaning working arrays
-	
-	memset(stencil,0,stride*sizeof(struct HGRID));
+	//memset(stencil,0,stride*sizeof(struct HGRID));
+	temps[0]=MPI_Wtime();
 	
 	// ------------ gathering the stencil value values
 	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+
 	
 	// ------------ solving the hydro
-	
+	temps[3]=MPI_Wtime();
 	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
-	      
+	temps[7]=MPI_Wtime();
 	// ------------ scatter back the data
 	
 	nextoct=scatterstencilgrav(curoct,stencil, nread, cpu);
+	
+	temps[9]=MPI_Wtime();
+
+	tall+=temps[9]-temps[0];
+	tcal+=temps[7]-temps[3];
+	tscat+=temps[9]-temps[7];
+	tgat+=temps[3]-temps[0];
 	nreadtot+=nread;
       }while(nextoct!=NULL);
     }
-	  
+
+    //printf("tall=%e tgat=%e tcal=%e tscat=%e\n",tall,tgat,tcal,tscat);
+
     // at this stage an iteration has been completed : let's update the potential and compute the residual
     int ic;
     if(nreadtot>0){
@@ -688,15 +708,21 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  nextoct=curoct->next;
 	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	  for(icell=0;icell<8;icell++){	
-	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
-	    if(iter==0){
-	      fnorm+=pow(curoct->cell[icell].res,2);
-	      //if((level==6)&&(ic==0)) printf("fnorm =%f\n",pow(curoct->cell[icell].res,2));
+	    if(level<6){
+	      curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
 	    }
 	    else{
-	      residual+=pow(curoct->cell[icell].res,2);
-	      //if((level==6)&&(ic==0)){ printf("fnorm =%f\n",pow(curoct->cell[icell].res,2));abort();}
-	      
+	      REAL w=0.8;
+	      curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+curoct->cell[icell].gdata.p*(1.-w);
+	    }
+
+	    if(iter==0){
+	      fnorm+=pow(curoct->cell[icell].res,2);
+	      residual=pow(curoct->cell[icell].res,2);
+	    }
+	    else{
+	      REAL rloc=pow(curoct->cell[icell].res,2);
+	      residual=(residual>rloc?residual:rloc);
 	    }
 	    ic++;
 	  }
@@ -710,15 +736,15 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	dres=sqrt(fabs(residual));
       }
       else{
-	dres=sqrt(fabs(residual)/fnorm);
+	dres=sqrt(residual);
       }
       //dres=sqrt(fabs(residual-residualold)/fabs(residual+residualold)*0.5);
    
       residualold=residual;
       if((dres)<param->poissonacc){
-	break;
+	if(level>=param->lcoarse) break;
       }
-      if(level==6) printf("level=%d iter=%d fnorm=%e rel. res=%e nread=%d ic=%d\n",level,iter,sqrt(fnorm),dres,nread,ic);
+      /* if(level==6) printf("level=%d iter=%d fnorm=%e rel. res=%e nread=%d ic=%d\n",level,iter,sqrt(fnorm),dres,nread,ic); */
     }
   }
   printf("level=%d iter=%d fnorm=%e rel. res=%e\n",level,iter,sqrt(fnorm),dres);
@@ -737,71 +763,74 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct CELL* curcell;
   // pre-relaxation
 
+#ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+#else
+  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+#endif
+
 
   
-  if(dres>param->poissonacc){
-    // reduction
-    nextoct=firstoct[level-1];
-    if(nextoct!=NULL){
-      do{ 
-	curoct=nextoct;
-	nextoct=curoct->next;
-	curoct->parent->gdata.d=0.;
-	curoct->parent->gdata.p=0.;
-	for(icell=0;icell<8;icell++){
-	  curoct->parent->gdata.d+=curoct->cell[icell].res*0.125; // we average the residual and store it as the new density
-	}
-      }while(nextoct!=NULL);
-    }
+  //  if(dres>param->poissonacc){
+  // reduction
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do{ 
+      curoct=nextoct;
+      nextoct=curoct->next;
+      curoct->parent->gdata.d=0.;
+      curoct->parent->gdata.p=0.;
+      for(icell=0;icell<8;icell++){
+	curoct->parent->gdata.d+=curoct->cell[icell].res*0.125; // we average the residual and store it as the new density
+      }
+    }while(nextoct!=NULL);
+  }
 
-    // full relaxation at coarsest level or recursive call to mgrid
-    
-     if((level-1)==param->mgridlmin){
-       PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
-     }
-     else{
-       PoissonMgrid(level-1,param,firstoct,cpu,stencil,stride,tsim);
-     }
-
-     // prolongation + correction
-     /* nextoct=firstoct[level-1]; */
-     /* if(nextoct!=NULL){ */
-     /*   do{  */
-     /* 	 curoct=nextoct; */
-     /* 	 nextoct=curoct->next; */
-     /* 	 for(icell=0;icell<8;icell++) { */
-     /* 	   curoct->cell[icell].gdata.p-=curoct->parent->gdata.p; // we propagate the error and correct the evaluation */
-     /* 	 } */
-     /*   }while(nextoct!=NULL); */
-     /* } */
-
-     nextoct=firstoct[level-1];
-     if(nextoct!=NULL){
-       do // sweeping level
+  // full relaxation at coarsest level or recursive call to mgrid
+  
+  if((level-1)==param->mgridlmin){
+#ifndef GPUAXL
+    PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
+#else
+    PoissonJacobiGPU(level-1,param,firstoct,cpu,stencil,stride,tsim);
+#endif
+  }
+  else{
+    PoissonMgrid(level-1,param,firstoct,cpu,stencil,stride,tsim);
+  }
+  
+  // prolongation + correction
+  
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do // sweeping level
 	 {
 	   curoct=nextoct;
 	   nextoct=curoct->next;
 	   curcell=curoct->parent;
-	   //	   coarse2fine_grav(curcell,Wi);
-	   for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(curcell->gdata),sizeof(struct Gtype));
+	   coarse2fine_grav(curcell,Wi);
+	   //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&(curcell->gdata),sizeof(struct Gtype));
 	   for(icell=0;icell<8;icell++) // looping over cells in oct
 	     {
 	       curoct->cell[icell].gdata.p-=Wi[icell].p; // we propagate the error and correct the evaluation
 	     }
 	 }while(nextoct!=NULL);
-     }
-
-     // post relaxation
-     dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
   }
-
+  
+  // post relaxation
+#ifndef GPUAXL
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+#else
+  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+#endif
+  
+  
   return dres;
 }
 
 //===================================================================================================================================
 
-int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride){
+int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL tsim){
   struct OCT *nextoct;
   struct OCT *curoct;
   REAL dxcur;
@@ -827,7 +856,7 @@ int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 	
 	// ------------ Computing the potential gradient
       
-      Pot2Force(stencil,level,cpu->rank,nread,stride,dxcur);
+      Pot2Force(stencil,level,cpu->rank,nread,stride,dxcur,tsim);
       
       // ------------ scatter back the data
       
@@ -881,7 +910,6 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 
 #ifdef TESTCOSMO
 	curoct->cell[icell].gdata.d-=1.;
-	//curoct->cell[icell].gdata.p=0.;
 #endif
 
 	avgdens+=locdens;
@@ -909,7 +937,13 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
-  if(cpu->rank==0) printf("Start Poisson Solver \n");
+  if(cpu->rank==0) printf("Start Poisson Solver ");
+
+#ifndef GPUAXL
+  if(cpu->rank==0)  printf("on CPU\n");
+#else
+  if(cpu->rank==0)  printf("on GPU\n");
+#endif
   //breakmpi();
 
   if((level==param->lcoarse)&&(param->lcoarse!=param->mgridlmin)){
@@ -920,7 +954,12 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     }
   }
   else{
+#ifndef GPUAXL
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
+#else
+    PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
+#endif
+
   }
 	
   //once done we propagate the solution to level+1

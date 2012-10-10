@@ -2741,12 +2741,12 @@ int hydroM(struct HGRID *stencil, int level, int curcpu, int nread,int stride,RE
 
       //if((ffact[4])&&(!ffact[3])) abort();
 
-      memcpy(stencil[i].new.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
-      memcpy(stencil[i].new.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
-      memcpy(stencil[i].new.cell[icell].flux+2*NVAR,GL,sizeof(REAL)*NVAR);
-      memcpy(stencil[i].new.cell[icell].flux+3*NVAR,GR,sizeof(REAL)*NVAR);
-      memcpy(stencil[i].new.cell[icell].flux+4*NVAR,HL,sizeof(REAL)*NVAR);
-      memcpy(stencil[i].new.cell[icell].flux+5*NVAR,HR,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+2*NVAR,GL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+3*NVAR,GR,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+4*NVAR,HL,sizeof(REAL)*NVAR);
+      memcpy(stencil[i].New.cell[icell].flux+5*NVAR,HR,sizeof(REAL)*NVAR);
 
 
       // ready for the next cell
@@ -3089,7 +3089,7 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 
 // Structure de base
 
-void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil){
+void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
   int ix[6]={-1,1,0,0,0,0};
   int iy[6]={0,0,-1,1,0,0};
@@ -3309,16 +3309,20 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   // next order
   if(order==1){
     for(i=0;i<6;i++){
-      if((i/2)==(inei/2)) continue;
+      if((i>>1)==(inei>>1)) continue;
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
-      recursive_neighbor_gather_oct(ioct2, inei, i, -1, 2, neicell, stencil);
+      if(visit[ioct2]) continue;
+      visit[ioct2]=1;
+      recursive_neighbor_gather_oct(ioct2, inei, i, -1, 2, neicell, stencil,visit);
     }
   }
   else if(order==2) {
     for(i=0;i<6;i++){
-      if(((i/2)==(inei/2))||((i/2)==(inei2/2))) continue;
+      if(((i>>1)==(inei>>1))||((i>>1)==(inei2>>1))) continue;
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
-      recursive_neighbor_gather_oct(ioct2, inei, inei2, i, 3, neicell, stencil);
+      if(visit[ioct2]) continue;
+      visit[ioct2]=1;
+      recursive_neighbor_gather_oct(ioct2, inei, inei2, i, 3, neicell, stencil,visit);
     }
   }
 }
@@ -3339,11 +3343,12 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
   
-  int ix[6]={-1,1,0,0,0,0};
-  int iy[6]={0,0,-1,1,0,0};
-  int iz[6]={0,0,0,0,-1,1};
+  static int ix[6]={-1,1,0,0,0,0};
+  static int iy[6]={0,0,-1,1,0,0};
+  static int iz[6]={0,0,0,0,-1,1};
   int ioct;
-
+  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+   
   //printf("let's gather\n");
   nextoct=octstart;
   if(nextoct!=NULL){
@@ -3360,10 +3365,10 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 #ifdef WGRAV 
  	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
 #endif 
-
+	
 
       }
-      
+      visit[13]=1;
       //abort();
       cell=curoct->parent;
       
@@ -3371,6 +3376,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       for(inei=0;inei<6;inei++)
 	{
 	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
+	  visit[ioct]=1;
 	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
 	}
 
@@ -3392,7 +3398,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   int iread=0;
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
-  
+  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
   int ix[6]={-1,1,0,0,0,0};
   int iy[6]={0,0,-1,1,0,0};
   int iz[6]={0,0,0,0,-1,1};
@@ -3410,7 +3416,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
-	memcpy(&(stencil[iread].new.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
+	memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
 
 #ifdef WGRAV 
  	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
@@ -3424,7 +3430,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       for(inei=0;inei<6;inei++)
 	{
 	  ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
-	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread);
+	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -3465,7 +3471,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].new.cell[icell].flux),sizeof(REAL)*NFLUX);
+	memcpy(&(curoct->cell[icell].flux),&(stencil[iread].New.cell[icell].flux),sizeof(REAL)*NFLUX);
       }
       
 
@@ -3511,7 +3517,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
 	//we scatter the values in the central cell
-	memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].new.cell[icell].field),sizeof(struct Wtype));
+	memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].New.cell[icell].field),sizeof(struct Wtype));
 	
 	
 	// let us deal with coarser neighbors
@@ -3571,7 +3577,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      W2U(&W0,&U0);
 
 	      // getting the flux
-	      memcpy(F,stencil[iread].new.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
+	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
 	      
 	      // update
 	      one=pow(-1.,inei+1);
@@ -3626,9 +3632,9 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
     for(icell=0;icell<8;icell++){ // we scan the cells
       
       if(stencil[i].oct[13].cell[icell].child!=NULL) continue;
-      memcpy(&W,&(stencil[i].new.cell[icell].field),sizeof(struct Wtype));// getting the original state (already contained in the new field)
+      memcpy(&W,&(stencil[i].New.cell[icell].field),sizeof(struct Wtype));// getting the original state (already contained in the new field)
       W2U(&W,&U);
-      memcpy(F,stencil[i].new.cell[icell].flux,sizeof(REAL)*NFLUX);// original fluxes
+      memcpy(F,stencil[i].New.cell[icell].flux,sizeof(REAL)*NFLUX);// original fluxes
 
       memcpy(&Ui,&U,sizeof(struct Utype));
       memcpy(&Wi,&W,sizeof(struct Wtype));
@@ -3653,7 +3659,7 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
       U2W(&U,&W);
       if(W.p<0) abort();
       //      if(W.p>2.2e-9) abort();
-      memcpy(&(stencil[i].new.cell[icell].field),&W,sizeof(struct Wtype));
+      memcpy(&(stencil[i].New.cell[icell].field),&W,sizeof(struct Wtype));
     }
   }
 

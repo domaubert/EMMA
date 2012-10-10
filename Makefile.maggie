@@ -1,8 +1,8 @@
 ##########################################
 ARCH = CPU
 C_LIBS = -lm 
-C_FLAGS = -g
-C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o poisson_utils.o advanceamr.o 
+C_FLAGS =
+C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o  poisson_utils.o 
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
 DEFINES  +=  -DWHYDRO2
@@ -22,15 +22,14 @@ DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DDUAL_E
 #=========================================== CODE PARAMETERS =====================
 
-#-DWGRAV # -DPRIMITIVE  -DDUAL_E -DTESTCOSMO  -DWGRAV -DNOCOUPLE # -DGRAFIC -DPIC  # -DRIEMANN_HLL -DWHYDRO2 -DWHYDRO2 # -DTRANSXM -DTRANSXP  -DWGRAV -DMULTIGRID -DWHYDRO2 -DTRANSZM -DTRANSZP -DREFZP -DREFZM #-DWMPI #-DTRANSYM -DTRANSYP -DTRANSZM -DTRANSZP #-DNEWJACK -DTRANSXM -DTRANSXP -DTRANSYM -DTRANSYP # #-DTRANSXM #-DWMPI #-DZELDO #-DPERFECT #-DWMPI #-DNEWPART #-DWMPI # -DEGYCSV O2 # #-O2 -DWMPI -DPIC -DTESTCOSMO -DSELFGRAV -DSUPERCOMOV -DGRAFIC
 ifeq ($(ARCH),GPU)
-DEFINESGLOB= $(DEFINES) -DWGPU
+DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartz
-CUDA_OBJS= interface.o vector_gpu.o # cic_gpu.o 
-CUDA_LIBS = -lcuda -L/usr/local/cuda/lib64 -lcudart -lcudpp_x86_64 -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
+CUDA_OBJS= interface.o poisson_utils_gpu.o # cic_gpu.o 
+CUDA_LIBS = -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
 else
 DEFINESGLOB= $(DEFINES) 
-EXECUTABLE = quartzcpu
+EXECUTABLE = quartz
 CUDA_OBJS= 
 CUDA_LIBS =
 endif
@@ -42,11 +41,11 @@ OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -c $<
 ifeq ($(ARCH),GPU)
 %.o:%.cu
-	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -c $*.cu	
+	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_13 -c $*.cu	
 endif
 
 all:$(C_OBJS) $(CUDA_OBJS)
-	$(CC)  $(CUDA_OBJS) $(C_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
 
 clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~

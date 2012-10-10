@@ -128,7 +128,14 @@ struct CPUINFO{
 
   struct OCT *freeoct; // the location of the first free oct
   int nsteps; // the current coarse step index
+
+#ifdef GPUAXL
+  struct HGRID * dev_stencil;
+#endif
+
 };
+
+
 
 
 
@@ -411,8 +418,13 @@ struct OCTFLUX
 // ========================================
 struct HGRID{
   struct OCTLIGHT oct[27];
-  struct OCTFLUX new;
+  struct OCTFLUX New;
 };
+
+// ============================================================================
+// ============================================================================
+
+
 
 
 // ========================================
@@ -452,3 +464,14 @@ struct OCT *SOCTX2;
 
 int IR,IR2;
 
+//==============================================
+#ifdef TESTCOSMO
+struct COSMOPARAM{
+  REAL aexp;
+  REAL om;
+  REAL ov;
+  REAL *tab_aexp;
+  REAL *tab_ttilde;
+  REAL tsim;
+};
+#endif
