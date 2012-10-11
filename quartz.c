@@ -482,6 +482,10 @@ int main(int argc, char *argv[])
   printf("stencil=%p with stride=%d\n",stencil,stride);
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+
+  struct GGRID *gstencil;
+  gstencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
+
   if(stencil==NULL) abort();
   
 
@@ -1687,7 +1691,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,gstencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump

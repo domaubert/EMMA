@@ -41,7 +41,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct GGRID *gstencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 
   if(cpu->rank==0){
@@ -137,7 +137,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //==================================== Getting Density ==================================== */
     FillDens(level,param,firstoct,cpu); 
     /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(level,param,firstoct,cpu,stencil,stride,cosmo->aexp); 
+    PoissonSolver(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp); 
     
     /* //====================================  Force Field ========================== */
     PoissonForce(level,param,firstoct,cpu,stencil,stride,cosmo->aexp);
@@ -147,7 +147,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,stride,cosmo,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,stride,cosmo,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one

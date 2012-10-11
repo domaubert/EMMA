@@ -368,6 +368,14 @@ struct CELLLIGHT
 };
 
 
+struct CELLGRAV
+{
+  struct Gtype gdata; // gravitational data 
+};
+
+
+
+
 //-------------------------------------
 //-------------------------------------------------------------------------
 struct OCT
@@ -407,6 +415,21 @@ struct OCTLIGHT
   // the cell properties
   struct CELLLIGHT cell[8]; // MUSTN'T BE MOVED !!
 };
+
+// ========================================
+struct OCTGRAV
+{
+  // the cell properties
+  struct CELLGRAV cell[8]; 
+};
+
+// =======================================
+struct GGRID{
+  REAL res[8];
+  REAL pnew[8]; 
+  struct OCTGRAV oct[27];
+};
+
 
 // ========================================
 struct OCTFLUX

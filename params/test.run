@@ -6,9 +6,9 @@ max_number_of_steps 0
 level_coarse 6
 level_max 6
 level_map 7
-max_number_of_relaxation_poisson 10
+max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3
-mgrid_lmin 6
+mgrid_lmin 2
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 vector_stencil_size 32768
