@@ -1,5 +1,5 @@
 ##########################################
-ARCH = CPU
+ARCH = GPU
 C_LIBS = -lm 
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o  poisson_utils.o 
@@ -26,7 +26,7 @@ ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartz
 CUDA_OBJS= interface.o poisson_utils_gpu.o # cic_gpu.o 
-CUDA_LIBS = -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
+CUDA_LIBS = -lcudpp -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -I/usr/local/cuda/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
 else
 DEFINESGLOB= $(DEFINES) 
 EXECUTABLE = quartz
@@ -41,7 +41,7 @@ OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -c $<
 ifeq ($(ARCH),GPU)
 %.o:%.cu
-	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_13 -c $*.cu	
+	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_20 -c $*.cu	
 endif
 
 all:$(C_OBJS) $(CUDA_OBJS)

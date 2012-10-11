@@ -234,7 +234,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   }
 
 
-  /* oct=cell2oct(cell);  */
+  /* oct=cell2oct(cell); */
   /* neioct=cell2oct(neicell); */
   /* dxcur=pow(0.5,oct->level); */
 
@@ -432,7 +432,7 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct HGRID *stencil, int s
   return nextoct;
 }
 
-//==============================================================================
+
 //==============================================================================
 
 struct OCT *scatterstencilgrav(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu)
@@ -567,6 +567,44 @@ int PoissonJacobi_single(struct HGRID *stencil, int level, int curcpu, int nread
 
 
 //============================================================================
+REAL comp_residual(struct HGRID *stencil, int level, int curcpu, int nread,int stride, int flag){
+
+  // flag=1 means the residual contains the norm of the density
+  // flag=0 means the resiual contains the actual residual of the Poisson Equation
+
+  int icell;
+  int i;
+
+  REAL residual=0.;
+  REAL rloc;
+
+  if(flag){
+    for(i=0;i<nread;i++){ // we scan the octs
+      for(icell=0;icell<8;icell++){ // we scan the cells
+	rloc=pow(stencil[i].New.cell[icell].res,2);
+	residual+=rloc;
+	// ready for the next cell
+      }
+      //ready for the next oct
+    }
+  }
+  else{
+    for(i=0;i<nread;i++){ // we scan the octs
+      for(icell=0;icell<8;icell++){ // we scan the cells
+	rloc=pow(stencil[i].New.cell[icell].res,2);
+	residual=(residual>rloc?residual:rloc);
+	// ready for the next cell
+      }
+      //ready for the next oct
+    }
+  }
+
+  return residual;
+}
+
+
+
+//============================================================================
 int Pot2Force(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL tsim){
 
   int inei,icell;
@@ -620,7 +658,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   int icell;
   int nitmax;
   REAL factdens;
-
+  REAL rloc;
 
 
   // Computing the factor of the density
@@ -647,13 +685,31 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
   dxcur=pow(0.5,level);
   
+  double tall=0.,tcal=0.,tscat=0.,tgat=0.;
+  double tglob=0.,tup=0.;
+
+  double tstart,tstop,tt;
+  
   for(iter=0;iter<nitmax;iter++){
+    tstart=MPI_Wtime();
+
     // --------------- setting the first oct of the level
     nextoct=firstoct[level-1];
     nreadtot=0;
 
     double temps[10];
-    double tall=0.,tcal=0.,tscat=0.,tgat=0.;
+
+    // --------------- some inits for iterative solver
+    if(iter==0){
+      fnorm=0.;
+      residual=0.;
+    }
+    else{
+      residual=0.;
+    }
+
+    // Scanning the octs
+
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
 	curoct=nextoct;
@@ -670,9 +726,23 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	temps[3]=MPI_Wtime();
 	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
 	temps[7]=MPI_Wtime();
+
+	// ------------ computing the residuals
+
+	rloc=comp_residual(stencil,level,cpu->rank,nread,stride,(iter==0));
+	if(iter==0){
+	  fnorm+=rloc;
+	}
+	else{
+	  printf("rloc=%e\n",sqrt(rloc));
+	  residual=(residual>rloc?residual:rloc);
+	}
+	
 	// ------------ scatter back the data
 	
 	nextoct=scatterstencilgrav(curoct,stencil, nread, cpu);
+	
+	//nextoct=scatterstencilforce(curoct,stencil, nread, cpu);
 	
 	temps[9]=MPI_Wtime();
 
@@ -684,23 +754,10 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }while(nextoct!=NULL);
     }
 
-    //printf("tall=%e tgat=%e tcal=%e tscat=%e\n",tall,tgat,tcal,tscat);
-
+    tt=MPI_Wtime();
     // at this stage an iteration has been completed : let's update the potential and compute the residual
-    int ic;
     if(nreadtot>0){
-      
-      if(iter==0){
-	fnorm=0.;
-	residualold=0.;
-	residual=0.;
-      }
-      else{
-	residual=0.;
-      }
-
       curoct=firstoct[level-1];
-      ic=0;
       if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
 	nextoct=curoct;
 	do{
@@ -708,46 +765,23 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  nextoct=curoct->next;
 	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	  for(icell=0;icell<8;icell++){	
-	    if(level<6){
-	      curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
-	    }
-	    else{
-	      REAL w=0.8;
-	      curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+curoct->cell[icell].gdata.p*(1.-w);
-	    }
-
-	    if(iter==0){
-	      fnorm+=pow(curoct->cell[icell].res,2);
-	      residual=pow(curoct->cell[icell].res,2);
-	    }
-	    else{
-	      REAL rloc=pow(curoct->cell[icell].res,2);
-	      residual=(residual>rloc?residual:rloc);
-	    }
-	    ic++;
+	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
 	  }
 	}while(nextoct!=NULL);
       }
     }
+    tstop=MPI_Wtime();
+    tup+=(tstop-tt);
+    tglob+=(tstop-tstart);
     
     if(iter>0){
-      //dres=sqrt(fabs(residual-residualold)/fnorm);
-      if(level<param->lcoarse){
-	dres=sqrt(fabs(residual));
-      }
-      else{
-	dres=sqrt(residual);
-      }
-      //dres=sqrt(fabs(residual-residualold)/fabs(residual+residualold)*0.5);
-   
-      residualold=residual;
+      dres=sqrt(residual);
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }
-      /* if(level==6) printf("level=%d iter=%d fnorm=%e rel. res=%e nread=%d ic=%d\n",level,iter,sqrt(fnorm),dres,nread,ic); */
     }
   }
-  printf("level=%d iter=%d fnorm=%e rel. res=%e\n",level,iter,sqrt(fnorm),dres);
+  printf("CPU | level=%d iter=%d res=%e tgat=%e tcal=%e tscat=%e tall=%e tup=%e tglob=%e\n",level,iter,dres,tgat/iter,tcal/iter,tscat/iter,tall/iter,tup/iter, tglob/iter);
   return dres;
 }
 
@@ -974,12 +1008,13 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 	  {
 	    curcell=&(curoct->cell[icell]);
 	    if(curcell->child!=NULL){
+
 	      coarse2fine_grav(curcell,Wi);
+
 	      for(icell2=0;icell2<8;icell2++){
-		//memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
 		memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
-		//memset(&(curcell->child->cell[icell2].gdata.p),0,sizeof(REAL));
 	      }
+
 	    }
 	  }
       }while(nextoct!=NULL);

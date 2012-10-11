@@ -3091,15 +3091,15 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 
 void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
-  int ix[6]={-1,1,0,0,0,0};
-  int iy[6]={0,0,-1,1,0,0};
-  int iz[6]={0,0,0,0,-1,1};
+  static int ix[6]={-1,1,0,0,0,0};
+  static int iy[6]={0,0,-1,1,0,0};
+  static int iz[6]={0,0,0,0,-1,1};
   int icell;
   int i;
   int ioct2;
   int vnei[6],vcell[6];
   int ineiloc;
-  int face[8]={0,1,2,3,4,5,6,7};
+  static int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
   struct Wtype Wi[8];
@@ -3144,9 +3144,9 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   }
 
 
-  oct=cell2oct(cell);
-  neioct=cell2oct(neicell);
-  dxcur=pow(0.5,oct->level);
+  /* oct=cell2oct(cell); */
+  /* neioct=cell2oct(neicell); */
+  /* dxcur=pow(0.5,oct->level); */
 
   // ============================ TRANSMISSIVE BOUNDARIES ====================
 #ifdef TRANSXP

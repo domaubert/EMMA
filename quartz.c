@@ -209,6 +209,36 @@ int main(int argc, char *argv[])
 /*   printf("size =%d\n",sizeof(struct OCT)); */
 /*   abort(); */
 
+#ifdef TRANSXM
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
+#ifdef TRANSXP
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
+#ifdef TRANSYM
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
+#ifdef TRANSYP
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
+#ifdef TRANSZM
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
+#ifdef TRANSZP
+  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
+  abort();
+#endif
+
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
