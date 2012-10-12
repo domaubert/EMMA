@@ -8,11 +8,10 @@
 
 #define NTHREAD 16
 
-extern "C" struct OCT *gatherstencilgrav(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread);
-extern "C" struct OCT *scatterstencilgrav(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu);
-extern "C" REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL tsim);
-extern "C" void create_stencil_GPU(struct CPUINFO *cpu, int stride);
-extern "C" REAL comp_residual(struct HGRID *stencil, int level, int curcpu, int nread,int stride, int flag);
+extern "C" struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *stencil, int stride, struct CPUINFO *cpu, int *nread);
+extern "C" struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *stencil, int nread, int stride, struct CPUINFO *cpu);
+extern "C" REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct STENGRAV *stencil, int stride, REAL tsim);
+extern "C" void create_gravstencil_GPU(struct CPUINFO *cpu, int stride);
 
 
 // ====================== structure for CUDPP =======
@@ -26,9 +25,13 @@ struct CUPARAM{
 
 
 // =======================================================
-void create_stencil_GPU(struct CPUINFO *cpu, int stride){
-  cudaMalloc((void **)&(cpu->dev_stencil),sizeof(struct HGRID)*stride);
-  printf("%p\n",cpu->dev_stencil);
+void create_gravstencil_GPU(struct CPUINFO *cpu, int stride){
+
+
+  cudaMalloc((void **)&(cpu->dev_stencil),sizeof(struct GGRID)*stride);
+  cudaMalloc((void **)&(cpu->res),sizeof(REAL)*stride*8);
+  cudaMalloc((void **)&(cpu->pnew),sizeof(REAL)*stride*8);
+  
 }
 
 // =======================================================
@@ -107,7 +110,7 @@ __device__ void getcellnei_gpu(int cindex, int *neip, int *cell)
 //========================================================================
 //========================================================================
 
-__global__ void dev_PoissonJacobi_single(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, int flag, REAL factdens, REAL *vres){
+__global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, int flag, REAL factdens, REAL *vres, REAL *stockres, REAL *stockpnew){
 
   // flag=1 means the residual contains the norm of the density
   // flag=0 means the resiual contains the actual residual of the Poisson Equation
@@ -121,6 +124,7 @@ __global__ void dev_PoissonJacobi_single(struct HGRID *stencil, int level, int c
   struct Gtype *curcell;
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
+
 
   i=bx*blockDim.x+tx;
 
@@ -151,16 +155,19 @@ __global__ void dev_PoissonJacobi_single(struct HGRID *stencil, int level, int c
     res=res/(dx*dx)-factdens*curcell->d;
 
     // we store the new value of the potential
-    stencil[i].New.cell[icell].pnew=temp;
+    //    stencil[i].pnew[icell]=temp;
+    stockpnew[icell*nread+i]=temp;
 
     // we store the local residual
     if(flag) {
-      //stencil[i].New.cell[icell].res=factdens*curcell->d;
-      vres[icell*stride+i]=factdens*curcell->d;
+      vres[icell*nread+i]=factdens*curcell->d; 
+      /* stencil[i].res[icell]=factdens*curcell->d; */
+      stockres[i+icell*nread]=factdens*curcell->d;
     }
     else{
-      vres[icell*stride+i]=res*res;
-      //stencil[i].New.cell[icell].res=res;
+      vres[icell*nread+i]=res*res; 
+      /* stencil[i].res[icell]=res; */
+      stockres[i+icell*nread]=res;
     }
   }
 
@@ -170,7 +177,7 @@ __global__ void dev_PoissonJacobi_single(struct HGRID *stencil, int level, int c
 
 //=========================================================================================================
 
-REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL tsim)
+REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct STENGRAV *stencil, int stride, REAL tsim)
 {
   REAL dxcur;
   int iter;
@@ -178,7 +185,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   struct OCT *curoct;
   int nreadtot;
   int nread;
-  REAL fnorm,residual,dres;
+  REAL residual,dres;
   int icell;
   int nitmax;
   REAL factdens;
@@ -255,13 +262,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     tstart=MPI_Wtime();
     cudaEventRecord(start,0);
     // --------------- some inits for iterative solver
-    if(iter==0){
-      fnorm=0.;
-      residual=0.;
-    }
-    else{
-      residual=0.;
-    }
+    residual=0.;
 
     // --------------- setting the first oct of the level
     nextoct=firstoct[level-1];
@@ -278,7 +279,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	t[0]=MPI_Wtime();
 	
 	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
-	cudaMemcpy(cpu->dev_stencil,stencil,nread*sizeof(struct HGRID),cudaMemcpyHostToDevice);  
+	cudaMemcpy(cpu->dev_stencil,stencil->stencil,nread*sizeof(struct GGRID),cudaMemcpyHostToDevice);  
        
 
 	t[3]=MPI_Wtime();
@@ -288,7 +289,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 	cudaEventRecord(startc,0);
 
-	dev_PoissonJacobi_single<<<gridoct,blockoct>>>(cpu->dev_stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens,resA);
+	dev_PoissonJacobi_single<<<gridoct,blockoct>>>(cpu->dev_stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens,resA,cpu->res,cpu->pnew);
 	
 	cudaEventRecord(stopc,0);
 	cudaEventSynchronize(stopc);
@@ -297,16 +298,16 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	// ------------ computing the residuals
 	
 	if(iter>0){
-	  cudppScan(cuparam.scanplan, resB, resA, nread);
+	  cudppScan(cuparam.scanplan, resB, resA, nread*8);
 	  cudaMemcpy(&rloc,resB,sizeof(REAL),cudaMemcpyDeviceToHost);
-	  printf("rloc=%e\n",sqrt(rloc));
 	  residual=(residual>rloc?residual:rloc);
 	}
 
 	// ------------ scatter back the data
 
-	cudaMemcpy(stencil,cpu->dev_stencil,nread*sizeof(struct HGRID),cudaMemcpyDeviceToHost);  
-	nextoct=scatterstencilgrav(curoct,stencil, nread, cpu);
+	cudaMemcpy(stencil->res,cpu->res,nread*sizeof(REAL)*8,cudaMemcpyDeviceToHost);  
+	cudaMemcpy(stencil->pnew,cpu->pnew,nread*sizeof(REAL)*8,cudaMemcpyDeviceToHost);  
+	nextoct=scatterstencilgrav(curoct,stencil, nread, stride,cpu);
 	t[8]=MPI_Wtime();
 
 	nreadtot+=nread;

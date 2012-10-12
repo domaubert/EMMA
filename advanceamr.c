@@ -41,7 +41,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct GGRID *gstencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 
   if(cpu->rank==0){
@@ -140,7 +140,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     PoissonSolver(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp); 
     
     /* //====================================  Force Field ========================== */
-    PoissonForce(level,param,firstoct,cpu,stencil,stride,cosmo->aexp);
+    PoissonForce(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp);
     
 #endif
  

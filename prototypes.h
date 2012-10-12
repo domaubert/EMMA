@@ -130,7 +130,9 @@ struct CPUINFO{
   int nsteps; // the current coarse step index
 
 #ifdef GPUAXL
-  struct HGRID * dev_stencil;
+  struct GGRID *dev_stencil;
+  REAL *res;
+  REAL *pnew;
 #endif
 
 };
@@ -425,9 +427,14 @@ struct OCTGRAV
 
 // =======================================
 struct GGRID{
-  REAL res[8];
-  REAL pnew[8]; 
   struct OCTGRAV oct[27];
+};
+
+
+struct STENGRAV{
+  struct GGRID *stencil;
+  REAL *res;
+  REAL *pnew;
 };
 
 

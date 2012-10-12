@@ -483,8 +483,13 @@ int main(int argc, char *argv[])
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
 
-  struct GGRID *gstencil;
-  gstencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
+
+  struct STENGRAV gstencil;
+  struct GGRID *grav_stencil;
+  grav_stencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
+  gstencil.stencil=grav_stencil;
+  gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
 
   if(stencil==NULL) abort();
   
@@ -493,7 +498,7 @@ int main(int argc, char *argv[])
   countdevices(0);
   initlocaldevice(0,1);
   checkdevice(0);
-  create_stencil_GPU(&cpu,stride);
+  create_gravstencil_GPU(&cpu,stride);
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
     
@@ -1691,7 +1696,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,gstencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump
