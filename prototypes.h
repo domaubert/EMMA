@@ -331,9 +331,6 @@ struct CELLFLUX
   REAL temp;
 
 #ifdef WGRAV
-  struct Gtype gdata;
-  REAL pnew; // new potential
-  REAL res; // residual
   REAL f[3]; // the gravitational force component
 #endif
 
@@ -342,6 +339,7 @@ struct CELLFLUX
   struct Wtype field;
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
   struct Wtype fieldnew;
+  struct Utype deltaU;
 #endif
 
 };
@@ -352,7 +350,7 @@ struct CELLFLUX
 
 struct CELLLIGHT
 {
-  struct OCT *child;
+  
   REAL marked; // REAL for consistency with physical quantities during communications
   int idx; //index of the cell within the oct
 
@@ -362,10 +360,10 @@ struct CELLLIGHT
 #endif
 
 #ifdef WGRAV
-  struct Gtype gdata; // gravitational data 
   REAL f[3];
 #endif
-  
+
+  char split;
 
 };
 
