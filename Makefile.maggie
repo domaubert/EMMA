@@ -25,7 +25,7 @@ DEFINES  +=  -DDUAL_E
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartz
-CUDA_OBJS= interface.o poisson_utils_gpu.o # cic_gpu.o 
+CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o # cic_gpu.o 
 CUDA_LIBS = -lcudpp -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -I/usr/local/cuda/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
 else
 DEFINESGLOB= $(DEFINES) 
@@ -34,7 +34,7 @@ CUDA_OBJS=
 CUDA_LIBS =
 endif
 
-NVCC= nvcc #--device-emulation
+NVCC= nvcc #-g -G #--device-emulation
 CC = mpicc
 OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 .c.o:

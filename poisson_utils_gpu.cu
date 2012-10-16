@@ -124,8 +124,6 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
   struct Gtype *curcell;
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
-
-
   i=bx*blockDim.x+tx;
 
 
@@ -205,9 +203,12 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   REAL *resA;
   REAL *resB;
 
+  printf("err 1=%s\n",cudaGetErrorString(cudaGetLastError()));
+
   cudaMalloc((void **)&resA,sizeof(REAL)*stride*8);
   cudaMalloc((void **)&resB,sizeof(REAL)*stride*8);
 
+  printf("err 2=%s\n",cudaGetErrorString(cudaGetLastError()));
   
   struct CUPARAM cuparam;
   
@@ -220,7 +221,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   cuparam.config.op=CUDPP_MAX;
 
   cuparam.scanplan =0;
-  cudppPlan(cuparam.theCudpp,&(cuparam.scanplan), cuparam.config, stride, 1, 0);
+  cudppPlan(cuparam.theCudpp,&(cuparam.scanplan), cuparam.config, stride*8, 1, 0);
 
 
   //======================== END CUDPP STUFF ========================/
@@ -284,6 +285,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 	t[3]=MPI_Wtime();
 	// ------------ solving the hydro
+	printf("%d \n",nread/NTHREAD);
 	dim3 gridoct((nread/NTHREAD>1?nread/NTHREAD:1));
 	dim3 blockoct(NTHREAD);
 
@@ -296,7 +298,6 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	t[6]=MPI_Wtime();
 
 	// ------------ computing the residuals
-	
 	if(iter>0){
 	  cudppScan(cuparam.scanplan, resB, resA, nread*8);
 	  cudaMemcpy(&rloc,resB,sizeof(REAL),cudaMemcpyDeviceToHost);

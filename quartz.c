@@ -178,9 +178,6 @@ int main(int argc, char *argv[])
 
 #endif
 
-  IR=-1;
-  IR2=-1;
-
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
   int rtag=0;
@@ -495,11 +492,19 @@ int main(int argc, char *argv[])
   
 
 #ifdef GPUAXL
+  // ================================== GPU ALLOCATIONS ===============
   countdevices(0);
   initlocaldevice(0,1);
   checkdevice(0);
+#ifdef WGRAV
   create_gravstencil_GPU(&cpu,stride);
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
+#endif
+
+#ifdef WHYDRO2
+  create_hydstencil_GPU(&cpu,stride);
+#endif
+  // ====================END GPU ALLOCATIONS ===============
 #endif
     
   if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
@@ -650,18 +655,6 @@ int main(int argc, char *argv[])
 	      lastoct[level]->next=newoct;
 	    }
 	    lastoct[level]=newoct;
-
-	    // SOCT STUFF
-	    if(level==(levelcoarse-1)){
-	      if((newoct->x==0.)*(newoct->y==0.)*(newoct->z==0.5)){
-		SOCTX=newoct;
-	      }
-	    }
-
-		/* if((newoct->x==0.)*(newoct->y==0.)*(newoct->z==0.46875)){ */
-		/*   printf("SOCT FOUND\n"); */
-		/*   SOCTX=newoct; */
-		/* } */
 
 	    // next oct ready
 	    newoct++; 
@@ -1381,24 +1374,24 @@ int main(int argc, char *argv[])
 
 	      /* /\* EVRARD ADIABATIC COLLAPSE *\/ */
 	      
-	      UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5));
-	      UR.du=0.;
-	      UR.dv=0.;
-	      UR.dw=0.;
-	      UR.E=0.05;
+	      /* UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5)); */
+	      /* UR.du=0.; */
+	      /* UR.dv=0.; */
+	      /* UR.dw=0.; */
+	      /* UR.E=0.05; */
 	      
-	      U2W(&UR,&WR);
+	      /* U2W(&UR,&WR); */
 
 
-	      /* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); */
-	      /* WR.u=0.; */
-	      /* WR.v=0.; */
-	      /* WR.w=0.; */
-	      /* WR.p=1e-1; */
-	      /* WR.a=sqrt(GAMMA*WR.p/WR.d); */
+	      /* /\* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); *\/ */
+	      /* /\* WR.u=0.; *\/ */
+	      /* /\* WR.v=0.; *\/ */
+	      /* /\* WR.w=0.; *\/ */
+	      /* /\* WR.p=1e-1; *\/ */
+	      /* /\* WR.a=sqrt(GAMMA*WR.p/WR.d); *\/ */
 
 
-	      memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); 
+	      /* memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));  */
 	      
  	      /* /\* KH INSTAB *\/ */
 

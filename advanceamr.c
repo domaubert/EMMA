@@ -6,6 +6,7 @@
 #include "hydro_utils.h"
 #include "friedmann.h"
 
+
 // ===============================================================
 // ===============================================================
 
@@ -153,16 +154,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
       }
     }
-    
 
-
-    
-    //if(!((dthydro<dtcosmo)&&(level==6))){
-#ifndef NOFLUX
-    hydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-#else
-    advancehydro(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-#endif
+    HydroSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
     
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro

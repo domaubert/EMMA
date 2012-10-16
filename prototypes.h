@@ -133,6 +133,9 @@ struct CPUINFO{
   struct GGRID *dev_stencil;
   REAL *res;
   REAL *pnew;
+
+  struct HGRID *hyd_stencil;
+  
 #endif
 
 };
@@ -305,41 +308,21 @@ struct CELL
 
 #ifdef WHYDRO2
   struct Wtype field;
-#ifndef NOFLUX
-  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
-#else
   struct Wtype fieldnew;
-#endif
 #endif
 };
 
 
-//-------------------------------------
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------
+
 struct CELLFLUX
 {
-  struct OCT *child;
-  REAL marked; // REAL for consistency with physical quantities during communications
-  int idx; //index of the cell within the oct
-
-  // the head particle
-  struct PART * phead;
-
-  // the physical quantities
-  REAL density; // total density
-  REAL pot;
-
-  REAL temp;
-
-#ifdef WGRAV
-  REAL f[3]; // the gravitational force component
-#endif
-
 
 #ifdef WHYDRO2
   struct Wtype field;
-  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
-  struct Wtype fieldnew;
   struct Utype deltaU;
+  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
 #endif
 
 };
@@ -347,32 +330,30 @@ struct CELLFLUX
 
 
 // ----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 struct CELLLIGHT
 {
-  
-  REAL marked; // REAL for consistency with physical quantities during communications
-  int idx; //index of the cell within the oct
-
-
-#ifdef WHYDRO2
-  struct Wtype field; // hydrodynamical data
-#endif
-
 #ifdef WGRAV
   REAL f[3];
 #endif
 
+#ifdef WHYDRO2
+  struct Wtype field; // hydrodynamical data
+#endif
   char split;
-
 };
 
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 struct CELLGRAV
 {
   struct Gtype gdata; // gravitational data 
 };
 
+// ----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 
 
@@ -429,6 +410,7 @@ struct GGRID{
 };
 
 
+// =======================================
 struct STENGRAV{
   struct GGRID *stencil;
   REAL *res;
@@ -482,15 +464,6 @@ struct MULTIVECT{
 };
 
 
-// ==========================================
-
-struct OCT *SOCT;
-struct OCT *SOCT2;
-
-struct OCT *SOCTX;
-struct OCT *SOCTX2;
-
-int IR,IR2;
 
 //==============================================
 #ifdef TESTCOSMO
