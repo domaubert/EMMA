@@ -37,6 +37,12 @@
 
 #include "advanceamr.h"
 
+#ifdef GPUAXL
+#include "poisson_utils_gpu.h"
+#include "hydro_utils_gpu.h"
+#endif
+
+
 void gdb_debug()
 {
   int i = 0;
@@ -422,7 +428,10 @@ int main(int argc, char *argv[])
   dt=param.dt;
   cpu.maxhash=param.maxhash;
   cpu.levelcoarse=levelcoarse;
-
+#ifdef GPUAXL
+  cpu.nthread=param.nthread;
+  cpu.nstream=param.nstream;
+#endif
   //breakmpi();
   //========== allocations ===================
   
@@ -458,37 +467,25 @@ int main(int argc, char *argv[])
   // allocating the vectorized tree
   
   struct MULTIVECT vectors;
-  
-#ifdef NEWJACK
-  vectors.vecpot=(REAL*)calloc(stride*8,sizeof(REAL));
-  vectors.vecpotnew=(REAL*)calloc(stride*8,sizeof(REAL));
-  vectors.vecden=(REAL*)calloc(stride*8,sizeof(REAL));
 
-
-
-  vectors.vecnei=(int *)calloc(stride*6,sizeof(int));
-  vectors.vecl=(int *)calloc(stride,sizeof(int));
-  vectors.veccpu=(int *)calloc(stride,sizeof(int));
-  vectors.vecicoarse=(int *)calloc(stride,sizeof(int));
-  memsize+= stride*32*4;
-  if(cpu.rank==0) printf(" vect = %f MB\n",((stride*32)/(1024*1024.))*sizeof(REAL));
-#endif 
   
   // allocating the 6dim stencil
   struct HGRID *stencil;
+  struct STENGRAV gstencil;
+
+#ifndef GPUAXL
   printf("stencil=%p with stride=%d\n",stencil,stride);
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
 
-
-  struct STENGRAV gstencil;
   struct GGRID *grav_stencil;
   grav_stencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
   gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
+#endif
 
-  if(stencil==NULL) abort();
   
 
 #ifdef GPUAXL
@@ -497,11 +494,14 @@ int main(int argc, char *argv[])
   initlocaldevice(0,1);
   checkdevice(0);
 #ifdef WGRAV
+  create_pinned_gravstencil(&gstencil,stride);
+
   create_gravstencil_GPU(&cpu,stride);
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
 
 #ifdef WHYDRO2
+  create_pinned_stencil(&stencil,stride);
   create_hydstencil_GPU(&cpu,stride);
 #endif
   // ====================END GPU ALLOCATIONS ===============
@@ -1714,6 +1714,23 @@ int main(int argc, char *argv[])
       tsim+=dt;
     }
     
+
+    // we are done let's free the ressources
+
+    free(adt);
+    free(ndt);
+
+
+#ifdef GPUAXL
+    destroy_pinned_gravstencil(&gstencil,stride);
+    destroy_gravstencil_GPU(&cpu,stride);
+    destroy_pinned_stencil(&stencil,stride);
+    destroy_hydstencil_GPU(&cpu,stride);
+#endif
+
+
+
+
     if(cpu.rank==0){
       printf("Done .....\n");
     }

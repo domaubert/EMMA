@@ -3840,8 +3840,8 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
 	    
-      hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
-      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+      hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
+      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
       hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
 
       // ------------ updating values within the stencil
@@ -3888,7 +3888,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   struct Wtype W;
   int icell;
   int nocthydro=cpu->noct[level-1];
+  double t[10];
 
+  t[0]=MPI_Wtime();
   if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
 
   // ===== COMPUTING THE FLUXES
@@ -3936,6 +3938,13 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
     }while(nextoct!=NULL);
   }
 
+  t[9]=MPI_Wtime();
+  
+#ifndef GPUAXL
+  printf("==== CPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+#else
+  printf(" === GPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+#endif
   
 }
 

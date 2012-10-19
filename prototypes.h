@@ -58,6 +58,9 @@ struct RUNPARAMS{
   REAL H0;
 #endif
 
+  int nthread;
+  int nstream;
+
 };
 
 
@@ -133,9 +136,11 @@ struct CPUINFO{
   struct GGRID *dev_stencil;
   REAL *res;
   REAL *pnew;
-
+  REAL *resLR;
   struct HGRID *hyd_stencil;
-  
+
+  int nstream;
+  int nthread;
 #endif
 
 };
@@ -406,7 +411,7 @@ struct OCTGRAV
 
 // =======================================
 struct GGRID{
-  struct OCTGRAV oct[27];
+  struct OCTGRAV oct[7];
 };
 
 
@@ -415,6 +420,7 @@ struct STENGRAV{
   struct GGRID *stencil;
   REAL *res;
   REAL *pnew;
+  REAL *resLR;
 };
 
 

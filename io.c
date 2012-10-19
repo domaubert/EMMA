@@ -181,6 +181,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
+      rstat=fscanf(buf,"%s %d",stream,&param->nthread);
+      rstat=fscanf(buf,"%s %d",stream,&param->nstream);
       fclose(buf);
     }
 
