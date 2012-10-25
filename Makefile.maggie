@@ -1,6 +1,6 @@
 ##########################################
-ARCH = GPU
-C_LIBS = -lm
+ARCH = CPU
+C_LIBS = -lm -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o  poisson_utils.o 
 DEFINES  =  

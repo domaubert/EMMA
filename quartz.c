@@ -1444,9 +1444,9 @@ int main(int argc, char *argv[])
 	      ainit=1./(1.+ZI);
 	      amax=1./(1.+ZC);
 	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
-	      curoct->cell[icell].field.u=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.u=0.;//
 	      curoct->cell[icell].field.v=0.;
-	      curoct->cell[icell].field.w=0.;
+	      curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
 	      curoct->cell[icell].field.p=1e-10;
 	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 

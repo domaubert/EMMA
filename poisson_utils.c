@@ -27,42 +27,9 @@ void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
   REAL r;
   REAL xi;
   REAL w=0.;
-  REAL beta=1.0;
-  // SLOPE LIMITER
 
-  if(Up->d==0.){
-    xi=0.;}
-  else{
-    r=Um->d/Up->d;
-    if(r<=0.){
-      xi=0.;
-    }
-    else if(r<=1.){
-      xi=r;
-    }
-    else{
-      xi=fmin(1.0,2.0*beta/(1.-w+(1.+w)*r));
-    }
-  }
-  xi=1.;
-  Ur->d=(0.5*(1.+w)*Um->d+0.5*(1.-w)*Up->d)*xi;
-
-  if(Up->p==0.){
-    xi=0.;}
-  else{
-    r=Um->p/Up->p;
-    if(r<=0.){
-      xi=0.;
-    }
-    else if(r<=1.){
-      xi=r;
-    }
-    else{
-      xi=fmin(1.0,2.0*beta/(1.-w+(1.+w)*r));
-    }
-  }
-  xi=1.;
-  Ur->p=(0.5*(1.+w)*Um->p+0.5*(1.-w)*Up->p)*xi;
+  Ur->d=(0.5*(1.+w)*Um->d+0.5*(1.-w)*Up->d);
+  Ur->p=(0.5*(1.+w)*Um->p+0.5*(1.-w)*Up->p);
 }
 
 // ================== performs the difference between two Us
@@ -86,7 +53,7 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
   struct Gtype Up;
   struct Gtype Um;
   struct Gtype Dp,Dm;
-  struct Gtype D[3];
+  struct Gtype D[6];
   struct Gtype *W;
   int inei2;
   int vcell[6],vnei[6];
@@ -162,7 +129,8 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
     
     diffUgrav(&Up,&U0,&Dp); 
     diffUgrav(&U0,&Um,&Dm); 
-    
+    //memcpy(D+(2*dir+0),&Dm,sizeof(struct Gtype));
+    //memcpy(D+(2*dir+1),&Dp,sizeof(struct Gtype));
     
     minmod2grav(&Dm,&Dp,D+dir);
 }
@@ -175,6 +143,8 @@ for(iz=0;iz<2;iz++){
     for(iy=0;iy<2;iy++){
       for(ix=0;ix<2;ix++){
 	icell=ix+iy*2+iz*4;
+	
+	//interpminmodgrav(&U0,&Up,D+ix,D+2+iy,D+4+iy,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
 	interpminmodgrav(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
 	memcpy(Wi+icell,&Up,sizeof(struct Gtype));
       }
@@ -356,26 +326,8 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
 
 
-
-  /* // next order */
-  /* if(order==1){ */
-  /*   for(i=0;i<6;i++){ */
-  /*     if((i>>1)==(inei>>1)) continue; */
-  /*     ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil */
-  /*     if(visit[ioct2]) continue; */
-  /*     visit[ioct2]=1; */
-  /*     recursive_neighbor_gather_oct_grav(ioct2, inei, i, -1, 2, neicell, stencil,visit); */
-  /*   } */
-  /* } */
-  /* else if(order==2) { */
-  /*   for(i=0;i<6;i++){ */
-  /*     if(((i>>1)==(inei>>1))||((i>>1)==(inei2>>1))) continue; */
-  /*     ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil */
-  /*     if(visit[ioct2]) continue; */
-  /*     visit[ioct2]=1; */
-  /*     recursive_neighbor_gather_oct_grav(ioct2, inei, inei2, i, 3, neicell, stencil,visit); */
-  /*   } */
-  /* } */
+ 
+ 
 }
 
 //================================================================
@@ -426,6 +378,7 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, i
 	  visit[ioct]=1;
 	  recursive_neighbor_gather_oct_grav(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
+      
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -445,7 +398,7 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
   struct OCT* curoct;
   int ipos,iread;
   int icell;
-  
+  int level=octstart->level;
   nextoct=octstart;
   iread=0;
 
@@ -464,8 +417,10 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
       }
 
 #ifdef ONFLYRED
-      curoct->parent->gdata.d=gstencil->resLR[iread];
-      curoct->parent->gdata.p=0.;
+      if(level<=cpu->levelcoarse){
+	curoct->parent->gdata.d=gstencil->resLR[iread];
+	curoct->parent->gdata.p=0.;
+      }
 #endif  
 
       iread++;
@@ -560,7 +515,6 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
 
       // we store the new value of the potential
       gstencil->pnew[icell+i*8]=temp;
-
       // we store the local residual
       if(flag) {
 	gstencil->res[i*8+icell]=factdens*curcell->d;
@@ -699,7 +653,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   double tglob=0.,tup=0.;
 
   double tstart,tstop,tt;
-  
+  //  if(level==6) nitmax=2;
+
   for(iter=0;iter<nitmax;iter++){
     tstart=MPI_Wtime();
 
@@ -747,8 +702,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	
 	nextoct=scatterstencilgrav(curoct,stencil,nread,stride, cpu);
 	
-	
-
 	tall+=temps[9]-temps[0];
 	tcal+=temps[7]-temps[3];
 	tscat+=temps[9]-temps[7];
@@ -769,7 +722,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	  for(icell=0;icell<8;icell++){	
 	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
-	  }
+ 	  }
 	}while(nextoct!=NULL);
       }
     }
@@ -866,7 +819,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #else
   dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
-    return dres;
+  return dres;
 }
 
 //===================================================================================================================================
@@ -1019,9 +972,10 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 	    if(curcell->child!=NULL){
 
 	      coarse2fine_grav(curcell,Wi);
-
 	      for(icell2=0;icell2<8;icell2++){
+		//		Wi[icell2].p=0.;
 		memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
+		//memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
 	      }
 
 	    }
