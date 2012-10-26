@@ -23,7 +23,7 @@ void U2W(struct Utype *U, struct Wtype *W)
   W->w=U->dw/U->d;
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
 #ifdef DUAL_E
-  if(W->p/((GAMMA-1.)*U->E)<1e-4) W->p=U->eint*(GAMMA-1.);
+  if(W->p/((GAMMA-1.)*U->E)<1e-2) W->p=U->eint*(GAMMA-1.);
 #endif
   W->a=sqrt(GAMMA*W->p/W->d);
 }
@@ -53,6 +53,9 @@ void diffU(struct Utype *U2, struct Utype *U1, struct Utype *UR){
   UR->dv=U2->dv- U1->dv;
   UR->dw=U2->dw- U1->dw;
   UR->E =U2->E - U1->E;
+#ifdef DUAL_E
+  UR->eint=U2->eint-U1->eint;
+#endif
 }
 
 // ================== performs the difference between two Ws
@@ -71,7 +74,7 @@ void diffW(struct Wtype *W2, struct Wtype *W1, struct Wtype *WR){
 
 void minmod(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
 
-  REAL beta=2.; // 1. for MINBEE 2. for SUPERBEE
+  REAL beta=1.; // 1. for MINBEE 2. for SUPERBEE
   // FLUX LIMITER
 
   if(Up->d>0){
@@ -182,7 +185,9 @@ void interpminmod(struct Utype *U0, struct Utype *Up, struct Utype *Dx, struct U
   Up->dv=U0->dv + dx*Dx->dv +dy*Dy->dv +dz*Dz->dv;
   Up->dw=U0->dw + dx*Dx->dw +dy*Dy->dw +dz*Dz->dw;
   Up->E =U0->E  + dx*Dx->E  +dy*Dy->E  +dz*Dz->E;
-
+#ifdef DUAL_E
+  Up->eint =U0->eint  + dx*Dx->eint  +dy*Dy->eint  +dz*Dz->eint;
+#endif
 }
 
 
@@ -297,6 +302,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 
 	    }
 
+
 	    diffW(Wp,W0,&Dp); 
 	    diffW(W0,Wm,&Dm); 
 	    
@@ -321,6 +327,151 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 		icell=ix+iy*2+iz*4;
 		interpminmod_W(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
 		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
+		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
+
+	      }
+	    }
+	  }
+
+}
+
+// =====================================================================================
+
+void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){ 
+
+
+	  struct OCT * oct;
+	  
+	  struct Wtype *W0;
+	  struct Wtype *Wp;
+	  struct Wtype *Wm;
+	  struct Wtype Wint;
+	  struct Wtype *W;
+
+
+	  struct Utype U0;
+	  struct Utype Up;
+	  struct Utype Um;
+	  struct Utype Uint;
+
+	  /* struct Wtype Dp,Dm; */
+	  /* struct Wtype D[6]; */
+	  struct Utype Dp,Dm;
+	  struct Utype D[6];
+	  
+	  
+	  int inei2;
+	  int vcell[6],vnei[6];
+	  int dir;
+	  REAL dxcur;
+
+	  oct=cell2oct(cell);
+	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  dxcur=pow(0.5,oct->level);
+
+	  W0=&(cell->field);
+	  // Limited Slopes
+	  for(dir=0;dir<3;dir++){
+	    
+	    inei2=2*dir;
+	    if(vnei[inei2]==6){
+	      Wm=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXM
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+		Wm=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSYM
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+		Wm=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSZM
+	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+	      if((oct->z==0.)&&(inei2==4)){
+		Wm=&(cell->field);
+#ifdef REFZM
+		// !!!!DANGEREUX CA !
+		Wm->w*=-1.0;
+		dxcur=1./pow(2,oct->level);
+		Wm->p=Wm->p+GRAV*Wm->d*dxcur;
+#endif
+	      }
+#endif
+
+
+	    }
+	    
+
+	    inei2=2*dir+1;
+	    if(vnei[inei2]==6){
+	      Wp=&(oct->cell[vcell[inei2]].field);
+	    }
+	    else{
+	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+
+#ifdef TRANSXP
+	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+		Wp=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSYP
+	      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+		Wp=&(cell->field);
+	      }
+#endif
+
+#ifdef TRANSZP
+	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+		Wp=&(cell->field);
+#ifdef REFZP
+		Wp->w*=-1.0;
+		dxcur=1./pow(2,oct->level);
+		Wp->p=Wp->p-GRAV*Wp->d*dxcur;
+#endif
+		
+	      }
+#endif
+
+	    }
+
+	    W2U(W0,&U0);
+	    W2U(Wm,&Um);
+	    W2U(Wp,&Up);
+
+	    diffU(&U0,&Um,D+2*dir+0); 
+	    diffU(&Up,&U0,D+2*dir+1); 
+	    
+
+	    //	    minmod_W(&Dm,&Dp,D+dir);
+	    
+		  
+	  }
+
+	  // Interpolation
+	  int ix,iy,iz;
+	  int icell;
+
+	  // =================================================
+	  // =================================================
+	  // =================================================
+	  // =================================================
+
+	  for(iz=0;iz<2;iz++){
+	    for(iy=0;iy<2;iy++){
+	      for(ix=0;ix<2;ix++){
+		icell=ix+iy*2+iz*4;
+		interpminmod(&U0,&Uint,D+ix,D+iy+2,D+iz+4,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
+		//Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
+		U2W(&Uint,&Wint);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 
 	      }
@@ -3540,7 +3691,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   }
   else{
-    coarse2fine_hydro2(neicell,Wi);
+    coarse2fine_hydrolin(neicell,Wi);
 #ifdef NOFLUX
     for(icell=0;icell<8;icell++){
       child[icell]=0;
@@ -3694,6 +3845,8 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	//memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].New.cell[icell].field),sizeof(struct Wtype));
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
+
+	if(U.eint+deltaU.eint<0) abort();
 
 	U.d  +=deltaU.d;
 	U.du +=deltaU.du;

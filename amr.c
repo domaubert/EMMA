@@ -14,7 +14,12 @@
 #include "communication.h"
 #include "particle.h"
 
+#include "hydro_utils.h"
+
+
 #ifdef WHYDRO2
+
+
 REAL comp_grad_hydro(struct OCT *curoct, int icell){
   REAL gradd[3]={0.,0.,0.};
   REAL gradv[3]={0.,0.,0.};
@@ -359,7 +364,7 @@ struct OCT * refine_cells(int levelcoarse, int levelmax, struct OCT **firstoct, 
 
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
-		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
+		  coarse2fine_hydrolin(&(curoct->cell[icell]),Wi);
 		}
 #endif
 
@@ -751,7 +756,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WGRAV
 		if(cpu->rank==curoct->cpu){
-		  coarse2fine_grav(&(curoct->cell[icell]),Gi);
+		  coarse2fine_gravlin(&(curoct->cell[icell]),Gi);
 		}
 #endif
 

@@ -36,7 +36,7 @@ void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
 
 void diffUgrav(struct Gtype *U2, struct Gtype *U1, struct Gtype *UR){
   
-  UR->d =U2->d - U1->d;
+  UR->d=U2->d- U1->d;
   UR->p=U2->p- U1->p;
 }
 
@@ -53,7 +53,7 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
   struct Gtype Up;
   struct Gtype Um;
   struct Gtype Dp,Dm;
-  struct Gtype D[6];
+  struct Gtype D[3];
   struct Gtype *W;
   int inei2;
   int vcell[6],vnei[6];
@@ -152,6 +152,120 @@ for(iz=0;iz<2;iz++){
   }
 
 }
+
+
+// ==============================================================================
+// ==============================================================================
+void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){ 
+
+  
+  struct OCT * oct;
+	  
+  struct Gtype U0;
+  struct Gtype Up;
+  struct Gtype Um;
+  struct Gtype Dp,Dm;
+  struct Gtype D[3];
+  struct Gtype *W;
+  int inei2;
+  int vcell[6],vnei[6];
+  int dir;
+  REAL dxcur;
+  
+  oct=cell2oct(cell);
+  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+  dxcur=pow(0.5,oct->level);
+  
+  W=&(cell->gdata);
+  U0=*W;
+  // Limited Slopes
+  for(dir=0;dir<3;dir++){
+    
+    inei2=2*dir;
+    if(vnei[inei2]==6){
+      W=&(oct->cell[vcell[inei2]].gdata);
+    }
+    else{
+      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      
+#ifdef TRANSXM
+      if((oct->x==0.)&&(inei2==0)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+#ifdef TRANSYM
+      if((oct->y==0.)&&(inei2==2)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+#ifdef TRANSZM
+      if((oct->z==0.)&&(inei2==4)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+      
+    }
+    Um=*W;
+    
+    inei2=2*dir+1;
+    if(vnei[inei2]==6){
+      W=&(oct->cell[vcell[inei2]].gdata);
+    }
+    else{
+      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      
+#ifdef TRANSXP
+      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+#ifdef TRANSYP
+      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+#ifdef TRANSZP
+      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
+      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+	W=&(cell->gdata);
+      }
+#endif
+      
+    }
+    Up=*W;
+    
+    diffUgrav(&U0,&Um,D+2*dir); 
+    diffUgrav(&Up,&U0,D+2*dir+1); 
+
+    /* memcpy(D+(2*dir+0),&Dm,sizeof(struct Gtype)); */
+    /* memcpy(D+(2*dir+1),&Dp,sizeof(struct Gtype)); */
+    
+    //    minmod2grav(&Dm,&Dp,D+dir);
+}
+  
+  // Interpolation
+  int ix,iy,iz;
+  int icell;
+  
+for(iz=0;iz<2;iz++){
+    for(iy=0;iy<2;iy++){
+      for(ix=0;ix<2;ix++){
+	icell=ix+iy*2+iz*4;
+	
+	interpminmodgrav(&U0,&Up,D+ix,D+2+iy,D+4+iz,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+	//interpminmodgrav(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+	memcpy(Wi+icell,&Up,sizeof(struct Gtype));
+      }
+    }
+  }
+
+}
+
 // ============================================================================================================
 // ============================================================================================================
 void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct GGRID *stencil,char *visit){
@@ -318,7 +432,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
     for(icell=0;icell<8;icell++) stencil->oct[ioct].cell[icell].gdata.p=neicell->child->cell[face[icell]].gdata.p;
   }
   else{
-    coarse2fine_grav(neicell,Wi);
+    coarse2fine_gravlin(neicell,Wi);
     for(icell=0;icell<8;icell++){
       memcpy(&(stencil->oct[ioct].cell[icell].gdata),Wi+face[icell],sizeof(struct Gtype)); //
     }
@@ -623,7 +737,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   int nitmax;
   REAL factdens;
   REAL rloc;
-
+  REAL res0;
 
   // Computing the factor of the density
   if(level>=param->lcoarse){
@@ -710,6 +824,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }while(nextoct!=NULL);
     }
 
+    if((iter==1)&&(level>param->lcoarse)) res0=residual;
+
+
     tt=MPI_Wtime();
     // at this stage an iteration has been completed : let's update the potential
     if(nreadtot>0){
@@ -721,7 +838,15 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  nextoct=curoct->next;
 	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	  for(icell=0;icell<8;icell++){	
-	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
+	    
+	    REAL w;
+	    if(level>param->lcoarse){
+	      w=1.8;
+	    }
+	    else{
+	      w=1.0;
+	    }
+	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+(1.-w)*curoct->cell[icell].gdata.p;
  	  }
 	}while(nextoct!=NULL);
       }
@@ -738,8 +863,14 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }
     }
   }
-  //printf("CPU | level=%d iter=%d res=%e tgat=%e tcal=%e tscat=%e tall=%e tup=%e tglob=%e\n",level,iter,dres,tgat/iter,tcal/iter,tscat/iter,tall/iter,tup/iter,tglob/iter);
-  printf("CPU | level=%d iter=%d res=%e\n",level,iter,dres);
+
+  if(level>param->lcoarse){
+    printf("CPU | level=%d iter=%d res=%e res0=%e\n",level,iter,dres,sqrt(res0));
+  }
+  else{
+    printf("CPU | level=%d iter=%d res=%e\n",level,iter,dres);
+  }
+
   return dres;
 }
 
@@ -805,7 +936,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 	curoct=nextoct;
 	nextoct=curoct->next;
 	curcell=curoct->parent;
-	coarse2fine_grav(curcell,Wi);
+	coarse2fine_gravlin(curcell,Wi);
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    curoct->cell[icell].gdata.p-=Wi[icell].p; // we propagate the error and correct the evaluation
@@ -911,6 +1042,10 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
     }while(nextoct!=NULL);
   }
 
+  avgdens/=nc;
+
+  
+
 
   return 0;
 }
@@ -971,7 +1106,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 	    curcell=&(curoct->cell[icell]);
 	    if(curcell->child!=NULL){
 
-	      coarse2fine_grav(curcell,Wi);
+	      coarse2fine_gravlin(curcell,Wi);
 	      for(icell2=0;icell2<8;icell2++){
 		//		Wi[icell2].p=0.;
 		memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
