@@ -138,14 +138,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
  
 #ifdef WGRAV
-    printf("ndt=%d\n",ndt[param->lcoarse-1]);
+    printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
     /* //==================================== Getting Density ==================================== */
     FillDens(level,param,firstoct,cpu); 
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp); 
     
     /* //====================================  Force Field ========================== */
-    PoissonForce(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp);
+    //if(nsteps<=16) {
+      PoissonForce(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp);
+      //}
 #endif
 
    // ================= III Recursive call to finer level
@@ -161,11 +163,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
 
 #ifdef WGRAV
-    //========================================================
-    HydroSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-    
-    // ================================= gravitational correction for Hydro
-    grav_correction(level,param,firstoct,cpu,adt[level-1]);
+    //if(nsteps<=16){ 
+      //========================================================
+      HydroSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
+      //}
+
+      //    if(nsteps<=16){ 
+      // ================================= gravitational correction for Hydro
+      grav_correction(level,param,firstoct,cpu,adt[level-1]);
+      //    }
 #endif
 
 

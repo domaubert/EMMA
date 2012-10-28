@@ -21,6 +21,7 @@ DEFINES  +=  -DPRIMITIVE
 DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DDUAL_E
 DEFINES  +=  -DONFLYRED
+#DEFINES  +=  -DLINU
 #=========================================== CODE PARAMETERS =====================
 
 ifeq ($(ARCH),GPU)

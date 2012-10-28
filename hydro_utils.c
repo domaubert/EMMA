@@ -11,7 +11,7 @@
 #define NITERMAX 10
 #define ERRTOL 1e-10
 #define CFL 0.4
-
+#define FRACP 1e-3
 
 
 // ==================== converts U -> W
@@ -21,9 +21,13 @@ void U2W(struct Utype *U, struct Wtype *W)
   W->u=U->du/U->d;
   W->v=U->dv/U->d;
   W->w=U->dw/U->d;
-  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
+  
+  
 #ifdef DUAL_E
-  if(W->p/((GAMMA-1.)*U->E)<1e-2) W->p=U->eint*(GAMMA-1.);
+  //  if(W->p/((GAMMA-1.)*U->E)<1e-4) W->p=U->eint*(GAMMA-1.);
+  W->p=U->eint*(GAMMA-1.);
+#else
+  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
 #endif
   W->a=sqrt(GAMMA*W->p/W->d);
 }
@@ -356,9 +360,11 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 
 	  /* struct Wtype Dp,Dm; */
 	  /* struct Wtype D[6]; */
-	  struct Utype Dp,Dm;
+#ifdef LINU
 	  struct Utype D[6];
-	  
+#else
+	  struct Wtype D[6];
+#endif
 	  
 	  int inei2;
 	  int vcell[6],vnei[6];
@@ -443,13 +449,19 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 
 	    }
 
+#ifdef LINU
 	    W2U(W0,&U0);
 	    W2U(Wm,&Um);
 	    W2U(Wp,&Up);
 
 	    diffU(&U0,&Um,D+2*dir+0); 
 	    diffU(&Up,&U0,D+2*dir+1); 
-	    
+#else
+	    diffW(W0,Wm,D+2*dir+0); 
+	    diffW(Wp,W0,D+2*dir+1); 
+#endif	    
+
+
 
 	    //	    minmod_W(&Dm,&Dp,D+dir);
 	    
@@ -469,9 +481,16 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	    for(iy=0;iy<2;iy++){
 	      for(ix=0;ix<2;ix++){
 		icell=ix+iy*2+iz*4;
+#ifdef LINU
 		interpminmod(&U0,&Uint,D+ix,D+iy+2,D+iz+4,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
-		//Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
 		U2W(&Uint,&Wint);
+#else
+		interpminmod_W(W0,&Wint,D+ix,D+iy+2,D+iz+4,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
+#endif
+
+
+
+		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 
 	      }
@@ -1078,7 +1097,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 #endif
 #endif
 	    
-	    if(Wi[idir].p<0) abort();
+	    //if(Wi[idir].p<0) abort();
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 	   
 	  }
@@ -2545,7 +2564,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	if(ebar<0) abort();
 	ecen+=ebar;
 	FL[5]=(Us.dw/Us.d*ebar);
-	divu[0]=(GAMMA-1.)*(Us.dw/Us.d);
+	divu[0]=(GAMMA-1.)*(UN[0].dw/UN[0].d)*0.5;
 #endif
 #ifdef DUAL_E
 	FL[5]+=divu[0]*eold; // CHANGE TO /6. when in 3D
@@ -2624,7 +2643,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	if(ebar<0) abort();
 	ecen+=ebar;
 	FR[5]=(Us.dw/Us.d*ebar);
-	divu[1]=(GAMMA-1.)*(Us.dw/Us.d);
+	divu[1]=(GAMMA-1.)*(UN[1].dw/UN[1].d)*0.5;
 #endif
 
 #ifdef DUAL_E
@@ -3486,9 +3505,10 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 	  U.dv+=-(U0.d*curoct->cell[icell].f[1]*dt);
 	  U.dw+=-(U0.d*curoct->cell[icell].f[2]*dt);
 	  U.E+=-(U.du*curoct->cell[icell].f[0]+U.dv*curoct->cell[icell].f[1]+U.dw*curoct->cell[icell].f[2])*dt;
+
 	  U2W(&U,&Wnew);
 #endif	
-	  if(Wnew.p<0) abort();
+	  //if(Wnew.p<0) abort();
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
       }
@@ -3699,7 +3719,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #endif
 
 #ifdef WGRAV
-    for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
+    coarse2fine_forcelin(neicell,floc);
+    //for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
 #endif
 
   }
@@ -3846,19 +3867,26 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
 
-	if(U.eint+deltaU.eint<0) abort();
+	//if(U.eint+deltaU.eint<0) abort();
 
 	U.d  +=deltaU.d;
 	U.du +=deltaU.du;
 	U.dv +=deltaU.dv;
 	U.dw +=deltaU.dw;
 	U.E  +=deltaU.E;
+
 #ifdef DUAL_E
 	U.eint+=deltaU.eint;
+	REAL eint=U.eint;
+	REAL ekin=0.5*(U.du*U.du+U.dv*U.dv+U.dw*U.dw)/U.d;
+	//	if(ekin<(1.-FRACP)*U.E) U.eint=U.E-ekin;
+	//if(eint>(1.-FRACP)*U.E) U.eint=U.E-ekin;
+
 #endif
 	
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
-	if(curoct->cell[icell].fieldnew.p<0) abort();
+	if((curoct->cell[icell].field.p<2e-10)&&((curoct->cell[icell].fieldnew.p<1e-8)&&(curoct->cell[icell].fieldnew.p>9e-9))) abort();
+	//if(curoct->cell[icell].fieldnew.p<0) abort();
 	// let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	

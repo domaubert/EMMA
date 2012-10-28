@@ -21,6 +21,16 @@ void interpminmodgrav(struct Gtype *U0, struct Gtype *Up, struct Gtype *Dx, stru
   Up->d =U0->d  +dx*Dx->d  +dy*Dy->d  +dz*Dz->d;
   Up->p =U0->p  +dx*Dx->p  +dy*Dy->p  +dz*Dz->p;
 }
+ 
+void interpforce(REAL *f0, REAL *fp, REAL *Dx, REAL *Dy, REAL *Dz,REAL dx,REAL dy,REAL dz){
+  
+  int i;
+  for(i=0;i<3;i++){
+    fp[i]=f0[i]+Dx[i]*dx+Dy[i]*dy+Dz[i]*dz;
+  }
+ 
+}
+ 
 
 //===============================================
 void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
@@ -32,6 +42,25 @@ void minmod2grav(struct Gtype *Um, struct Gtype *Up, struct Gtype *Ur){
   Ur->p=(0.5*(1.+w)*Um->p+0.5*(1.-w)*Up->p);
 }
 
+
+void minmod2grav_mix(struct Gtype *U1, struct Gtype *U2){
+  REAL Dm=U1->d;
+  REAL Dp=U2->d;
+  REAL beta=1.; // 1 MINBEE 2 SUPERBEE
+
+  if(Dp>0){
+    U1->d=fmax(fmax(0.,fmin(beta*Dm,Dp)),fmin(Dm,beta*Dp));
+    U2->d=U1->d;
+  }
+  else{
+    U1->d=fmin(fmin(0.,fmax(beta*Dm,Dp)),fmax(Dm,beta*Dp));
+    U2->d=U1->d;
+  }
+
+
+
+}
+
 // ================== performs the difference between two Us
 
 void diffUgrav(struct Gtype *U2, struct Gtype *U1, struct Gtype *UR){
@@ -40,6 +69,14 @@ void diffUgrav(struct Gtype *U2, struct Gtype *U1, struct Gtype *UR){
   UR->p=U2->p- U1->p;
 }
 
+void diffforce(REAL *f2, REAL *f1, REAL *fr){
+  
+  int i;
+  for(i=0;i<3;i++){
+    fr[i]=f2[i]-f1[i];
+  }
+ 
+}
 
 // ===============================================================
 // ==============================================
@@ -164,8 +201,7 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
   struct Gtype U0;
   struct Gtype Up;
   struct Gtype Um;
-  struct Gtype Dp,Dm;
-  struct Gtype D[3];
+  struct Gtype D[6];
   struct Gtype *W;
   int inei2;
   int vcell[6],vnei[6];
@@ -245,7 +281,7 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
     /* memcpy(D+(2*dir+0),&Dm,sizeof(struct Gtype)); */
     /* memcpy(D+(2*dir+1),&Dp,sizeof(struct Gtype)); */
     
-    //    minmod2grav(&Dm,&Dp,D+dir);
+    minmod2grav_mix(D+2*dir,D+2*dir+1);
 }
   
   // Interpolation
@@ -260,6 +296,118 @@ for(iz=0;iz<2;iz++){
 	interpminmodgrav(&U0,&Up,D+ix,D+2+iy,D+4+iz,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
 	//interpminmodgrav(&U0,&Up,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
 	memcpy(Wi+icell,&Up,sizeof(struct Gtype));
+      }
+    }
+  }
+
+}
+
+
+void coarse2fine_forcelin(struct CELL *cell, REAL *Wi){ 
+
+  
+  struct OCT * oct;
+	  
+  REAL U0[3];
+  REAL Up[3];
+  REAL Um[3];
+  REAL *W;
+  REAL D[18];
+   /*  struct Gtype Up; */
+  /* struct Gtype Um; */
+  /* struct Gtype D[3]; */
+  /* struct Gtype *W; */
+  int inei2;
+  int vcell[6],vnei[6];
+  int dir;
+  REAL dxcur;
+  
+  oct=cell2oct(cell);
+  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+  dxcur=pow(0.5,oct->level);
+  
+  W=cell->f;
+  memcpy(U0,W,sizeof(REAL)*3);
+
+  // Limited Slopes
+  for(dir=0;dir<3;dir++){
+    
+    inei2=2*dir;
+    if(vnei[inei2]==6){
+      W=oct->cell[vcell[inei2]].f;
+    }
+    else{
+      W=oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].f;
+      
+#ifdef TRANSXM
+      if((oct->x==0.)&&(inei2==0)){
+	W=cell->f;
+      }
+#endif
+      
+#ifdef TRANSYM
+      if((oct->y==0.)&&(inei2==2)){
+	W=cell->f;
+      }
+#endif
+      
+#ifdef TRANSZM
+      if((oct->z==0.)&&(inei2==4)){
+	W=cell->f;
+      }
+#endif
+      
+      
+    }
+    memcpy(Um,W,sizeof(REAL)*3);
+    
+    inei2=2*dir+1;
+    if(vnei[inei2]==6){
+      W=oct->cell[vcell[inei2]].f;
+    }
+    else{
+      W=oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].f;
+      
+#ifdef TRANSXP
+      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+	W=cell->f;
+      }
+#endif
+      
+#ifdef TRANSYP
+      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+	W=cell->f;
+      }
+#endif
+      
+#ifdef TRANSZP
+      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+	W=cell->f;
+      }
+#endif
+      
+    }
+    
+    memcpy(Up,W,sizeof(REAL)*3);
+    
+    diffforce(U0,Um,D+2*dir*3); 
+    diffforce(Up,U0,D+(2*dir+1)*3); 
+
+ 
+}
+  
+  // Interpolation
+  int ix,iy,iz;
+  int icell;
+  
+for(iz=0;iz<2;iz++){
+    for(iy=0;iy<2;iy++){
+      for(ix=0;ix<2;ix++){
+	icell=ix+iy*2+iz*4;
+	
+	interpforce(U0,Up,D+ix*3,D+6+iy*3,D+12+iz*3,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
+	//Up[2]=0.;Up[1]=0.;Up[0]=0.;
+	memcpy(Wi+icell*3,Up,sizeof(REAL)*3);
       }
     }
   }

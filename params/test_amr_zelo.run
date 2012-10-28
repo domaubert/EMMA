@@ -2,7 +2,7 @@ max_number_of_octs 3000000
 max_number_of_part 2
 mpi_buffer_size 131072
 output_frequency 1
-max_number_of_steps 40
+max_number_of_steps 15
 level_coarse 5
 level_max 6
 level_map 6
@@ -13,7 +13,7 @@ mgrid_nvcycles 3
 mgrid_nsmooth 5
 vector_stencil_size 1024
 time_step_max  10.
-amr_thresh 3.5e-5
+amr_thresh 3.3e-5
 restart_snap 0
 max_subccles 1
 nthread 64
