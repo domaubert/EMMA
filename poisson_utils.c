@@ -957,7 +957,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  fnorm+=rloc;
 	}
 	else{
-	  residual=(residual>rloc?residual:rloc);
+	  //residual=(residual>rloc?residual:rloc);
+	  residual+=rloc;
 	}
 	
 	// ------------ scatter back the data
@@ -1005,7 +1006,12 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     tglob+=(tstop-tstart);
     
     if(iter>0){
-      dres=sqrt(residual);
+      if(level<param->lcoarse){
+	dres=sqrt(residual);
+      }
+      else{
+	dres=sqrt(residual/fnorm);
+      }
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }

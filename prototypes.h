@@ -162,7 +162,7 @@ struct Wtype{
   REAL w;   // velocity
   REAL p;   // pressure
   REAL a;   // sound speed
-
+  REAL E;
 
 };
 
@@ -328,6 +328,7 @@ struct CELLFLUX
   struct Wtype field;
   struct Utype deltaU;
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
+  REAL divu;
 #endif
 
 };
@@ -411,7 +412,7 @@ struct OCTGRAV
 
 // =======================================
 struct GGRID{
-  struct OCTGRAV oct[7];
+  struct OCTGRAV oct[27];
 };
 
 

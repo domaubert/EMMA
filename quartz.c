@@ -1442,14 +1442,20 @@ int main(int argc, char *argv[])
 	      param.omegav=omegav;
 
 	      ainit=1./(1.+ZI);
-	      amax=1./(1.+ZC);
+	      amax=1.;///(1.+ZC);
 	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
 	      curoct->cell[icell].field.u=0.;//
 	      curoct->cell[icell].field.v=0.;
-	      curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.w=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
 	      curoct->cell[icell].field.p=1e-10;
 	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+	      getE(&curoct->cell[icell].field);
+	      //curoct->cell[icell].field.E=curoct->cell[icell].field.p/(GAMMA-1.);
+	      
 
+ 	      /* struct Wtype *Wt; */
+	      /* Wt=&(curoct->cell[icell].field); */
+	      /* Wt->E=0.5*Wt->d*(Wt->u*Wt->u+Wt->v*Wt->v+Wt->w*Wt->w)+Wt->p/(GAMMA-1.); */
 
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(zc<=X0){ */
@@ -1493,7 +1499,7 @@ int main(int argc, char *argv[])
 
   compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
 
-  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0,omegam,omegav,1e-8);
+  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0+1e-6,omegam,omegav,1e-8);
   
   struct COSMOPARAM cosmo;
   
