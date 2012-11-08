@@ -165,9 +165,11 @@ int main(int argc, char *argv[])
   size_t rstat;
 
 
-  REAL omegam,omegav,Hubble,omegab=0.045;
+  REAL omegam,omegav,Hubble,omegab;
   REAL avgdens; 
   REAL tmax;
+
+
 #ifdef PIC
   avgdens=1.;//we assume a unit mass in a unit length box
 #else
@@ -1196,10 +1198,13 @@ int main(int argc, char *argv[])
   
 #ifdef GRAFIC
   int ncellhydro;
-  ncellhydro=read_grafic_hydro(&cpu,&ainit, &omegam, &omegav, &Hubble,omegab);
+  ncellhydro=read_grafic_hydro(&cpu,&ainit, &omegam, &omegav, &Hubble,&omegab);
 
   printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
   amax=1.0;
+  param.omegam=omegam;
+  param.omegav=omegav;
+  param.h0=Hubble;
 #else
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1361,7 +1366,7 @@ int main(int argc, char *argv[])
 	     
 	      
 	      /* if(zc>0.75){ */
-	      /* 	curoct->cell[icell].field.d=2.; */
+	      /* sZEL	curoct->cell[icell].field.d=2.; */
 	      /* } */
 	      /* else{ */
 	      /* 	curoct->cell[icell].field.d=1.; */
@@ -1434,28 +1439,23 @@ int main(int argc, char *argv[])
 
 	      /* /\* ZELDOVICH PANCAKE *\/ */
 
-	      REAL ZI=99;
+	      REAL ZI=100;
 	      REAL ZC=9;
 	      omegam=1.0;
 	      omegav=0.;
+	      omegab=omegam;
 	      param.omegam=omegam;
 	      param.omegav=omegav;
 
 	      ainit=1./(1.+ZI);
-	      amax=1.;///(1.+ZC);
-	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(zc-0.5));
-	      curoct->cell[icell].field.u=0.;//
-	      curoct->cell[icell].field.v=0.;
-	      curoct->cell[icell].field.w=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
-	      curoct->cell[icell].field.p=1e-10;
+	      amax=1.;//(1.+ZC);
+	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5));
+	      curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
+	      curoct->cell[icell].field.p=1e-14;
 	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 	      getE(&curoct->cell[icell].field);
-	      //curoct->cell[icell].field.E=curoct->cell[icell].field.p/(GAMMA-1.);
-	      
-
- 	      /* struct Wtype *Wt; */
-	      /* Wt=&(curoct->cell[icell].field); */
-	      /* Wt->E=0.5*Wt->d*(Wt->u*Wt->u+Wt->v*Wt->v+Wt->w*Wt->w)+Wt->p/(GAMMA-1.); */
 
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(zc<=X0){ */

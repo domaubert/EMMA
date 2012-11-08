@@ -55,7 +55,7 @@ struct RUNPARAMS{
 #ifdef TESTCOSMO
   REAL omegam;
   REAL omegav;
-  REAL H0;
+  REAL h0;
 #endif
 
   int nthread;

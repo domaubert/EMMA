@@ -715,8 +715,6 @@ struct OCT *scatterstencilforce(struct OCT *octstart, struct STENGRAV *gstencil,
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
-	//curoct->cell[icell].f[dir]=stencil[iread].pnew[icell];
-	//curoct->cell[icell].f[dir]=gstencil->pnew[icell*nread+iread];
 	curoct->cell[icell].f[dir]=gstencil->pnew[icell+iread*8];
       }
       iread++;

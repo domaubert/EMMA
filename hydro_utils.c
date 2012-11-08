@@ -12,6 +12,13 @@
 #define ERRTOL 1e-10
 #define CFL 0.4
 #define FRACP 1e-3
+#define PMIN 1e-15
+
+
+// ===================================================
+
+
+// ===================================================
 
 void getE(struct Wtype *W){
   W->E=W->p/(GAMMA-1.)+0.5*W->d*(W->u*W->u+W->v*W->v+W->w*W->w);
@@ -26,9 +33,7 @@ void U2W(struct Utype *U, struct Wtype *W)
   W->v=U->dv/U->d;
   W->w=U->dw/U->d;
   
-  
 #ifdef DUAL_E
-  //  if(W->p/((GAMMA-1.)*U->E)<1e-4) W->p=U->eint*(GAMMA-1.);
   W->p=U->eint*(GAMMA-1.);
   W->E=U->E;
 #else
@@ -44,7 +49,6 @@ void W2U(struct Wtype *W, struct Utype *U)
   U->du=W->d*W->u;
   U->dv=W->d*W->v;
   U->dw=W->d*W->w;
-  //  U->E=W->d*(0.5*(W->u*W->u+W->v*W->v+W->w*W->w)+W->p/((GAMMA-1.)*W->d));
 
 #ifdef DUAL_E
   U->eint=W->p/(GAMMA-1.);
@@ -565,7 +569,6 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
   int cas;
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
-
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
   pmax=fmax(WL->p,WR->p);
   pmin=fmin(WL->p,WR->p);
@@ -698,8 +701,8 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
     }
 
   if(i==NITERMAX){
-    printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err);
-    abort();
+    //printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err);
+    //abort();
   }
 
   /* if(p>6.4e-7){ */
@@ -1076,7 +1079,8 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;
 	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
 	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
-	    Wi[idir].p = W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p;
+	    Wi[idir].p = fmax(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
+
 
 	    if(Wi[idir].p<0) abort();
 	    if(Wi[idir].d<0) abort();
@@ -1180,16 +1184,15 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
-
   if((*SL)>(*SR)){
     (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
     (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)) abort();
+  if(isnan(*ustar)) abort();
 
 }
-
 
 
 
@@ -1228,44 +1231,6 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   if(isnan(*ustar)) abort();
 
 }
-
-
-
-void W2Ustar_x(struct Wtype *W, struct Utype *U, REAL SK, REAL SS){
-  
-  REAL fact=W->d*(SK-W->u)/(SK-SS);
-  REAL EK=0.5*W->d*(W->u*W->u+W->v*W->v+W->w*W->w)+W->p/(GAMMA-1.);
-
-  U->d=fact;
-  U->du=fact*SS;
-  U->dv=fact*W->v;
-  U->dw=fact*W->w;
-  U->E=fact*(EK/W->d+(SS-W->u)*(SS+W->p/(W->d*(SK-W->u))));
-
-}
-
-
-
-void speedestimateY(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
-
-  REAL splus;
-  splus=fmax(fabs(WL->v)+WL->a,fabs(WR->v)+WR->a);
-  *SL=-splus;
-  *SR= splus;
-
-
-
-}
-
-void speedestimateZ(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR){
-
-  REAL splus;
-  splus=fmax(fabs(WL->w)+WL->a,fabs(WR->w)+WR->a);
-  *SL=-splus;
-  *SR= splus;
-}
-
-
 
 
 
@@ -1324,10 +1289,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 #endif      
 
       Wold.d=curcell->d;
-      Wold.u=curcell->u;;
-      Wold.v=curcell->v;;
-      Wold.w=curcell->w;;
-      Wold.p=curcell->p;;
+      Wold.u=curcell->u;
+      Wold.v=curcell->v;
+      Wold.w=curcell->w;
+      Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
 
       W2U(&Wold,&Uold); // primitive -> conservative
@@ -1352,6 +1317,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	inei=iface+4;
 	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);// 
 	memcpy(WN+iface,WT+idxnei[inei],sizeof(struct Wtype)); 
+	//memcpy(WN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype)); 
 	W2U(WN+iface,UN+iface);
 	
 	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
@@ -1359,8 +1325,6 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	}
 
       }
-
-
 
 
       // Z DIRECTION =========================================================================
@@ -1430,9 +1394,6 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       FL[5]=(Us.dw/Us.d*ebar);
       divu+=-divuloc;
 #endif
-      /* #ifdef DUAL_E */
-      /* 	FL[5]+=divu[0]*eold; // CHANGE TO /6. when in 3D */
-      /* #endif */
 
 #endif
       // ===========================================
@@ -1501,19 +1462,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef DUAL_E
       ebar=(Us.E-0.5*(Us.du*Us.du+Us.dv*Us.dv+Us.dw*Us.dw)/Us.d); 
-      /* //ebar=pstar/(GAMMA-1.); */
-      /* ecen+=ebar; */
-      /* FR[5]=(Us.dw/Us.d*ebar)+divu[1]*eold; */
-      /* divu+=(GAMMA-1.)*(Us.dw/Us.d)*eold; */
-
       divuloc=(GAMMA-1.)*(Us.dw/Us.d)*eold;
       FR[5]=(Us.dw/Us.d*ebar);
       divu+= divuloc;
 #endif
-
-      /* #ifdef DUAL_E */
-      /* 	FR[5]+=; // CHANGE TO /6. when in 3D */
-      /* #endif */
 
 
 #endif
@@ -1523,8 +1475,8 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       // Cancelling the fluxes from splitted neighbours
 
-      for(iface=0;iface<NVAR;iface++) FL[iface]*=ffact[0];
-      for(iface=0;iface<NVAR;iface++) FR[iface]*=ffact[1];
+      for(iface=0;iface<NVAR;iface++) FL[iface]*=ffact[0]; 
+      for(iface=0;iface<NVAR;iface++) FR[iface]*=ffact[1]; 
 
 
       memcpy(stencil[i].New.cell[icell].flux+4*NVAR,FL,sizeof(REAL)*NVAR);
@@ -1574,6 +1526,13 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
+#ifdef DUAL_E
+	struct Utype Us;
+	REAL ebar;
+	REAL ecen=0.;
+	REAL divu,divuloc;
+#endif
+
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
       
@@ -1585,15 +1544,21 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       // Getting the original state ===========================
       
       curcell=&(stencil[i].oct[ioct[6]].cell[icell].field);
-      
+
+#ifdef DUAL_E
+      divu=stencil[i].New.cell[icell].divu;
+#endif      
+
       Wold.d=curcell->d;
-      Wold.u=curcell->u;;
-      Wold.v=curcell->v;;
-      Wold.w=curcell->w;;
-      Wold.p=curcell->p;;
+      Wold.u=curcell->u;
+      Wold.v=curcell->v;
+      Wold.w=curcell->w;
+      Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
 
       W2U(&Wold,&Uold); // primitive -> conservative
+
+      REAL eold=Uold.eint;
 
       /* // MUSCL STATE RECONSTRUCTION */
 #ifdef NOFLUX
@@ -1605,6 +1570,8 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       for(iface=0;iface<2;iface++){
 	inei=iface+2;
 	memcpy(WC+iface,WC+inei,sizeof(struct Wtype)); // moving the data towards idx=0,1
+	//memcpy(WC+iface,&Wold,sizeof(struct Wtype)); // moving the data towards idx=0,1
+
 	W2U(WC+iface,UC+iface);
       }
 
@@ -1613,20 +1580,16 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	inei=iface+2;
 	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);// 
 	memcpy(WN+iface,WT+idxnei[inei],sizeof(struct Wtype)); 
+	//memcpy(WN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype)); 
+
        	W2U(WN+iface,UN+iface);
 	
-	if(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 
       }
 
-#ifdef DUAL_E
-	struct Utype Us;
-	REAL ebar;
-	REAL ecen=0.;
-	REAL divu[2]={0.,0.};
-#endif
 
 
 
@@ -1636,7 +1599,6 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       // Switching to Split description
 
-      if(!ffact[0]){
 /* 	// =========================================== */
 
 #ifdef RIEMANN_HLLC
@@ -1692,21 +1654,25 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 	}
 
+
 #ifdef DUAL_E
-	ebar=(Us.E-0.5*(Us.du*Us.du+Us.dw*Us.dw+Us.dv*Us.dv)/Us.d);
-	ecen+=ebar;
-	FL[5]=(Us.dv/Us.d*ebar);
-	divu[0]=(GAMMA-1.)*(Us.dv/Us.d);
+      ebar=(Us.E-0.5*(Us.du*Us.du+Us.dv*Us.dv+Us.dw*Us.dw)/Us.d); 
+      FL[5]=(Us.dv/Us.d*ebar);
+      divuloc=(GAMMA-1.)*(Us.dv/Us.d)*eold;
+      divu+=-divuloc;
 #endif
+
+/* #ifdef DUAL_E */
+/* 	ebar=(Us.E-0.5*(Us.du*Us.du+Us.dw*Us.dw+Us.dv*Us.dv)/Us.d); */
+/* 	ecen+=ebar; */
+/* 	FL[5]=(Us.dv/Us.d*ebar); */
+/* 	divu[0]=(GAMMA-1.)*(Us.dv/Us.d); */
+/* #endif */
 
 #endif
 	// ===========================================
 
-#ifdef DUAL_E
-      FL[5]+=divu[0]*ebar; // CHANGE TO /6. when in 3D
-#endif
 
-      }
 
 
       // --------- solving the Riemann Problems BACK
@@ -1714,7 +1680,6 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       // Switching to Split description
 
-      if(!ffact[1]){
 	//=====================================================
 
 #ifdef RIEMANN_HLLC
@@ -1770,27 +1735,27 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 #endif
 	}
 
+
 #ifdef DUAL_E
-	ebar=(Us.E-0.5*(Us.du*Us.du+Us.dw*Us.dw+Us.dv*Us.dv)/Us.d);
-	ecen+=ebar;
-	FR[5]=(Us.dv/Us.d*ebar);
-	divu[1]=(GAMMA-1.)*(Us.dv/Us.d);
+      ebar=(Us.E-0.5*(Us.du*Us.du+Us.dv*Us.dv+Us.dw*Us.dw)/Us.d); 
+      divuloc=(GAMMA-1.)*(Us.dv/Us.d)*eold;
+      FR[5]=(Us.dv/Us.d*ebar);
+      divu+= divuloc;
 #endif
 
 #endif
-#ifdef DUAL_E
-      FR[5]+=divu[1]*ebar; // CHANGE TO /6. when in 3D
-#endif
-
-      }
-
-
 
       
       //========================= copy the fluxes
+      // Cancelling the fluxes from splitted neighbours
+
+      for(iface=0;iface<NVAR;iface++) FL[iface]*=ffact[0]; 
+      for(iface=0;iface<NVAR;iface++) FR[iface]*=ffact[1]; 
+
       memcpy(stencil[i].New.cell[icell].flux+2*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+3*NVAR,FR,sizeof(REAL)*NVAR);
 
+      stencil[i].New.cell[icell].divu=divu;
 
       // ready for the next cell
     }
@@ -1831,14 +1796,18 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
+#ifdef DUAL_E
+  struct Utype Us;
+  REAL ebar;
+  REAL ecen=0.;
+  REAL divu,divuloc;
+#endif
+
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
       
     for(i=0;i<nread;i++){ // we scan the octs
       
-      memset(WN,0,sizeof(struct Wtype)*2);
-      memset(WN,0,sizeof(struct Wtype)*2);
-      memset(WT,0,sizeof(struct Wtype)*6);
       memset(FL,0,sizeof(REAL)*NVAR);
       memset(FR,0,sizeof(REAL)*NVAR);
 
@@ -1846,6 +1815,10 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       
       curcell=&(stencil[i].oct[ioct[6]].cell[icell].field);
       
+#ifdef DUAL_E
+      divu=stencil[i].New.cell[icell].divu;
+#endif      
+
       Wold.d=curcell->d;
       Wold.u=curcell->u;;
       Wold.v=curcell->v;;
@@ -1854,6 +1827,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
 
       W2U(&Wold,&Uold); // primitive -> conservative
+      REAL eold=Uold.eint;
 
       /* // MUSCL STATE RECONSTRUCTION */
 #ifdef NOFLUX
@@ -1870,22 +1844,14 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	inei=iface;
 	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);// 
 	memcpy(WN+iface,WT+idxnei[inei],sizeof(struct Wtype)); 
-	if((iface==0)&&(WN[0].d!=WC[0].d)) abort();
        	W2U(WN+iface,UN+iface);
 	
-	if(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 
       }
 
-      
-#ifdef DUAL_E
-	struct Utype Us;
-	REAL ebar;
-	REAL ecen=0.;
-	REAL divu[2]={0.,0.};
-#endif
 
 
 
@@ -1895,7 +1861,6 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       // Switching to Split description
 
-      if(!ffact[0]){
 /* 	// =========================================== */
 
 #ifdef RIEMANN_HLLC
@@ -1951,30 +1916,28 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 	}
 
+
 #ifdef DUAL_E
-	ebar=(Us.E-0.5*(Us.dv*Us.dv+Us.dw*Us.dw+Us.du*Us.du)/Us.d);
-	ecen+=ebar;
-	FL[5]=(Us.du/Us.d*ebar);
-	divu[0]=(GAMMA-1.)*(Us.du/Us.d);
+      ebar=(Us.E-0.5*(Us.du*Us.du+Us.dv*Us.dv+Us.dw*Us.dw)/Us.d); 
+      divuloc=(GAMMA-1.)*(Us.du/Us.d)*eold;
+      FL[5]=(Us.du/Us.d*ebar);
+      divu+=-divuloc;
 #endif
+
 
 #endif
 	
-#ifdef DUAL_E
-	FL[5]+=divu[0]*ebar; // CHANGE TO /6. when in 3D
-#endif
 
 	// ===========================================
 
 
-      }
+      
 
       // --------- solving the Riemann Problems RIGHT
 
 
       // Switching to Split description
 
-      if(!ffact[1]){
 	//=====================================================
 
 #ifdef RIEMANN_HLLC
@@ -2031,27 +1994,29 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	}
 
 #ifdef DUAL_E
-	ebar=(Us.E-0.5*(Us.dv*Us.dv+Us.dw*Us.dw+Us.du*Us.du)/Us.d);
-	ecen+=ebar;
-	FR[5]=(Us.du/Us.d*ebar);
-	divu[1]=(GAMMA-1.)*(Us.du/Us.d);
+      ebar=(Us.E-0.5*(Us.du*Us.du+Us.dv*Us.dv+Us.dw*Us.dw)/Us.d); 
+      divuloc=(GAMMA-1.)*(Us.du/Us.d)*eold;
+      FR[5]=(Us.du/Us.d*ebar);
+      divu+= divuloc;
 #endif
 
 #endif
 
-#ifdef DUAL_E
-	//      FL[5]+=divu[0]*ebar/6.; // CHANGE TO /6. when in 3D
-      FR[5]+=divu[1]*ebar; // CHANGE TO /6. when in 3D
-#endif
 
-      }
 
 
 
       
       //========================= copy the fluxes
+      // Cancelling the fluxes from splitted neighbours
+
+      for(iface=0;iface<NVAR;iface++) FL[iface]*=ffact[0]; 
+      for(iface=0;iface<NVAR;iface++) FR[iface]*=ffact[1]; 
+
       memcpy(stencil[i].New.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
+
+      stencil[i].New.cell[icell].divu=divu;
 
       // ready for the next cell
     }
@@ -2175,6 +2140,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 
 //=================================================================================
 #ifdef WGRAV
+
 REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
   struct OCT *nextoct;
@@ -2205,52 +2171,6 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
   return dt;
 }
 
-
-REAL comptstep_ff(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
-  
-  int level;
-  struct OCT *nextoct;
-  struct OCT *curoct;
-  REAL dxcur;
-  int icell;
-  REAL dtloc;
-  REAL dt;
-
-  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
-
-  // Computing new timestep
-  dt=tmax;
-  for(level=levelcoarse;level<=levelmax;level++) // looping over levels
-    {
-      // setting the first oct
-      
-      nextoct=firstoct[level-1];
-      
-      if(nextoct==NULL) continue; // in case the level is empty
-      dxcur=pow(0.5,level); // +1 to protect level change
-      do // sweeping through the octs of level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      dtloc=0.1*sqrt(2.*M_PI/(3.*curoct->cell[icell].gdata.d*aexp));
-	      dt=fmin(dt,dtloc);
-	    }
-	}while(nextoct!=NULL);
-    }
-
-  // new tstep
-  // printf("original dt=%f chosen dt=%f\n",tmax,dt);
-
-
-/* #ifdef WMPI */
-/*   // reducing by taking the smallest time step */
-/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm); */
-/* #endif   */
-
-  return dt;
-}
 
 #endif
 
@@ -2362,7 +2282,6 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 	  Wnew.u+=(-curcell->f[0]*dt);
 	  Wnew.v+=(-curcell->f[1]*dt);
 	  Wnew.w+=(-curcell->f[2]*dt);
-	  getE(&Wnew);
 #endif
 
 #ifdef CONSERVATIVE
@@ -2377,7 +2296,8 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 
 	  U2W(&U,&Wnew);
 #endif	
-	  //if(Wnew.p<0) abort();
+	  getE(&Wnew);
+	  if(Wnew.p<0) abort();
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
       }
@@ -2603,7 +2523,6 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #ifdef NOFLUX
     stencil->oct[ioct].cell[icell].split=child[icell];
 #endif
-    //if(icell==0) if(ioct==24) if(stencil->oct[ioct].cell[icell].field.p==0.099999999999999978) abort();
 
 #ifdef WGRAV
     memcpy(stencil->oct[ioct].cell[icell].f,floc+3*face[icell],sizeof(REAL)*3); //
@@ -2810,15 +2729,14 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	  U.eint=U.E-ekin; 
 	} 
 
-	//	if(ekin<(1.-FRACP)*U.E) U.eint=U.E-ekin;
-	//if(eint>(1.-FRACP)*U.E) U.eint=U.E-ekin;
+	U.eint=fmaxf(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 
-
+	if(U.eint<0) abort();
 
 #endif
 	
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
-
+	getE(&(curoct->cell[icell].fieldnew));
 
 	// let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -2888,6 +2806,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      //if(U.eint<0) abort();
 	      //scatter back
 	      U2W(&U,&W);
+	      getE(&W);
 	      memcpy(&(curoct->nei[vnei[inei]]->fieldnew),&W,sizeof(struct Wtype));
 	      
 	    }
@@ -2934,10 +2853,10 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
 	    
-      //      hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);  
-      //hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);  
-      hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
-      //hydroM(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
+      hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);   
+      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
+      hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
+      
       // ------------ updating values within the stencil
 
       t[4]=MPI_Wtime();

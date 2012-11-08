@@ -377,14 +377,14 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 //==================================================================================
 
 #ifdef WHYDRO2
-int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, REAL omegab){
+int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, REAL *omegab){
   
   FILE *fx;
   FILE *fy;
   FILE *fz;
   FILE *fdx;
   int np1,np2,np3;
-  float dx,x1o,x2o,x3o,astart,om,ov,h0;
+  float dx,x1o,x2o,x3o,astart,om,ov,ob,h0;
   int dummy;
   struct PART *lastpart;
   int ip;
@@ -454,9 +454,13 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   fread(&h0,1,4,fz);
   fread(&dummy,1,sizeof(dummy),fz);
 
+
+  // setting baryon density parameter
+  ob=om;
+  
   printf("============================================\n");
   printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
-  printf("om=%f ov=%f h0=%f\n",om,ov,h0);
+  printf("om=%f ov=%f ob=%f h0=%f\n",om,ov,ob,h0);
   printf("dx=%f np1*dx=%f\n",dx,np1*dx);
   printf("astart=%f zstart=%f\n",astart,1./astart-1.);
   printf("============================================\n");
@@ -493,9 +497,10 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   double mu=0.59; // mean molecular weight
   double kboltz=1.3806503e-23; // boltzmann constant SI
   double zstart=1./astart-1.;
-  //double temp=550.*((1.0+zstart)*(1.0+zstart)/(201.*201.)); // baryon temperature (to check) in K
-  double temp=1e4;
-
+  //  double temp=550.*((1.0+zstart)*(1.0+zstart)); // baryon temperature (to check) in K
+  //double temp=2.7*(1+zstart);
+  //double temp=1e4;
+  double temp=170.*(1.+zstart)*(1.+zstart)/10000.;
   // supercomoving unit values
   double rhostar;
   double rstar;
@@ -509,7 +514,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   rhostar=rhoc*om;
   tstar=2./H0/sqrt(om); // sec
   tstar2=2./h0/sqrt(om); // Mpc sec / km
-  vstar=rstar/tstar;
+  vstar=rstar/tstar; //m/s
   pstar=rhostar*vstar*vstar;
 
   printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
@@ -562,26 +567,22 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
 	  icz=i3%2;
 	  
 	  icell=icx+icy*2+icz*4;
-	  /* if(i1>115) printf("x0=%f y0=%f z0=%f key=%d oct=%p deltab=%f icell=%d ix=%f %d\n",x0,y0,z0,key,curoct,deltab[i1+np1*i2],icell,(x0/pow(0.5,6)),(int)(x0*pow(2,6))); */
-
-	  if(curoct->cell[icell].field.d!=0){
-	    printf("euhh\n");
-	    abort();
-	  }
 	
-	  rhob=(deltab[i1+i2*np1]+1.0)*omegab*rhoc/pow(astart,3); // physical baryon density in kg/m3
+	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/pow(astart,3); // physical baryon density in kg/m3
 	  pressure=(GAMMA-1.0)*1.5*(rhob/(mu*mp))*kboltz*temp; // physical pressure
 
 	  // filling the cells using supercomoving values
 	  
 	  //abort();
 
-	  W.d=(deltab[i1+i2*np1]+1.0)*omegab/om;
-	  W.u=(velx[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	  W.v=(vely[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	  W.w=(velz[i1+i2*np1]      )*astart/(np1*dx*h0)/(sqrt(om)*0.5);
+	  W.d=(deltab[i1+i2*np1]+1.0)*ob/om;
+	  W.u=(velx[i1+i2*np1]*1e3)*astart/vstar; // vstar is expressed in m/s and grafic vel are in km/s
+	  W.v=(vely[i1+i2*np1]*1e3)*astart/vstar;
+	  W.w=(velz[i1+i2*np1]*1e3)*astart/vstar;
 	  W.p=pressure/pstar*pow(astart,5);
 	  W.a=sqrt(GAMMA*W.p/W.d);
+	  getE(&W);
+
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
 	  ifound++;
@@ -609,6 +610,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   *ainit=astart;
   *omegam=om;
   *omegav=ov;
+  *omegab=ob;
   *Hubble=h0;
 
   printf("Grafic hydro read ok\n");
