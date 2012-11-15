@@ -20,6 +20,17 @@ typedef double REAL;
 #endif
 #define NFLUX (6*NVAR)
 
+//=======================================
+#ifdef TESTCOSMO
+struct COSMOPARAM{
+  REAL aexp;
+  REAL om;
+  REAL ov;
+  REAL *tab_aexp;
+  REAL *tab_ttilde;
+  REAL tsim;
+};
+#endif
 
 //=======================================
 
@@ -53,9 +64,7 @@ struct RUNPARAMS{
   int nsubcycles; // number of subcyles in AMR advance procedure
 
 #ifdef TESTCOSMO
-  REAL omegam;
-  REAL omegav;
-  REAL h0;
+  struct COSMOPARAM *cosmo;
 #endif
 
   int nthread;
@@ -473,13 +482,3 @@ struct MULTIVECT{
 
 
 //==============================================
-#ifdef TESTCOSMO
-struct COSMOPARAM{
-  REAL aexp;
-  REAL om;
-  REAL ov;
-  REAL *tab_aexp;
-  REAL *tab_ttilde;
-  REAL tsim;
-};
-#endif

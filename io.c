@@ -466,6 +466,12 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   printf("============================================\n");
 
 
+  if(np1!=(int)pow(2,cpu->levelcoarse)){
+    printf("ERROR !ABORT! Grafic file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,cpu->levelcoarse));
+    abort();
+  }
+
+
   // reading the grafic planes
 
   float *deltab;
@@ -497,10 +503,16 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   double mu=0.59; // mean molecular weight
   double kboltz=1.3806503e-23; // boltzmann constant SI
   double zstart=1./astart-1.;
+
+  // ---------- Setting the initial temperature ---- //
+
   //  double temp=550.*((1.0+zstart)*(1.0+zstart)); // baryon temperature (to check) in K
   //double temp=2.7*(1+zstart);
   //double temp=1e4;
-  double temp=170.*(1.+zstart)*(1.+zstart)/10000.;
+  //double temp=170.*(1.+zstart)*(1.+zstart)/10000.;
+  double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
+
+
   // supercomoving unit values
   double rhostar;
   double rstar;

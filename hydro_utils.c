@@ -12,7 +12,7 @@
 #define ERRTOL 1e-10
 #define CFL 0.4
 #define FRACP 1e-3
-#define PMIN 1e-15
+#define PMIN 1e-12
 
 
 // ===================================================
@@ -1300,9 +1300,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       REAL eold=Uold.eint;
 
       /* // MUSCL STATE RECONSTRUCTION */
-#ifdef NOFLUX
       memset(ffact,0,sizeof(int)*2);
-#endif
 
       MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central
 
@@ -1561,9 +1559,7 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       REAL eold=Uold.eint;
 
       /* // MUSCL STATE RECONSTRUCTION */
-#ifdef NOFLUX
       memset(ffact,0,sizeof(int)*2);
-#endif
 
       MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central
 
@@ -1830,9 +1826,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       REAL eold=Uold.eint;
 
       /* // MUSCL STATE RECONSTRUCTION */
-#ifdef NOFLUX
       memset(ffact,0,sizeof(int)*2);
-#endif
 
       MUSCL_BOUND2(stencil+i, 13, icell, WC,dt,dx);// central
       for(iface=0;iface<2;iface++){
@@ -2329,9 +2323,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   REAL dxcur;
 
   struct Wtype Wi[8];
-#ifdef NOFLUX
   char child[8];
-#endif
 
   struct OCT *oct;
   struct OCT *neioct;
@@ -2489,9 +2481,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
       memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype));
       
       
-#ifdef NOFLUX
       child[icell]=(neicell->child->cell[icell].child!=NULL);
-#endif
     }
 
 #ifdef WGRAV
@@ -2501,11 +2491,9 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   }
   else{
     coarse2fine_hydro2(neicell,Wi);
-#ifdef NOFLUX
     for(icell=0;icell<8;icell++){
       child[icell]=0;
     }
-#endif
 
 #ifdef WGRAV
     coarse2fine_forcelin(neicell,floc);
@@ -2520,9 +2508,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
 
-#ifdef NOFLUX
     stencil->oct[ioct].cell[icell].split=child[icell];
-#endif
 
 #ifdef WGRAV
     memcpy(stencil->oct[ioct].cell[icell].f,floc+3*face[icell],sizeof(REAL)*3); //

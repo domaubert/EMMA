@@ -42,22 +42,26 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, int stride, struct COSMOPARAM *cosmo,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, int stride,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
+#ifdef TESTCOSMO
+  struct COSMOPARAM *cosmo;
+  cosmo=param->cosmo;
+#endif
+  struct OCT *curoct;
+  REAL dtnew;
+  REAL dt=0.;
+  REAL dtfine;
+  int npart=0;
+  int mtot;
+  int is=0;
+  REAL tloc=cosmo->tsim;
 
   if(cpu->rank==0){
     printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,cosmo->aexp);
   }
-  struct OCT *curoct;
-  REAL dtnew;
-  REAL dt;
-  REAL dtfine;
-  int npart=0;
-  int mtot;
 
-  dt=0.;
-  int is=0;
-  REAL tloc=cosmo->tsim;
+
   if(level==param->lcoarse){
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
@@ -90,10 +94,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef WHYDRO2
-#ifdef NOFLUX
     // =============================== cleaning the updated values of hydro quantities
     clean_new_hydro(level,param,firstoct,cpu);
-#endif
 #endif
 
     // == Ready to advance
@@ -103,7 +105,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(param->omegam)*integ_da_dt_tilde(cosmo->aexp*1.1,cosmo->aexp,param->omegam,param->omegav,1e-8);
+    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(cosmo->aexp*1.1,cosmo->aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
     if(dtcosmo==0) abort();
@@ -148,7 +150,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,stride,cosmo,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one

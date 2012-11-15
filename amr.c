@@ -418,7 +418,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].field),Wi+ii,sizeof(struct Wtype)); 
-
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));

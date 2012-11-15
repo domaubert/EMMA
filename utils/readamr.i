@@ -126,13 +126,15 @@ func ext_amr1D(levmap,field,color=,lmin=)
 }
 
 
-func oct2cube(fname,lvl,field,ncpu=,execut=){
+func oct2cube(fname,lvl,field,&time,ncpu=,execut=){
   if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
+  time=array(double);
   commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu);
   system(commande);
-  cube=readcube(swrite(format=fname+".f"+pr1(field)+".p%05d",ncpu-1));
+  cube=readcube(swrite(format=fname+".f"+pr1(field)+".p%05d",ncpu-1),time);
   return cube;
                                                                                              
 }
+
 

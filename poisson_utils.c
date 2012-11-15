@@ -890,7 +890,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #ifndef TESTCOSMO
     factdens=4.0*M_PI;
 #else
-    //    factdens=6.0*tsim; WARNING JUST TESTING WITHOUT TSIM!!!
     factdens=6.0;
 #endif
   }
@@ -913,7 +912,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   double tglob=0.,tup=0.;
 
   double tstart,tstop,tt;
-  //  if(level==6) nitmax=2;
+  //if(level==6) nitmax=10;
 
   for(iter=0;iter<nitmax;iter++){
     tstart=MPI_Wtime();
@@ -943,7 +942,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	
 	// ------------ gathering the stencil value values
 	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
-
 	
 	// ------------ solving the hydro
 	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
@@ -951,6 +949,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	// ------------ computing the residuals
 
 	rloc=comp_residual(stencil,level,cpu->rank,nread,stride,(iter==0));
+
 	if(iter==0){
 	  fnorm+=rloc;
 	}
@@ -988,7 +987,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	    
 	    REAL w;
 	    if(level>param->lcoarse){
-	      w=1.8;
+	      w=1.0;
 	    }
 	    else{
 	      w=1.0;
@@ -1017,7 +1016,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   }
 
   if(level>param->lcoarse){
-    printf("CPU | level=%d iter=%d res=%e res0=%e\n",level,iter,dres,sqrt(res0));
+    printf("CPU | level=%d iter=%d res=%e res0=%e\n",level,iter,dres,sqrt(res0/fnorm));
   }
   else{
     printf("CPU | level=%d iter=%d res=%e\n",level,iter,dres);
@@ -1187,6 +1186,7 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 #ifdef TESTCOSMO
 	curoct->cell[icell].gdata.d-=1.;
 #endif
+	
 
 	avgdens+=locdens;
 	nc++;

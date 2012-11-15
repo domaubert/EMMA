@@ -1202,9 +1202,6 @@ int main(int argc, char *argv[])
 
   printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
   amax=1.0;
-  param.omegam=omegam;
-  param.omegav=omegav;
-  param.h0=Hubble;
 #else
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1444,8 +1441,6 @@ int main(int argc, char *argv[])
 	      omegam=1.0;
 	      omegav=0.;
 	      omegab=omegam;
-	      param.omegam=omegam;
-	      param.omegav=omegav;
 
 	      ainit=1./(1.+ZI);
 	      amax=1.;//(1.+ZC);
@@ -1502,7 +1497,8 @@ int main(int argc, char *argv[])
   tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0+1e-6,omegam,omegav,1e-8);
   
   struct COSMOPARAM cosmo;
-  
+  param.cosmo=&cosmo;
+
   cosmo.aexp=aexp;
   cosmo.om=omegam;
   cosmo.ov=omegav;
@@ -1695,15 +1691,19 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,stride,&cosmo,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump
   
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
 	if(cpu.rank==0) printf("Dumping .......\n");
+
+#ifndef TESTCOSMO
 	REAL tdump=tsim;
-    
+#else
+	REAL tdump=cosmo.aexp;
+#endif
 	// === Hydro dump
     
 #ifdef WHYDRO2

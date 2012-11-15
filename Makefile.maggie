@@ -1,13 +1,35 @@
 ##########################################
 ARCH = CPU
-C_LIBS = -lm -g
+C_LIBS = -lm 
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o  poisson_utils.o 
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
-DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DRIEMANN_HLLC
 
+#------------ MAIN OPTIONS --------------------
+
+DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DTESTCOSMO
+#DEFINES   +=  -DPIC
+#DEFINES   +=  -DPART2
+
+#------------ ICs OPTIONS ---------------------
+
+DEFINES  +=  -DGRAFIC
+
+
+#------------ MULTIGRID SOLVER OPTIONS ---------
+
+DEFINES  +=  -DONFLYRED
+
+
+# ----------- HYDRODYNAMICS OPTIONS ------------
+DEFINES  +=  -DRIEMANN_HLLC
+DEFINES  +=  -DWGRAV
+DEFINES  +=  -DPRIMITIVE
+DEFINES  +=  -DDUAL_E
+
+# ----------- BOUNDARY CONDITIONS --------------
 #DEFINES  +=  -DTRANSZM
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
@@ -15,14 +37,8 @@ DEFINES  +=  -DRIEMANN_HLLC
 #DEFINES  +=  -DTRANSXM
 #DEFINES  +=  -DTRANSXP
 
-DEFINES  +=  -DNOFLUX
-DEFINES  +=  -DWGRAV
-DEFINES  +=  -DPRIMITIVE
-DEFINES  +=  -DTESTCOSMO
-DEFINES  +=  -DDUAL_E
-DEFINES  +=  -DONFLYRED
-DEFINES  +=  -DGRAFIC
-#=========================================== CODE PARAMETERS =====================
+
+#=================================================================================
 
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
