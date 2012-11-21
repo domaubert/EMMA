@@ -1,3 +1,6 @@
+
+#ifdef WHYDRO2
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +13,6 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-#define CFL 0.4
 #define FRACP 1e-3
 #define PMIN 1e-12
 
@@ -2085,88 +2087,8 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
 //=================================================================================
 //=================================================================================
 
-REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
-  
-  struct OCT *nextoct;
-  struct OCT *curoct;
-  REAL dxcur;
-  int icell;
-  REAL aa;
-  REAL va,vx,vy,vz;
-  REAL dt;
-  REAL Smax=0.,S1;
-
-  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
-  // Computing new timestep
-  dt=tmax;
-  // setting the first oct
-  
-  nextoct=firstoct[level-1];
-  
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
-    do // sweeping through the octs of level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-	for(icell=0;icell<8;icell++) // looping over cells in oct
-	  {
-	    vx=curoct->cell[icell].field.u; 
-	    vy=curoct->cell[icell].field.v; 
-	    vz=curoct->cell[icell].field.w; 
-	    va=sqrt(vx*vx+vy*vy+vz*vz); 
-	    aa=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
-	    Smax=fmax(Smax,va+aa); 
-
-	  }
-      }while(nextoct!=NULL);
-  }
-
-  dt=fmin(dxcur*CFL/(Smax*3.),dt);
-
-  /* #ifdef WMPI */
-  /*   // reducing by taking the smallest time step */
-  /*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm); */
-  /* #endif   */
-
-  return dt;
-}
 
 //=================================================================================
-#ifdef WGRAV
-
-REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
-  
-  struct OCT *nextoct;
-  struct OCT *curoct;
-  REAL dxcur;
-  int icell;
-  REAL dtloc;
-  REAL dt;
-
-  dt=tmax;
-  // setting the first oct
-      
-  nextoct=firstoct[level-1];
-      
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
-    do // sweeping through the octs of level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-	for(icell=0;icell<8;icell++) // looping over cells in oct
-	  {
-	    dtloc=0.1*sqrt(2.*M_PI/(3.*curoct->cell[icell].gdata.d*aexp));
-	    dt=fmin(dt,dtloc);
-	  }
-      }while(nextoct!=NULL);
-  }
-  return dt;
-}
-
-
-#endif
 
 #ifdef WGRAV
 REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
@@ -2973,3 +2895,6 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
   }
 }
 
+
+
+#endif

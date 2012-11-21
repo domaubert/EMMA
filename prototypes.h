@@ -8,7 +8,9 @@ typedef double REAL;
 #endif
 
 #define GAMMA (5./3.)
+#define CFL (0.4)
 #define GRAV (0.25)
+#define OMEGAB (0.045)
 
 #define NCOSMOTAB (262144)
 
@@ -26,6 +28,7 @@ struct COSMOPARAM{
   REAL aexp;
   REAL om;
   REAL ov;
+  REAL ob;
   REAL *tab_aexp;
   REAL *tab_ttilde;
   REAL tsim;
@@ -43,7 +46,6 @@ struct RUNPARAMS{
   
   int lcoarse; // the coarse level
   int lmax; // the max level of refinement
-  int levelmap; // the map projection level
   
   int niter; // the maximal number of iterations for the Poisson solver
   
@@ -136,6 +138,7 @@ struct CPUINFO{
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
+  int *npart; // the number of particles per levels
   int levelcoarse; // the levelcoarse
 
   struct OCT *freeoct; // the location of the first free oct

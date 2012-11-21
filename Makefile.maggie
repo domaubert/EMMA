@@ -1,6 +1,6 @@
 ##########################################
 ARCH = CPU
-C_LIBS = -lm 
+C_LIBS = -lm -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o  poisson_utils.o 
 DEFINES  =  
@@ -8,14 +8,15 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DTESTCOSMO
-#DEFINES   +=  -DPIC
-#DEFINES   +=  -DPART2
+DEFINES  +=  -DPIC
+#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWGRAV
+#DEFINES  +=  -DTESTCOSMO
 
 #------------ ICs OPTIONS ---------------------
 
-DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DPART2
 
 
 #------------ MULTIGRID SOLVER OPTIONS ---------
@@ -24,10 +25,9 @@ DEFINES  +=  -DONFLYRED
 
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
-DEFINES  +=  -DRIEMANN_HLLC
-DEFINES  +=  -DWGRAV
-DEFINES  +=  -DPRIMITIVE
-DEFINES  +=  -DDUAL_E
+#DEFINES  +=  -DRIEMANN_HLLC
+#DEFINES  +=  -DPRIMITIVE
+#DEFINES  +=  -DDUAL_E
 
 # ----------- BOUNDARY CONDITIONS --------------
 #DEFINES  +=  -DTRANSZM

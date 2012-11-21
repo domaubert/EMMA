@@ -5,7 +5,8 @@
 #include "amr.h"
 #include "hydro_utils.h"
 #include "friedmann.h"
-
+#include "cic.h"
+#include "particle.h"
 
 // ===============================================================
 // ===============================================================
@@ -40,6 +41,89 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 }
 
 // ===============================================================
+#ifdef WHYDRO2
+REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+  
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  REAL dxcur;
+  int icell;
+  REAL aa;
+  REAL va,vx,vy,vz;
+  REAL dt;
+  REAL Smax=0.,S1;
+
+  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
+  // Computing new timestep
+  dt=tmax;
+  // setting the first oct
+  
+  nextoct=firstoct[level-1];
+  
+  if(nextoct!=NULL){
+    dxcur=pow(0.5,level); // +1 to protect level change
+    do // sweeping through the octs of level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    vx=curoct->cell[icell].field.u; 
+	    vy=curoct->cell[icell].field.v; 
+	    vz=curoct->cell[icell].field.w; 
+	    va=sqrt(vx*vx+vy*vy+vz*vz); 
+	    aa=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
+	    Smax=fmax(Smax,va+aa); 
+
+	  }
+      }while(nextoct!=NULL);
+  }
+
+  dt=fmin(dxcur*CFL/(Smax*3.),dt);
+
+  /* #ifdef WMPI */
+  /*   // reducing by taking the smallest time step */
+  /*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm); */
+  /* #endif   */
+
+  return dt;
+}
+#endif
+
+// ===============================================================
+#ifdef WGRAV
+REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
+  
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  REAL dxcur;
+  int icell;
+  REAL dtloc;
+  REAL dt;
+
+  dt=tmax;
+  // setting the first oct
+      
+  nextoct=firstoct[level-1];
+      
+  if(nextoct!=NULL){
+    dxcur=pow(0.5,level); // +1 to protect level change
+    do // sweeping through the octs of level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    dtloc=0.1*sqrt(2.*M_PI/(3.*curoct->cell[icell].gdata.d*aexp));
+	    dt=fmin(dt,dtloc);
+	  }
+      }while(nextoct!=NULL);
+  }
+  return dt;
+}
+#endif
+
+// ===============================================================
 // ===============================================================
 
 REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, int stride,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
@@ -51,23 +135,32 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   struct OCT *curoct;
   REAL dtnew;
   REAL dt=0.;
+  REAL dtold;
   REAL dtfine;
   int npart=0;
   int mtot;
   int is=0;
-  REAL tloc=cosmo->tsim;
+  REAL tloc;
+  REAL aexp;
+
+#ifdef TESTCOSMO
+  tloc =cosmo->tsim;
+  aexp=cosmo->aexp;
+#else
+  tloc=0.;
+  aexp=1.0;
+#endif
 
   if(cpu->rank==0){
-    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,cosmo->aexp);
+    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,aexp);
   }
 
+  // ==================================== Check the number of particles and octs
+  mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
   if(level==param->lcoarse){
-    // ==================================== Check the number of particles and octs
-    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
         
     // =========== Grid Census ========================================
-      
     grid_census(param,cpu);
   }
 
@@ -78,6 +171,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
 #ifdef TESTCOSMO
     cosmo->aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    aexp=cosmo->aexp;
 #endif
 
 
@@ -88,27 +182,66 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       cpu->freeoct=curoct;
     }
     
-    
-    // ==================================== Check the number of particles and octs
-    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu->noct);
 
 
+
+    // =============================== cleaning 
 #ifdef WHYDRO2
-    // =============================== cleaning the updated values of hydro quantities
     clean_new_hydro(level,param,firstoct,cpu);
 #endif
 
+#ifdef PIC
+    L_clean_dens(level,param,firstoct,cpu);
+#endif
+
+
     // == Ready to advance
+
+
+    // ================= IV advance solution at the current level
+
+
+    printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
+
+
+#ifdef PIC
+    // ==================================== performing the CIC assignement
+    L_cic(level,firstoct,param,cpu);
+#endif
+ 
+    /* //==================================== Getting Density ==================================== */
+    FillDens(level,param,firstoct,cpu); 
+
+#ifdef WGRAV
+
+    /* //====================================  Poisson Solver ========================== */
+    PoissonSolver(level,param,firstoct,cpu,gstencil,stride,aexp); 
+
+    /* //====================================  Force Field ========================== */
+    PoissonForce(level,param,firstoct,cpu,gstencil,stride,aexp);
+
+#endif
+
+
+
 
     // ================= II We compute the timestep of the current level
     dtnew=param->dt;//*(cpu->nsteps>2);
-
+    
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(cosmo->aexp*1.1,cosmo->aexp,cosmo->om,cosmo->ov,1e-8);
+    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.1,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
-    if(dtcosmo==0) abort();
+
+#ifdef WGRAV
+    REAL dtff;
+    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
+
+    dtnew=(dtff<dtnew?dtff:dtnew);
+    printf("dtff= %e ",dtff);
+#endif
+
 #endif
   
 #ifdef WHYDRO2
@@ -118,34 +251,24 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("dthydro= %e ",dthydro);
 #endif
 
-
-#ifdef WGRAV
-    REAL dtff;
-    dtff=L_comptstep_ff(level,param,firstoct,cosmo->aexp,cpu,1e9);
-    dtnew=(dtff<dtnew?dtff:dtnew);
-    printf("dtff= %e ",dtff);
+#ifdef PIC
+    REAL dtpic;
+    dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
+    printf("dtpic= %e ",dtpic);
+    dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
 
+
+    printf("\n");
+    dtold=adt[level-1];
     adt[level-1]=dtnew;
 
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
     adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
 
 
-    // ================= IV advance solution at the current level
 
-
-    printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
- 
-#ifdef WGRAV
-    /* //==================================== Getting Density ==================================== */
-    FillDens(level,param,firstoct,cpu); 
-    /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp); 
-    /* //====================================  Force Field ========================== */
-    PoissonForce(level,param,firstoct,cpu,gstencil,stride,cosmo->aexp);
-#endif
 
    // ================= III Recursive call to finer level
     if(level<param->lmax){
@@ -157,14 +280,35 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 
+
+#ifdef PIC
+    //================ Part. Update ===========================
+
+    if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",cpu->npart[level-1],adt[level-1],level);
     
 
-#ifdef WGRAV
-      //========================================================
+    // =============================== Leapfrog Euler Step # 0
+    if((is==0)&&(cpu->nsteps==0)){
+      L_accelpart(level,firstoct,adt[level-1]*0.5,cpu); // computing the particle acceleration and velocity
+    }
+    else{
+      L_accelpart(level,firstoct,(adt[level-1]+dtold)*0.5,cpu); // computing the particle acceleration and velocity
+    }
+
+    L_movepart(level,firstoct,adt[level-1],cpu); // moving the particles
+
+    L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
+
+
+#endif
+
+
+#ifdef WHYDRO2
+      //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-      //}
 
       // ================================= gravitational correction for Hydro
+
     grav_correction(level,param,firstoct,cpu,adt[level-1]);
 #endif
 

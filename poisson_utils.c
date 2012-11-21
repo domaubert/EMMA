@@ -986,6 +986,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  for(icell=0;icell<8;icell++){	
 	    
 	    REAL w;
+	    // TO FIX : DO WE ALLOW OVER-RELAXATION ?
 	    if(level>param->lcoarse){
 	      w=1.0;
 	    }
@@ -1178,14 +1179,15 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
 #ifdef PIC
 	locdens+=curoct->cell[icell].density;
 #endif
+
 #ifdef WHYDRO2
 	locdens+=curoct->cell[icell].field.d;
 #endif
 	curoct->cell[icell].gdata.d=locdens;
 
-#ifdef TESTCOSMO
+
+	// WARNING HERE ASSUME PERIODIC BOUNDARY CONDITIONS AND REMOVE THE AVG DENSITY
 	curoct->cell[icell].gdata.d-=1.;
-#endif
 	
 
 	avgdens+=locdens;

@@ -163,26 +163,37 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
   else
     {
+      fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);
       rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
       rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
+      
+      fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=dummyf;
+
+      fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,"%s %d",stream,&param->levelmap);
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
+
+      fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %f",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
-      rstat=fscanf(buf,"%s %d",stream,&param->stride);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
+
+      fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
+
+      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %d",stream,&param->stride);
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
+
       fclose(buf);
     }
 
@@ -194,12 +205,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 //==================================================================================
 //==================================================================================
-
-struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, int *npart, REAL omegab){
-  
+#ifdef PIC
+#ifdef GRAFIC
+struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param)
+{
   FILE *fx, *fy, *fz;
   int np1,np2,np3;
-  float dx,x1o,x2o,x3o,astart,om,ov,h0;
+  float dx,x1o,x2o,x3o,astart,om,ov,h0,ob;
   int dummy;
   struct PART *lastpart;
   int ip;
@@ -261,6 +273,16 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   printf("============================================\n");
 
 
+  if(np1*np2*np3>param->npartmax){
+    printf("Error : Number of particles greater than npartmax Np(grafic)=%d Npartmax=%d!\n",np1*np2*np3,param->npartmax);
+    abort();
+  }
+
+  //setting omegab
+
+  ob=OMEGAB;
+
+
   // computing Zeldovich displacement quantities
   
   double vfact;
@@ -287,7 +309,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   float mass;
 
 #ifdef WHYDRO2
-  mass=(1.-omegab/om)/(np1*np2*np3);
+  mass=(1.-ob/om)/(np1*np2*np3);
 #else
   mass=1./(np1*np2*np3);
 #endif
@@ -313,7 +335,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     fread(&dummy,1,sizeof(dummy),fz);
 
     z0=(i3-0.5)*dx;
-
     for(i2=1;i2<=np2;i2++){
       y0=(i2-0.5)*dx;
       for(i1=1;i1<=np1;i1++){
@@ -363,21 +384,23 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
   *munit=mass;
   *ainit=astart;
-  *omegam=om;
-  *omegav=ov;
-  *Hubble=h0;
+  param->cosmo->om=om;
+  param->cosmo->ov=ov;
+  param->cosmo->ob=ob;
+  //param->cosmo->Hubble=h0;
   *npart=ip;
 
 
   printf("Grafic Particle Read ok\n");
   return lastpart;
 }
-
+#endif
+#endif
 //==================================================================================
 //==================================================================================
 
 #ifdef WHYDRO2
-int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *omegav, REAL *Hubble, REAL *omegab){
+int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param){
   
   FILE *fx;
   FILE *fy;
@@ -456,7 +479,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
 
 
   // setting baryon density parameter
-  ob=om;
+  ob=OMEGAB;
   
   printf("============================================\n");
   printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
@@ -620,11 +643,11 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, REAL *omegam, REAL *ome
   free(velz);
 
   *ainit=astart;
-  *omegam=om;
-  *omegav=ov;
-  *omegab=ob;
-  *Hubble=h0;
-
+  param->cosmo->om=om;
+  param->cosmo->ov=ov;
+  param->cosmo->ob=ob;
+  //param->cosmo->Hubble=h0;
+  
   printf("Grafic hydro read ok\n");
   return ifound;
 }

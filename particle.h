@@ -6,5 +6,7 @@ void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct);
 void forcevel(int levelcoarse,int levelmax,struct OCT **firstoct, REAL **vcomp,int stride,REAL dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer);
 REAL egypart(int levelcoarse,int levelmax,struct OCT **firstoct,struct CPUINFO *cpu);
 REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu,REAL);
-void accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu, struct PACKET **sendbuffer,struct PACKET **recvbuffer);
+void L_accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu);
 REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax);
+REAL L_movepart(int level,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu);
+void L_partcellreorg(int level,struct OCT **firstoct);

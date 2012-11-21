@@ -165,7 +165,6 @@ int main(int argc, char *argv[])
   size_t rstat;
 
 
-  REAL omegam,omegav,Hubble,omegab;
   REAL avgdens; 
   REAL tmax;
 
@@ -183,7 +182,8 @@ int main(int argc, char *argv[])
   double tab_t[NCOSMOTAB];
   REAL ainit;
   REAL amax;
-
+  struct COSMOPARAM cosmo;
+  param.cosmo=&cosmo;
 #endif
 
   //========== RIEMANN CHECK ====================/
@@ -423,13 +423,14 @@ int main(int argc, char *argv[])
 #endif
 
   threshold=param.amrthresh;
-  lmap=param.levelmap;
+  printf("DDD %d\n",param.stride);
   stride=fmax(8,param.stride);//pow(2,levelcoarse);
   ncomp=10;
   acc=param.poissonacc;
   dt=param.dt;
   cpu.maxhash=param.maxhash;
   cpu.levelcoarse=levelcoarse;
+
 #ifdef GPUAXL
   cpu.nthread=param.nthread;
   cpu.nstream=param.nstream;
@@ -455,7 +456,8 @@ int main(int argc, char *argv[])
   firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the firstoct of each level
   lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the last oct of each level
   cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); memsize+=cpu.maxhash*sizeof(struct OCT*);// the htable keys->oct address
-  cpu.noct=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
+  cpu.noct =(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
+  cpu.npart=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of particles per level
 
   lastpart=part-1; // the last particle points before the first at the very beginning
 
@@ -777,12 +779,12 @@ int main(int argc, char *argv[])
     }
     else if(ir==1){
 
-      x=0.5+0.1;
+      x=0.5+0.3;
       y=0.5;
       z=0.5;
 
       vx=0.;
-      vy=sqrt((1.-epsilon)/0.1)*0.6;
+      vy=sqrt((1.-epsilon)/0.3)*1.0;
       vz=0.;
       
       mass=epsilon;
@@ -931,7 +933,7 @@ int main(int argc, char *argv[])
 
 #endif  
 
-#ifdef TESTCOSMO
+#ifdef TESTCOSMO // =================PARTICLE COSMOLOGICAL CASE
 
 #ifdef HPC
   long dummy;
@@ -947,129 +949,12 @@ int main(int argc, char *argv[])
 
 #ifdef GRAFIC // ==================== read grafic file
 
-  lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &omegam, &omegav, &Hubble, &npart,omegab);
+  lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param);
   amax=1.;
-
-#else // ============================  explicit read here
-#ifndef ZELDO
-  fd=fopen("utils/IC.PM.0","rb");
-#else
-  fd=fopen("utils/ZEL.PM.0","rb");
 #endif
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
-  rstat=fread(&nploc,sizeof(int),1,fd);
-  rstat=fread(&munit,sizeof(REAL),1,fd);
-  rstat=fread(&ainit,sizeof(REAL),1,fd);
-  rstat=fread(&lbox,sizeof(REAL),1,fd);
-  rstat=fread(&omegam,sizeof(REAL),1,fd);
-  rstat=fread(&omegav,sizeof(REAL),1,fd);
-  rstat=fread(&Hubble,sizeof(REAL),1,fd);
-  rstat=fread(&dummy,sizeof(dummy),1,fd);
 
-  if(cpu.rank==0) printf("%f %d %f %f\n",ainit,nploc,omegav,Hubble);
+#endif
   
-  mass=munit;
-  tsim=ainit;
-  aexp=ainit;
-
-  // at this stage we have to compute the conformal time
-  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
-
-  // we compute the friedmann tables
-
-
-  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
-
-
-  // ------------------ dealing with particles
-
-  REAL *pos;
-  REAL *vel;
-  int nread=(nploc<2097152?nploc:2097152); // we read by patch of 128^3
-  int npatch=nploc/nread;
-  int ipatch;
-
-  pos=(REAL *)malloc(sizeof(REAL)*3*nread);
-  vel=(REAL *)malloc(sizeof(REAL)*3*nread);
-  int pstart=ftell(fd);
-
-  ip=0.;
-  for(ipatch=0;ipatch<npatch;ipatch++) {
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd); 
-    //    fseek(fd,pstart,SEEK_SET);
-    fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(REAL)+1*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos,sizeof(REAL),nread,fd);
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(REAL)+3*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos+nread,sizeof(REAL),nread,fd);
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(REAL)+5*sizeof(dummy),SEEK_SET);
-    rstat=fread(pos+2*nread,sizeof(REAL),nread,fd);
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-  
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(REAL)+7*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel,sizeof(REAL),nread,fd);
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(REAL)+9*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel+nread,sizeof(REAL),nread,fd);
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd);
-    fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(REAL)+11*sizeof(dummy),SEEK_SET);
-    rstat=fread(vel+2*nread,sizeof(REAL),nread,fd);
-    //rstat=fread(&dummy,sizeof(dummy),1,fd);
-    
-    for(i=0;i<nread;i++)
-      {
-	x=pos[i];
-	y=pos[i+nread];
-	z=pos[i+2*nread];
-	vx=vel[i];
-	vy=vel[i+nread];
-	vz=vel[i+2*nread];
-	// periodic boundary conditions
-	
-	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-	if(ip<4){
-	  printf("x=%f y=%f z=%f\n",x,y,z);
-	  printf("vx=%f\n",vx);
-	}
-	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
-	if(segment_part(x,y,z,&cpu,levelcoarse)){
-	  if(ip<4) printf("passed\n");
-	  part[ip].x=x;
-	  part[ip].y=y;
-	  part[ip].z=z;
-	  
-	  part[ip].vx=vx;
-	  part[ip].vy=vy;
-	  part[ip].vz=vz;
-	  
-	  part[ip].mass=mass;
-	  part[ip].idx=i;
-	  lastpart=part+ip;
-	  ip++;
-	}
-      }
-  }
-
-  npart=ip;
-  fclose(fd);
-  free(pos);
-  free(vel);
-  if (cpu.rank==0) printf("cosmo readpart done with munit=%e\n",munit);
-#endif
-#endif
-
   // we set all the "remaining" particles mass to -1
   for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
@@ -1147,39 +1032,7 @@ int main(int argc, char *argv[])
     }
 
 
-#if 1
-  // ==================================== Check the number of particles and octs
 
-  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-
-#endif	
-
-  // ==================================== performing the CIC assignement
-#ifndef WGPU
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
-#else
-  call_cic(levelmax,levelcoarse,firstoct,&cpu);
-#endif
-
-#ifdef WMPI
-    // ==================================== performing the CIC BOUNDARY CORRECTION 
-
-  mpi_cic_correct(&cpu,sendbuffer,recvbuffer,0);
-
-  // ======================================= Density boundary mpi update 
-
-  mpi_exchange(&cpu,sendbuffer,recvbuffer,1,1);
-
-#endif
-
-  mtot=multicheck(firstoct,npart,levelcoarse,levelmax,cpu.rank,cpu.noct);
-
-  /* sprintf(filename,"data/partstart.%05d.p%05d",0,cpu.rank); */
-  /* dumppart(firstoct,filename,npart,levelcoarse,levelmax,tsim); */
-  
-  /* sprintf(filename,"data/denstart.%05d.p%05d",0,cpu.rank); */
-  /* dumpcube(lmap,firstoct,1,filename,tsim); */
-  /* abort(); */
 #endif
 
   //===================================================================================================================================
@@ -1198,7 +1051,7 @@ int main(int argc, char *argv[])
   
 #ifdef GRAFIC
   int ncellhydro;
-  ncellhydro=read_grafic_hydro(&cpu,&ainit, &omegam, &omegav, &Hubble,&omegab);
+  ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
 
   printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
   amax=1.0;
@@ -1438,9 +1291,9 @@ int main(int argc, char *argv[])
 
 	      REAL ZI=100;
 	      REAL ZC=9;
-	      omegam=1.0;
-	      omegav=0.;
-	      omegab=omegam;
+	      cosmo.om=1.0;
+	      cosmo.ov=0.;
+	      cosmo.ob=OMEGAB;
 
 	      ainit=1./(1.+ZI);
 	      amax=1.;//(1.+ZC);
@@ -1483,43 +1336,39 @@ int main(int argc, char *argv[])
   /* dumpcube(lmap,firstoct,105,filename,0.);  */
 
 
+
+
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+  //===================================================================================================================================
+
+#endif
+
 #ifdef TESTCOSMO
+  // ================== COMPUTATION OF FRIEDMANN TABLES
+
   tsim=ainit;
   aexp=ainit;
 
   // at this stage we have to compute the conformal time
-  tsim=-0.5*sqrt(omegam)*integ_da_dt_tilde(ainit,1.0,omegam,omegav,1e-8);
+  tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(ainit,1.0,cosmo.om,cosmo.ov,1e-8);
 
   // we compute the friedmann tables
 
-  compute_friedmann(ainit*0.95,NCOSMOTAB,omegam,omegav,tab_aexp,tab_ttilde,tab_t);
+  compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
 
-  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(amax,1.0+1e-6,omegam,omegav,1e-8);
+  tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
   
-  struct COSMOPARAM cosmo;
-  param.cosmo=&cosmo;
-
-  cosmo.aexp=aexp;
-  cosmo.om=omegam;
-  cosmo.ov=omegav;
   cosmo.tab_aexp=tab_aexp;
   cosmo.tab_ttilde=tab_ttilde;
 #endif
-
-
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-
-#endif
-
 
 
   
@@ -1545,14 +1394,11 @@ int main(int argc, char *argv[])
 
 
 #ifndef TESTCOSMO
-#ifdef ZELDO
-  tmax=-0.5*sqrt(omegam)*integ_da_dt_tilde(0.5,1.0,omegam,omegav,1e-8);
-#else
-  tmax=1000.;
-#endif
 
 #ifdef WHYDRO2
   tmax=5.;
+#else
+  tmax=1000.;
 #endif
 #endif
 
@@ -1697,7 +1543,6 @@ int main(int argc, char *argv[])
       // ==================================== dump
   
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
-	if(cpu.rank==0) printf("Dumping .......\n");
 
 #ifndef TESTCOSMO
 	REAL tdump=tsim;
@@ -1706,10 +1551,21 @@ int main(int argc, char *argv[])
 #endif
 	// === Hydro dump
     
-#ifdef WHYDRO2
 	//printf("tdum=%f\n",tdump);
 	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+	if(cpu.rank==0){
+	  printf("Dumping .......");
+	  printf("%s\n",filename);
+	}
 	dumpgrid(levelmax,firstoct,filename,tdump); 
+
+#ifdef PIC
+	sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
+	if(cpu.rank==0){
+	  printf("Dumping .......");
+	  printf("%s\n",filename);
+	}
+	dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
 #endif
 
 	ndumps++;

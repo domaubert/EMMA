@@ -727,25 +727,30 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  //=========================================================
 			case 2: // marking cells satisfying user defined criterion marker=3/6
 			  if((curoct->level<=param->lmax)&&(ismooth==0)){ // we don't need to test the finest level
+
+			    REAL den;
+#ifdef TESTCOSMO
+			    den=curoct->cell[icell].gdata.d+1.;
+#else
+			    den=curoct->cell[icell].gdata.d;
+#endif
+
 #ifdef PIC
-			    mcell=curoct->cell[icell].density*dx*dx*dx*(curoct->level>=param->lcoarse);
-			    //mcell=countpart(curoct->cell[icell].phead);
+			    mcell=den*(curoct->level>=param->lcoarse);
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#else
+
+#ifdef WGRAV
+			    mcell=den*(curoct->level>=param->lcoarse);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
 #endif
 
-#ifdef WGRAV
-			    mcell=curoct->cell[icell].field.d*dx*dx*dx*(curoct->level>=param->lcoarse);
-			    /* if(mcell>0){ */
-			    /* 	printf("%e\n",mcell); */
-			    /* } */
-			    //mcell=countpart(curoct->cell[icell].phead);
-			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
 #endif
 
 /* #ifdef WHYDRO2 */

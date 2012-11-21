@@ -298,7 +298,6 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
   int inei;
   getcellnei(icell, vnei, vcell);
   for(inei=0;inei<6;inei++){
-    //if(vnei[inei]==6) continue;
     if(curoct->nei[inei]->child==NULL) hres=0; // particle is not deep enough for this level
   }
 
@@ -552,7 +551,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
    curp->fy=-accel[1];
    curp->fz=-accel[2];
    
-   if(curp->idx==0) {
+   if(curp->idx==1) {
      REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
      REAL f=sqrt((curp->fx)*(curp->fx)+(curp->fy)*(curp->fy)+(curp->fz)*(curp->fz));
      REAL fth=1./(r*r);
@@ -1396,8 +1395,184 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
   //  printf("great total=%f\n",toto);
 }
 
+// ====================================================================================
+// ====================================================================================
+
+// COULD BE REWRITTEN IN A RECURSIVE FASHION (SEE gatherstencil)
+
+void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  int icell;
+  struct PART *curp;
+  struct PART *nexp;
+  int inei,inei2;
+  REAL dxcur;
+
+  struct OCT *newoct;
+  struct OCT *newoct2;
+  
+  struct CELL *newcell;
+  struct CELL *newcell2;
+
+  int vnei[6],vcell[6];
+  int vnei2[6],vcell2[6];
+  int il,ip;
+
+  double t[10];
+
+  dxcur=1./pow(2,level);
+  nextoct=firstoct[level-1];
+  do // sweeping level
+    {
+      curoct=nextoct;
+      nextoct=curoct->next;
+	  
+      // we skip octs which do not belong to the current CPU (they will be considered through mpi)
+      if(curoct->cpu!=cpu->rank) continue;
+	  
+      //==== FIRST WE CONSIDER THE PARTICLES INSIDE THE BOUNDARIES AT LEVEL L
+      for(icell=0;icell<8;icell++) // looping over cells in oct
+	{
+	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
+	  if(nexp!=NULL){ 
+	    do{  
+	      curp=nexp; 
+	      nexp=curp->next; 
+	      part2cell_cic(curp, curoct, icell,1); 
+	    }while(nexp!=NULL); 
+	  }
+	  else if(curoct->cell[icell].child!=NULL){
+	    // THEN WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
+	    cic_child(curoct->cell[icell].child,curoct,icell);
+	  }
+
+	  if(level>param->lcoarse){
+	    //==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
+
+	    int visit[27];
+	    int iv;
+	    for(inei=0;inei<27;inei++) visit[inei]=0;
+	    int tot=0;
+	    // first the cartesian neighbors (6)
+	    for(inei=0;inei<6;inei++){
+	      nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
+	      iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+	      visit[iv]=1;
+	      if(nexp!=NULL){
+		do{ 
+		  curp=nexp;
+		  nexp=curp->next;
+		  part2cell_cic(curp, curoct, icell,0);
+		}while(nexp!=NULL);
+	      }
+	      // second the fundamental plane (4)
+	      // each of the 6 cardinal neighbors will probe 4 neighbors
+		
+	      newcell=curoct->nei[inei];
+	      newoct=cell2oct(newcell); // we get the parent oct;
+	      getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
+	      for(il=0;il<6;il++){
+		iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1);
+		if((il>>1)==(inei>>1)) continue;
+		if(visit[iv]) continue;
+		if(vnei[il]==6){
+		  visit[iv]=1;
+		  nexp=newoct->cell[vcell[il]].phead;
+		  newcell2=&(newoct->cell[vcell[il]]);
+		  if(nexp!=NULL){
+		    do{ 
+		      curp=nexp;
+		      nexp=curp->next;
+		      part2cell_cic(curp, curoct, icell,0);
+		    }while(nexp!=NULL);
+		  }
+		}
+		else{
+		  if(newoct->nei[vnei[il]]->child!=NULL){
+		    nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
+		    newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
+		    visit[iv]=1;
+		    if(nexp!=NULL){
+		      do{ 
+			curp=nexp;
+			nexp=curp->next;
+			part2cell_cic(curp, curoct, icell,0);
+		      }while(nexp!=NULL);
+		    }
+		  }
+		  else{
+		    newcell2=NULL;
+		  }
+		}
+
+		// ecah of the 4 side neighbors will mark 2 corners
+		if(newcell2!=NULL){
+		  newoct2=cell2oct(newcell2);
+		  getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
+		  for(ip=0;ip<6;ip++){
+		    iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
+		    if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
+		    if(visit[iv]) continue;
+		    if(vnei2[ip]==6){
+		      visit[iv]=1;
+		      nexp=newoct2->cell[vcell2[ip]].phead;
+		      if(nexp!=NULL){
+			do{ 
+			  curp=nexp;
+			  nexp=curp->next;
+			  part2cell_cic(curp, curoct, icell,0);
+			}while(nexp!=NULL);
+		      }
+		    }
+		    else{
+		      if(newoct2->nei[vnei2[ip]]->child!=NULL){
+			visit[iv]=1;
+			nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
+			if(nexp!=NULL){
+			  do{ 
+			    curp=nexp;
+			    nexp=curp->next;
+			    part2cell_cic(curp, curoct, icell,0);
+			  }while(nexp!=NULL);
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+
+	     
+	}
+    }while(nextoct!=NULL);
+}
 
 
+
+
+// ===================================================
+
+void L_clean_dens(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu){
+
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  // --------------- setting the first oct of the level
+  nextoct=firstoct[level-1];
+  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    do {
+      curoct=nextoct;
+      nextoct=curoct->next; 
+
+      for(icell=0;icell<8;icell++) curoct->cell[icell].density=0.;
+      
+    }while(nextoct!=NULL);
+  }
+}
 
 
 #endif
