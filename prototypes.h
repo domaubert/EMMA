@@ -250,7 +250,8 @@ struct PART
   REAL mass;
 
   int idx;
-
+  REAL dt; // local dt per particle
+  int is; // local timestep number per particle
 };
 
 struct PART_MPI // For mpi communications

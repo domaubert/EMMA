@@ -16,6 +16,7 @@ DEFINES  +=  -DWGRAV
 #------------ ICs OPTIONS ---------------------
 
 #DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DPARTN
 DEFINES  +=  -DPART2
 
 

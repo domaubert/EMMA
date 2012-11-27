@@ -12,7 +12,7 @@
 #include "communication.h"
 #endif
 
-#define FRACDX 0.4
+#define FRACDX 0.1
 
 #ifdef PIC
 //------------------------------------------------------------------------
@@ -33,6 +33,8 @@ struct PART* findlastpart(struct PART* phead)
   return curp;
 }
 
+
+  
 //------------------------------------------------------------------------
 
 int countpart(struct PART* phead)
@@ -237,6 +239,7 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 		  else{
 		    dtlev=va/aa*(sqrt(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
 		  }
+		  dtlev=(FRACDX*dxcur)/va;
 		}		 
 		else if((aa==0.)||(va==0.)){
 		  dtlev=1e9;
@@ -326,7 +329,7 @@ REAL movepart(int levelcoarse,int levelmax,struct OCT** firstoct, REAL dt, struc
 
 // ================================================================================================
 
-REAL L_movepart(int level,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu){
+REAL L_movepart(int level,struct OCT** firstoct, int is, struct CPUINFO* cpu){
   
   REAL mdisp,lmdisp;
   struct OCT *nextoct;
@@ -336,8 +339,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu){
   struct PART *nexp;
   struct PART *curp;
   REAL disp;
-  REAL dtlev,dtnew;
-
+  REAL dt;
   // === Moving particles
 
   // setting the first oct
@@ -359,14 +361,16 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu){
 	    do{ 
 	      curp=nexp; 
 	      nexp=curp->next; 
-		 
-	      // particle displacement
-	      disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
-	      curp->x+=curp->vx*dt;
-	      curp->y+=curp->vy*dt;
-	      curp->z+=curp->vz*dt;
-	      if(disp>mdisp) mdisp=disp;
-		  
+	      
+		// particle displacement
+	      if(curp->is==is){
+		dt=curp->dt;
+		disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
+		curp->x+=curp->vx*dt;
+		curp->y+=curp->vy*dt;
+		curp->z+=curp->vz*dt;
+		if(disp>mdisp) mdisp=disp;
+	      }
 	    }while(nexp!=NULL);
 	  }
 	}
@@ -374,6 +378,115 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL dt, struct CPUINFO* cpu){
   if(cpu->rank==0) printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
 
   return dt;
+}
+
+//===============================================
+//===============================================
+
+void L_dtpart(int level,struct OCT** firstoct, REAL dt,int is){
+  
+  struct OCT *nextoct;
+  struct OCT oct;
+  int icell;
+  struct PART *nexp;
+  struct PART *curp;
+
+  
+  // setting the first oct
+  nextoct=firstoct[level-1];
+      
+  do // sweeping through the octs of level
+    {
+      oct=(*nextoct);
+      nextoct=oct.next;
+
+      for(icell=0;icell<8;icell++) // looping over cells in oct
+	{
+	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+
+	  if(nexp!=NULL){
+	    do{ 
+	      curp=nexp; 
+	      nexp=curp->next; 
+	      
+	      curp->dt=dt;
+	      curp->is=is;
+	    }while(nexp!=NULL);
+	  }
+	}
+    }while(nextoct!=NULL);
+}
+
+
+void L_fixdtpart(int level,struct OCT** firstoct, REAL dt,int is){
+  
+  struct OCT *nextoct;
+  struct OCT oct;
+  int icell;
+  struct PART *nexp;
+  struct PART *curp;
+
+  
+  // setting the first oct
+  nextoct=firstoct[level-1];
+      
+  do // sweeping through the octs of level
+    {
+      oct=(*nextoct);
+      nextoct=oct.next;
+
+      for(icell=0;icell<8;icell++) // looping over cells in oct
+	{
+	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+
+	  if(nexp!=NULL){
+	    do{ 
+	      curp=nexp; 
+	      nexp=curp->next; 
+	      
+	      if(curp->is==is){
+		if(curp->dt<dt){
+		  curp->dt=(dt-curp->dt);
+		}
+	      }
+	    }while(nexp!=NULL);
+	  }
+	}
+    }while(nextoct!=NULL);
+}
+
+
+void L_reset_is_part(int level,struct OCT** firstoct){
+  
+  struct OCT *nextoct;
+  struct OCT oct;
+  int icell;
+  struct PART *nexp;
+  struct PART *curp;
+
+  
+  // setting the first oct
+  nextoct=firstoct[level-1];
+      
+  do // sweeping through the octs of level
+    {
+      oct=(*nextoct);
+      nextoct=oct.next;
+
+      for(icell=0;icell<8;icell++) // looping over cells in oct
+	{
+	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+
+	  if(nexp!=NULL){
+	    do{ 
+	      curp=nexp; 
+	      nexp=curp->next; 
+	      
+	      curp->is=0;
+	    }while(nexp!=NULL);
+	  }
+	}
+    }while(nextoct!=NULL);
 }
 
 //------------------------------------------------------------------------
@@ -806,7 +919,8 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 }    
 
-
+// =======================================================
+// =======================================================
 
 void L_partcellreorg(int level,struct OCT **firstoct){
 
@@ -1209,7 +1323,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		    abort();
 		  }
 
-
+		  
 		  if(newcell->phead!=NULL){
 		    part=findlastpart(newcell->phead);
 		    part->next=curp;
@@ -1221,6 +1335,8 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		  }
 		      
 		  curp->next=NULL;
+		  
+		  
 		}
 
 	      }while(nexp!=NULL);
@@ -1785,7 +1901,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 //------------------------------------------------------------------------
 #ifdef PIC
 
-void L_accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu){
+void L_accelpart(int level,struct OCT **firstoct, int is, struct CPUINFO *cpu){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -1810,7 +1926,7 @@ void L_accelpart(int level,struct OCT **firstoct, REAL dt, struct CPUINFO *cpu){
 	      do{  
 		curp=nexp; 
 		nexp=curp->next; 
-		cell2part_cic(curp, curoct, icell,dt); 
+		if((curp->is==is)||(is==-1)) cell2part_cic(curp, curoct, icell,curp->dt*0.5); // here 0.5 because of half timestep for midpoint rule
 	      }while(nexp!=NULL); 
 	    }
 	  }

@@ -301,6 +301,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  printf("sum2=%d sump=%d\n",sum2,sump);
 		  abort();
 		}
+
+
 #endif
 	      }
 #endif	      
@@ -444,6 +446,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  do{ //sweeping the particles of the current cell
 		    curp=nexp;
 		    nexp=curp->next;
+
 		    
 		    xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);xp=(xp==2?1:xp);
 		    yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);yp=(yp==2?1:yp);
@@ -451,8 +454,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    ip=xp+yp*2+zp*4;
 
 		    //ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
+
 		    
-		    
+		      // actual spliting
 		    if(newoct->cell[ip].phead==NULL)
 		      {
 			// we create a new particle list in the cell
@@ -735,13 +739,28 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=curoct->cell[icell].gdata.d;
 #endif
 
+/* #ifdef PART2 */
+/* 			    if((curoct->x<0.5)&&(curoct->x>0.25)){ */
+/* 			      if((curoct->y<0.5)&&(curoct->y>0.25)){ */
+/* 				if((curoct->z<0.5)&&(curoct->z>0.25)){ */
+/* 				  if(curoct->cell[icell].marked==0) { */
+/* 				    curoct->cell[icell].marked=marker; */
+/* 				    nmark++;stati[2]++; */
+/* 				  } */
+/* 				} */
+/* 			      } */
+/* 			    } */
+/* #endif */
+			    
 #ifdef PIC
 			    mcell=den*(curoct->level>=param->lcoarse);
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
+ 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
 #else
+
+ 
 
 #ifdef WGRAV
 			    mcell=den*(curoct->level>=param->lcoarse);

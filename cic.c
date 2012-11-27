@@ -559,7 +559,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
      //for(ic=0;ic<8;ic++) printf("%d %e %e\n",visit[ic],vcont[ic],vf[ic]);
    }
 #endif
-
+   //if((curp->idx==1)&&(curp->fx>72)) abort();
 
 }
 #endif
@@ -884,12 +884,22 @@ void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char di
   switch(dir){
   case(0):
     curp->vx+=-accel*dt;
+#ifdef PARTN
+    curp->fx=accel;
+#endif
     break;
   case(1):
     curp->vy+=-accel*dt;
+#ifdef PARTN
+    curp->fy=accel;
+#endif
     break;
   case(2):
     curp->vz+=-accel*dt;
+#ifdef PARTN
+    curp->fz=accel;
+#endif
+
     break;
   }
 

@@ -779,12 +779,12 @@ int main(int argc, char *argv[])
     }
     else if(ir==1){
 
-      x=0.5+0.3;
+      x=0.5+0.12;
       y=0.5;
       z=0.5;
 
       vx=0.;
-      vy=sqrt((1.-epsilon)/0.3)*1.0;
+      vy=sqrt((1.-epsilon)/0.12)*0.8;
       vz=0.;
       
       mass=epsilon;
@@ -1031,7 +1031,7 @@ int main(int argc, char *argv[])
 	}while(nextoct!=NULL);
     }
 
-
+ 
 
 #endif
 
@@ -1532,7 +1532,7 @@ int main(int argc, char *argv[])
       // Resetting the timesteps
 
       for(level=1;level<=levelmax;level++){
-	adt[level-1]=param.dt;
+	//adt[level-1]=param.dt;
 	ndt[level-1]=0;
       }
 
@@ -1545,7 +1545,7 @@ int main(int argc, char *argv[])
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
 
 #ifndef TESTCOSMO
-	REAL tdump=tsim;
+	REAL tdump=tsim+adt[levelcoarse-1];
 #else
 	REAL tdump=cosmo.aexp;
 #endif

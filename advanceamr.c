@@ -136,10 +136,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   REAL dtnew;
   REAL dt=0.;
   REAL dtold;
+  REAL dtvel;
   REAL dtfine;
   int npart=0;
   int mtot;
-  int is=0;
+  int is;
   REAL tloc;
   REAL aexp;
 
@@ -155,14 +156,26 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,aexp);
   }
 
+  // ================= I we refine the current level
+  if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+    // refining (and destroying) octs
+    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax);
+    cpu->freeoct=curoct;
+  }
+
   // ==================================== Check the number of particles and octs
   mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
   if(level==param->lcoarse){
-        
     // =========== Grid Census ========================================
     grid_census(param,cpu);
   }
+  
+#ifdef PIC
+  //reset substep index of the particles
+  is=0;
+  L_reset_is_part(level,firstoct);
+#endif
 
 
   do{
@@ -175,16 +188,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-    // ================= I we refine the current level
-    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-      // refining (and destroying) octs
-      curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax);
-      cpu->freeoct=curoct;
-    }
     
-
-
-
     // =============================== cleaning 
 #ifdef WHYDRO2
     clean_new_hydro(level,param,firstoct,cpu);
@@ -222,7 +226,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
-
+#ifdef PIC
+    // Mid point rule correction step
+    if((is>0)||(cpu->nsteps>0)){
+      L_accelpart(level,firstoct,-1,cpu); // computing the particle acceleration and velocity
+      // here -1 forces the correction : all particles must be corrected
+    }
+ #endif
 
 
     // ================= II We compute the timestep of the current level
@@ -257,17 +267,28 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
-
-
-
     printf("\n");
+
+
+    /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
+    printf("inital dtnew=%e\n",dtnew);
 
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
-    adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
 
+    // the coarser level may be shorter than the finer one
+    if(adt[level-2]<adt[level-1]){
+      adt[level-1]=adt[level-2];
+    }
+    else{ // otherwise standard case
+      adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
+    }
 
+#ifdef PIC
+    //assigning the timestep of the level to the particles of level & the subtimestep index
+    L_dtpart(level,firstoct,adt[level-1],is);
+#endif
 
 
    // ================= III Recursive call to finer level
@@ -280,26 +301,21 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 
+    // ==================================== Check the number of particles and octs
+    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
 #ifdef PIC
     //================ Part. Update ===========================
 
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",cpu->npart[level-1],adt[level-1],level);
-    
-
-    // =============================== Leapfrog Euler Step # 0
-    if((is==0)&&(cpu->nsteps==0)){
-      L_accelpart(level,firstoct,adt[level-1]*0.5,cpu); // computing the particle acceleration and velocity
-    }
-    else{
-      L_accelpart(level,firstoct,(adt[level-1]+dtold)*0.5,cpu); // computing the particle acceleration and velocity
-    }
-
-    L_movepart(level,firstoct,adt[level-1],cpu); // moving the particles
-
+    // predictor step
+    L_accelpart(level,firstoct,is,cpu); // computing the particle acceleration and velocity
+#ifndef PARTN
+    // midpoint rule
+    L_fixdtpart(level,firstoct,adt[level-1],is);// correct dt for particles that leave a fine level
+    L_movepart(level,firstoct,is,cpu); // moving the particles
+#endif
     L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
-
-
 #endif
 
 
@@ -320,7 +336,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       // cleaning the marks
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
-      L_mark_cells(level,param,firstoct,param->nrelax,param->amrthresh,cpu,sendbuffer,recvbuffer);
+      L_mark_cells(level,param,firstoct,2,param->amrthresh,cpu,sendbuffer,recvbuffer);
     }
 
 
