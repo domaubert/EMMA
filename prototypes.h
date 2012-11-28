@@ -250,7 +250,7 @@ struct PART
   REAL mass;
 
   int idx;
-  REAL dt; // local dt per particle
+  int level;
   int is; // local timestep number per particle
 };
 

@@ -229,10 +229,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     // Mid point rule correction step
     if((is>0)||(cpu->nsteps>0)){
-      L_accelpart(level,firstoct,-1,cpu); // computing the particle acceleration and velocity
+      L_accelpart(level,firstoct,adt,-1,cpu); // computing the particle acceleration and velocity
       // here -1 forces the correction : all particles must be corrected
     }
- #endif
+    L_levpart(level,firstoct,is); // assigning all the particles to the current level
+#endif
 
 
     // ================= II We compute the timestep of the current level
@@ -285,12 +286,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
     }
 
-#ifdef PIC
-    //assigning the timestep of the level to the particles of level & the subtimestep index
-    L_dtpart(level,firstoct,adt[level-1],is);
-#endif
-
-
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
@@ -309,12 +304,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",cpu->npart[level-1],adt[level-1],level);
     // predictor step
-    L_accelpart(level,firstoct,is,cpu); // computing the particle acceleration and velocity
+    L_accelpart(level,firstoct,adt,is,cpu); // computing the particle acceleration and velocity
+
 #ifndef PARTN
-    // midpoint rule
-    L_fixdtpart(level,firstoct,adt[level-1],is);// correct dt for particles that leave a fine level
-    L_movepart(level,firstoct,is,cpu); // moving the particles
+    L_movepart(level,firstoct,adt,is,cpu); // moving the particles
 #endif
+
     L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
 #endif
 

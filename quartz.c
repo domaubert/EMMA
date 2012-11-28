@@ -760,10 +760,12 @@ int main(int argc, char *argv[])
 
 #ifdef PART2
 
-  int ir,nr=2;
+  int ir,nr=5;
   ip=0;
   REAL dxcell=1./pow(2.,levelcoarse);
   REAL epsilon=0.;
+  REAL r0=0.12;
+  REAL vf=0.8;
   for(ir=0;ir<nr;ir++) {
     // first we read the position etc... (eventually from the file)
     if(ir==0){
@@ -779,12 +781,48 @@ int main(int argc, char *argv[])
     }
     else if(ir==1){
 
-      x=0.5+0.12;
+      x=0.5+r0;
       y=0.5;
       z=0.5;
 
       vx=0.;
-      vy=sqrt((1.-epsilon)/0.12)*0.8;
+      vy=sqrt((1.-epsilon)/r0)*1.0; // this one is circular
+      vz=0.;
+      
+      mass=epsilon;
+    }
+    else if(ir==2){
+
+      x=0.5;
+      y=0.5+r0*0.3;
+      z=0.5;
+
+      vy=0.;
+      vx=-sqrt((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
+      vz=0.;
+      
+      mass=epsilon;
+    }
+    else if(ir==3){
+
+      x=0.5-r0;
+      y=0.5;
+      z=0.5;
+
+      vx=0.;
+      vy=-sqrt((1.-epsilon)/r0)*vf;
+      vz=0.;
+      
+      mass=epsilon;
+    }
+    else if(ir==4){
+
+      x=0.5;
+      y=0.5-r0;
+      z=0.5;
+
+      vy=0.;
+      vx=sqrt((1.-epsilon)/r0)*vf;
       vz=0.;
       
       mass=epsilon;
@@ -1509,6 +1547,7 @@ int main(int argc, char *argv[])
 
     REAL *adt;
     adt=(REAL *)malloc(sizeof(REAL)*levelmax);
+    for(level=1;level<=levelmax;level++) adt[level-1]=param.dt;
 
     int *ndt;
     ndt=(int *)malloc(sizeof(int)*levelmax);

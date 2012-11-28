@@ -456,7 +456,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    //ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 
 		    
-		      // actual spliting
+		    // actual spliting
 		    if(newoct->cell[ip].phead==NULL)
 		      {
 			// we create a new particle list in the cell

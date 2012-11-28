@@ -1,13 +1,13 @@
 ##==MemoryManagement=========
 max_number_of_octs 50000
-max_number_of_part 2
+max_number_of_part 5
 mpi_buffer_size 131072
 ##==TimestepManagement=======
 output_frequency 1
-max_number_of_steps 1200
-time_step_max  1e0
+max_number_of_steps 1000
+time_step_max  1e-3
 ##==AMRGrid==================
-level_coarse 5
+level_coarse 6
 level_max 6
 amr_thresh 0.1
 ##==PoissonSolver============
