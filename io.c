@@ -122,9 +122,15 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
 		  val=curp->y;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->z;fwrite(&val,1,sizeof(float),fp);
 #ifndef PARTN
+#ifdef PART_EGY
+		  val=curp->ekin+curp->epot;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
+#else
 		  val=curp->vx;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vy;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->vz;fwrite(&val,1,sizeof(float),fp);
+#endif
 #else
 		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
 		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);

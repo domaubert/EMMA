@@ -12,6 +12,7 @@ DEFINES  +=  -DPIC
 #DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV
 #DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DFASTGRAV
 
 #------------ ICs OPTIONS ---------------------
 
@@ -19,11 +20,14 @@ DEFINES  +=  -DWGRAV
 #DEFINES  +=  -DPARTN
 DEFINES  +=  -DPART2
 
-
 #------------ MULTIGRID SOLVER OPTIONS ---------
 
 DEFINES  +=  -DONFLYRED
 
+#------------ PIC OPTIONS ----------------------
+
+#DEFINES += -DPART_EGY
+#DEFINES += -DPERFECT
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
 #DEFINES  +=  -DRIEMANN_HLLC

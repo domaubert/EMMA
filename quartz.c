@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
 #ifdef PIC
   npartmax=param.npartmax;
 #ifdef PART2
-  npart=2;
+  npart=5;
 #else
   npart=128*128*128;
 #endif
@@ -482,12 +482,27 @@ int main(int argc, char *argv[])
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
 
+#ifndef FASTGRAV
   struct GGRID *grav_stencil;
   grav_stencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
   gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
+#else
+  gstencil.d=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.p=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
+
+  gstencil.nei=(int *)calloc(stride*7,sizeof(int));
+  gstencil.level=(int *)calloc(stride,sizeof(int));
+  gstencil.cpu=(int *)calloc(stride,sizeof(int));
+  gstencil.valid=(char *)calloc(stride,sizeof(char));
+  
+  gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
+#endif
+
 #endif
 
   
@@ -880,7 +895,8 @@ int main(int argc, char *argv[])
 
       th=acos(((REAL)(rand())/RAND_MAX*2-1.));
       ph=2*M_PI*(REAL)(rand())/RAND_MAX;
-      r=(REAL)(rand())/RAND_MAX*0.3;
+      //r=(REAL)(rand())/RAND_MAX*0.3;
+      r=0.12;
 
       x=r*sin(th)*cos(ph)+0.5;
       y=r*sin(th)*sin(ph)+0.5;

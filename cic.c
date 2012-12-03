@@ -34,9 +34,6 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   int i1,i2,i3;
   int idx1,idx2; // scan the cic cell being analysed
 
-  /* struct OCT **cicoct; */
-  /* char ciccell[8]; */
-  /* cicoct=(struct OCT **)calloc(8,sizeof(struct OCT *)); */
 
   xc=curoct->x+( icell   & 1)*dxcur+dxcur*0.5; // coordinates of the cell center 
   yc=curoct->y+((icell>>1)& 1)*dxcur+dxcur*0.5;
@@ -47,19 +44,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   neip[1]=(curp->y<yc?2:3);
   neip[2]=(curp->z<zc?4:5);
 
-  /* // getting the neighbors */
-  /* getcellnei(icell, vnei, vcell); */
-		  
-		  
-  /* // here we denote the offset in ZYX */
-  /* ciccell[0]=icell;          //cell 000 */
-  /* ciccell[1]=vcell[neip[0]]; //cell 001 */
-  /* ciccell[2]=vcell[neip[1]]; //cell 010 */
-  /* ciccell[4]=vcell[neip[2]]; //cell 100 */
-  /* cicoct[0]=curoct; */
-
   // the CIC weights
-
   
   tx=(curp->x-xc)/dxcur;tx=(tx>0.?tx:-tx);
   ty=(curp->y-yc)/dxcur;ty=(ty>0.?ty:-ty);
@@ -75,6 +60,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
     } // necessary for boundary cells
 
   //                   ZYX
+
   REAL dunit=curp->mass/(dxcur*dxcur*dxcur);
   vcont[0]=dz*dy*dx*dunit; //000
   vcont[1]=dz*dy*tx*dunit; //001
@@ -93,44 +79,23 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
   REAL tot=0;
   REAL tot2=0;
   int ntot=0;
-  //contrib=vcont[0];
-  //  if((contrib<=1.)&&(contrib>=0.)){
-    if(full||fullok){
-#ifndef NGP
-      curoct->cell[icell].density+=vcont[0];
-#else
-      curoct->cell[icell].density+=1./pow(dxcur,3)*curp->mass;
-#endif
-      /* tot+=vcont[0]; */
-      /* tot2+=curoct->cell[icell].density; */
-      /* ntot++; */
-    }
-    //}
+  if(full||fullok){
+    curoct->cell[icell].density+=vcont[0];
+  }
 
-#ifndef NGP
   if(full){
     // contribs to cardinal neighbors
     getcellnei(icell, vnei, vcell);
     for(i1=0;i1<3;i1++){
-      //idx1=pow(2,i1);
       idx1=1<<i1;
-      //contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
 	curoct->cell[vcell[neip[i1]]].density+=vcont[idx1];
 	newcell=&(curoct->cell[vcell[neip[i1]]]);
-	/* tot+=vcont[idx1];  */
-	/* tot2+=curoct->cell[vcell[neip[i1]]].density; */
-	/* ntot++; */
       }
       else{
 	if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
 	  curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density+=vcont[idx1];
 	  newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
-	  /* tot+=vcont[idx1];  */
-	  /* tot2+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density; */
-	  /* tot+=contrib; */
-	  /* ntot++; */
-
 	}
 	else{
 	  newcell=NULL;
@@ -140,32 +105,22 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       // contrib to 2nd order neighbours
       if(newcell!=NULL){
 	for(i2=0;i2<3;i2++){
-	  //idx2=pow(2,i1)+pow(2,i2);
-	  idx2=(1<<i1)+(1<<i2);
 	  if(i2==i1) continue;
+	  idx2=(1<<i1)+(1<<i2);
 	  if(visit[idx2]) continue;
 
-	  //contrib=vcont[idx2];
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
 	    newoct->cell[vcell2[neip[i2]]].density+=vcont[idx2];
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
-	    /* tot+=vcont[idx2];  */
-	    /* tot2+=newoct->cell[vcell2[neip[i2]]].density; */
-/* tot+=contrib; */
-	    /* ntot++; */
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
 	      newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density+=vcont[idx2];
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
-	      /* tot+=vcont[idx2];  */
-	      /* tot2+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density; */
-	      /* tot+=contrib; */
-	      /* ntot++; */
 	    }
 	    else{
 	      newcell2=NULL;
@@ -178,26 +133,16 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	  for(i3=0;i3<3;i3++){
 	    if((i3==i1)||(i3==i2)) continue;
 	    if(visit[7]) continue;
-	    //contrib=vcont[7];
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
 	      newoct2->cell[vcell3[neip[i3]]].density+=vcont[7];
 	      visit[7]=1;
-	      /* tot+=vcont[7];  */
-	      /* tot2+=newoct2->cell[vcell3[neip[i3]]].density; */
-	      /* tot+=contrib; */
-	      /* ntot++; */
-
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
 		newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density+=vcont[7];
 		visit[7]=1;
-		/* tot+=vcont[7];  */
-		/* tot2+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density; */
-		/* tot+=contrib; */
-		/* ntot++; */
 	      }
 	    }
 	  }
@@ -205,14 +150,6 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       }
     }
   }
-
-  /* if(ntot>8) abort(); */
-  /* if((dx+tx)!=1.) abort(); */
-  /* if((dy+ty)!=1.) abort(); */
-  /* if((dz+tz)!=1.) abort(); */
-
-  //printf("lev= %d tot=%e tot2=%e\n",curoct->level,tot,tot2);
-#endif
 
 }
 
@@ -305,15 +242,12 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
   if(hres!=0){ // can be skipped if particle is at border
 
     // contrib from current cell 000 =====
-    /* REAL tot=0; */
-    /* int ntot=0; */
 
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
       for(ic=0;ic<3;ic++) accel[ic]+=curoct->cell[icell].f[ic]*contrib;
     }
     visit[0]=1;
-    //vf[0]=curoct->cell[icell].gdata.p;
 
     // contribs to cardinal neighbors
     for(i1=0;i1<3;i1++){
@@ -536,7 +470,9 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 #ifdef PERFECT
    if(curp->mass<0.5) {
     REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
-    accel[ic]=(curp->x-0.5)/(r*r*r);
+    accel[0]=(curp->x-0.5)/(r*r*r);
+    accel[1]=(curp->y-0.5)/(r*r*r);
+    accel[2]=(curp->z-0.5)/(r*r*r);
    }
 #endif
    
@@ -565,346 +501,6 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 #endif
 
 
-#ifdef WGPU
-void cell2part_cic_GPU(struct PART *curp, struct OCT *curoct, int icell, char dir, REAL dt)
-{
-  REAL xc,yc,zc;
-  REAL xm,ym,zm;
-  REAL dxcur=1./pow(2,curoct->level);
-  int vnei [6],vcell [6];
-  int vnei2[6],vcell2[6];
-  int vnei3[6],vcell3[6];
-  int neip[3];
-  REAL tx,ty,tz;
-  REAL dx,dy,dz;
-  REAL contrib;
-  struct OCT *curoctlr;
-  REAL accel=0.;
-  char hres=1; // could be switched to hres=0 if particle is not deep enough
-
-  int visit[8]={0,0,0,0,0,0,0,0};
-  REAL vcont[8];
-
-  int i1,i2,i3;
-  int idx1,idx2; // scan the cic cell being analysed
-
-  struct OCT *newoct;
-  struct OCT *newoct2;
-  
-  struct CELL *newcell;
-  struct CELL *newcell2;
-  
-
-
-  xc=curoct->x+( icell   %2)*dxcur+0.5*dxcur; // coordinates of the cell center
-  yc=curoct->y+((icell/2)%2)*dxcur+0.5*dxcur;
-  zc=curoct->z+( icell/4   )*dxcur+0.5*dxcur; 
-
-		  
-  // here we compute the indexes of the direct neighbors which are involved in the cic
-  neip[0]=(curp->x<xc?0:1);
-  neip[1]=(curp->y<yc?2:3);
-  neip[2]=(curp->z<zc?4:5);
-
-  /* if((curp->x<xc)||(curp->y<yc)){ */
-  /*   printf("x %e %e %e\n",curp->x,xc,curp->x-xc); */
-  /*   printf("x %e %e %e\n",curp->y,yc,curp->y-yc); */
-  /*   abort(); */
-  /* } */
-		   
-
-  // the CIC weights
-  tx=fabs((curp->x-xc)/dxcur);
-  ty=fabs((curp->y-yc)/dxcur);
-  tz=fabs((curp->z-zc)/dxcur);
-
-  //if(curp->mass<0.5) printf("%e %e %e x=%e xc=%e xo=%e\n",tx,ty,tz,curp->x,xc,curoct->x);
-	  
-  dx=1.-tx;
-  dy=1.-ty;
-  dz=1.-tz;
-
-
-  vcont[0]=dz*dy*dx; //000
-  vcont[1]=dz*dy*tx; //001
-  vcont[2]=dz*ty*dx; //010
-  vcont[4]=tz*dy*dx; //100
-
-  vcont[3]=dz*ty*tx; //011
-  vcont[6]=tz*ty*dx; //110
-  vcont[5]=tz*dy*tx; //101
-
-  vcont[7]=tz*ty*tx; //111
-
-
-
-  // contrib from current cell 000 =====
-  REAL tot=0;
-  int ntot=0;
-
-  contrib=vcont[0];
-  if((contrib<=1.)&&(contrib>=0.)){
-    accel+=curoct->cell[icell].temp*contrib;
-    tot+=contrib;
-    ntot++;
-    visit[0]=1;
-  }
-  
-
-  // contribs to cardinal neighbors
-  getcellnei(icell, vnei, vcell);
-  for(i1=0;i1<3;i1++){
-    idx1=pow(2,i1);
-    contrib=vcont[idx1];
-    visit[idx1]=1;
-    if(vnei[neip[i1]]==6){
-      accel+=curoct->cell[vcell[neip[i1]]].temp*contrib;
-      newcell=&(curoct->cell[vcell[neip[i1]]]);
-      tot+=contrib;
-      ntot++;
-    }
-    else{
-      if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
-	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
-	newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
-	tot+=contrib;
-	ntot++;
-      }
-      else{
-	// the particle is not deep enough we stop
-	accel=0;
-	hres=0;
-	newcell=NULL;
-	break;
-      }
-    }
-    
-    // contrib to 2nd order neighbours
-    if(newcell!=NULL){
-      for(i2=0;i2<3;i2++){
-	idx2=pow(2,i1)+pow(2,i2);
-	if(i2==i1) continue;
-	if(visit[idx2]) continue;
-
-	contrib=vcont[idx2];
-	getcellnei(newcell->idx, vnei2, vcell2);
-	newoct=cell2oct(newcell);
-	if(vnei2[neip[i2]]==6){
-	  accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
-	  newcell2=&(newoct->cell[vcell2[neip[i2]]]);
-	  visit[idx2]=1;
-	  tot+=contrib;
-	  ntot++;
-	}
-	else{
-	  if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
-	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
-	    newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
-	    visit[idx2]=1;
-	    tot+=contrib;
-	    ntot++;
-	  }
-	  else{
-	    accel=0;
-	    hres=0;
-	    newcell2=NULL;
-	    break;
-	  }
-	}
-      }
-
-      // contrib to 3rd order neighbors
-      if(newcell2!=NULL){
-	for(i3=0;i3<3;i3++){
-	  if((i3==i1)||(i3==i2)) continue;
-	  if(visit[7]) continue;
-	  contrib=vcont[7];
-	  getcellnei(newcell2->idx, vnei3, vcell3);
-	  newoct2=cell2oct(newcell2);
-	  if(vnei3[neip[i3]]==6){
-	    accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
-	    visit[7]=1;
-	    tot+=contrib;
-	    ntot++;
-
-	  }
-	  else{
-	    if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
-	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
-	      visit[7]=1;
-	      tot+=contrib;
-	      ntot++;
-	    }
-	    else{
-	      accel=0;
-	      hres=0;
-	      break;
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  if(ntot!=8){
-    int ii;
-    printf("tot=%e ntot=%d m=%e v0=%e\n",tot,ntot,curp->mass,vcont[0]);
-    for(ii=0;ii<8;ii++) printf("%d ",visit[ii]);
-    printf("\n");
-    abort();
-  }
-
-  // we must recompute the force from level-1 if the particle is not deep enough LOWRES
-  if(hres!=1){
-    
-    // Getting the new curoct at low resolution
-    curoctlr=cell2oct(curoct->parent);
-    icell=curoct->parent->idx;
-    dxcur=1./pow(2,curoctlr->level);
-
-    // start again
-    
-    xc=curoctlr->x+( icell   %2)*dxcur; // coordinates of the cell center 
-    yc=curoctlr->y+((icell/2)%2)*dxcur;
-    zc=curoctlr->z+( icell/4   )*dxcur; 
-    
-    // the CIC weights
-    tx=fabs((curp->x-xc)/dxcur);
-    ty=fabs((curp->y-yc)/dxcur);
-    tz=fabs((curp->z-zc)/dxcur);
-	  
-    dx=1.-tx;
-    dy=1.-ty;
-    dz=1.-tz;
-
-    for(i1=0;i1<8;i1++) visit[i1]=0;
-
-    vcont[0]=dz*dy*dx; //000
-    vcont[1]=dz*dy*tx; //001
-    vcont[2]=dz*ty*dx; //010
-    vcont[4]=tz*dy*dx; //100
-
-    vcont[3]=dz*ty*tx; //011
-    vcont[6]=tz*ty*dx; //110
-    vcont[5]=tz*dy*tx; //101
-
-    vcont[7]=tz*ty*tx; //111
-
-
-    // contrib from current cell 000 =====
-    REAL tot=0;
-    int ntot=0;
-    contrib=vcont[0];
-    if((contrib<=1.)&&(contrib>=0.)){
-      accel+=curoctlr->cell[icell].temp*contrib;
-    }
-  
-  
-    // contribs to cardinal neighbors
-    getcellnei(icell, vnei, vcell);
-    for(i1=0;i1<3;i1++){
-      idx1=pow(2,i1);
-      contrib=vcont[idx1];
-      if(vnei[neip[i1]]==6){
-	accel+=curoctlr->cell[vcell[neip[i1]]].temp*contrib;
-	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
-	tot+=contrib;
-	ntot++;
-      }
-      else{
-	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
-	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].temp*contrib;
-	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
-	  tot+=contrib;
-	  ntot++;
-
-	}
-      }
-    
-      // contrib to 2nd order neighbours
-      if(newcell!=NULL){
-	for(i2=0;i2<3;i2++){
-	  idx2=pow(2,i1)+pow(2,i2);
-	  if(i2==i1) continue;
-	  if(visit[idx2]) continue;
-
-	  contrib=vcont[idx2];
-	  getcellnei(newcell->idx, vnei2, vcell2);
-	  newoct=cell2oct(newcell);
-	  if(vnei2[neip[i2]]==6){
-	    accel+=newoct->cell[vcell2[neip[i2]]].temp*contrib;
-	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
-	    visit[idx2]=1;
-	    tot+=contrib;
-	    ntot++;
-	  }
-	  else{
-	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
-	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].temp*contrib;
-	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
-	      visit[idx2]=1;
-	      tot+=contrib;
-	      ntot++;
-	    }
-	  }
-	}
-
-	// contrib to 3rd order neighbors
-	if(newcell2!=NULL){
-	  for(i3=0;i3<3;i3++){
-	    if((i3==i1)||(i3==i2)) continue;
-	    if(visit[7]) continue;
-	    contrib=vcont[7];
-	    getcellnei(newcell2->idx, vnei3, vcell3);
-	    newoct2=cell2oct(newcell2);
-	    if(vnei3[neip[i3]]==6){
-	      accel+=newoct2->cell[vcell3[neip[i3]]].temp*contrib;
-	      visit[7]=1;
-	      tot+=contrib;
-	      ntot++;
-
-	    }
-	    else{
-	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
-		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].temp*contrib;
-		visit[7]=1;
-		tot+=contrib;
-		ntot++;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-  
-
-
-  // Once we have the acceleration we can compute the velocity
-  switch(dir){
-  case(0):
-    curp->vx+=-accel*dt;
-#ifdef PARTN
-    curp->fx=accel;
-#endif
-    break;
-  case(1):
-    curp->vy+=-accel*dt;
-#ifdef PARTN
-    curp->fy=accel;
-#endif
-    break;
-  case(2):
-    curp->vz+=-accel*dt;
-#ifdef PARTN
-    curp->fz=accel;
-#endif
-
-    break;
-  }
-
-}
-#endif
 
 //=====================================================================================
 //=====================================================================================
@@ -959,16 +555,16 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
   dz=1.-tz;
 
 
-  vcont[0]=dz*dy*dx*curp->mass; //000
-  vcont[1]=dz*dy*tx*curp->mass; //001
-  vcont[2]=dz*ty*dx*curp->mass; //010
-  vcont[4]=tz*dy*dx*curp->mass; //100
+  vcont[0]=dz*dy*dx; //000
+  vcont[1]=dz*dy*tx; //001
+  vcont[2]=dz*ty*dx; //010
+  vcont[4]=tz*dy*dx; //100
 
-  vcont[3]=dz*ty*tx*curp->mass; //011
-  vcont[6]=tz*ty*dx*curp->mass; //110
-  vcont[5]=tz*dy*tx*curp->mass; //101
+  vcont[3]=dz*ty*tx; //011
+  vcont[6]=tz*ty*dx; //110
+  vcont[5]=tz*dy*tx; //101
 
-  vcont[7]=tz*ty*tx*curp->mass; //111
+  vcont[7]=tz*ty*tx; //111
 
 
   // contrib from current cell 000 =====
@@ -977,7 +573,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 
   contrib=vcont[0];
   if((contrib<=1.)&&(contrib>=0.)){
-    accel+=curoct->cell[icell].pot*contrib;
+    accel+=curoct->cell[icell].gdata.p*contrib;
   }
   
 
@@ -987,14 +583,14 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     idx1=pow(2,i1);
     contrib=vcont[idx1];
     if(vnei[neip[i1]]==6){
-      accel+=curoct->cell[vcell[neip[i1]]].pot*contrib;
+      accel+=curoct->cell[vcell[neip[i1]]].gdata.p*contrib;
       newcell=&(curoct->cell[vcell[neip[i1]]]);
       tot+=contrib;
       ntot++;
     }
     else{
       if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
-	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].pot*contrib;
+	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
 	newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	tot+=contrib;
 	ntot++;
@@ -1020,7 +616,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	getcellnei(newcell->idx, vnei2, vcell2);
 	newoct=cell2oct(newcell);
 	if(vnei2[neip[i2]]==6){
-	  accel+=newoct->cell[vcell2[neip[i2]]].pot*contrib;
+	  accel+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
 	  newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	  visit[idx2]=1;
 	  tot+=contrib;
@@ -1028,7 +624,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	}
 	else{
 	  if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
-	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].pot*contrib;
+	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
 	    newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    tot+=contrib;
@@ -1052,7 +648,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  getcellnei(newcell2->idx, vnei3, vcell3);
 	  newoct2=cell2oct(newcell2);
 	  if(vnei3[neip[i3]]==6){
-	    accel+=newoct2->cell[vcell3[neip[i3]]].pot*contrib;
+	    accel+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
 	    visit[7]=1;
 	    tot+=contrib;
 	    ntot++;
@@ -1060,7 +656,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  }
 	  else{
 	    if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
-	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].pot*contrib;
+	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
 	      visit[7]=1;
 	      tot+=contrib;
 	      ntot++;
@@ -1118,7 +714,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     int ntot=0;
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
-      accel+=curoctlr->cell[icell].pot*contrib;
+      accel+=curoctlr->cell[icell].gdata.p*contrib;
     }
   
   
@@ -1128,14 +724,14 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
       idx1=pow(2,i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
-	accel+=curoctlr->cell[vcell[neip[i1]]].pot*contrib;
+	accel+=curoctlr->cell[vcell[neip[i1]]].gdata.p*contrib;
 	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
 	tot+=contrib;
 	ntot++;
       }
       else{
 	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
-	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].pot*contrib;
+	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
 	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	  tot+=contrib;
 	  ntot++;
@@ -1154,7 +750,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
-	    accel+=newoct->cell[vcell2[neip[i2]]].pot*contrib;
+	    accel+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    tot+=contrib;
@@ -1162,7 +758,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
-	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].pot*contrib;
+	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
 	      tot+=contrib;
@@ -1180,7 +776,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
-	      accel+=newoct2->cell[vcell3[neip[i3]]].pot*contrib;
+	      accel+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
 	      visit[7]=1;
 	      tot+=contrib;
 	      ntot++;
@@ -1188,7 +784,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
-		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].pot*contrib;
+		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
 		visit[7]=1;
 		tot+=contrib;
 		ntot++;
@@ -1201,6 +797,12 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
   }
   
   
+#ifdef PERFECT
+   if(curp->mass<0.5) {
+    REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+    accel=-1./r;
+   }
+#endif
 
 
   // we return the energy (stored in accel) 

@@ -217,13 +217,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     FillDens(level,param,firstoct,cpu); 
 
 #ifdef WGRAV
-
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,stride,aexp); 
 
     /* //====================================  Force Field ========================== */
     PoissonForce(level,param,firstoct,cpu,gstencil,stride,aexp);
-
 #endif
 
 #ifdef PIC
@@ -303,6 +301,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //================ Part. Update ===========================
 
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",cpu->npart[level-1],adt[level-1],level);
+
+#ifdef PART_EGY
+    //computing energy
+    L_egypart(level,firstoct); // computing the particle acceleration and velocity
+#endif
+
     // predictor step
     L_accelpart(level,firstoct,adt,is,cpu); // computing the particle acceleration and velocity
 

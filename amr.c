@@ -573,7 +573,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   struct CELL *newcell3;
   int ichild;
   REAL mcell;
-  
+  REAL mmax=0.;
   int stati[3]={0,0,0};
 
   if(cpu->rank==0) printf("==> start marking\n");
@@ -753,7 +753,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 /* #endif */
 			    
 #ifdef PIC
-			    mcell=den*(curoct->level>=param->lcoarse);
+			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
+			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
@@ -804,7 +805,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	    }
 	  //printf("\n");
 	}
-      printf(" STAT MARK 0:%d 1:%d 2:%d\n",stati[0],stati[1],stati[2]);
+  printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
 
 }
 
@@ -842,7 +843,7 @@ void L_clean_marks(int level,struct OCT **firstoct){
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
-    
+  
   nextoct=firstoct[level-1];
   if(nextoct!=NULL){
     do // sweeping level

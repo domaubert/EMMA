@@ -252,6 +252,12 @@ struct PART
   int idx;
   int level;
   int is; // local timestep number per particle
+
+#ifdef PART_EGY
+  REAL epot;
+  REAL ekin;
+#endif
+
 };
 
 struct PART_MPI // For mpi communications
@@ -312,7 +318,6 @@ struct CELL
 
   // the physical quantities
   REAL density; // total density
-  REAL pot;
   REAL temp;
 #endif
 
@@ -383,9 +388,9 @@ struct OCT
   // the cell properties
   struct CELL cell[8]; // MUSTN'T BE MOVED !!
 
-  struct CELL *parent; // parent cell 
   struct CELL *nei[6];// neighbor cells at level - 1
-  
+  struct CELL *parent; // parent cell 
+ 
   // the next two pointers are required for sweeps through a single level
   struct OCT *next; // next oct on the same level
   struct OCT *prev; // previous oct on the same level
@@ -401,11 +406,14 @@ struct OCT
   int level;// level of the cells in the oct
 
 
+  // ***************** CAN BE DELETED *****************//
   // vector info
   int vecpos;
   int border; // equal to zero if not a border
+  // ***************** CAN BE DELETED *****************//
 
-  
+  int stenpos;
+
 };
 
 
@@ -424,10 +432,10 @@ struct OCTGRAV
 };
 
 // =======================================
+#ifndef FASTGRAV
 struct GGRID{
   struct OCTGRAV oct[27];
 };
-
 
 // =======================================
 struct STENGRAV{
@@ -436,6 +444,32 @@ struct STENGRAV{
   REAL *pnew;
   REAL *resLR;
 };
+
+#else
+struct GGRID{
+  int nei[27]; //pointers toward other neighbour octs in the stencil
+  struct OCTGRAV oct; // the local one
+};
+
+// =======================================
+struct STENGRAV{
+  REAL *d; // density [8*stride]
+  REAL *p; // potential [8*stride]
+  REAL *pnew; // new potential [8*stride]
+
+  REAL *res; //residual [8*stride]
+  REAL *resLR; // low res residual for MG [stride]
+
+  int *nei; // neighbour indexes [7*stride] (6 real neighbours plus the middle one)
+  int *level; // oct levels [stride]
+  int *cpu; // cpu of octs for MPI boundaries [stride]
+  char *valid; // validity of oct (border=0 or inner=1);
+};
+#endif
+
+
+
+
 
 
 // ========================================

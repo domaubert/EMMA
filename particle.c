@@ -311,7 +311,6 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 		curp->x+=curp->vx*dt;
 		curp->y+=curp->vy*dt;
 		curp->z+=curp->vz*dt;
-		if(disp==0.) abort();
 		if(disp>mdisp) mdisp=disp;
 	      }
 	    }while(nexp!=NULL);
@@ -1831,7 +1830,7 @@ void L_accelpart(int level,struct OCT **firstoct, REAL *adt, int is, struct CPUI
 	    if(nexp!=NULL){ 
 	      do{  
 		curp=nexp; 
-		nexp=curp->next; 
+		nexp=curp->next;
 		if(((curp->level==level)||(curp->is==0))||(is==-1)) cell2part_cic(curp, curoct, icell,adt[curp->level-1]*0.5); // here 0.5 because of half timestep for midpoint rule
 	      }while(nexp!=NULL); 
 	    }
@@ -1846,63 +1845,40 @@ void L_accelpart(int level,struct OCT **firstoct, REAL *adt, int is, struct CPUI
 
 //------------------------------------------------------------------------
 
-REAL egypart(int levelcoarse,int levelmax,struct OCT **firstoct, struct CPUINFO *cpu){
+#ifdef PART_EGY
+REAL L_egypart(int level,struct OCT **firstoct){
 
-  int dir;
-  int level;
   struct OCT *nextoct;
   struct OCT *curoct;
-  REAL dx;
-  int icomp,icell;
+  int icell;
   struct PART *curp;
   struct PART *nexp;
-  int nread;
-
-  REAL upart, utot=0.; // potential energy
-  REAL tpart, ttot=0.; // kinetic energy
-  REAL etot; // total energy
-
   REAL vx,vy,vz;
 
-  // ==================================== performing the INVERSE CIC assignement
-  
-    //printf("start INVERSE CIC\n");
-    //start INVERSE CIC
-    for(level=levelmax;level>=levelcoarse;level--)
-      {
-	nextoct=firstoct[level-1];
-	if(nextoct==NULL) continue;
-	do // sweeping level
-	  {
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	  
-	    //==== FIRST WE CONSIDER THE PARTICLES INSIDE THE BOUNDARIES AT LEVEL L
-	    for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
-		nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-		if(nexp!=NULL){ 
-		  do{  
-		    curp=nexp; 
-		    nexp=curp->next; 
-		    upart=cell2part_cic_egy(curp, curoct, icell); 
-		    utot=utot-upart;
+  nextoct=firstoct[level-1];
+  do // sweeping level
+    {
+      curoct=nextoct;
+      nextoct=curoct->next;
+      for(icell=0;icell<8;icell++) // looping over cells in oct
+	{
+	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
+	  if(nexp!=NULL){ 
+	    do{  
+	      curp=nexp; 
+	      nexp=curp->next; 
+	      
 		    
-		    vx=curp->vx;
-		    vy=curp->vy;
-		    vz=curp->vz;
+	      vx=curp->vx;
+	      vy=curp->vy;
+	      vz=curp->vz;
 
-		    tpart=0.5*curp->mass*(vx*vx+vy*vy+vz*vz);
-		    //printf("tpart=%e upart=%e\n",tpart,upart);
-		    ttot+=tpart;
-		  }while(nexp!=NULL); 
-		}
-	      }
-	  }while(nextoct!=NULL);
-      }
-
-    //printf("%e %e \n",utot,ttot);
-    etot=utot*0.5+ttot;
-    return etot;
+	      curp->epot=cell2part_cic_egy(curp, curoct, icell); 
+	      curp->ekin=0.5*(vx*vx+vy*vy+vz*vz);
+	    }while(nexp!=NULL); 
+	  }
+	}
+    }while(nextoct!=NULL);
 }
+#endif
 #endif

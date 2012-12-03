@@ -222,7 +222,12 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
       W=&(oct->cell[vcell[inei2]].gdata);
     }
     else{
-      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      if(oct->nei[vnei[inei2]]->child!=NULL){
+	W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      }
+      else{
+	W=&(oct->nei[vnei[inei2]]->gdata);
+      }
       
 #ifdef TRANSXM
       if((oct->x==0.)&&(inei2==0)){
@@ -241,8 +246,6 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
 	W=&(cell->gdata);
       }
 #endif
-      
-      
     }
     Um=*W;
     
@@ -251,7 +254,12 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
       W=&(oct->cell[vcell[inei2]].gdata);
     }
     else{
-      W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      if(oct->nei[vnei[inei2]]->child!=NULL){
+	W=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].gdata);
+      }
+      else{
+	W=&(oct->nei[vnei[inei2]]->gdata);
+      }
       
 #ifdef TRANSXP
       if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
@@ -416,6 +424,7 @@ for(iz=0;iz<2;iz++){
 
 // ============================================================================================================
 // ============================================================================================================
+#ifndef FASTGRAV
 void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct GGRID *stencil,char *visit){
 
   static int ix[6]={-1,1,0,0,0,0};
@@ -647,8 +656,143 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, i
   
   (*nread)=iread;
   return nextoct;
+} 
+#else
+
+struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  struct OCT* coarseoct;
+  int iread=0;
+  int inei,icell;
+  int ipos=0,stenfull=0;;
+  int icur;
+  int j;
+
+  nextoct=octstart;
+
+  // first we clean the pointers
+  memset(gstencil->nei,0,sizeof(int)*7*stride);
+  memset(gstencil->valid,0,sizeof(char)*stride);
+  
+
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+
+      if(curoct->vecpos<0){
+	// the current oct has not been vectorized yet
+	curoct->vecpos=ipos;
+	ipos++;
+      }
+      
+      if(curoct->cpu==cpu->rank){ // we look for neighbors of current cpu octs only
+	// getting the vector element
+	icur=curoct->vecpos;
+
+	// we scan the neighbors
+	for(inei=0;inei<6;inei++){
+	  if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
+	    if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
+	      if(ipos==stride){
+		// the stencil is full
+		stenfull=1; // we stop filling the array
+		break;
+	      }
+
+	      curoct->nei[inei]->child->vecpos=ipos;
+	      ipos++;
+	    }
+
+	    gstencil->nei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
+
+	    /* if(gstencil->nei[icur+inei*stride]>=stride){ */
+	    /*   printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos); */
+	    /* } */
+	  }
+	  else{ // we need to interpolate from coarser level
+	  
+	    if(ipos==stride){
+	      // the stencil is full
+	      stenfull=1; // we stop filling the array
+	      break;
+	    }
+
+	    // perform the interpolation in the coarse neighbour
+	    static int face[8]={0,1,2,3,4,5,6,7};
+	    struct Gtype Wi[8];
+	    coarse2fine_gravlin(curoct->nei[inei],Wi);
+	    for(icell=0;icell<8;icell++){
+	      memcpy(&(gstencil->p[ipos+icell*stride]),&(Wi[face[icell]].p),sizeof(REAL)); 
+	      memcpy(&(gstencil->d[ipos+icell*stride]),&(Wi[face[icell]].d),sizeof(REAL)); 
+	    }
+	    gstencil->level[ipos]=curoct->level-1; // assigning a level
+	    gstencil->nei[icur+inei*stride]=ipos; // we assign a neighbor
+	    ipos++;
+	  }
+	}
+
+	if(stenfull){
+	  nextoct=curoct; // we rewind the oct sequence by 1
+	  break; //we stop filling the array
+	  
+	}
+	// we add a seventh neighbour that corresponds to the current oct
+	gstencil->nei[icur+6*stride]=icur;
+      }
+  
+      gstencil->cpu[icur]=curoct->cpu; // assigning a cpu
+      gstencil->level[icur]=curoct->level; // assigning a level
+      gstencil->valid[icur]=1; // if we managed to achieve this point the oct is fully valid
+      iread++;
+    }while((nextoct!=NULL)&&(iread<stride));
+  }
+  
+  (*nread)=iread;
+  return nextoct;
 }
 
+//======================================================
+
+struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
+{
+  struct OCT* nextoct;
+  struct OCT* curoct;
+  int ipos;
+  int iread=0,ival=0.;
+  int icell;
+  
+  nextoct=octstart;
+  if(nextoct!=NULL){
+    do{ //sweeping levels
+      curoct=nextoct;
+      nextoct=curoct->next;
+      
+      //getting the vector element
+      ipos=curoct->vecpos;
+      if(ipos<0){
+	continue; // for octs not involved in fine level calculations
+      }
+      if(gstencil->valid[ipos]!=1) continue;
+
+      // filling the values
+      for(icell=0;icell<8;icell++){
+	gstencil->p[ipos+icell*stride]=curoct->cell[icell].gdata.p;
+	gstencil->d[ipos+icell*stride]=curoct->cell[icell].gdata.d;
+      }
+      ival+=(gstencil->valid[ipos]==1);
+      iread++;
+    }while((nextoct!=NULL));
+  }
+
+  //printf("ival=%d nread=%d iread=%d stride=%d\n",ival,*nread,iread,stride);
+  if(ival!=(*nread)) abort();
+
+  return nextoct;
+}
+#endif
 
 //==============================================================================
 
@@ -662,7 +806,15 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
   int icell;
   int level=octstart->level;
   nextoct=octstart;
-  iread=0;
+  iread=0;  
+  int vecpos;
+  int ilast;
+
+#ifndef FASTGRAV
+  ilast=nread;
+#else
+  ilast=stride;
+#endif
 
   //printf("let's scatter\n");
   if(nextoct!=NULL){
@@ -670,24 +822,47 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
       curoct=nextoct;
       nextoct=curoct->next;
       
+      // filling the values in the central oct
+      vecpos=curoct->vecpos;
+      
       if(curoct->cpu!=cpu->rank) continue;
 
-      // filling the values in the central oct
+#ifdef FASTGRAV
+      if(gstencil->valid[vecpos]!=1){
+	continue;
+      }
+#endif
+
       for(icell=0;icell<8;icell++){
+#ifndef FASTGRAV
 	curoct->cell[icell].pnew=gstencil->pnew[icell+iread*8];
 	curoct->cell[icell].res =gstencil->res [icell+iread*8];
+#else
+	// NOTE FASTGRAV uses a different memory layout
+	curoct->cell[icell].pnew=gstencil->pnew[icell*stride+vecpos];
+	curoct->cell[icell].res =gstencil->res [icell*stride+vecpos];
+#endif
       }
 
 #ifdef ONFLYRED
       if(level<=cpu->levelcoarse){
+
+#ifndef FASTGRAV
 	curoct->parent->gdata.d=gstencil->resLR[iread];
+#else
+	curoct->parent->gdata.d=gstencil->resLR[vecpos];
+#endif
+
 	curoct->parent->gdata.p=0.;
       }
 #endif  
 
       iread++;
-    }while((nextoct!=NULL)&&(iread<nread));
+    }while((nextoct!=NULL)&&(iread<ilast));
   }
+
+  if(iread!=(nread)) abort();
+
   return nextoct;
 }
 
@@ -701,6 +876,14 @@ struct OCT *scatterstencilforce(struct OCT *octstart, struct STENGRAV *gstencil,
   struct OCT* curoct;
   int ipos,iread;
   int icell;
+  int ilast;
+  int vecpos;
+
+#ifndef FASTGRAV
+  ilast=nread;
+#else
+  ilast=stride;
+#endif
 
   nextoct=octstart;
   iread=0;
@@ -711,14 +894,26 @@ struct OCT *scatterstencilforce(struct OCT *octstart, struct STENGRAV *gstencil,
       curoct=nextoct;
       nextoct=curoct->next;
       
+      vecpos=curoct->vecpos;
       if(curoct->cpu!=cpu->rank) continue;
+
+#ifdef FASTGRAV
+      if(gstencil->valid[vecpos]!=1){
+	continue;
+      }
+#endif
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
+#ifndef FASTGRAV
 	curoct->cell[icell].f[dir]=gstencil->pnew[icell+iread*8];
+#else
+	// NOTE FASTGRAV uses a different memory layout
+	curoct->cell[icell].f[dir]=gstencil->pnew[icell*stride+vecpos];
+#endif
       }
       iread++;
-    }while((nextoct!=NULL)&&(iread<nread));
+    }while((nextoct!=NULL)&&(iread<ilast));
   }
   return nextoct;
 }
@@ -739,13 +934,28 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
   int vnei[6],vcell[6];
   //int ioct[7]={12,14,10,16,4,22,13};
   int ioct[7]={0,1,2,3,4,5,6};
+  int ilast;
+  int ival=0;
 
+  struct Gtype ct;
   struct Gtype *curcell;
+#ifndef FASTGRAV
   struct GGRID *stencil=gstencil->stencil;
+  ilast=nread;
+#else
+  ilast=stride;
+#endif
 
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
-    for(i=0;i<nread;i++){ // we scan the octs
+    for(i=0;i<ilast;i++){ // we scan the octs
+      // we skip octs that are non valid
+
+#ifdef FASTGRAV
+      if(gstencil->valid[i]!=1){
+	continue;
+      }
+#endif
 
 #ifdef ONFLYRED
       if(icell==0) gstencil->resLR[i]=0.;
@@ -753,13 +963,23 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
       
       temp=0.;
       res=0.;
-      
+
+#ifndef FASTGRAV      
       curcell=&(stencil[i].oct[ioct[6]].cell[icell].gdata);
-      
+#else
+      ct.p=gstencil->p[i+icell*stride];
+      ct.d=gstencil->d[i+icell*stride];
+      curcell=&ct;
+#endif      
       // Computing the laplacian ===========================
  
       for(inei=0;inei<6;inei++){
+#ifndef FASTGRAV
  	temp+=stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].gdata.p;
+#else
+	int idxnei=gstencil->nei[i+vnei[inei]*stride];
+	temp+=gstencil->p[idxnei+vcell[inei]*stride];
+#endif
       }
  
       // setting up the residual
@@ -774,13 +994,25 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
       res=res/(dx*dx)-factdens*curcell->d;
 
       // we store the new value of the potential
+#ifndef FASTGRAV
       gstencil->pnew[icell+i*8]=temp;
+#else
+      gstencil->pnew[i+icell*stride]=temp;
+#endif
       // we store the local residual
       if(flag) {
+#ifndef FASTGRAV
 	gstencil->res[i*8+icell]=factdens*curcell->d;
-      }
+#else
+	gstencil->res[i+icell*stride]=factdens*curcell->d;
+#endif
+     }
       else{
+#ifndef FASTGRAV
 	gstencil->res[icell+i*8]=res;
+#else
+	gstencil->res[icell*stride+i]=res;
+#endif
       }
 
 #ifdef ONFLYRED
@@ -788,6 +1020,7 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
       gstencil->resLR[i]+=res*0.125;
 #endif
       // ready for the next cell
+      if(icell==0) ival++;
     }
 
     //ready for the next oct
@@ -811,11 +1044,30 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 
   REAL residual=0.;
   REAL rloc;
+  int ilast;
+
+#ifndef FASTGRAV
+  ilast=nread;
+#else
+  ilast=stride;
+#endif
 
   if(flag){
-    for(i=0;i<nread;i++){ // we scan the octs
+    for(i=0;i<ilast;i++){ // we scan the octs
+
+#ifdef FASTGRAV
+      if(gstencil->valid[i]!=1){
+	continue;
+      }
+#endif
+
+
       for(icell=0;icell<8;icell++){ // we scan the cells
+#ifndef FASTGRAV
 	rloc=pow(gstencil->res[icell+i*8],2);
+#else
+	rloc=pow(gstencil->res[icell*stride+i],2);
+#endif
 	residual+=rloc;
 	// ready for the next cell
       }
@@ -823,10 +1075,21 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
     }
   }
   else{
-    for(i=0;i<nread;i++){ // we scan the octs
+    for(i=0;i<ilast;i++){ // we scan the octs
+
+#ifdef FASTGRAV
+      if(gstencil->valid[i]!=1){
+	continue;
+      }
+#endif
       for(icell=0;icell<8;icell++){ // we scan the cells
+#ifndef FASTGRAV
 	rloc=pow(gstencil->res[icell+i*8],2);
-	residual=(residual>rloc?residual:rloc);
+#else
+	rloc=pow(gstencil->res[icell*stride+i],2);
+#endif
+	residual+=rloc;
+	//residual=(residual>rloc?residual:rloc);
       }
       //ready for the next oct
     }
@@ -848,24 +1111,68 @@ int Pot2Force(struct STENGRAV *gstencil, int level, int curcpu, int nread,int st
   //  int ioct[7]={12,14,10,16,4,22,13};
   int ioct[7]={0,1,2,3,4,5,6};
   REAL floc;
+
+  int ilast;
+
+#ifndef FASTGRAV
+  ilast=nread;
   struct GGRID *stencil=gstencil->stencil;
+#else
+  int idxR,idxL;
+  int cR,cL;
+  ilast=stride;
+#endif
 
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
-    for(i=0;i<nread;i++){ // we scan the octs
+    for(i=0;i<ilast;i++){ // we scan the octs
       
+#ifndef FASTGRAV
       floc=0.5*(stencil[i].oct[ioct[vnei[(dir<<1)+1]]].cell[vcell[(dir<<1)+1]].gdata.p-stencil[i].oct[ioct[vnei[(dir<<1)]]].cell[vcell[(dir<<1)]].gdata.p)/dx*tsim;
+#else
+      if(gstencil->valid[i]!=1){
+	continue;
+      }
+
+      idxR=gstencil->nei[i+vnei[(dir<<1)+1]*stride];
+      idxL=gstencil->nei[i+vnei[(dir<<1)  ]*stride];
+
+      cR=vcell[(dir<<1)+1];
+      cL=vcell[(dir<<1)  ];
+
+      floc=0.5*(gstencil->p[idxR+cR*stride]-gstencil->p[idxL+cL*stride])/dx*tsim;
+#endif
 
       // store the force
       
       //gstencil->pnew[icell*nread+i]=floc;;
+#ifndef FASTGRAV
       gstencil->pnew[icell+i*8]=floc;;
+#else
+      gstencil->pnew[icell*stride+i]=floc;;
+#endif
 
       // ready for the next cell
     }
     //ready for the next oct
   }
   return 0;
+}
+
+
+//============================================================================
+void clean_vecpos(int level,struct OCT **firstoct)
+{
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  nextoct=firstoct[level-1];
+  do // sweeping level
+    {
+      curoct=nextoct;
+      nextoct=curoct->next;
+      curoct->vecpos=-1;
+    }while(nextoct!=NULL);
+  
 }
 
 //=============================================================================
@@ -914,9 +1221,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   double tstart,tstop,tt;
   //if(level==6) nitmax=10;
 
+
   for(iter=0;iter<nitmax;iter++){
     tstart=MPI_Wtime();
-
     // --------------- setting the first oct of the level
     nextoct=firstoct[level-1];
     nreadtot=0;
@@ -937,11 +1244,29 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
 	curoct=nextoct;
-	nextoct=curoct->next; 
 		
 	
-	// ------------ gathering the stencil value values
+#ifndef FASTGRAV
+	// ------------ gathering the stencil value 
 	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+
+#else
+	if((iter==0)||(cpu->noct[level-1]>stride)){
+	  // ------------ some cleaning
+	  clean_vecpos(level,firstoct);
+	  if(level>param->lcoarse) clean_vecpos(level-1,firstoct); // for two level interactions
+	  
+	  //------------- gathering neighbour structure
+	  nextoct=gatherstencilgrav_nei(curoct,stencil,stride,cpu, &nread);
+
+	  // ------------ gathering the stencil value 
+	  gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread); //  the whole level must be parsed to recover the values
+	}
+	else{
+	  nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+	}
+
+#endif
 	
 	// ------------ solving the hydro
 	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
@@ -960,7 +1285,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	
 	// ------------ scatter back the data
 	
-	nextoct=scatterstencilgrav(curoct,stencil,nread,stride, cpu);
+	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
 	
 	tall+=temps[9]-temps[0];
 	tcal+=temps[7]-temps[3];
@@ -969,7 +1294,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	nreadtot+=nread;
       }while(nextoct!=NULL);
     }
-
     if((iter==1)&&(level>param->lcoarse)) res0=residual;
 
 
@@ -1017,12 +1341,11 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   }
 
   if(level>param->lcoarse){
-    printf("CPU | level=%d iter=%d res=%e res0=%e\n",level,iter,dres,sqrt(res0/fnorm));
+    printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    printf("CPU | level=%d iter=%d res=%e\n",level,iter,dres);
+    printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e\n",level,iter,dres,fnorm,residual);
   }
-
   return dres;
 }
 
@@ -1123,20 +1446,33 @@ int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
     do {
       curoct=nextoct;
-      nextoct=curoct->next; 
-      
-      // ------------ gathering the stencil value values
+
+
+#ifndef FASTGRAV
+	// ------------ gathering the stencil value 
       nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
-	
+#else
+      // ------------ some cleaning
+      clean_vecpos(level,firstoct);
+      
+      //------------- gathering neighbour structure
+      nextoct=gatherstencilgrav_nei(curoct,stencil,stride,cpu, &nread);
+      
+      // ------------ gathering the stencil value 
+      gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread); //  the whole level must be parsed to recover the values
+
+#endif
+      
       
       for(idir=0;idir<3;idir++){
 	// ------------ Computing the potential gradient
 	Pot2Force(stencil,level,cpu->rank,nread,stride,dxcur,tsim,idir);
-      
+	
 	// ------------ scatter back the data
 	
-	nextoct=scatterstencilforce(curoct,stencil, nread, stride, cpu,idir);
+	scatterstencilforce(curoct,stencil, nread, stride, cpu,idir);
       }
+      
       nreadtot+=nread;
     }while(nextoct!=NULL);
   }
