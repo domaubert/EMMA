@@ -799,7 +799,6 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, i
 struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,int nread,int stride, struct CPUINFO *cpu)
 {
 
-
   struct OCT* nextoct;
   struct OCT* curoct;
   int ipos,iread;
@@ -1097,6 +1096,32 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 
   return residual;
 }
+
+
+//============================================================================
+void update_pot_in_stencil(struct STENGRAV *gstencil, int level, int curcpu, int nread,int stride, int flag){
+
+  int icell;
+  int i;
+
+  REAL residual=0.;
+  REAL rloc;
+  int ilast;
+
+  ilast=stride;
+
+  for(i=0;i<ilast;i++){ // we scan the octs
+      
+    if(gstencil->valid[i]!=1){
+      continue;
+    }
+
+    for(icell=0;icell<8;icell++){ // update
+      gstencil->p[icell*stride+i]=gstencil->pnew[icell*stride+i];
+    }
+  }
+
+}
  
 //-------------
  
@@ -1173,6 +1198,35 @@ void clean_vecpos(int level,struct OCT **firstoct)
       curoct->vecpos=-1;
     }while(nextoct!=NULL);
   
+}
+
+//=============================================================================
+void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, struct RUNPARAMS *param){
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  curoct=firstoct[level-1];
+  if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    nextoct=curoct;
+    do{
+      curoct=nextoct;
+      nextoct=curoct->next;
+      if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
+      for(icell=0;icell<8;icell++){	
+	    
+	REAL w;
+	// TO FIX : DO WE ALLOW OVER-RELAXATION ?
+	if(level>param->lcoarse){
+	  w=1.0;
+	}
+	else{
+	  w=1.0;
+	}
+	curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+(1.-w)*curoct->cell[icell].gdata.p;
+      }
+    }while(nextoct!=NULL);
+  }
 }
 
 //=============================================================================
@@ -1262,9 +1316,10 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  // ------------ gathering the stencil value 
 	  gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread); //  the whole level must be parsed to recover the values
 	}
-	else{
-	  nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
-	}
+	 else{ 
+	   //nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread); 
+	   nextoct=NULL;
+	 } 
 
 #endif
 	
@@ -1283,10 +1338,19 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  residual+=rloc;
 	}
 	
-	// ------------ scatter back the data
-	
+	// ------------ scatter back the data in the tree
+
+#ifndef FASTGRAV	
 	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
-	
+#else
+	// we scatter back in the tree b/c of a small stencil
+ 	if(cpu->noct[level-1]>stride){
+	  scatterstencilgrav(curoct,stencil,nread,stride, cpu);
+	}
+	else{
+	  update_pot_in_stencil(stencil,level,cpu->rank,nread,stride,0);
+	}
+#endif
 	tall+=temps[9]-temps[0];
 	tcal+=temps[7]-temps[3];
 	tscat+=temps[9]-temps[7];
@@ -1296,33 +1360,19 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     }
     if((iter==1)&&(level>param->lcoarse)) res0=residual;
 
+#ifdef FASTGRAV
+    if(cpu->noct[level-1]<=stride){
+      scatterstencilgrav(curoct,stencil,nread,stride, cpu);
+    }
+#endif
+
 
     tt=MPI_Wtime();
-    // at this stage an iteration has been completed : let's update the potential
-    if(nreadtot>0){
-      curoct=firstoct[level-1];
-      if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
-	nextoct=curoct;
-	do{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
-	  for(icell=0;icell<8;icell++){	
-	    
-	    REAL w;
-	    // TO FIX : DO WE ALLOW OVER-RELAXATION ?
-	    if(level>param->lcoarse){
-	      w=1.0;
-	    }
-	    else{
-	      w=1.0;
-	    }
-	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+(1.-w)*curoct->cell[icell].gdata.p;
- 	  }
-	}while(nextoct!=NULL);
-      }
-    }
-    
+    // at this stage an iteration has been completed : let's update the potential in the tree
+    if(nreadtot>0) update_pot_in_tree(level,firstoct,cpu,param);
+
+
+     
     tstop=MPI_Wtime();
     tup+=(tstop-tt);
     tglob+=(tstop-tstart);
