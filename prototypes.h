@@ -10,7 +10,12 @@ typedef double REAL;
 #define GAMMA (5./3.)
 #define CFL (0.4)
 #define GRAV (0.25)
+
+#ifndef WHYDRO2 
+#define OMEGAB (0.0)
+#else
 #define OMEGAB (0.045)
+#endif
 
 #define NCOSMOTAB (262144)
 

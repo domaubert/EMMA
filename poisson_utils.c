@@ -683,6 +683,10 @@ struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstenci
       nextoct=curoct->next;
 
       if(curoct->vecpos<0){
+	if(ipos==stride){
+	  nextoct=curoct; // we rewind the oct sequence by 1
+	  break; //we stop filling the array
+	}
 	// the current oct has not been vectorized yet
 	curoct->vecpos=ipos;
 	ipos++;
@@ -747,10 +751,12 @@ struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstenci
       gstencil->level[icur]=curoct->level; // assigning a level
       gstencil->valid[icur]=1; // if we managed to achieve this point the oct is fully valid
       iread++;
-    }while((nextoct!=NULL)&&(iread<stride));
+    }while(((nextoct!=NULL)&&(iread<stride)));
   }
   
   (*nread)=iread;
+  //printf("iread=%d ipos=%d\n",iread,ipos);
+
   return nextoct;
 }
 
@@ -775,7 +781,6 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, i
       if(ipos<0){
 	continue; // for octs not involved in fine level calculations
       }
-      if(gstencil->valid[ipos]!=1) continue;
 
       // filling the values
       for(icell=0;icell<8;icell++){
@@ -861,7 +866,7 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
   }
 
   if(iread!=(nread)) abort();
-
+  
   return nextoct;
 }
 
@@ -987,6 +992,8 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
       // we finish the laplacian
       temp=temp/6.0;
       temp=temp-dx*dx*curcell->d/6.0*factdens;
+      
+      //if(curcell->d>0) printf("temp=%e den=%e pot=%e\n",temp,curcell->d,curcell->p);
 
       // we finsih the residual
       res=res-6.0*curcell->p;
@@ -1024,6 +1031,8 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
 
     //ready for the next oct
   }
+
+  if(ival!=nread) abort();
   return 0;
 }
 
@@ -1040,6 +1049,7 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 
   int icell;
   int i;
+  int iread=0;
 
   REAL residual=0.;
   REAL rloc;
@@ -1071,6 +1081,7 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 	// ready for the next cell
       }
       //ready for the next oct
+      iread++;
     }
   }
   else{
@@ -1091,13 +1102,15 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 	//residual=(residual>rloc?residual:rloc);
       }
       //ready for the next oct
+      iread++;
     }
   }
 
+  if(iread!=nread) abort();
   return residual;
 }
 
-
+#ifdef FASTGRAV
 //============================================================================
 void update_pot_in_stencil(struct STENGRAV *gstencil, int level, int curcpu, int nread,int stride, int flag){
 
@@ -1122,7 +1135,7 @@ void update_pot_in_stencil(struct STENGRAV *gstencil, int level, int curcpu, int
   }
 
 }
- 
+ #endif
 //-------------
  
 
@@ -1315,9 +1328,11 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 	  // ------------ gathering the stencil value 
 	  gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread); //  the whole level must be parsed to recover the values
+	  //printf("iter=%d nread=%d\n",iter,nread);
 	}
 	 else{ 
-	   //nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread); 
+	   //nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+	   //gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread);
 	   nextoct=NULL;
 	 } 
 
@@ -1336,6 +1351,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	else{
 	  //residual=(residual>rloc?residual:rloc);
 	  residual+=rloc;
+	  //printf("iter=%d rloc=%e\n",iter,rloc);
 	}
 	
 	// ------------ scatter back the data in the tree
@@ -1344,12 +1360,12 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
 #else
 	// we scatter back in the tree b/c of a small stencil
- 	if(cpu->noct[level-1]>stride){
+	if(cpu->noct[level-1]>stride){
 	  scatterstencilgrav(curoct,stencil,nread,stride, cpu);
-	}
-	else{
-	  update_pot_in_stencil(stencil,level,cpu->rank,nread,stride,0);
-	}
+	} 
+	else{ 
+	  update_pot_in_stencil(stencil,level,cpu->rank,nread,stride,0); 
+	} 
 #endif
 	tall+=temps[9]-temps[0];
 	tcal+=temps[7]-temps[3];
@@ -1360,6 +1376,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     }
     if((iter==1)&&(level>param->lcoarse)) res0=residual;
 
+    //printf("iter=%d nreadtot=%d\n",iter,nreadtot);
 #ifdef FASTGRAV
     if(cpu->noct[level-1]<=stride){
       scatterstencilgrav(curoct,stencil,nread,stride, cpu);
