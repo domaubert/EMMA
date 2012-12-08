@@ -756,7 +756,7 @@ struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstenci
   
   (*nread)=iread;
   //printf("iread=%d ipos=%d\n",iread,ipos);
-
+  //if(iread!=cpu->noct[octstart->level-1]) abort();
   return nextoct;
 }
 
@@ -1301,6 +1301,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if(iter==0){
       fnorm=0.;
       residual=0.;
+      nread=0;
     }
     else{
       residual=0.;
@@ -1318,7 +1319,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
 
 #else
-	if((iter==0)||(cpu->noct[level-1]>stride)){
+	//printf("iter=%d nread=%d\n",iter,nread);
+	if((iter==0)||(cpu->noct[level-1]>nread)){
 	  // ------------ some cleaning
 	  clean_vecpos(level,firstoct);
 	  if(level>param->lcoarse) clean_vecpos(level-1,firstoct); // for two level interactions
@@ -1328,7 +1330,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 	  // ------------ gathering the stencil value 
 	  gatherstencilgrav(firstoct[level-1],stencil,stride,cpu, &nread); //  the whole level must be parsed to recover the values
-	  //printf("iter=%d nread=%d\n",iter,nread);
 	}
 	 else{ 
 	   //nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
@@ -1360,7 +1361,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
 #else
 	// we scatter back in the tree b/c of a small stencil
-	if(cpu->noct[level-1]>stride){
+	if(cpu->noct[level-1]>nread){
 	  scatterstencilgrav(curoct,stencil,nread,stride, cpu);
 	} 
 	else{ 
@@ -1374,22 +1375,17 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	nreadtot+=nread;
       }while(nextoct!=NULL);
     }
-    if((iter==1)&&(level>param->lcoarse)) res0=residual;
+    if((iter==1)&&(level>=param->lcoarse)) res0=residual;
 
     //printf("iter=%d nreadtot=%d\n",iter,nreadtot);
-#ifdef FASTGRAV
-    if(cpu->noct[level-1]<=stride){
-      scatterstencilgrav(curoct,stencil,nread,stride, cpu);
-    }
-#endif
 
 
     tt=MPI_Wtime();
     // at this stage an iteration has been completed : let's update the potential in the tree
-    if(nreadtot>0) update_pot_in_tree(level,firstoct,cpu,param);
+    if(cpu->noct[level-1]>nread){
+      if(nreadtot>0) update_pot_in_tree(level,firstoct,cpu,param);
+    }
 
-
-     
     tstop=MPI_Wtime();
     tup+=(tstop-tt);
     tglob+=(tstop-tstart);
@@ -1407,11 +1403,18 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     }
   }
 
+#ifdef FASTGRAV
+  if(cpu->noct[level-1]==nread){
+    scatterstencilgrav(curoct,stencil,nread,stride, cpu);
+    if(nreadtot>0) update_pot_in_tree(level,firstoct,cpu,param);
+  }
+#endif
+
   if(level>param->lcoarse){
     printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e\n",level,iter,dres,fnorm,residual);
+    printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
   }
   return dres;
 }

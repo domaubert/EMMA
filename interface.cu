@@ -65,8 +65,8 @@ void initlocaldevice(int rank, int count)
 {
   int devicenum=rank%count;
   struct cudaDeviceProp prop;
-  cudaSetDevice(devicenum);
-  cudaGetDeviceProperties(&prop,devicenum);
+  cudaSetDevice(0);
+  cudaGetDeviceProperties(&prop,0);
   printf("Local Device #%d initialized for proc #%d with %d B of VRAM\n",devicenum,rank,(int)prop.totalGlobalMem);
 }
 

@@ -470,7 +470,6 @@ int main(int argc, char *argv[])
 
   // allocating the vectorized tree
   
-  struct MULTIVECT vectors;
 
   
   // allocating the 6dim stencil
@@ -502,7 +501,7 @@ int main(int argc, char *argv[])
   gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
 #endif
-
+  
 #endif
 
   
@@ -514,7 +513,10 @@ int main(int argc, char *argv[])
   checkdevice(0);
 #ifdef WGRAV
   create_pinned_gravstencil(&gstencil,stride);
-
+#ifdef FASTGRAV
+  struct STENGRAV dev_stencil;
+  cpu.dev_stencil=&dev_stencil;
+#endif
   create_gravstencil_GPU(&cpu,stride);
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
@@ -526,6 +528,7 @@ int main(int argc, char *argv[])
   // ====================END GPU ALLOCATIONS ===============
 #endif
     
+
   if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
 
   //========== setting up the parallel topology ===
@@ -1639,10 +1642,17 @@ int main(int argc, char *argv[])
 
 
 #ifdef GPUAXL
+
+#ifdef WGRAV
     destroy_pinned_gravstencil(&gstencil,stride);
     destroy_gravstencil_GPU(&cpu,stride);
+#endif
+
+#ifdef WHYDRO2
     destroy_pinned_stencil(&stencil,stride);
     destroy_hydstencil_GPU(&cpu,stride);
+#endif
+
 #endif
 
 

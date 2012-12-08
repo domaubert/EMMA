@@ -4,10 +4,17 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "silo.h"
 #include "prototypes.h"
-
 //=================================================================================================
 
+
+
+/*
+
+ mpicc  -I./silo/include -DPIC -DWGRAV -DTESTCOSMO -DFASTGRAV -DGRAFIC -DONFLYRED -DGPUAXL -o ./oct2grid ./oct2grid.c ./silo/lib/libsilo.a
+
+ */
 int main(int argc, char *argv[])
 {
   //(int lmap,struct OCT **firstoct,int field,char filename[],REAL tsim)
@@ -35,7 +42,7 @@ int main(int argc, char *argv[])
   struct OCT *zerooct;
 
 
-  if(argc!=6){
+  if(argc!=7){
     printf("USAGE: /a.out input level field output nproc\n");
     printf("Ex : data/grid.00002 7 101 data/grid.den 8\n");
     printf("field values :\n");
@@ -55,6 +62,10 @@ int main(int argc, char *argv[])
   // getting the number of CPUs
   sscanf(argv[5],"%d",&ncpu);
 
+
+  // silo file
+  int dumpsilo=0;
+  sscanf(argv[6],"%d",&dumpsilo);
 
   // scanning the cpus
   for(icpu=0;icpu<ncpu;icpu++){
@@ -189,13 +200,50 @@ int main(int argc, char *argv[])
       
     //============= dump
     
-    printf("dumping %s with nmap=%d\n",fname2,nmap*nmap*nmap);
-    fp=fopen(fname2,"wb");
-    fwrite(&nmap,1,sizeof(int),fp);
-    fwrite(&tsimf,1,sizeof(float),fp);
-    for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(float),fp);
-    status=ferror(fp);
-    fclose(fp);
+    if(!dumpsilo){
+      printf("dumping %s with nmap=%d\n",fname2,nmap*nmap*nmap);
+      fp=fopen(fname2,"wb");
+      fwrite(&nmap,1,sizeof(int),fp);
+      fwrite(&tsimf,1,sizeof(float),fp);
+      for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(float),fp);
+      status=ferror(fp);
+      fclose(fp);
+    }
+    else{
+      DBfile *dbfile=NULL;
+      dbfile=DBCreate(strcat(fname2,".silo"),DB_CLOBBER, DB_LOCAL,"silo file created by Quartz",DB_PDB);
+      if(dbfile==NULL){
+	printf("Error while writing file");
+      }
+
+
+      float *x;
+      float *y;
+      float *z;
+      int dims[]={nmap+1,nmap+1,nmap+1};
+      int ndims=3;
+      
+      x=(float*)malloc(sizeof(float)*(nmap+1));
+      y=(float*)malloc(sizeof(float)*(nmap+1));
+      z=(float*)malloc(sizeof(float)*(nmap+1));
+
+      float *coords[]={x,y,z};
+      
+      int i;
+      for(i=0;i<=nmap;i++){
+	x[i]=(i*1.0)/nmap;
+	y[i]=(i*1.0)/nmap;
+	z[i]=(i*1.0)/nmap;
+      }
+
+      int dimsvar[]={nmap,nmap,nmap};
+      int ndimsvar=3;
+
+      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
+      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
+
+      DBClose(dbfile);
+    }
   }
   printf("status=%d\n",status);
   free(map);

@@ -150,11 +150,22 @@ struct CPUINFO{
   int nsteps; // the current coarse step index
 
 #ifdef GPUAXL
+#ifdef WGRAV
+
+#ifndef FASTGRAV
   struct GGRID *dev_stencil;
   REAL *res;
   REAL *pnew;
   REAL *resLR;
+#else
+  struct STENGRAV *dev_stencil;
+  struct STENGRAV *gpu_stencil;
+#endif
+#endif
+
+#ifdef WHDYRO2
   struct HGRID *hyd_stencil;
+#endif
 
   int nstream;
   int nthread;
@@ -463,6 +474,7 @@ struct STENGRAV{
   REAL *pnew; // new potential [8*stride]
 
   REAL *res; //residual [8*stride]
+  REAL *res2; 
   REAL *resLR; // low res residual for MG [stride]
 
   int *nei; // neighbour indexes [7*stride] (6 real neighbours plus the middle one)
