@@ -521,10 +521,16 @@ int main(int argc, char *argv[])
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
 
-#ifdef WHYDRO2
-  create_pinned_stencil(&stencil,stride);
-  create_hydstencil_GPU(&cpu,stride);
-#endif
+#ifdef WHYDRO2 
+
+  printf("stencil=%p with stride=%d\n",stencil,stride);
+  stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
+  printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+  
+  // UNCOMMENT BELOW FOR FASTHYDRO GPU
+  create_pinned_stencil(&stencil,stride);  
+  create_hydstencil_GPU(&cpu,stride); 
+#endif 
   // ====================END GPU ALLOCATIONS ===============
 #endif
     
@@ -1649,8 +1655,8 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-    destroy_pinned_stencil(&stencil,stride);
-    destroy_hydstencil_GPU(&cpu,stride);
+    /* destroy_pinned_stencil(&stencil,stride); */
+    /* destroy_hydstencil_GPU(&cpu,stride); */
 #endif
 
 #endif

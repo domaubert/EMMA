@@ -9,7 +9,7 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV
 DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DFASTGRAV
@@ -30,9 +30,9 @@ DEFINES  +=  -DONFLYRED
 #DEFINES += -DPERFECT
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
-#DEFINES  +=  -DRIEMANN_HLLC
-#DEFINES  +=  -DPRIMITIVE
-#DEFINES  +=  -DDUAL_E
+DEFINES  +=  -DRIEMANN_HLLC
+DEFINES  +=  -DPRIMITIVE
+DEFINES  +=  -DDUAL_E
 
 # ----------- BOUNDARY CONDITIONS --------------
 #DEFINES  +=  -DTRANSZM
@@ -48,7 +48,7 @@ DEFINES  +=  -DONFLYRED
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartzgpu
-CUDA_OBJS= interface.o poisson_utils_gpu.o #hydro_utils_gpu.o # cic_gpu.o 
+CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o # cic_gpu.o 
 CUDA_LIBS = -lcudpp -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -I/usr/local/cuda/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
 else
 DEFINESGLOB= $(DEFINES) 

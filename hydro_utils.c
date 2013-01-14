@@ -14,7 +14,6 @@
 #define NITERMAX 10
 #define ERRTOL 1e-10
 #define FRACP 1e-3
-#define PMIN 1e-12
 
 
 // ===================================================
@@ -2820,6 +2819,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 #ifndef GPUAXL
   nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #else
+  //nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
   nreadtot=advancehydroGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #endif
 
@@ -2868,6 +2868,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   printf("==== CPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
 #else
   printf(" === GPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+  //printf(" === GPU (DISABLED) HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
   
 }

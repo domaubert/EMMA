@@ -137,4 +137,12 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=){
                                                                                              
 }
 
+func gensilo(fname,lvl,field,&time,ncpu=,execut=){
+  if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";
+  if(is_void(ncpu)) ncpu=1;
+  time=array(double);
+  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+" "+pr1(ncpu)+" 1";
+  system(commande);
+}
+
 

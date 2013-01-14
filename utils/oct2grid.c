@@ -79,7 +79,10 @@ int main(int argc, char *argv[])
 
     // building the output file name
     strcpy(format,argv[4]);
-    strcat(format,".p%05d");
+
+    if(!dumpsilo){
+      strcat(format,".p%05d");
+    }
     sprintf(fname2,format,icpu);
 
 
@@ -231,9 +234,9 @@ int main(int argc, char *argv[])
       
       int i;
       for(i=0;i<=nmap;i++){
-	x[i]=(i*1.0)/nmap;
-	y[i]=(i*1.0)/nmap;
-	z[i]=(i*1.0)/nmap;
+	x[i]=((i*1.0)/nmap-0.);
+	y[i]=((i*1.0)/nmap-0.);
+	z[i]=((i*1.0)/nmap-0.);
       }
 
       int dimsvar[]={nmap,nmap,nmap};

@@ -328,6 +328,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+#ifdef WRAD
+    //=============== Radiation Update ======================
+    RadSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
+
+#endif
+
+
     //}
   // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){

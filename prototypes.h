@@ -15,6 +15,7 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.045)
+#define PMIN 1e-12
 #endif
 
 #define NCOSMOTAB (262144)
@@ -26,6 +27,13 @@ typedef double REAL;
 #define NVAR (5)
 #endif
 #define NFLUX (6*NVAR)
+
+
+#ifdef WRAD
+#define NVAR_R (4)
+#define NGRP (1)
+#define NFLUX_R (6*NGRP*NVAR_R)
+#endif
 
 //=======================================
 #ifdef TESTCOSMO
@@ -150,8 +158,9 @@ struct CPUINFO{
   int nsteps; // the current coarse step index
 
 #ifdef GPUAXL
-#ifdef WGRAV
 
+#ifdef WGRAV
+  
 #ifndef FASTGRAV
   struct GGRID *dev_stencil;
   REAL *res;
@@ -161,16 +170,17 @@ struct CPUINFO{
   struct STENGRAV *dev_stencil;
   struct STENGRAV *gpu_stencil;
 #endif
+
 #endif
 
-#ifdef WHDYRO2
+#ifdef WHYDRO2
   struct HGRID *hyd_stencil;
 #endif
+
 
   int nstream;
   int nthread;
 #endif
-
 };
 
 
@@ -183,6 +193,14 @@ struct CPUINFO{
 //
 
 
+struct Rtype{
+  REAL e[NGRP];
+  REAL fx[NGRP];
+  REAL fy[NGRP];
+  REAL fz[NGRP];
+}
+
+
 struct Wtype{
   REAL d;   // density
   REAL u;   // velocity
@@ -191,7 +209,6 @@ struct Wtype{
   REAL p;   // pressure
   REAL a;   // sound speed
   REAL E;
-
 };
 
 
@@ -349,6 +366,12 @@ struct CELL
   struct Wtype field;
   struct Wtype fieldnew;
 #endif
+
+
+#ifdef WRAD
+  struct Rtype rfield;
+  struct Rtype rfieldnew;
+#endif
 };
 
 
@@ -363,6 +386,12 @@ struct CELLFLUX
   struct Utype deltaU;
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
   REAL divu;
+#endif
+
+#ifdef WHYDRO2
+  struct Rtype deltaR;
+  struct Rtype rfield;
+  REAL rflux[NFLUX_R]; 
 #endif
 
 };
@@ -381,6 +410,11 @@ struct CELLLIGHT
 #ifdef WHYDRO2
   struct Wtype field; // hydrodynamical data
 #endif
+
+#ifdef WRAD
+  struct Rtype rfield; // radiation data
+#endif
+
   char split;
 };
 
@@ -507,33 +541,13 @@ struct HGRID{
 
 
 
-
 // ========================================
-struct MULTIVECT{
-  REAL *vecpot; //contains the potential in "stride" octs
-  REAL *vecpotnew; //contains the potential in "stride" octs
-  REAL *vecden; //contains the density   in "stride" octs
-
-
-  int *vecnei;//contains the cell neighbors of the octs
-  int *vecl; // contains the level of the octs
-  int *veccpu; // contains the level of the octs
-  int *vecicoarse; // contains the level of the octs
-
-#ifdef WGPU
-  REAL *vecden_d;
-  int *vecl_d;
-  int *veccpu_d;
-  REAL *vec2_d;
-  REAL *vecsum_d;
-
-  REAL *vecpot_d; 
-  REAL *vecpotnew_d; 
-  int *vecnei_d;
-  int *vecicoarse_d; 
-#endif
+struct RGRID{
+  struct OCTLIGHT oct[7];
+  struct OCTFLUX New;
 };
 
 
 
-//==============================================
+
+

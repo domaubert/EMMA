@@ -102,3 +102,11 @@ for(q=1;q<=dimsof(p)(0);q++){
 
  return dens;
 }
+
+func genpartsilo(fname,ncpu=,execut=){
+  if(is_void(execut)) execut="~/Project/Quartz/utils/part2silo ";
+  if(is_void(ncpu)) ncpu=1;
+  time=array(double);
+  commande=execut+" "+fname+" "+pr1(ncpu);
+  system(commande);
+}

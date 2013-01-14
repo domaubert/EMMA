@@ -1,0 +1,10 @@
+void initlocaldevice(int,int);
+void initlocaldeviceTITANE(int rank, int count, int *hostnum, int nhost);
+int countdevices(int);
+void checkdevice(int);
+void exchange_zp(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
+void exchange_zm(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
+void exchange_yp(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
+void exchange_ym(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
+void exchange_xp(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
+void exchange_xm(float *cuegy, float *cuflx, float *cubuff, float *buff, int *neighbor, int even);
