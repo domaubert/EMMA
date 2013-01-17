@@ -187,6 +187,26 @@ int main(int argc, char *argv[])
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
 			    break;
 #endif			  
+
+#ifdef WRAD
+			  case 701:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.e[0];
+			    break;
+			  case 702:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fx[0];
+			    break;
+			  case 703:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fy[0];
+			    break;
+			  case 704:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fz[0];
+			    break;
+			  case 705:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.src[0];
+			    break;
+#endif
+
+
 			  }
 			}
 		    }

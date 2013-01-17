@@ -4,6 +4,7 @@
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
+#include "rad_utils.h"
 #include "friedmann.h"
 #include "cic.h"
 #include "particle.h"
@@ -123,10 +124,39 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 }
 #endif
 
+
+#ifdef WRAD
+REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+  
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  REAL dxcur;
+  int icell;
+  REAL dtloc;
+  REAL dt;
+
+  dt=tmax;
+  // setting the first oct
+      
+  nextoct=firstoct[level-1];
+      
+  if(nextoct!=NULL){
+    dxcur=pow(0.5,level); // +1 to protect level change
+    dt=CFL*dxcur/param->clight/3.0;
+  }
+
+  return dt;
+}
+#endif
+
+
+
+
+
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, int stride,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int stride,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -171,9 +201,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     grid_census(param,cpu);
   }
   
+  is=0;
 #ifdef PIC
   //reset substep index of the particles
-  is=0;
   L_reset_is_part(level,firstoct);
 #endif
 
@@ -192,6 +222,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // =============================== cleaning 
 #ifdef WHYDRO2
     clean_new_hydro(level,param,firstoct,cpu);
+#endif
+
+#ifdef WRAD
+    clean_new_rad(level,param,firstoct,cpu);
 #endif
 
 #ifdef PIC
@@ -214,9 +248,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
  
     /* //==================================== Getting Density ==================================== */
+#ifdef WGRAV
     FillDens(level,param,firstoct,cpu); 
 
-#ifdef WGRAV
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,stride,aexp); 
 
@@ -266,6 +300,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
+
+#ifdef WRAD
+    REAL dtrad;
+    dtrad=L_comptstep_rad(level,param,firstoct,1.0,1.0,cpu,1e9);
+    printf("dtrad= %e ",dtrad);
+    dtnew=(dtrad<dtnew?dtrad:dtnew);
+#endif
+
+
+
     printf("\n");
 
 
@@ -287,7 +331,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -330,8 +374,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WRAD
     //=============== Radiation Update ======================
-    RadSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
-
+    RadSolver(level,param,firstoct,cpu,rstencil,stride,adt[level-1]);
 #endif
 
 

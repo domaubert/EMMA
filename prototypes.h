@@ -30,8 +30,9 @@ typedef double REAL;
 
 
 #ifdef WRAD
-#define NVAR_R (4)
+#define NVAR_R (5)
 #define NGRP (1)
+#define EMIN (0.)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 
@@ -84,6 +85,10 @@ struct RUNPARAMS{
 
   int nthread;
   int nstream;
+
+#ifdef WRAD
+  REAL clight;
+#endif
 
 };
 
@@ -198,7 +203,8 @@ struct Rtype{
   REAL fx[NGRP];
   REAL fy[NGRP];
   REAL fz[NGRP];
-}
+  REAL src[NGRP];
+};
 
 
 struct Wtype{
@@ -388,7 +394,7 @@ struct CELLFLUX
   REAL divu;
 #endif
 
-#ifdef WHYDRO2
+#ifdef WRAD
   struct Rtype deltaR;
   struct Rtype rfield;
   REAL rflux[NFLUX_R]; 
@@ -550,4 +556,30 @@ struct RGRID{
 
 
 
+
+// ========================================
+struct MULTIVECT{
+  REAL *vecpot; //contains the potential in "stride" octs
+  REAL *vecpotnew; //contains the potential in "stride" octs
+  REAL *vecden; //contains the density in "stride" octs
+
+
+  int *vecnei;//contains the cell neighbors of the octs
+  int *vecl; // contains the level of the octs
+  int *veccpu; // contains the level of the octs
+  int *vecicoarse; // contains the level of the octs
+
+#ifdef WGPU
+  REAL *vecden_d;
+  int *vecl_d;
+  int *veccpu_d;
+  REAL *vec2_d;
+  REAL *vecsum_d;
+
+  REAL *vecpot_d;
+  REAL *vecpotnew_d;
+  int *vecnei_d;
+  int *vecicoarse_d;
+#endif
+};
 

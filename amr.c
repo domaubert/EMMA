@@ -736,7 +736,9 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef TESTCOSMO
 			    den=curoct->cell[icell].gdata.d+1.;
 #else
+#ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d;
+#endif
 #endif
 
 /* #ifdef PART2 */

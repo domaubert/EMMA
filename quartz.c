@@ -35,6 +35,10 @@
 #include "poisson_utils.h"
 #endif
 
+#ifdef WRAD
+#include "rad_utils.h"
+#endif
+
 #include "advanceamr.h"
 
 #ifdef GPUAXL
@@ -475,11 +479,16 @@ int main(int argc, char *argv[])
   // allocating the 6dim stencil
   struct HGRID *stencil;
   struct STENGRAV gstencil;
+  struct RGRID *rstencil;
 
 #ifndef GPUAXL
   printf("stencil=%p with stride=%d\n",stencil,stride);
   stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
   printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+
+#ifdef WRAD
+  rstencil=(struct RGRID*)calloc(stride,sizeof(struct RGRID));
+#endif
 
 #ifndef FASTGRAV
   struct GGRID *grav_stencil;
@@ -1350,23 +1359,25 @@ int main(int argc, char *argv[])
 	      
 
 
-	      /* /\* ZELDOVICH PANCAKE *\/ */
+	      /* /\* /\\* ZELDOVICH PANCAKE *\\/ *\/ */
 
-	      REAL ZI=100;
-	      REAL ZC=9;
-	      cosmo.om=1.0;
-	      cosmo.ov=0.;
-	      cosmo.ob=OMEGAB;
+	      /* REAL ZI=100; */
+	      /* REAL ZC=9; */
+	      /* cosmo.om=1.0; */
+	      /* cosmo.ov=0.; */
+	      /* cosmo.ob=OMEGAB; */
 
-	      ainit=1./(1.+ZI);
-	      amax=1.;//(1.+ZC);
-	      curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5));
-	      curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI);
-	      curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI);
-	      curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI);
-	      curoct->cell[icell].field.p=1e-14;
-	      curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
-	      getE(&curoct->cell[icell].field);
+	      /* ainit=1./(1.+ZI); */
+	      /* amax=1.;//(1.+ZC); */
+	      /* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
+	      /* curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
+	      /* curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI); */
+	      /* curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI); */
+	      /* curoct->cell[icell].field.p=1e-14; */
+	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
+	      /* getE(&curoct->cell[icell].field); */
+
+
 
 	      /* /\* SHOCK TUBE *\/ */
 	      /* if(zc<=X0){ */
@@ -1401,6 +1412,48 @@ int main(int argc, char *argv[])
 
 
 
+#endif
+
+  //===================================================================================================================================
+#ifdef WRAD
+  REAL X0=1./32.;
+  int igrp;
+  for(level=levelcoarse;level<=levelmax;level++) 
+    {
+      dxcur=pow(0.5,level);
+      nextoct=firstoct[level-1];
+      if(nextoct==NULL) continue;
+      do // sweeping level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+	      
+	      for(igrp=0;igrp<NGRP;igrp++){
+		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
+		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
+		  curoct->cell[icell].rfield.src[igrp]=1.; 
+		}
+		else{
+		  curoct->cell[icell].rfield.src[igrp]=0.; 
+		}
+		curoct->cell[icell].rfield.fx[igrp]=0.; 
+		curoct->cell[icell].rfield.fy[igrp]=0.; 
+		curoct->cell[icell].rfield.fz[igrp]=0.; 
+
+	      }
+	    }
+	}while(nextoct!=NULL);
+      
+      
+    }
+
+#endif
+
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1412,7 +1465,7 @@ int main(int argc, char *argv[])
   //===================================================================================================================================
   //===================================================================================================================================
 
-#endif
+
 
 #ifdef TESTCOSMO
   // ================== COMPUTATION OF FRIEDMANN TABLES
@@ -1601,7 +1654,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump

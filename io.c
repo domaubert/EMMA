@@ -200,6 +200,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
 
+      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->clight=dummyf;
+
       fclose(buf);
     }
 
