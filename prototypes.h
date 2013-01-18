@@ -36,6 +36,12 @@ typedef double REAL;
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 
+// ================= PHYSICAL CONSTANTS ===================
+#define LIGHT_SPEED_IN_M_PER_S (299792458.)
+#define KBOLTZ (1.3806e-23) // J/K
+#define PARSEC (3.085677e16) // in m
+
+
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -43,9 +49,19 @@ struct COSMOPARAM{
   REAL om;
   REAL ov;
   REAL ob;
+  REAL H0;
   REAL *tab_aexp;
   REAL *tab_ttilde;
   REAL tsim;
+};
+#endif
+
+
+#ifdef WRAD
+struct UNITS{
+  REAL unit_l; // comoving length size of the box [meters]
+  REAL unit_v; // unit velocity
+  REAL unit_t; // unit time [seconds]
 };
 #endif
 
@@ -88,6 +104,9 @@ struct RUNPARAMS{
 
 #ifdef WRAD
   REAL clight;
+  struct UNITS unit;
+  REAL fudgecool;
+  int ncvgcool;
 #endif
 
 };
@@ -203,7 +222,14 @@ struct Rtype{
   REAL fx[NGRP];
   REAL fy[NGRP];
   REAL fz[NGRP];
-  REAL src[NGRP];
+  REAL src;
+
+#ifdef WCHEM
+  REAL xion;
+  REAL temp;
+  REAL nh;
+#endif
+
 };
 
 
@@ -397,6 +423,7 @@ struct CELLFLUX
 #ifdef WRAD
   struct Rtype deltaR;
   struct Rtype rfield;
+  struct Rtype rfieldnew;
   REAL rflux[NFLUX_R]; 
 #endif
 

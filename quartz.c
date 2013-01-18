@@ -1418,6 +1418,16 @@ int main(int argc, char *argv[])
 #ifdef WRAD
   REAL X0=1./32.;
   int igrp;
+
+#ifdef WCHEM
+  param.unit.unit_l=6.6e3*PARSEC;
+  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  param.fudgecool=0.1;
+  param.ncvgcool=0;
+#endif
+
+
   for(level=levelcoarse;level<=levelmax;level++) 
     {
       dxcur=pow(0.5,level);
@@ -1436,15 +1446,19 @@ int main(int argc, char *argv[])
 	      for(igrp=0;igrp<NGRP;igrp++){
 		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
-		  curoct->cell[icell].rfield.src[igrp]=1.; 
+		  curoct->cell[icell].rfield.src=1.; 
 		}
 		else{
-		  curoct->cell[icell].rfield.src[igrp]=0.; 
+		  curoct->cell[icell].rfield.src=0.; 
 		}
 		curoct->cell[icell].rfield.fx[igrp]=0.; 
 		curoct->cell[icell].rfield.fy[igrp]=0.; 
 		curoct->cell[icell].rfield.fz[igrp]=0.; 
-
+#ifdef WCHEM
+		curoct->cell[icell].rfield.temp=1e4; 
+		curoct->cell[icell].rfield.xion=1e-4; 
+		curoct->cell[icell].rfield.nh=1e4; 
+#endif
 	      }
 	    }
 	}while(nextoct!=NULL);

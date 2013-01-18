@@ -9,6 +9,10 @@
 
 #include <mpi.h>
 
+#ifdef WCHEM
+#include "chem_utils.h"
+#endif
+
 //================================================================================
 void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
   int igrp;
@@ -17,8 +21,8 @@ void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->fx[igrp]=W2->fx[igrp]- W1->fx[igrp];
     WR->fy[igrp]=W2->fy[igrp]- W1->fy[igrp];
     WR->fz[igrp]=W2->fz[igrp]- W1->fz[igrp];
-    WR->src[igrp]=W2->src[igrp]- W1->src[igrp];
   }
+    WR->src=W2->src- W1->src;
 }
 
 //================================================================================
@@ -60,14 +64,15 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
       Wr->fz[igrp]=fmin(fmin(0.,fmax(beta*Wm->fz[igrp],Wp->fz[igrp])),fmax(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
 
-    if(Wp->src[igrp]>0){
-      Wr->src[igrp]=fmax(fmax(0.,fmin(beta*Wm->src[igrp],Wp->src[igrp])),fmin(Wm->src[igrp],beta*Wp->src[igrp]));
+  }
+
+    if(Wp->src>0){
+      Wr->src=fmax(fmax(0.,fmin(beta*Wm->src,Wp->src)),fmin(Wm->src,beta*Wp->src));
     }
     else{
-      Wr->src[igrp]=fmin(fmin(0.,fmax(beta*Wm->src[igrp],Wp->src[igrp])),fmax(Wm->src[igrp],beta*Wp->src[igrp]));
+      Wr->src=fmin(fmin(0.,fmax(beta*Wm->src,Wp->src)),fmax(Wm->src,beta*Wp->src));
     }
 
-  }
 }
 
 //================================================================================
@@ -78,8 +83,8 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
     Wp->fx[igrp] =W0->fx[igrp] +dx*Dx->fx[igrp] +dy*Dy->fx[igrp] +dz*Dz->fx[igrp];
     Wp->fy[igrp] =W0->fy[igrp] +dx*Dx->fy[igrp] +dy*Dy->fy[igrp] +dz*Dz->fy[igrp];
     Wp->fz[igrp] =W0->fz[igrp] +dx*Dx->fz[igrp] +dy*Dy->fz[igrp] +dz*Dz->fz[igrp];
-    Wp->src[igrp] =W0->src[igrp] +dx*Dx->src[igrp] +dy*Dy->src[igrp] +dz*Dz->src[igrp];
   }
+    Wp->src =W0->src +dx*Dx->src +dy*Dy->src +dz*Dz->src;
 }
 
 //================================================================================
@@ -849,6 +854,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 {
   int i,icell,igrp;
   struct Rtype R;
+  struct Rtype Rupdate;
   REAL one;
   int flx;
   REAL dtsurdx=dtnew/dxcur;
@@ -883,13 +889,28 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
       // adding the source contribution
       for(igrp=0;igrp<NGRP;igrp++){
-	SRC=stencil[i].oct[6].cell[icell].rfield.src[igrp];
+	SRC=stencil[i].oct[6].cell[icell].rfield.src;
 	R.e[igrp]  +=SRC*dtnew+EMIN;
       }
       
       // scatter back the delta Uwithin the stencil
 
       memcpy(&(stencil[i].New.cell[icell].deltaR),&R,sizeof(struct Rtype));
+
+      // TESTING FULL UPDATE IN STENCIL APPROACH
+      
+      memcpy(&Rupdate,&stencil[i].oct[6].cell[icell].rfield,sizeof(struct Rtype));
+
+      for(igrp=0;igrp<NGRP;igrp++){
+	Rupdate.e[igrp]   +=R.e[igrp];
+	Rupdate.fx[igrp]  +=R.fx[igrp];
+	Rupdate.fy[igrp]  +=R.fy[igrp];
+	Rupdate.fz[igrp]  +=R.fz[igrp];
+      }
+      
+      //memcpy(&(curoct->cell[icell].rfieldnew),&Rupdate,sizeof(struct Rtype));
+      memcpy(&stencil[i].New.cell[icell].rfieldnew,&Rupdate,sizeof(struct Rtype));
+
     }
   }
 
@@ -929,22 +950,22 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
       for(icell=0;icell<8;icell++){
 	//we scatter the values in the central cell
 	
-	memcpy(&deltaR,&(stencil[iread].New.cell[icell].deltaR),sizeof(struct Rtype)); // getting the delta U back
-	memcpy(&R,&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
 
-	for(igrp=0;igrp<NGRP;igrp++){
-	  R.e[igrp]   +=deltaR.e[igrp];
-	  R.fx[igrp]  +=deltaR.fx[igrp];
-	  R.fy[igrp]  +=deltaR.fy[igrp];
-	  R.fz[igrp]  +=deltaR.fz[igrp];
-	}
-
-
- 	memcpy(&(curoct->cell[icell].rfieldnew),&R,sizeof(struct Rtype)); // at this stage the central cell has been updated
- 	/* if(icell==4){ */
-	/*   if(curoct->cell[icell].rfieldnew.e[0]!=curoct->cell[0].rfieldnew.e[0]) abort(); */
+	// BLOC ==
+	/* memcpy(&deltaR,&(stencil[iread].New.cell[icell].deltaR),sizeof(struct Rtype)); // getting the delta U back */
+	/* memcpy(&R,&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); */
+	/* for(igrp=0;igrp<NGRP;igrp++){ */
+	/*   R.e[igrp]   +=deltaR.e[igrp]; */
+	/*   R.fx[igrp]  +=deltaR.fx[igrp]; */
+	/*   R.fy[igrp]  +=deltaR.fy[igrp]; */
+	/*   R.fz[igrp]  +=deltaR.fz[igrp]; */
 	/* } */
-	
+ 	/* memcpy(&(curoct->cell[icell].rfieldnew),&R,sizeof(struct Rtype)); // at this stage the central cell has been updated */
+	// ENDBLOC ==
+
+	memcpy(&(curoct->cell[icell].rfieldnew),&(stencil[iread].New.cell[icell].rfieldnew),sizeof(struct Rtype)); 
+
+
 	// let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
@@ -959,8 +980,6 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	      memcpy(&R,&(curoct->nei[vnei[inei]]->rfieldnew),sizeof(struct Rtype));
 
 	      // getting the flux
-
-	      /// ==== > A FIXER A PARTIR D'ICI AVEC IGRP SUR LES GROUPES  (NVAR ? NFLUX_R ?)
 
 	      memcpy(F,stencil[iread].New.cell[icell].rflux+inei*NVAR,sizeof(REAL)*NVAR_R*NGRP);
 	      
@@ -989,7 +1008,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 
 // ====================================================================================================================
 
-int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL c){
+int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew, struct RUNPARAMS *param){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -1013,16 +1032,22 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
-      rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,c);   
-      rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,c); 
-      rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,c); 
+      rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight);   
+      rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight); 
+      rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight); 
       
       // ------------ updating values within the stencil
 
       t[4]=MPI_Wtime();
 
       updatefieldrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew);
-      
+
+      // ----------- perform physical cooling and ionisation 
+#ifdef WCHEM
+      chemrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,param);
+#endif
+
+
       // ------------ scatter back the FLUXES
       
       t[6]=MPI_Wtime();
@@ -1048,6 +1073,8 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   return nreadtot;
 }
 
+
+
 // =================================================================================================
 // =================================================================================================
 
@@ -1072,9 +1099,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param->clight);
+  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param);
 #else
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param->clight);
+  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param);
   //  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #endif
 
