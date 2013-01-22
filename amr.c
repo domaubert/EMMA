@@ -157,6 +157,62 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #endif
 
+// =========================================================================================================
+// =========================================================================================================
+
+#ifdef WRAD
+#ifdef WCHEM
+
+REAL comp_grad_rad(struct OCT *curoct, int icell){
+  REAL gradd[3]={0.,0.,0.};
+
+
+  int vcell[6],vnei[6];
+  struct Rtype W;
+  struct Rtype Wi[8];
+  int ii;
+
+  REAL ratiox,ratio;
+  REAL dxcur=pow(0.5,curoct->level);
+
+  getcellnei(icell, vnei, vcell);
+  for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
+    if(vnei[ii]==6){
+      memcpy(&W,&(curoct->cell[vcell[ii]].rfield),sizeof(struct Rtype));
+
+    }
+    else{
+      // Note that the neibourgh cell may not exist therefore we have to check
+      if(curoct->nei[vnei[ii]]->child!=NULL){
+	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].rfield),sizeof(struct Rtype));
+
+      }
+      else{
+	// the neighbour does not exist we need to interpolate the value at the correct position
+	coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
+	memcpy(&W,Wi+vcell[ii],sizeof(struct Rtype));
+    
+      }
+    }
+    
+    int ax=ii/2;
+    int fact=((ii%2)==0?-1:1);
+    gradd[ax]+=(W.xion*fact);   
+
+  }
+
+  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
+
+  //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
+
+  ratio=ratiox;
+  return ratio; 
+  
+}
+
+#endif
+#endif
+
 
 //========================================================================================================================
 //========================================================================================================================
@@ -189,6 +245,13 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2  
   struct Wtype Wi[8];
 #endif
+
+#ifdef WRAD
+#ifdef WCHEM  
+  struct Rtype Ri[8];
+#endif
+#endif
+
 
 #ifdef WGRAV  
   struct Gtype Gi[8];
@@ -395,6 +458,16 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		}
 #endif
 
+
+#ifdef WRAD
+#ifdef WCHEM
+		if(cpu->rank==curoct->cpu){
+		  coarse2fine_rad2(&(curoct->cell[icell]),Ri);
+		}
+#endif
+#endif
+
+
 #ifdef WGRAV
 		if(cpu->rank==curoct->cpu){
 		  coarse2fine_gravlin(&(curoct->cell[icell]),Gi);
@@ -425,6 +498,20 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
 		  }
 #endif
+
+
+#ifdef WRAD
+#ifdef WCHEM
+		  if(cpu->rank==curoct->cpu){
+		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
+		    //printf("xion=%e %e\n",curoct->cell[icell].rfield.xion,Ri[ii].xion);
+		  }
+		  else{
+		    memset(&(newoct->cell[ii].rfield),0,sizeof(struct Rtype));
+		  }
+#endif
+#endif
+
 
 #ifdef WGRAV
 		  if(cpu->rank==curoct->cpu){
@@ -772,6 +859,18 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 #endif
+
+#ifdef WRAD
+#ifdef WCHEM
+			    //mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+			    mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif
+#endif
+
 
 #endif
 

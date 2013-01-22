@@ -132,7 +132,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
 void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param)
 {
-  int i,icell,igrp;
+  int i,icell,igrp,itest=0;
   REAL one;
   int flx;
   REAL dtsurdx=dtnew/dxcur;
@@ -200,18 +200,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       // switch to physical units, chemistry remains unchanged with and without cosmo
       for (igrp=0;igrp<NGRP;igrp++)
 	{			
-	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexp*aexp*aexp)/pow(param->unit.unit_l,3); 
-	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t;
-	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t;
-	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t;
+	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
+	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
 	}
 
 
       x0[idloc]=R.xion;
-      nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3);
+      nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
       tloc[idloc]=R.temp; 
-      srcloc[idloc]=R.src/pow(param->unit.unit_l,3); 
+      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t; 
 
+      if((R.e[0]>2.5e65)&&(octstart->level==5)){
+	printf("1//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]);
+	itest=1;
+      }
+      
       // at this stage we are ready to do the calculations
 
 
@@ -357,16 +362,21 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       // FIlling the rad structure to send it back
       for(igrp=0;igrp<NGRP;igrp++)
 	{
-	  R.e[igrp]=fmax(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])*pow(param->unit.unit_l,3);
-	  R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t;
-	  R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t;
-	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t;
+	  R.e[igrp]=fmax(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])*pow(param->unit.unit_l,3)/param->unit.unit_n;
+	  R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	  R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
 	}
  
       
       R.temp=tloc[idloc];
       R.xion=x0[idloc];
-
+      /*  R.src=srcloc[idloc]; */
+      /* R.nh=nH[idloc]; */
+      if(itest){
+	printf("2//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]);
+	itest=0;
+      }
            
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 

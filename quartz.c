@@ -37,6 +37,11 @@
 
 #ifdef WRAD
 #include "rad_utils.h"
+#ifdef WCHEM
+#include "chem_utils.h"
+#include "atomic_data/Atomic.h"
+#endif
+
 #endif
 
 #include "advanceamr.h"
@@ -1416,15 +1421,21 @@ int main(int argc, char *argv[])
 
   //===================================================================================================================================
 #ifdef WRAD
-  REAL X0=1./32.;
+  REAL X0=1./pow(2,levelcoarse);
   int igrp;
 
-#ifdef WCHEM
-  param.unit.unit_l=6.6e3*PARSEC;
+  param.unit.unit_l=13.2e3*PARSEC;
   param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
   param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  param.unit.unit_n=1.;
+
+#ifdef WCHEM
   param.fudgecool=0.1;
   param.ncvgcool=0;
+  if(NGRP!=NGRP_ATOMIC){
+    printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
+    abort();
+  }
 #endif
 
 
@@ -1446,7 +1457,9 @@ int main(int argc, char *argv[])
 	      for(igrp=0;igrp<NGRP;igrp++){
 		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
-		  curoct->cell[icell].rfield.src=1.; 
+		  //curoct->cell[icell].rfield.src=5e8;
+		  curoct->cell[icell].rfield.src=5e48/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n; 
+		  printf("SRC=%e\n",curoct->cell[icell].rfield.src);
 		}
 		else{
 		  curoct->cell[icell].rfield.src=0.; 
@@ -1456,8 +1469,8 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.fz[igrp]=0.; 
 #ifdef WCHEM
 		curoct->cell[icell].rfield.temp=1e4; 
-		curoct->cell[icell].rfield.xion=1e-4; 
-		curoct->cell[icell].rfield.nh=1e4; 
+		curoct->cell[icell].rfield.xion=1.2e-3; 
+		curoct->cell[icell].rfield.nh=1e3*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 #endif
 	      }
 	    }
@@ -1528,7 +1541,7 @@ int main(int argc, char *argv[])
 #ifdef WHYDRO2
   tmax=5.;
 #else
-  tmax=1000.;
+  tmax=1e15;
 #endif
 #endif
 
@@ -1658,7 +1671,11 @@ int main(int argc, char *argv[])
       cosmo.tsim=tsim;
       if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f t=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
+#ifndef WRAD
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
+#else
+      if(cpu.rank==0) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+#endif
 #endif
       // Resetting the timesteps
 

@@ -27,7 +27,7 @@ func readcube(fname,&time){
   time=array(float);
   _read,fp,adress,nmap;adress+=sizeof(nmap);
   _read,fp,adress,time;adress+=sizeof(time);
-  map=array(float,nmap^3);
+  map=array(double,nmap^3);
   _read,fp,adress,map;
   close,fp;
 

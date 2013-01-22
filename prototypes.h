@@ -40,7 +40,8 @@ typedef double REAL;
 #define LIGHT_SPEED_IN_M_PER_S (299792458.)
 #define KBOLTZ (1.3806e-23) // J/K
 #define PARSEC (3.085677e16) // in m
-
+#define AVOGADRO (6.02214129e23) // mol-1
+#define MYR (3.1536e13) // s
 
 //=======================================
 #ifdef TESTCOSMO
@@ -62,6 +63,7 @@ struct UNITS{
   REAL unit_l; // comoving length size of the box [meters]
   REAL unit_v; // unit velocity
   REAL unit_t; // unit time [seconds]
+  REAL unit_n; // unit number [moles typically]
 };
 #endif
 

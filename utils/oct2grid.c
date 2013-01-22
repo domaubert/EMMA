@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
   int status;
   int I;
   int lmap;
-  float *map;
+  REAL *map;
   int imap,jmap,kmap;
   int nmap;
   REAL dxmap,dxcur;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   //getting the resolution
   sscanf(argv[2],"%d",&lmap);
   nmap=pow(2,lmap);
-  map=(float *)calloc(nmap*nmap*nmap,sizeof(float));
+  map=(REAL *)calloc(nmap*nmap*nmap,sizeof(REAL));
   dxmap=1./nmap;
 
   // getting the number of CPUs
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   // scanning the cpus
   for(icpu=0;icpu<ncpu;icpu++){
     
-    memset(map,0,nmap*nmap*nmap*sizeof(float));
+    memset(map,0,nmap*nmap*nmap*sizeof(REAL));
     
     // building the input file name
     strcpy(format,argv[1]);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
       printf("Casting Rays on %dx%dx%d cube from %s\n",nmap,nmap,nmap,fname);
     }
     
-    printf("size= %ld\n",nmap*nmap*nmap*sizeof(float)+sizeof(int)*2);
+    printf("size= %ld\n",nmap*nmap*nmap*sizeof(REAL)+sizeof(int)*2);
     // reading the time
     fread(&tsim,sizeof(REAL),1,fp);
     printf("tsim=%e\n",tsim);
@@ -202,8 +202,19 @@ int main(int argc, char *argv[])
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fz[0];
 			    break;
 			  case 705:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.src[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.src;
 			    break;
+#ifdef WCHEM
+			  case 706:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.xion;
+			    break;
+			  case 707:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.temp;
+			    break;
+			  case 708:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.nh;
+			    break;
+#endif
 #endif
 
 
@@ -228,7 +239,7 @@ int main(int argc, char *argv[])
       fp=fopen(fname2,"wb");
       fwrite(&nmap,1,sizeof(int),fp);
       fwrite(&tsimf,1,sizeof(float),fp);
-      for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(float),fp);
+      for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(REAL),fp);
       status=ferror(fp);
       fclose(fp);
     }
