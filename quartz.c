@@ -1468,8 +1468,13 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.fy[igrp]=0.; 
 		curoct->cell[icell].rfield.fz[igrp]=0.; 
 #ifdef WCHEM
+#ifndef COOLING
 		curoct->cell[icell].rfield.temp=1e4; 
 		curoct->cell[icell].rfield.xion=1.2e-3; 
+#else
+		curoct->cell[icell].rfield.temp=1e2; 
+		curoct->cell[icell].rfield.xion=1e-5; 
+#endif
 		curoct->cell[icell].rfield.nh=1e3*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 #endif
 	      }

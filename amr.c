@@ -189,6 +189,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
       }
       else{
 	// the neighbour does not exist we need to interpolate the value at the correct position
+	//coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
 	coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
 	memcpy(&W,Wi+vcell[ii],sizeof(struct Rtype));
     
@@ -862,8 +863,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef WRAD
 #ifdef WCHEM
-			    //mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
-			    mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
+			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
