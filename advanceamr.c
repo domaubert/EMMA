@@ -4,7 +4,10 @@
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
+#ifdef WRAD
 #include "rad_utils.h"
+#include "src_utils.h"
+#endif
 #include "friedmann.h"
 #include "cic.h"
 #include "particle.h"
@@ -124,6 +127,7 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 }
 #endif
 
+// ===============================================================
 
 #ifdef WRAD
 REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
@@ -134,7 +138,13 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   int icell;
   REAL dtloc;
   REAL dt;
+  REAL aexp;
 
+#ifdef TESTCOSMO
+  aexp=param->cosmo->aexp;
+#else
+  aexp=1.0;
+#endif
   dt=tmax;
   // setting the first oct
       
@@ -142,7 +152,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
       
   if(nextoct!=NULL){
     dxcur=pow(0.5,level); // +1 to protect level change
-    dt=CFL*dxcur/param->clight/3.0;
+    dt=CFL*dxcur/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
   }
 
   return dt;
@@ -173,7 +183,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int is;
   REAL tloc;
   REAL aexp;
-
+  int nsource;
 #ifdef TESTCOSMO
   tloc =cosmo->tsim;
   aexp=cosmo->aexp;
@@ -189,7 +199,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   // ================= I we refine the current level
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
     // refining (and destroying) octs
-    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax);
+#ifdef WRAD
+    sanity_rad(level,param,firstoct,cpu,aexp);
+#endif
+    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
     cpu->freeoct=curoct;
   }
 
@@ -224,14 +237,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     clean_new_hydro(level,param,firstoct,cpu);
 #endif
 
-#ifdef WRAD
-    clean_new_rad(level,param,firstoct,cpu);
-#endif
 
 #ifdef PIC
     L_clean_dens(level,param,firstoct,cpu);
 #endif
 
+#ifdef WRAD
+    sanity_rad(level,param,firstoct,cpu,aexp);
+    clean_new_rad(level,param,firstoct,cpu,aexp);
+#endif
 
     // == Ready to advance
 
@@ -249,7 +263,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  
     /* //==================================== Getting Density ==================================== */
 #ifdef WGRAV
-    FillDens(level,param,firstoct,cpu); 
+    FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,stride,aexp); 
@@ -368,13 +382,33 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       // ================================= gravitational correction for Hydro
 
-    grav_correction(level,param,firstoct,cpu,adt[level-1]);
+    grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
 
 #ifdef WRAD
+
+
+#ifdef WHYDRO2
+    //=============== Building Sources and counting them ======================
+    nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
+#else
+    nsource=8;
+#endif
+
+ 
     //=============== Radiation Update ======================
-    RadSolver(level,param,firstoct,cpu,rstencil,stride,adt[level-1]);
+    if(nsource>0){
+      RadSolver(level,param,firstoct,cpu,rstencil,stride,adt[level-1],aexp);
+      
+      sanity_rad(level,param,firstoct,cpu,aexp);
+
+    }
+    else{
+      printf("== Skipping RT nsource=0\n");
+    }
+
+
 #endif
 
 

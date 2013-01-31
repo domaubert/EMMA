@@ -2,24 +2,25 @@
 ARCH = CPU
 C_LIBS = -lm -g -lstdc++
 C_FLAGS =
-C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o
+C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
 
 #------------ MAIN OPTIONS --------------------
 
-#DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
-#DEFINES  +=  -DWGRAV
+DEFINES  +=  -DPIC
+DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWGRAV
 DEFINES  +=  -DWRAD
-#DEFINES  +=  -DTESTCOSMO
-#DEFINES  +=  -DFASTGRAV
+DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DFASTGRAV
 
 #------------ ICs OPTIONS ---------------------
 
-#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
+#DEFINES  +=  -DWRADTEST
 
 #------------ MULTIGRID SOLVER OPTIONS ---------
 
@@ -37,8 +38,9 @@ DEFINES  +=  -DDUAL_E
 
 
 # ----------- RADIATION OPTIONS ------------
-DEFINES  += -DWCHEM -DS_50000
-DEFINES  += -DCOOLING
+DEFINES  += -DWCHEM 
+DEFINES  += -DS_50000
+#DEFINES  += -DCOOLING
 
 # ----------- BOUNDARY CONDITIONS --------------
 #DEFINES  +=  -DTRANSZM

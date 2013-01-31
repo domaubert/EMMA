@@ -1421,23 +1421,56 @@ int main(int argc, char *argv[])
 
   //===================================================================================================================================
 #ifdef WRAD
-  REAL X0=1./pow(2,levelcoarse);
-  int igrp;
-
-  param.unit.unit_l=13.2e3*PARSEC;
-  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
-  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
-  param.unit.unit_n=1.;
 
 #ifdef WCHEM
-  param.fudgecool=0.1;
+  param.fudgecool=0.01;
   param.ncvgcool=0;
   if(NGRP!=NGRP_ATOMIC){
     printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
     abort();
   }
+
+
 #endif
 
+#ifdef WRADTEST
+  REAL X0=1./pow(2,levelcoarse);
+  int igrp;
+
+#ifndef TESTCOSMO
+  param.unit.unit_l=13.2e3*PARSEC;
+  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  param.unit.unit_n=1.;
+  ainit=1.;
+#else
+  ainit=1./(11.);;
+  REAL om=1.;
+  REAL ov=0.;
+  REAL ob=0.045;
+  REAL h0=0.73;
+  REAL H0=h0*100*1e3/1e6/PARSEC;
+
+  param.cosmo->om=om;
+  param.cosmo->ov=ov;
+  param.cosmo->ob=ob;
+  param.cosmo->H0=h0*100.;
+
+  REAL rstar= 13.2*1e6*PARSEC; // box size in m
+  double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
+
+  REAL rhostar=rhoc*om;
+  REAL tstar=2./H0/sqrt(om); // sec
+  REAL vstar=rstar/tstar; //m/s
+
+  param.unit.unit_l=rstar;
+  param.unit.unit_v=vstar;
+  param.unit.unit_t=tstar;
+  param.unit.unit_n=1.;
+  param.unit.unit_mass=rhostar*pow(param.unit.unit_l,3);
+  amax=1.;
+
+#endif
 
   for(level=levelcoarse;level<=levelmax;level++) 
     {
@@ -1458,7 +1491,7 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
 		  //curoct->cell[icell].rfield.src=5e8;
-		  curoct->cell[icell].rfield.src=5e48/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n; 
+		  curoct->cell[icell].rfield.src=5e55/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n*pow(ainit,2); 
 		  printf("SRC=%e\n",curoct->cell[icell].rfield.src);
 		}
 		else{
@@ -1475,7 +1508,7 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.temp=1e2; 
 		curoct->cell[icell].rfield.xion=1e-5; 
 #endif
-		curoct->cell[icell].rfield.nh=1e3*pow(param.unit.unit_l,3)/param.unit.unit_n; 
+		curoct->cell[icell].rfield.nh=0.2*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 #endif
 	      }
 	    }
@@ -1483,7 +1516,7 @@ int main(int argc, char *argv[])
       
       
     }
-
+#endif
 #endif
 
   //===================================================================================================================================
@@ -1513,7 +1546,7 @@ int main(int argc, char *argv[])
   compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
 
   tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
-  
+  printf("tmax=%e\n",tmax);
   cosmo.tab_aexp=tab_aexp;
   cosmo.tab_ttilde=tab_ttilde;
 #endif

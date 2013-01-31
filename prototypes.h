@@ -42,7 +42,9 @@ typedef double REAL;
 #define PARSEC (3.085677e16) // in m
 #define AVOGADRO (6.02214129e23) // mol-1
 #define MYR (3.1536e13) // s
-
+#define PROTON_MASS (1.67262158e-27) //kg
+#define NEWTON_G (6.67384e-11) // SI
+#define HELIUM_MASSFRACTION (0.24)
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -64,6 +66,7 @@ struct UNITS{
   REAL unit_v; // unit velocity
   REAL unit_t; // unit time [seconds]
   REAL unit_n; // unit number [moles typically]
+  REAL unit_mass; // unit mass [in kg, total mass is equal to one in unit codes]
 };
 #endif
 
@@ -105,10 +108,14 @@ struct RUNPARAMS{
   int nstream;
 
 #ifdef WRAD
-  REAL clight;
-  struct UNITS unit;
-  REAL fudgecool;
-  int ncvgcool;
+  REAL clight; // speed of light in units of the real one
+  struct UNITS unit; // contains the units
+  REAL fudgecool; // cooling fraction
+  int ncvgcool; // cooling max iterations
+  
+  REAL srcthresh; // threshold to turn the sources on
+  REAL srcint; // intensity of the sources
+
 #endif
 
 };
@@ -218,7 +225,7 @@ struct CPUINFO{
 // U stands for conservative quantities
 //
 
-
+#ifdef WRAD
 struct Rtype{
   REAL e[NGRP];
   REAL fx[NGRP];
@@ -233,6 +240,7 @@ struct Rtype{
 #endif
 
 };
+#endif
 
 
 struct Wtype{

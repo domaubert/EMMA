@@ -223,7 +223,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 //========================================================================================================================
 //========================================================================================================================
 
-struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit)
+struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit, REAL aexp)
 {
   int nref,ndes;
   struct OCT *newoct;
@@ -248,9 +248,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 
 #ifdef WRAD
-#ifdef WCHEM  
   struct Rtype Ri[8];
-#endif
 #endif
 
 
@@ -461,11 +459,26 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 
 #ifdef WRAD
-#ifdef WCHEM
 		if(cpu->rank==curoct->cpu){
-		  coarse2fine_rad2(&(curoct->cell[icell]),Ri);
+		    REAL E;
+		    REAL F;
+		    int il;
+		  
+		    //coarse2fine_radlin(&(curoct->cell[icell]),Ri);
+		    
+ 		    for(il=0;il<8;il++) memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
+		  //sanity check
+		    REAL cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
+ 		    for(il=0;il<8;il++) {
+		      E=Ri[il].e[0]*cloc;
+		      F=sqrt(pow(Ri[il].fx[0],2)+pow(Ri[il].fy[0],2)+pow(Ri[il].fz[0],2));
+		      if(F/E>1.0){
+			abort();
+		      }
+		    }
+
 		}
-#endif
+		
 #endif
 
 
@@ -502,7 +515,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 
 #ifdef WRAD
-#ifdef WCHEM
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
 		    //printf("xion=%e %e\n",curoct->cell[icell].rfield.xion,Ri[ii].xion);
@@ -510,7 +522,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  else{
 		    memset(&(newoct->cell[ii].rfield),0,sizeof(struct Rtype));
 		  }
-#endif
 #endif
 
 
@@ -822,7 +833,9 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 			    REAL den;
 #ifdef TESTCOSMO
+#ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
+#endif
 #else
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d;
@@ -849,6 +862,17 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+
+#ifdef WRAD
+#ifdef WCHEM
+			    mcell=(curoct->cell[icell].rfield.src>0.)*(curoct->level>=param->lcoarse);
+			    if((mcell>(0.5))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif
+#endif
+
 #else
 
  
@@ -870,6 +894,18 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 #endif
+
+#ifdef WRADTEST
+			    mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
+	
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+			    
+#endif
+
+
 #endif
 
 

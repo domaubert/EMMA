@@ -159,7 +159,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   FILE *buf; 
   char stream[256];
   size_t rstat;
-  float dummyf;
+  REAL dummyf;
 
   buf=fopen(fparam,"r");
   if(buf==NULL)
@@ -177,16 +177,16 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
 
       fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->amrthresh=dummyf;
 
       fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->poissonacc=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
@@ -200,9 +200,12 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
 
+#ifdef WRAD
       fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->clight=dummyf;
-
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcthresh=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
+#endif
       fclose(buf);
     }
 
@@ -655,10 +658,21 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   param->cosmo->om=om;
   param->cosmo->ov=ov;
   param->cosmo->ob=ob;
-  //param->cosmo->Hubble=h0;
+  param->cosmo->H0=h0;
+
+#ifdef WRAD
+  param->unit.unit_l=rstar;
+  param->unit.unit_v=vstar;
+  param->unit.unit_t=param->unit.unit_l/param->unit.unit_v;
+  param->unit.unit_n=1.;
+  param->unit.unit_mass=rhostar*pow(param->unit.unit_l,3);
+#endif
+
   
   printf("Grafic hydro read ok\n");
   return ifound;
 }
 
 #endif
+
+

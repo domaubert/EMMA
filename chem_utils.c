@@ -1,5 +1,5 @@
 
-
+#ifdef WRAD
 #ifdef WCHEM
 
 #include <math.h>
@@ -24,7 +24,7 @@ REAL cucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_b=2.753e-14*pow(lambda,1.5)/pow(1e0+pow(lambda/2.740,0.407),2.242); //cm3/s
 #ifdef TESTCOSMO
-  alpha_b=alpha_b*1e-6*unit_number/(aexp*aexp*aexp); //m3/s
+  alpha_b=alpha_b*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
 #else
   alpha_b=alpha_b*1e-6*unit_number; //m3/s
 #endif
@@ -43,7 +43,7 @@ REAL cucompute_alpha_a(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_a=1.269e-13*pow(lambda,1.503)/pow(1e0+pow(lambda/0.522,0.470),1.923); //cm3/s
 #ifdef TESTCOSMO
-  alpha_a=alpha_a*1e-6*unit_number/(aexp*aexp*aexp); //m3/s
+  alpha_a=alpha_a*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
 #else
   alpha_a=alpha_a*1e-6*unit_number; //m3/s
 #endif
@@ -61,7 +61,7 @@ REAL cucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   T5=temp/1e5;
   beta=5.85e-11*sqrt(temp)/(1+sqrt(T5))*expf(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
-  beta=beta*1e-6*unit_number/(aexp*aexp*aexp); // !m3/s
+  beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
 #else
   beta=beta*1e-6*unit_number; // !m3/s
 #endif
@@ -160,15 +160,15 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     p[NGRP];
 
 #ifdef TESTCOSMO
-  REAL aexp=param->cosmo.aexp;
-  REAL hubblet=param->cosmo.H0*sqrtf(param->cosmo.om/aexp+param->cosmo.ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
+  REAL aexp=param->cosmo->aexp;
+  REAL hubblet=0.;//;param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
 
 #else
   REAL aexp=1.0;
   REAL hubblet=0.;
 #endif
 
-  REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S*aexp; 			// switch back to physical velocity m/s
+  REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
 
@@ -185,7 +185,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     srcloc[BLOCKCOOL];
   
   
-  REAL dt=dtnew*param->unit.unit_t;
+  REAL dt=dtnew*param->unit.unit_t*pow(aexp,2);
 
   struct Rtype R;
   REAL fudgecool=param->fudgecool;
@@ -201,21 +201,21 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       for (igrp=0;igrp<NGRP;igrp++)
 	{			
 	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
-	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/(aexp*aexp)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
 	}
 
 
       x0[idloc]=R.xion;
       nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
       tloc[idloc]=R.temp; 
-      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t; 
+      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp); 
 
-      if((R.e[0]>2.5e65)&&(octstart->level==5)){
-	printf("1//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]);
-	itest=1;
-      }
+      /* if((R.src>0)&&(octstart->level==6)){ */
+      /* 	printf("1//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]); */
+      /* 	itest=1; */
+      /* } */
       
       // at this stage we are ready to do the calculations
 
@@ -357,26 +357,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
       // ====================== End of the cooling loop
       
-      
-
       // FIlling the rad structure to send it back
       for(igrp=0;igrp<NGRP;igrp++)
 	{
 	  R.e[igrp]=fmax(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])*pow(param->unit.unit_l,3)/param->unit.unit_n;
-	  R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
-	  R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
-	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*aexp*aexp*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	  R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	  R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
 	}
- 
-      
+       
       R.temp=tloc[idloc];
       R.xion=x0[idloc];
-      /*  R.src=srcloc[idloc]; */
-      /* R.nh=nH[idloc]; */
-      if(itest){
-	printf("2//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]);
-	itest=0;
-      }
+      /* R.src=srcloc[idloc];  */
+      /* R.nh=nH[idloc];  */
+      /* if(srcloc[idloc]>0){ */
+      /* 	printf("2//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]); */
+      /* 	itest=0; */
+      /* } */
            
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 
@@ -385,4 +382,5 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
 }
 
+#endif
 #endif

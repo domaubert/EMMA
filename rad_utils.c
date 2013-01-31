@@ -640,6 +640,8 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	for(iface=0;iface<NVAR_R;iface++) FL[iface+igrp*NVAR_R]*=ffact[0]; 
 	for(iface=0;iface<NVAR_R;iface++) FR[iface+igrp*NVAR_R]*=ffact[1]; 
       }
+      
+      if(RC[0].e[0]-FR[0]*dt/dx<0.) abort();
 
       memcpy(stencil[i].New.cell[icell].rflux+2*NVAR_R*NGRP,FL,sizeof(REAL)*NVAR_R*NGRP);
       memcpy(stencil[i].New.cell[icell].rflux+3*NVAR_R*NGRP,FR,sizeof(REAL)*NVAR_R*NGRP);
@@ -819,6 +821,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	for(iface=0;iface<NVAR_R;iface++) FR[iface+igrp*NVAR_R]*=ffact[1]; 
       }
 
+
+
       memcpy(stencil[i].New.cell[icell].rflux+4*NVAR_R*NGRP,FL,sizeof(REAL)*NVAR_R*NGRP);
       memcpy(stencil[i].New.cell[icell].rflux+5*NVAR_R*NGRP,FR,sizeof(REAL)*NVAR_R*NGRP);
       
@@ -888,7 +892,10 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 
   }
   else{
-    coarse2fine_rad2(neicell,Ri);
+    //coarse2fine_radlin(neicell,Ri);
+    int il; 
+    for(il=0;il<8;il++) memcpy(&Ri[il],&neicell->rfield,sizeof(struct Rtype)); 
+
     for(icell=0;icell<8;icell++){
       child[icell]=0;
     }
@@ -1090,6 +1097,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	      // initial data from the new value
 	      memcpy(&R,&(curoct->nei[vnei[inei]]->rfieldnew),sizeof(struct Rtype));
 
+	      //if(curoct->cell[icell].rfield.e[0]!=0.)  if(curoct->level==6) printf("R1=%e\n",R.e[0]);
 	      // getting the flux
 
 	      memcpy(F,stencil[iread].New.cell[icell].rflux+inei*NVAR_R*NGRP,sizeof(REAL)*NVAR_R*NGRP);
@@ -1104,6 +1112,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	      }
  	      
 	      memcpy(&(curoct->nei[vnei[inei]]->rfieldnew),&R,sizeof(struct Rtype));
+	      //if(curoct->cell[icell].rfield.e[0]!=0.) if(curoct->level==6) printf("R2=%e\n",R.e[0]);
 	      
 	    }
 	  }
@@ -1119,15 +1128,17 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 
 // ====================================================================================================================
 
-int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew, struct RUNPARAMS *param){
+int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param){
 
   struct OCT *nextoct;
   struct OCT *curoct;
   int nreadtot,nread;
   double t[10];
   double tg=0.,th=0.,tu=0.,ts=0.,tfu=0.,ttot=0.;
-  
-  
+  REAL cloc; // the speed of light in code units
+
+  cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
+  printf("cloc=%e aexp=%e\n",cloc,aexp);
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   nreadtot=0;
@@ -1143,9 +1154,9 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
-      rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight);   
-      rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight); 
-      rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,param->clight); 
+      rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
+      rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
+      rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
       
       // ------------ updating values within the stencil
       
@@ -1190,7 +1201,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 // =================================================================================================
 
 
-void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew){
+void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp){
   
   int nread,nreadtot;;
   struct OCT *curoct;
@@ -1210,9 +1221,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param);
+  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #else
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,param);
+  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
   //  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #endif
 
@@ -1225,6 +1236,11 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
       for(icell=0;icell<8;icell++){
 	if(curoct->cell[icell].child==NULL){
 	  // unsplit case
+
+	  curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src;
+#ifdef WCHEM
+	  curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+#endif
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
 	}
 	else{
@@ -1246,6 +1262,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    R.temp+=child->cell[i].rfield.temp*0.125;
 	    R.nh+=child->cell[i].rfield.nh*0.125;
 #endif
+
 	  }
 	  memcpy(&curoct->cell[icell].rfield,&R,sizeof(struct Rtype));
 	}
@@ -1266,11 +1283,12 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 
 // ==============================================================
-void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu){
+void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;
+
 
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
@@ -1281,6 +1299,38 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 
       //for(icell=0;icell<8;icell++) memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
       for(icell=0;icell<8;icell++) memcpy(&(curoct->cell[icell].rfieldnew),&(curoct->cell[icell].rfield),sizeof(struct Rtype));
+      
+    }while(nextoct!=NULL);
+  }
+}
+
+
+// ==============================================================
+void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
+
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  REAL cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
+
+  // --------------- setting the first oct of the level
+  nextoct=firstoct[level-1];
+  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    do {
+      curoct=nextoct;
+      nextoct=curoct->next; 
+       // sanity check
+
+      REAL E;
+      REAL F;
+      for(icell=0;icell<8;icell++) {
+	E=curoct->cell[icell].rfield.e[0]*cloc;
+	F=sqrt(pow(curoct->cell[icell].rfield.fx[0],2)+pow(curoct->cell[icell].rfield.fy[0],2)+pow(curoct->cell[icell].rfield.fz[0],2));
+	if(F/E>1.0){
+	  abort();
+	}
+      }
       
     }while(nextoct!=NULL);
   }
