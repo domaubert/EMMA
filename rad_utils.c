@@ -641,7 +641,7 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	for(iface=0;iface<NVAR_R;iface++) FR[iface+igrp*NVAR_R]*=ffact[1]; 
       }
       
-      if(RC[0].e[0]-FR[0]*dt/dx<0.) abort();
+      //if(RC[0].e[0]-FR[0]*dt/dx<0.) abort();
 
       memcpy(stencil[i].New.cell[icell].rflux+2*NVAR_R*NGRP,FL,sizeof(REAL)*NVAR_R*NGRP);
       memcpy(stencil[i].New.cell[icell].rflux+3*NVAR_R*NGRP,FR,sizeof(REAL)*NVAR_R*NGRP);

@@ -842,18 +842,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 #endif
 
-/* #ifdef PART2 */
-/* 			    if((curoct->x<0.5)&&(curoct->x>0.25)){ */
-/* 			      if((curoct->y<0.5)&&(curoct->y>0.25)){ */
-/* 				if((curoct->z<0.5)&&(curoct->z>0.25)){ */
-/* 				  if(curoct->cell[icell].marked==0) { */
-/* 				    curoct->cell[icell].marked=marker; */
-/* 				    nmark++;stati[2]++; */
-/* 				  } */
-/* 				} */
-/* 			      } */
-/* 			    } */
-/* #endif */
 			    
 #ifdef PIC
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
@@ -896,7 +884,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #ifdef WRADTEST
-			    mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
+			    //mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
+			    mcell=(curoct->cell[icell].rfield.src>0.);
 	
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;

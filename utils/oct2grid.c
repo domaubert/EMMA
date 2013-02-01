@@ -105,6 +105,8 @@ int main(int argc, char *argv[])
     fread(&zerooct,sizeof(struct OCT *),1,fp);
     printf("0oct=%p\n",zerooct);
 
+    printf("size of the OCT=%ld\n",sizeof(struct OCT));
+
     ic=0;
     
     fread(&oct,sizeof(struct OCT),1,fp);
@@ -251,17 +253,17 @@ int main(int argc, char *argv[])
       }
 
 
-      float *x;
-      float *y;
-      float *z;
+      REAL *x;
+      REAL *y;
+      REAL *z;
       int dims[]={nmap+1,nmap+1,nmap+1};
       int ndims=3;
       
-      x=(float*)malloc(sizeof(float)*(nmap+1));
-      y=(float*)malloc(sizeof(float)*(nmap+1));
-      z=(float*)malloc(sizeof(float)*(nmap+1));
+      x=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+      y=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+      z=(REAL*)malloc(sizeof(REAL)*(nmap+1));
 
-      float *coords[]={x,y,z};
+      REAL *coords[]={x,y,z};
       
       int i;
       for(i=0;i<=nmap;i++){
@@ -272,9 +274,15 @@ int main(int argc, char *argv[])
 
       int dimsvar[]={nmap,nmap,nmap};
       int ndimsvar=3;
-
-      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
-      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
+      
+      if(sizeof(REAL)==4){
+	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
+	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
+      }
+      else if(sizeof(REAL)==8){
+	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_DOUBLE,DB_COLLINEAR,NULL);
+	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_DOUBLE,DB_ZONECENT,NULL);
+      }
 
       DBClose(dbfile);
     }

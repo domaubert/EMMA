@@ -1,4 +1,4 @@
-##########################################
+########################################## 
 ARCH = CPU
 C_LIBS = -lm -g -lstdc++
 C_FLAGS =
@@ -8,23 +8,23 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-DEFINES  +=  -DPIC
-DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DWGRAV
+#DEFINES  +=  -DPIC
+#DEFINES  +=  -DWHYDRO2
+#DEFINES  +=  -DWGRAV
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DTESTCOSMO
-DEFINES  +=  -DFASTGRAV
+#DEFINES  +=  -DFASTGRAV
 
 #------------ ICs OPTIONS ---------------------
 
-DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-#DEFINES  +=  -DWRADTEST
+DEFINES  +=  -DWRADTEST
 
 #------------ MULTIGRID SOLVER OPTIONS ---------
 
-DEFINES  +=  -DONFLYRED
+#DEFINES  +=  -DONFLYRED
 
 #------------ PIC OPTIONS ----------------------
 
@@ -32,9 +32,9 @@ DEFINES  +=  -DONFLYRED
 #DEFINES += -DPERFECT
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
-DEFINES  +=  -DRIEMANN_HLLC
-DEFINES  +=  -DPRIMITIVE
-DEFINES  +=  -DDUAL_E
+#DEFINES  +=  -DRIEMANN_HLLC
+#DEFINES  +=  -DPRIMITIVE
+#DEFINES  +=  -DDUAL_E
 
 
 # ----------- RADIATION OPTIONS ------------
@@ -77,6 +77,9 @@ endif
 
 all:$(C_OBJS) $(CUDA_OBJS)
 	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+
+oct2grid:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	
 
 clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~
