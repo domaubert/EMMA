@@ -12,6 +12,22 @@
 #include "atomic_data/Atomic.h"
 
 
+#define FRAC_VAR (0.1)
+
+//================================================================================
+void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
+
+  REAL tloc;
+  REAL eint=R->eint;
+  REAL nH=R->nh;
+  REAL x=R->xion;
+  REAL pstar=param->unit.unit_n*param->unit.unit_mass/pow(param->unit.unit_l,3)*pow(param->unit.unit_v,2);
+
+  nH=nH/pow(aexp,3)/pow(param->unit.unit_l,3)*param->unit.unit_n;
+  eint=eint/pow(aexp,5)*pstar;
+  tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
+  R->temp=tloc;
+}
 
 
 // ============================================================================
@@ -93,7 +109,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   // Case B Recombination Cooling
 
   c6=3.435e-30*temp*pow(2e0*157807e0/temp,1.970e0)/pow(1.f+(pow(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
-  
+  c6=0.;
 
   // Collisional excitation cooling
 
@@ -125,7 +141,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   unsurtc=fmaxf(unsurtc,fabs(c5));
   unsurtc=fmaxf(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
-  *tcool=1.5e0*nh2*(1+x)*1.3806e-23*temp/unsurtc; //Myr
+  *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
 }
 
 // ===========================================================================================================================
@@ -149,8 +165,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     alpha,
     alphab,
     beta,
-    eint,
+    tloc,
     xt,
+    eintt,
     ai_tmp1=0.,
     hnu[NGRP],		// ! Average Photon Energy (J)
     factgrp[NGRP],		
@@ -181,7 +198,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     floc[3*BLOCKCOOL*NGRP],
     x0[BLOCKCOOL],
     nH[BLOCKCOOL],
-    tloc[BLOCKCOOL],
+    eint[BLOCKCOOL],
     srcloc[BLOCKCOOL];
   
   
@@ -193,7 +210,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
   for(i=0;i<nread;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
-      
+
+      fudgecool=param->fudgecool;
       if(stencil[i].oct[6].cell[icell].split) continue;
       memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
       
@@ -209,17 +227,11 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
       x0[idloc]=R.xion;
       nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
-      tloc[idloc]=R.temp; 
-      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp); 
-
-      /* if((R.src>0)&&(octstart->level==6)){ */
-      /* 	printf("1//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]); */
-      /* 	itest=1; */
-      /* } */
+      //tloc[idloc]=R.temp; 
+      eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
+      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)/pow(aexp,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp); 
       
       // at this stage we are ready to do the calculations
-
-
 
       // DEALING WITH CLUMPING ----------------------
 #ifdef WCLUMP
@@ -249,21 +261,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	{
 	  nitcool++;
 
-	  eint=1.5*nH[idloc]*KBOLTZ*(1.f+x0[idloc])*tloc[idloc];
+	  //eint=1.5*nH[idloc]*KBOLTZ*(1.f+x0[idloc])*tloc[idloc];
 	  
+	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
+
 	  //== Getting a timestep
-	  cuCompCooling(tloc[idloc],x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 	  
 	  ai_tmp1=0.;
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
-	  tcool=fabsf(eint/(nH[idloc]*(1.0f-x0[idloc])*ai_tmp1-Cool));
+	  tcool=fabsf(eint[idloc]/(nH[idloc]*(1.0f-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
 	  dtcool=fminf(fudgecool*tcool,dt-currentcool_t);
 	  
-	  alpha=cucompute_alpha_a(tloc[idloc],1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_b(tloc[idloc],1.,1.)*CLUMPF2;
-	  beta=cucompute_beta(tloc[idloc],1.,1.)*CLUMPF2;
+	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
+	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
+	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
 	  
@@ -276,7 +290,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	      //et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 	      
 	      if(et[igrp]<0) 	{test=1;}
-	      
+ 	      /* if(fabs(et[igrp]-egyloc[igrp])>FRAC_VAR*egyloc[igrp]) { */
+	      /* 	test=1; */
+	      /* } */
 	      p[igrp]=(1.f+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
 	    }
 	  ai_tmp1=0.;
@@ -304,12 +320,18 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  ai_tmp1=0.;
 
 	  if((xt>1.f)||(xt<0.f)) 
-	    {
+ 	    {
 	      fudgecool/=10.f; 
 	      continue;	
 	    } 
+
+	  /* if(fabs(xt-x0[idloc])>FRAC_VAR*x0[idloc]) */
+	  /*   { */
+	  /*     fudgecool/=10.f;  */
+	  /*     continue;	 */
+	  /*   }  */
 	  
-	  cuCompCooling(tloc[idloc],xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 
 #ifdef COOLING
 	  // HEATING
@@ -329,14 +351,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp];}
 #endif
 	  
-	  eint=(eint+dtcool*(nH[idloc]*(1.f-xt)*(ai_tmp1)-Cool))/(1.f+3*hubblet*dtcool);
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.f-xt)*(ai_tmp1)-Cool))/(1.f+3*hubblet*dtcool);
 	  ai_tmp1=0;
 
-	  if(eint<0.f) 
-	    {
+	  if(eintt<0.f) 
+ 	    {
 	      fudgecool/=10.f; 
 	      continue;
 	    } 
+
+	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
+	    {
+	      if(srcloc[idloc]==0.){
+		//printf("Breaking FAST %e\n",fabs(eintt/eint[idloc]-1.));
+		fudgecool/=10.f;
+		continue;
+	      }
+	    }
 #endif
 	  
 	  for(igrp =0;igrp<NGRP;igrp++)
@@ -347,9 +378,10 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	    }
 	  
 	  x0[idloc]=xt;
-	  
+
 #ifdef COOLING
-	  tloc[idloc]=eint/(1.5f*nH[idloc]*KBOLTZ*(1.f+x0[idloc]));
+	  eint[idloc]=eintt;
+	  //tloc=eint/(1.5f*nH[idloc]*KBOLTZ*(1.f+x0[idloc]));
 #endif
 	  currentcool_t+=dtcool;
 	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
@@ -366,14 +398,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
 	}
        
-      R.temp=tloc[idloc];
+      //R.temp=tloc;
       R.xion=x0[idloc];
-      /* R.src=srcloc[idloc];  */
-      /* R.nh=nH[idloc];  */
-      /* if(srcloc[idloc]>0){ */
-      /* 	printf("2//%e %e %e %e\n",R.xion,R.src,R.nh,R.e[0]); */
-      /* 	itest=0; */
-      /* } */
+      R.eint=eint[idloc]*pow(aexp,5)*pow(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/pow(param->unit.unit_v,2);
            
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 

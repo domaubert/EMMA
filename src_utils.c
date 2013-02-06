@@ -18,8 +18,6 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp){
   if(cell->field.d>param->srcthresh){
     cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units
     cell->rfieldnew.src=cell->rfield.src;
-    //cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n; // switch to code units
-    
     flag=1;
   }
   else{
@@ -65,15 +63,31 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	// filling the temperature, nh, and xion
 #ifdef WCHEM
 	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
-	curoct->cell[icell].rfield.nh=d*(1.-HELIUM_MASSFRACTION)/(PROTON_MASS/param->unit.unit_mass); // switch to atom/unit_length^3
-	curoct->cell[icell].rfieldnew.nh=d*(1.-HELIUM_MASSFRACTION)/(PROTON_MASS/param->unit.unit_mass); // switch to atom/unit_length^3
+	curoct->cell[icell].rfield.nh=d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass); // switch to atom/unit_length^3
+	curoct->cell[icell].rfieldnew.nh=d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass); // switch to atom/unit_length^3
+
+#ifdef WRADHYD
+	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
+	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
+#endif
+
 #endif
 	if(init==1){
 #ifdef WCHEM
-	  curoct->cell[icell].rfield.temp=1e4; // 10000 K for a start
-	  curoct->cell[icell].rfield.xion=1.2e-3; 
-	  curoct->cell[icell].rfieldnew.temp=1e4; // 10000 K for a start
-	  curoct->cell[icell].rfieldnew.xion=1.2e-3; 
+	  REAL temperature=1e4;
+	  REAL xion=0.2e-3;
+	  REAL eint;
+
+	  curoct->cell[icell].rfield.xion=xion; 
+	  curoct->cell[icell].rfieldnew.xion=xion; 
+	  
+#ifndef WRADHYD
+	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
+	  eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*pow(aexp,2)/pow(param->unit.unit_v,2)/param->unit.unit_mass;
+	  curoct->cell[icell].rfield.eint=eint; // 10000 K for a start
+	  curoct->cell[icell].rfieldnew.eint=eint; // 10000 K for a start
+#endif
+
 #endif
 
 	  for(igrp=0;igrp<NGRP;igrp++){
@@ -89,6 +103,10 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  }
 	}
 
+#ifdef WRADHYD
+	E2T(&curoct->cell[icell].rfieldnew,aexp,param);
+	//printf("temp=%e\n",curoct->cell[icell].rfieldnew.temp);
+#endif
 
 	nc+=flag;
       }

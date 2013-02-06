@@ -45,6 +45,7 @@ typedef double REAL;
 #define PROTON_MASS (1.67262158e-27) //kg
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
+#define MOLECULAR_MU (0.59)
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -84,7 +85,8 @@ struct RUNPARAMS{
   
   int niter; // the maximal number of iterations for the Poisson solver
   
-  int stride; // the size of the stencil for vector based computations
+  int gstride; // the size of the stencil for vector based computations (gravity)
+  int hstride; // the size of the stencil for vector based computations (hydro)
 
   REAL dt; // the timsestep
 
@@ -235,8 +237,9 @@ struct Rtype{
 
 #ifdef WCHEM
   REAL xion;
-  REAL temp;
+  REAL eint;
   REAL nh;
+  REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
 #endif
 
 };
@@ -251,6 +254,12 @@ struct Wtype{
   REAL p;   // pressure
   REAL a;   // sound speed
   REAL E;
+
+#ifdef WRADHYD
+  REAL xion;
+#endif
+ 
+
 };
 
 
@@ -273,6 +282,10 @@ struct Utype{
 
 #ifdef DUAL_E
   REAL eint; // internal energy
+#endif
+
+#ifdef WRADHYD
+  REAL xion;
 #endif
 
 };

@@ -13,6 +13,8 @@
 #include "chem_utils.h"
 #endif
 
+
+
 //================================================================================
 void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
   int igrp;
@@ -25,7 +27,7 @@ void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->src=W2->src- W1->src;
 #ifdef WCHEM
     WR->xion=W2->xion-W1->xion;
-    WR->temp=W2->temp-W1->temp;
+    WR->eint=W2->eint-W1->eint;
     WR->nh=W2->nh-W1->nh;
 #endif
 }
@@ -85,11 +87,11 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
     Wr->xion=fmin(fmin(0.,fmax(beta*Wm->xion,Wp->xion)),fmax(Wm->xion,beta*Wp->xion));
   }
 
-  if(Wp->temp>0){
-    Wr->temp=fmax(fmax(0.,fmin(beta*Wm->temp,Wp->temp)),fmin(Wm->temp,beta*Wp->temp));
+  if(Wp->eint>0){
+    Wr->eint=fmax(fmax(0.,fmin(beta*Wm->eint,Wp->eint)),fmin(Wm->eint,beta*Wp->eint));
   }
   else{
-    Wr->temp=fmin(fmin(0.,fmax(beta*Wm->temp,Wp->temp)),fmax(Wm->temp,beta*Wp->temp));
+    Wr->eint=fmin(fmin(0.,fmax(beta*Wm->eint,Wp->eint)),fmax(Wm->eint,beta*Wp->eint));
   }
 
   if(Wp->nh>0){
@@ -115,7 +117,7 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
 
 #ifdef WCHEM
     Wp->xion =W0->xion +dx*Dx->xion +dy*Dy->xion +dz*Dz->xion;
-    Wp->temp =W0->temp +dx*Dx->temp +dy*Dy->temp +dz*Dz->temp;
+    Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
 #endif
 }
@@ -1240,8 +1242,14 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src;
 #ifdef WCHEM
 	  curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 #endif
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
+#ifdef WRADHYD
+	  // inject back thermal energy into the hydro
+	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+#endif
+
 	}
 	else{
 	  // split case : -> quantities are averaged
@@ -1259,11 +1267,15 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    R.src+=child->cell[i].rfield.src*0.125;
 #ifdef WCHEM
 	    R.xion+=child->cell[i].rfield.xion*0.125;
-	    R.temp+=child->cell[i].rfield.temp*0.125;
+	    R.eint+=child->cell[i].rfield.eint*0.125;
 	    R.nh+=child->cell[i].rfield.nh*0.125;
 #endif
 
 	  }
+
+#ifdef WCHEM
+	  E2T(&R,aexp,param);
+#endif
 	  memcpy(&curoct->cell[icell].rfield,&R,sizeof(struct Rtype));
 	}
       }

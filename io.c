@@ -195,7 +195,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
 
       fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->stride);
+      rstat=fscanf(buf,"%s %d",stream,&param->gstride);
+      rstat=fscanf(buf,"%s %d",stream,&param->hstride);
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
@@ -306,19 +307,19 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   float *vely;
   float *velz;
 
-  float x;
-  float y;
-  float z;
+  double x;
+  double y;
+  double z;
 
-  float vx;
-  float vy;
-  float vz;
+  double vx;
+  double vy;
+  double vz;
 
-  float x0,y0,z0;
+  double x0,y0,z0;
 
   int i1,i2,i3;
 
-  float mass;
+  double mass;
 
 #ifdef WHYDRO2
   mass=(1.-ob/om)/(np1*np2*np3);
@@ -358,9 +359,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// periodic boundary conditions
 
-	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+	x+=(x<=0.)*((int)(-x)+1.)-(x>1.)*((int)x); 
+	y+=(y<=0.)*((int)(-y)+1.)-(y>1.)*((int)y); 
+	z+=(z<=0.)*((int)(-z)+1.)-(z>1.)*((int)z); 
 
 	// computing the velocities
 	vx=velx[(i1-1)+(i2-1)*np1]*astart/(np1*dx*h0)/(sqrt(om)*0.5);
@@ -531,21 +532,25 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   velz=(float*)malloc(sizeof(float)*np1*np2);
 
   double rhob,pressure;
-  double Gnewt=6.674e-11; // Newton G
   double H0=h0*1e3/3.08568025e22; // Hubble constant (s-1)
-  double rhoc=3.*H0*H0/(8.*M_PI*Gnewt); // comoving critical density (kg/m3)
-  double mp=1.67262158e-27; // proton mass (kg)
-  double mu=0.59; // mean molecular weight
-  double kboltz=1.3806503e-23; // boltzmann constant SI
+  double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
   double zstart=1./astart-1.;
 
   // ---------- Setting the initial temperature ---- //
-
+  double temp;
   //  double temp=550.*((1.0+zstart)*(1.0+zstart)); // baryon temperature (to check) in K
   //double temp=2.7*(1+zstart);
   //double temp=1e4;
   //double temp=170.*(1.+zstart)*(1.+zstart)/10000.;
-  double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
+
+  //double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
+  if(om==1.) {
+    temp=33.64/pow(41.,2)*pow(1.+zstart,2);
+  }
+  else{
+    printf("No temperature law for cosmologies other than SCDM\n");
+    abort();
+  }
 
 
   // supercomoving unit values
@@ -563,7 +568,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   tstar2=2./h0/sqrt(om); // Mpc sec / km
   vstar=rstar/tstar; //m/s
   pstar=rhostar*vstar*vstar;
-
+  
   printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
 
   for(i3=0;i3<np3;i3++){
@@ -616,8 +621,9 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  icell=icx+icy*2+icz*4;
 	
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/pow(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(mu*mp))*kboltz*temp; // physical pressure
-
+	  pressure=(GAMMA-1.0)*1.5*(rhob/(MOLECULAR_MU*PROTON_MASS))*KBOLTZ*temp; // physical pressure
+	  
+	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values
 	  
 	  //abort();

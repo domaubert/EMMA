@@ -166,7 +166,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int stride,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -184,6 +184,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   REAL tloc;
   REAL aexp;
   int nsource;
+  int hstride=param->hstride;
+  int gstride=param->gstride;
+
 #ifdef TESTCOSMO
   tloc =cosmo->tsim;
   aexp=cosmo->aexp;
@@ -193,7 +196,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
   if(cpu->rank==0){
-    printf("\n === entering level =%d with stride=%d sten=%p aexp=%e\n",level,stride,stencil,aexp);
+    printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e\n",level,gstride,hstride,stencil,aexp);
   }
 
   // ================= I we refine the current level
@@ -266,10 +269,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(level,param,firstoct,cpu,gstencil,stride,aexp); 
+    PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp); 
 
     /* //====================================  Force Field ========================== */
-    PoissonForce(level,param,firstoct,cpu,gstencil,stride,aexp);
+    PoissonForce(level,param,firstoct,cpu,gstencil,gstride,aexp);
 #endif
 
 #ifdef PIC
@@ -345,7 +348,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -378,7 +381,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WHYDRO2
       //=============== Hydro Update ======================
-    HydroSolver(level,param,firstoct,cpu,stencil,stride,adt[level-1]);
+    HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
       // ================================= gravitational correction for Hydro
 
@@ -398,15 +401,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
  
     //=============== Radiation Update ======================
-    if(nsource>0){
-      RadSolver(level,param,firstoct,cpu,rstencil,stride,adt[level-1],aexp);
+    //    if(nsource>0){
+      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
       
       sanity_rad(level,param,firstoct,cpu,aexp);
 
-    }
-    else{
-      printf("== Skipping RT nsource=0\n");
-    }
+    /* } */
+    /* else{ */
+    /*   printf("== Skipping RT nsource=0\n"); */
+    /* } */
 
 
 #endif

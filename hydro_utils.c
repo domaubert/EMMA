@@ -2846,9 +2846,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 	    W.v+=child->cell[i].field.v*0.125;
 	    W.w+=child->cell[i].field.w*0.125;
 	    W.p+=child->cell[i].field.p*0.125;
-
 	  }
-
 	  getE(&W);
 	  //if(W.v!=0.) abort();
 	  //U2W(&U,&W);

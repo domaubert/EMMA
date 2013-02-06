@@ -124,7 +124,8 @@ int main(int argc, char *argv[])
   int nref=0,ndes=0;
 
   REAL xc,yc,zc;
-  int stride;
+  int hstride;
+  int gstride;
   int ncomp;
   REAL acc;
   REAL dt;
@@ -184,12 +185,12 @@ int main(int argc, char *argv[])
   avgdens=0.;
 #endif
 
+  REAL ainit;
 
 #ifdef TESTCOSMO
   double tab_aexp[NCOSMOTAB];
   double tab_ttilde[NCOSMOTAB];
   double tab_t[NCOSMOTAB];
-  REAL ainit;
   REAL amax;
   struct COSMOPARAM cosmo;
   param.cosmo=&cosmo;
@@ -432,8 +433,8 @@ int main(int argc, char *argv[])
 #endif
 
   threshold=param.amrthresh;
-  printf("DDD %d\n",param.stride);
-  stride=fmax(8,param.stride);//pow(2,levelcoarse);
+  gstride=fmax(8,param.gstride);//pow(2,levelcoarse);
+  hstride=fmax(8,param.hstride);//pow(2,levelcoarse);
   ncomp=10;
   acc=param.poissonacc;
   dt=param.dt;
@@ -487,33 +488,33 @@ int main(int argc, char *argv[])
   struct RGRID *rstencil;
 
 #ifndef GPUAXL
-  printf("stencil=%p with stride=%d\n",stencil,stride);
-  stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
-  printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+  printf("stencil=%p with stride=%d\n",stencil,hstride);
+  stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
+  printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
 
 #ifdef WRAD
-  rstencil=(struct RGRID*)calloc(stride,sizeof(struct RGRID));
+  rstencil=(struct RGRID*)calloc(hstride,sizeof(struct RGRID));
 #endif
 
 #ifndef FASTGRAV
   struct GGRID *grav_stencil;
-  grav_stencil=(struct GGRID*)calloc(stride,sizeof(struct GGRID));
+  grav_stencil=(struct GGRID*)calloc(gstride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
-  gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
-  gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
-  gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
+  gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
 #else
-  gstencil.d=(REAL *)calloc(stride*8,sizeof(REAL));
-  gstencil.p=(REAL *)calloc(stride*8,sizeof(REAL));
-  gstencil.pnew=(REAL *)calloc(stride*8,sizeof(REAL));
+  gstencil.d=(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.p=(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
 
-  gstencil.nei=(int *)calloc(stride*7,sizeof(int));
-  gstencil.level=(int *)calloc(stride,sizeof(int));
-  gstencil.cpu=(int *)calloc(stride,sizeof(int));
-  gstencil.valid=(char *)calloc(stride,sizeof(char));
+  gstencil.nei=(int *)calloc(gstride*7,sizeof(int));
+  gstencil.level=(int *)calloc(gstride,sizeof(int));
+  gstencil.cpu=(int *)calloc(gstride,sizeof(int));
+  gstencil.valid=(char *)calloc(gstride,sizeof(char));
   
-  gstencil.res=(REAL *)calloc(stride*8,sizeof(REAL));
-  gstencil.resLR=(REAL *)calloc(stride,sizeof(REAL));
+  gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
 #endif
   
 #endif
@@ -526,24 +527,24 @@ int main(int argc, char *argv[])
   initlocaldevice(0,1);
   checkdevice(0);
 #ifdef WGRAV
-  create_pinned_gravstencil(&gstencil,stride);
+  create_pinned_gravstencil(&gstencil,gstride);
 #ifdef FASTGRAV
   struct STENGRAV dev_stencil;
   cpu.dev_stencil=&dev_stencil;
 #endif
-  create_gravstencil_GPU(&cpu,stride);
+  create_gravstencil_GPU(&cpu,gstride);
   printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
 
 #ifdef WHYDRO2 
 
-  printf("stencil=%p with stride=%d\n",stencil,stride);
-  stencil=(struct HGRID*)calloc(stride,sizeof(struct HGRID));
-  printf("stenci=%p mem=%f\n",stencil,stride*sizeof(struct HGRID)/(1024.*1024.));
+  printf("stencil=%p with stride=%d\n",stencil,hstride);
+  stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
+  printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
   
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
-  create_pinned_stencil(&stencil,stride);  
-  create_hydstencil_GPU(&cpu,stride); 
+  create_pinned_stencil(&stencil,hstride);  
+  create_hydstencil_GPU(&cpu,hstride); 
 #endif 
   // ====================END GPU ALLOCATIONS ===============
 #endif
@@ -1490,8 +1491,7 @@ int main(int argc, char *argv[])
 	      for(igrp=0;igrp<NGRP;igrp++){
 		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
-		  //curoct->cell[icell].rfield.src=5e8;
-		  curoct->cell[icell].rfield.src=5e55/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n*pow(ainit,2); 
+		  curoct->cell[icell].rfield.src=5e48/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n*pow(ainit,2); 
 		  printf("SRC=%e\n",curoct->cell[icell].rfield.src);
 		}
 		else{
@@ -1501,14 +1501,28 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.fy[igrp]=0.; 
 		curoct->cell[icell].rfield.fz[igrp]=0.; 
 #ifdef WCHEM
+		REAL xion,temperature;
+		REAL eint;
+		REAL nh;
 #ifndef COOLING
-		curoct->cell[icell].rfield.temp=1e4; 
-		curoct->cell[icell].rfield.xion=1.2e-3; 
+		temperature=1e4;
+		xion=1.2e-3;
 #else
-		curoct->cell[icell].rfield.temp=1e2; 
-		curoct->cell[icell].rfield.xion=1e-5; 
+		temperature=1e2;
+		xion=1e-5;
 #endif
-		curoct->cell[icell].rfield.nh=0.2*pow(param.unit.unit_l,3)/param.unit.unit_n; 
+
+#ifndef TESTCOSMO
+		nh=1000.;
+#else
+		nh=0.2;
+#endif
+		
+		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
+		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS;
+		eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pow(param.unit.unit_v,2)*pow(ainit,2)/param.unit.unit_mass;
+		curoct->cell[icell].rfield.eint=eint; 
+		curoct->cell[icell].rfield.xion=xion; 
 #endif
 	      }
 	    }
@@ -1723,7 +1737,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,stride,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps);
       
 
       // ==================================== dump
@@ -1772,8 +1786,8 @@ int main(int argc, char *argv[])
 #ifdef GPUAXL
 
 #ifdef WGRAV
-    destroy_pinned_gravstencil(&gstencil,stride);
-    destroy_gravstencil_GPU(&cpu,stride);
+    destroy_pinned_gravstencil(&gstencil,gstride);
+    destroy_gravstencil_GPU(&cpu,gstride);
 #endif
 
 #ifdef WHYDRO2

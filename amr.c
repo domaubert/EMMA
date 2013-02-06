@@ -832,7 +832,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  if((curoct->level<=param->lmax)&&(ismooth==0)){ // we don't need to test the finest level
 
 			    REAL den;
-#ifdef TESTCOSMO
+			    
+#ifdef TESTCOSMO 
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
 #endif
@@ -840,7 +841,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d;
 #endif
-#endif
+#endif 
 
 			    
 #ifdef PIC
@@ -853,8 +854,13 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef WRAD
 #ifdef WCHEM
-			    mcell=(curoct->cell[icell].rfield.src>0.)*(curoct->level>=param->lcoarse);
-			    if((mcell>(0.5))&&(curoct->cell[icell].marked==0)) {
+			    int mcell1,mcell2;
+			    mcell1=(curoct->cell[icell].rfield.src>0.)*(curoct->level>=param->lcoarse);
+			    mcell2=(1<0);
+			      //mcell2=(comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse)>1.5);
+
+			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
+			    if((mcell1||mcell2)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
@@ -874,6 +880,18 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #ifdef WRAD
+
+#ifdef WRADTEST
+			    //mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
+			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+			    //mcell=(curoct->cell[icell].rfield.src>0.);
+	
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+			    
+#else
 #ifdef WCHEM
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
@@ -883,15 +901,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 #endif
 
-#ifdef WRADTEST
-			    //mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
-			    mcell=(curoct->cell[icell].rfield.src>0.);
-	
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-			    
 #endif
 
 
