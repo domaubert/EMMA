@@ -8,19 +8,19 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-DEFINES  +=  -DPIC
+#DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DWGRAV -DFASTGRAV -DONFLYRED
+#DEFINES  +=  -DWGRAV -DFASTGRAV -DONFLYRED
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
-DEFINES  +=  -DTESTCOSMO
+#DEFINES  +=  -DTESTCOSMO
 
 #------------ ICs OPTIONS ---------------------
 
-DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-#DEFINES  +=  -DWRADTEST
+DEFINES  +=  -DWRADTEST
 
 #------------ PIC OPTIONS ----------------------
 

@@ -454,6 +454,10 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
 		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
+#ifdef WRADHYD
+		  int il;
+		  for(il=0;il<8;il++) Wi[il].X=curoct->cell[icell].field.X;
+#endif
 		}
 #endif
 
@@ -517,6 +521,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
+		    curoct->cell[icell].rfield.src=0.;
 		    //printf("xion=%e %e\n",curoct->cell[icell].rfield.xion,Ri[ii].xion);
 		  }
 		  else{
@@ -856,8 +861,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WCHEM
 			    int mcell1,mcell2;
 			    mcell1=(curoct->cell[icell].rfield.src>0.)*(curoct->level>=param->lcoarse);
-			    mcell2=(1<0);
-			      //mcell2=(comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse)>1.5);
+			    //mcell2=(1<0);
+			    mcell2=(comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse)>1.5);
 
 			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
 			    if((mcell1||mcell2)&&(curoct->cell[icell].marked==0)) {
@@ -882,7 +887,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WRAD
 
 #ifdef WRADTEST
-			    //mcell=(curoct->cell[icell].rfield.e[0]>1e73)+(curoct->cell[icell].rfield.src>0.);
+			    //mcell=(curoct->cell[icell].rfield.e[0]>1e74) +(curoct->cell[icell].rfield.src>0.);
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
 	

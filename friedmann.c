@@ -165,12 +165,18 @@ double interp_aexp(double ttilde,double *tab_aexp,double *tab_ttilde){
 
 void compute_friedmann(double amin, int ntab, double omegam, double omegav, double *tab_aexp, double *tab_ttilde, double *tab_t)
 {
+
+  //FILE *fp;
+  //  fp=fopen("data/fried.txt","w");
   int i;
   for(i=0;i<ntab;i++){
     tab_aexp[i]=amin+(1.0-amin)/(ntab-1)*i;
     tab_t[i]=-integ_da_dt(tab_aexp[i],1.0,omegam,omegav,1e-8); // in hubble time units
     tab_ttilde[i]=-0.5*sqrt(omegam)*integ_da_dt_tilde(tab_aexp[i],1.0,omegam,omegav,1e-8);
+    //fprintf(fp,"%lf %lf %f\n",tab_aexp[i],tab_t[i],tab_ttilde[i]);
   }
+  //fclose(fp);
+
 }
 
 

@@ -22,10 +22,18 @@ typedef double REAL;
 
 
 #ifdef DUAL_E
+
+#ifndef WRADHYD
 #define NVAR (6)
+#else
+#define NVAR (7)
+#endif
 #else
 #define NVAR (5)
 #endif
+
+
+
 #define NFLUX (6*NVAR)
 
 
@@ -256,10 +264,8 @@ struct Wtype{
   REAL E;
 
 #ifdef WRADHYD
-  REAL xion;
+  REAL X;
 #endif
- 
-
 };
 
 
@@ -285,7 +291,7 @@ struct Utype{
 #endif
 
 #ifdef WRADHYD
-  REAL xion;
+  REAL dX;
 #endif
 
 };
@@ -296,6 +302,9 @@ struct Wtype1D{
   REAL u;   // velocity
   REAL p;   // pressure
   REAL a;   // sound speed
+#ifdef WRADHYD
+  REAL X;
+#endif
 };
 
 struct Wtype1D_double{
@@ -310,6 +319,9 @@ struct Utype1D{
   REAL d;    // density
   REAL du;   // momentum
   REAL E;    // Energy
+#ifdef WRADHYD
+  REAL dX;
+#endif
 };
 
 

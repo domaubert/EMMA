@@ -25,7 +25,8 @@ void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
   nH=nH/pow(aexp,3)/pow(param->unit.unit_l,3)*param->unit.unit_n;
   eint=eint/pow(aexp,5)*pstar;
-  tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
+  //  tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
+  tloc=eint/(1.5*nH*KBOLTZ*(1.+0.));
   R->temp=tloc;
 }
 
@@ -146,7 +147,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
 // ===========================================================================================================================
 
-void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param)
+void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexp)
 {
   int i,icell,igrp,itest=0;
   REAL one;
@@ -177,11 +178,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     p[NGRP];
 
 #ifdef TESTCOSMO
-  REAL aexp=param->cosmo->aexp;
   REAL hubblet=0.;//;param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
 
 #else
-  REAL aexp=1.0;
   REAL hubblet=0.;
 #endif
 
@@ -229,7 +228,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
       //tloc[idloc]=R.temp; 
       eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
-      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)/pow(aexp,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp); 
+      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
       
       // at this stage we are ready to do the calculations
 
@@ -263,8 +262,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
 	  //eint=1.5*nH[idloc]*KBOLTZ*(1.f+x0[idloc])*tloc[idloc];
 	  
-	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
-
+	  //tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
+	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.));
+	  
 	  //== Getting a timestep
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 	  
@@ -368,6 +368,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 		continue;
 	      }
 	    }
+#else
+	  eintt=eint[idloc];
 #endif
 	  
 	  for(igrp =0;igrp<NGRP;igrp++)
@@ -400,8 +402,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
        
       //R.temp=tloc;
       R.xion=x0[idloc];
+
       R.eint=eint[idloc]*pow(aexp,5)*pow(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/pow(param->unit.unit_v,2);
-           
+      
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 
     }

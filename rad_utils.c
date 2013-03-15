@@ -1168,7 +1168,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 
       // ----------- perform physical cooling and ionisation 
 #ifdef WCHEM
-      chemrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,param);
+      chemrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
 #endif
 
 
@@ -1218,7 +1218,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   int igrp;
 
   t[0]=MPI_Wtime();
-  if(cpu->rank==0) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
+  if(cpu->rank==0) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
 
   // ===== COMPUTING THE FLUXES
   
@@ -1244,10 +1244,13 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 #endif
+
+	  //if(curoct->cell[icell].rfieldnew.temp!=curoct->cell[icell].rfield.temp) abort();
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+	  curoct->cell[icell].field.X=curoct->cell[icell].rfield.xion;
 #endif
 
 	}

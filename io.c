@@ -413,6 +413,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 //==================================================================================
 
 #ifdef WHYDRO2
+#ifdef TESTCOSMO
 int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param){
   
   FILE *fx;
@@ -636,6 +637,12 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  W.a=sqrt(GAMMA*W.p/W.d);
 	  getE(&W);
 
+#ifdef WRADHYD
+	  // Testing ADVECTION
+	  //W.X=(i1/6)%2+((i2+1)/6)%2;
+	  W.X=0.2e-3;
+#endif
+
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
 	  ifound++;
@@ -680,5 +687,5 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 }
 
 #endif
-
+#endif
 

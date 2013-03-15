@@ -104,7 +104,7 @@ func ext_amr1D(levmap,field,color=,lmin=)
   lcur=max(levmap);
   dx=2^(lmap-lcur);
   imod=1;
-  xi=span(0,1,nx+1)(zcen);
+  xi=span(-0.5,0.5,nx+1)(zcen);
   y=x=lv=[];
   while(lcur>=lmin){
     lcur;

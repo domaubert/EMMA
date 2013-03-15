@@ -188,6 +188,11 @@ int main(int argc, char *argv[])
 			  case 107:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
 			    break;
+#ifdef WRADHYD
+			  case 108:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.X;
+			    break;
+#endif
 #endif			  
 
 #ifdef WRAD
@@ -246,7 +251,7 @@ int main(int argc, char *argv[])
       fclose(fp);
     }
     else{
-      DBfile *dbfile=NULL;
+       DBfile *dbfile=NULL;
       dbfile=DBCreate(strcat(fname2,".silo"),DB_CLOBBER, DB_LOCAL,"silo file created by Quartz",DB_PDB);
       if(dbfile==NULL){
 	printf("Error while writing file");

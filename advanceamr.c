@@ -130,7 +130,7 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 // ===============================================================
 
 #ifdef WRAD
-REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -138,13 +138,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   int icell;
   REAL dtloc;
   REAL dt;
-  REAL aexp;
 
-#ifdef TESTCOSMO
-  aexp=param->cosmo->aexp;
-#else
-  aexp=1.0;
-#endif
   dt=tmax;
   // setting the first oct
       
@@ -166,7 +160,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,struct PACKET **sendbuffer, struct PACKET **recvbuffer,int *ndt, int nsteps,REAL tloc){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -181,17 +175,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int npart=0;
   int mtot;
   int is;
-  REAL tloc;
   REAL aexp;
   int nsource;
   int hstride=param->hstride;
   int gstride=param->gstride;
 
 #ifdef TESTCOSMO
-  tloc =cosmo->tsim;
   aexp=cosmo->aexp;
 #else
-  tloc=0.;
   aexp=1.0;
 #endif
 
@@ -229,8 +220,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("subscyle #%d subt=%e\n",is,dt);
     
 #ifdef TESTCOSMO
-    cosmo->aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
-    aexp=cosmo->aexp;
+    aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    //aexp=cosmo->aexp;
 #endif
 
 
@@ -320,7 +311,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WRAD
     REAL dtrad;
-    dtrad=L_comptstep_rad(level,param,firstoct,1.0,1.0,cpu,1e9);
+    dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
     printf("dtrad= %e ",dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
 #endif
@@ -348,7 +339,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
     if(level<param->lmax){
       if(cpu->noct[level]>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps);
+	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -385,31 +376,25 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       // ================================= gravitational correction for Hydro
 
+#ifdef WGRAV
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
+#endif
 #endif
 
 
 #ifdef WRAD
 
 
-#ifdef WHYDRO2
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
-#else
-    nsource=8;
-#endif
 
  
     //=============== Radiation Update ======================
-    //    if(nsource>0){
-      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
-      
-      sanity_rad(level,param,firstoct,cpu,aexp);
+    printf("aexp=%e\n",aexp);
+    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+    
+    sanity_rad(level,param,firstoct,cpu,aexp);
 
-    /* } */
-    /* else{ */
-    /*   printf("== Skipping RT nsource=0\n"); */
-    /* } */
 
 
 #endif

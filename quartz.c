@@ -1150,7 +1150,7 @@ int main(int argc, char *argv[])
 
   struct Wtype WL, WR;
   struct Utype UL, UR;
-  REAL X0;
+  //  REAL X0;
   if(cpu.rank==0) printf("Init Hydro\n");
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
@@ -1189,19 +1189,19 @@ int main(int argc, char *argv[])
 
   /*  /\* // TEST 3 *\/ */
 
-  WL.d=1.;
-  WL.u=0.;
-  WL.v=0.;
-  WL.w=0.;
-  WL.p=1000.;
+  /* WL.d=1.; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=1000.; */
 
-  WR.d=1.;
-  WR.u=0.;
-  WR.v=0.;
-  WR.w=0.;
-  WR.p=0.01;
-  X0=0.5;
-  tmax=0.012;
+  /* WR.d=1.; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.01; */
+  /* X0=0.5; */
+  /* tmax=0.012; */
 
 
   /*  /\* // TEST 5 *\/ */
@@ -1439,15 +1439,15 @@ int main(int argc, char *argv[])
   int igrp;
 
 #ifndef TESTCOSMO
-  param.unit.unit_l=13.2e3*PARSEC;
+  param.unit.unit_l=15.e3*PARSEC;
   param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
   param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
   param.unit.unit_n=1.;
   ainit=1.;
 #else
-  ainit=1./(11.);;
-  REAL om=1.;
-  REAL ov=0.;
+  ainit=1./(16.);;
+  REAL om=0.27;
+  REAL ov=0.73;
   REAL ob=0.045;
   REAL h0=0.73;
   REAL H0=h0*100*1e3/1e6/PARSEC;
@@ -1457,7 +1457,7 @@ int main(int argc, char *argv[])
   param.cosmo->ob=ob;
   param.cosmo->H0=h0*100.;
 
-  REAL rstar= 13.2*1e6*PARSEC; // box size in m
+  REAL rstar= 20.*1e6*PARSEC; // box size in m
   double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
 
   REAL rhostar=rhoc*om;
@@ -1468,7 +1468,6 @@ int main(int argc, char *argv[])
   param.unit.unit_v=vstar;
   param.unit.unit_t=tstar;
   param.unit.unit_n=1.;
-  param.unit.unit_mass=rhostar*pow(param.unit.unit_l,3);
   amax=1.;
 
 #endif
@@ -1489,17 +1488,7 @@ int main(int argc, char *argv[])
 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 	      
 	      for(igrp=0;igrp<NGRP;igrp++){
-		curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
-		if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ 
-		  curoct->cell[icell].rfield.src=5e48/pow(X0,3)/8.*param.unit.unit_t/param.unit.unit_n*pow(ainit,2); 
-		  printf("SRC=%e\n",curoct->cell[icell].rfield.src);
-		}
-		else{
-		  curoct->cell[icell].rfield.src=0.; 
-		}
-		curoct->cell[icell].rfield.fx[igrp]=0.; 
-		curoct->cell[icell].rfield.fy[igrp]=0.; 
-		curoct->cell[icell].rfield.fz[igrp]=0.; 
+
 #ifdef WCHEM
 		REAL xion,temperature;
 		REAL eint;
@@ -1523,6 +1512,17 @@ int main(int argc, char *argv[])
 		eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pow(param.unit.unit_v,2)*pow(ainit,2)/param.unit.unit_mass;
 		curoct->cell[icell].rfield.eint=eint; 
 		curoct->cell[icell].rfield.xion=xion; 
+#ifdef WRADHYD
+		curoct->cell[icell].field.d=1.0;
+		curoct->cell[icell].field.u=0.0;
+		curoct->cell[icell].field.v=0.0;
+		curoct->cell[icell].field.w=0.0;
+		curoct->cell[icell].field.p=eint*(GAMMA-1.);
+		curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+		getE(&(curoct->cell[icell].field));
+#endif
+
+
 #endif
 	      }
 	    }
@@ -1591,7 +1591,7 @@ int main(int argc, char *argv[])
 #ifndef TESTCOSMO
 
 #ifdef WHYDRO2
-  tmax=5.;
+  tmax=1e15;
 #else
   tmax=1e15;
 #endif
@@ -1737,17 +1737,16 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps,tsim);
       
 
       // ==================================== dump
-  
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
 
 #ifndef TESTCOSMO
-	REAL tdump=tsim+adt[levelcoarse-1];
+	REAL tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
 #else
-	REAL tdump=cosmo.aexp;
+	REAL tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
 #endif
 	// === Hydro dump
     
