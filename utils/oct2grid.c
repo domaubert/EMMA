@@ -40,7 +40,9 @@ int main(int argc, char *argv[])
   int ncpu;
   int icpu;
   struct OCT *zerooct;
-
+#ifdef WRAD
+  struct UNITS unit;
+#endif
 
   if(argc!=7){
     printf("USAGE: /a.out input level field output nproc\n");
@@ -99,6 +101,15 @@ int main(int argc, char *argv[])
     printf("size= %ld\n",nmap*nmap*nmap*sizeof(REAL)+sizeof(int)*2);
     // reading the time
     fread(&tsim,sizeof(REAL),1,fp);
+#ifdef WRAD
+    fread(&unit.unit_l,sizeof(REAL),1,fp);
+    printf("unit=%e\n",unit.unit_l);
+    fread(&unit.unit_v,sizeof(REAL),1,fp);
+    fread(&unit.unit_t,sizeof(REAL),1,fp);
+    fread(&unit.unit_n,sizeof(REAL),1,fp);
+    fread(&unit.unit_mass,sizeof(REAL),1,fp);
+#endif
+
     printf("tsim=%e\n",tsim);
     tsimf=tsim;
     // reading the zerooct
@@ -219,7 +230,7 @@ int main(int argc, char *argv[])
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.temp;
 			    break;
 			  case 708:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.nh;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.nh/pow(unit.unit_l,3.);
 			    break;
 #endif
 #endif

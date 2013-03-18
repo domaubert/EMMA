@@ -1439,7 +1439,7 @@ int main(int argc, char *argv[])
   int igrp;
 
 #ifndef TESTCOSMO
-  param.unit.unit_l=15.e3*PARSEC;
+  param.unit.unit_l=30.e3*PARSEC;
   param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
   param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
   param.unit.unit_n=1.;
@@ -1508,10 +1508,13 @@ int main(int argc, char *argv[])
 #endif
 		
 		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
-		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS;
-		eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pow(param.unit.unit_v,2)*pow(ainit,2)/param.unit.unit_mass;
+		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		REAL pstar;
+		pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+		eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
 		curoct->cell[icell].rfield.eint=eint; 
 		curoct->cell[icell].rfield.xion=xion; 
+		E2T(&curoct->cell[icell].rfield,1.0,&param);
 #ifdef WRADHYD
 		curoct->cell[icell].field.d=1.0;
 		curoct->cell[icell].field.u=0.0;
@@ -1756,7 +1759,7 @@ int main(int argc, char *argv[])
 	  printf("Dumping .......");
 	  printf("%s\n",filename);
 	}
-	dumpgrid(levelmax,firstoct,filename,tdump); 
+	dumpgrid(levelmax,firstoct,filename,tdump,&param); 
 
 #ifdef PIC
 	sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);

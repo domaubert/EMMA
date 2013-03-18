@@ -155,7 +155,8 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 #ifdef WRADHYD
 	E2T(&curoct->cell[icell].rfieldnew,aexp,param);
-	//printf("temp=%e\n",curoct->cell[icell].rfieldnew.temp);
+	E2T(&curoct->cell[icell].rfield,aexp,param);
+	//printf("temp=%e nh=%e\n",curoct->cell[icell].rfieldnew.temp,curoct->cell[icell].rfieldnew.nh/pow(param->unit.unit_l,3.));
 #endif
 
 	nc+=flag;

@@ -10,7 +10,7 @@
 //====================================================================================================
 //====================================================================================================
 
-void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
+void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param)
 {
 
   int icur,ii,jj,kk;
@@ -46,7 +46,15 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
   // dumping the zero oct
 
   //printf("%p\n",firstoct[0]);
+#ifdef WRAD
+  fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+#endif
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
+
   printf("size of the OCT= %ld\n",sizeof(struct OCT));
 
   for(level=1;level<=levelmax;level++) // looping over octs
@@ -67,8 +75,6 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim)
     }
 
   
-
- 
   fclose(fp);
 }
 
