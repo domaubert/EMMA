@@ -224,36 +224,6 @@ int main(int argc, char *argv[])
 /*   printf("size =%d\n",sizeof(struct OCT)); */
 /*   abort(); */
 
-#ifdef TRANSXM
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
-#ifdef TRANSXP
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
-#ifdef TRANSYM
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
-#ifdef TRANSYP
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
-#ifdef TRANSZM
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
-#ifdef TRANSZP
-  printf("ERROR FIX GATHER FOR TRANSMISSIVE BNDARY\n");
-  abort();
-#endif
-
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
@@ -1515,7 +1485,7 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].rfield.eint=eint; 
 		curoct->cell[icell].rfield.xion=xion; 
 		E2T(&curoct->cell[icell].rfield,1.0,&param);
-#ifdef WRADHYD
+
 		curoct->cell[icell].field.d=1.0;
 		curoct->cell[icell].field.u=0.0;
 		curoct->cell[icell].field.v=0.0;
@@ -1523,7 +1493,6 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].field.p=eint*(GAMMA-1.);
 		curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		getE(&(curoct->cell[icell].field));
-#endif
 
 
 #endif

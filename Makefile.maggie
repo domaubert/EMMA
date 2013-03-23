@@ -38,13 +38,13 @@ DEFINES  += -DWCHEM
 DEFINES  += -DS_50000
 DEFINES  += -DCOOLING
 
-# ----------- BOUNDARY CONDITIONS --------------
+# ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-#DEFINES  +=  -DTRANSXM
-#DEFINES  +=  -DTRANSXP
+DEFINES  +=  -DTRANSXM
+DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================

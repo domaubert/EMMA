@@ -274,7 +274,6 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
 #endif
       
 #ifdef TRANSZP
-      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
       if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 	W=&(cell->gdata);
       }
@@ -467,6 +466,108 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
     else{
       if(oct->nei[ineiloc]->child!=NULL){
 	neicell=&(oct->nei[ineiloc]->child->cell[vcell[ineiloc]]);
+	// ============================ TRANSMISSIVE BOUNDARIES ====================
+#ifdef TRANSXP
+	if(ineiloc==1){
+	  if((oct->x+2.*dxcur)==1.){
+	    neicell=cell;
+	    face[0]=1;
+	    face[1]=1;
+	    face[2]=3;
+	    face[3]=3;
+	    face[4]=5;
+	    face[5]=5;
+	    face[6]=7;
+	    face[7]=7;
+	  }
+	}
+#endif
+
+
+#ifdef TRANSYP
+	if(ineiloc==3){
+	  if((oct->y+2.*dxcur)==1.){
+	    neicell=cell;
+	    face[0]=2;
+	    face[1]=3;
+	    face[2]=2;
+	    face[3]=3;
+	    face[4]=7;
+	    face[5]=6;
+	    face[6]=6;
+	    face[7]=7;
+	  }
+	}
+#endif
+
+#ifdef TRANSZP
+	if(ineiloc==5){
+	  if((oct->z+2.*dxcur)==1.){
+	    neicell=cell;
+	    face[0]=4;
+	    face[1]=5;
+	    face[2]=6;
+	    face[3]=7;
+	    face[4]=4;
+	    face[5]=5;
+	    face[6]=6;
+	    face[7]=7;
+	  }
+	}
+#endif
+
+
+      
+#ifdef TRANSXM
+	if(ineiloc==0){
+	  if(oct->x==0.){
+	    neicell=cell;
+	    face[0]=0;
+	    face[1]=0;
+	    face[2]=2;
+	    face[3]=2;
+	    face[4]=4;
+	    face[5]=4;
+	    face[6]=6;
+	    face[7]=6;
+	  }
+	}
+#endif
+
+#ifdef TRANSYM
+	if(ineiloc==2){
+	  if(oct->y==0.){
+	    neicell=cell;
+	    face[0]=0;
+	    face[1]=1;
+	    face[2]=0;
+	    face[3]=1;
+	    face[4]=4;
+	    face[5]=5;
+	    face[6]=4;
+	    face[7]=5;
+	  }
+	}
+#endif
+
+#ifdef TRANSZM
+	if(ineiloc==4){
+	  if(oct->z==0.){
+	    neicell=cell;
+	    face[0]=0;
+	    face[1]=1;
+	    face[2]=2;
+	    face[3]=3;
+	    face[4]=0;
+	    face[5]=1;
+	    face[6]=2;
+	    face[7]=3;
+	  }
+	}
+#endif
+
+
+  // ============================ END TRANSMISSIVE BOUNDARIES ====================
       }
       else{
 	printf("big problem\n");
@@ -480,108 +581,6 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   /* neioct=cell2oct(neicell); */
   /* dxcur=pow(0.5,oct->level); */
 
-  // ============================ TRANSMISSIVE BOUNDARIES ====================
-#ifdef TRANSXP
-    if(ineiloc==1){
-      if((oct->x+2.*dxcur)==1.){
-	neicell=cell;
-	face[0]=1;
-	face[1]=1;
-	face[2]=3;
-	face[3]=3;
-	face[4]=5;
-	face[5]=5;
-	face[6]=7;
-	face[7]=7;
-      }
-    }
-#endif
-
-
-#ifdef TRANSYP
-    if(ineiloc==3){
-      if((oct->y+2.*dxcur)==1.){
-	neicell=cell;
-	face[0]=2;
-	face[1]=3;
-	face[2]=2;
-	face[3]=3;
-	face[4]=7;
-	face[5]=6;
-	face[6]=6;
-	face[7]=7;
-      }
-    }
-#endif
-
-#ifdef TRANSZP
-    if(ineiloc==5){
-      if((oct->z+2.*dxcur)==1.){
-	neicell=cell;
-	face[0]=4;
-	face[1]=5;
-	face[2]=6;
-	face[3]=7;
-	face[4]=4;
-	face[5]=5;
-	face[6]=6;
-	face[7]=7;
-      }
-    }
-#endif
-
-
-      
-#ifdef TRANSXM
-    if(ineiloc==0){
-      if(oct->x==0.){
-	neicell=cell;
-	face[0]=0;
-	face[1]=0;
-	face[2]=2;
-	face[3]=2;
-	face[4]=4;
-	face[5]=4;
-	face[6]=6;
-	face[7]=6;
-      }
-    }
-#endif
-
-#ifdef TRANSYM
-    if(ineiloc==2){
-      if(oct->y==0.){
-	neicell=cell;
-	face[0]=0;
-	face[1]=1;
-	face[2]=0;
-	face[3]=1;
-	face[4]=4;
-	face[5]=5;
-	face[6]=4;
-	face[7]=5;
-      }
-    }
-#endif
-
-#ifdef TRANSZM
-    if(ineiloc==4){
-      if(oct->z==0.){
-	neicell=cell;
-	face[0]=0;
-	face[1]=1;
-	face[2]=2;
-	face[3]=3;
-	face[4]=0;
-	face[5]=1;
-	face[6]=2;
-	face[7]=3;
-      }
-    }
-#endif
-
-
-  // ============================ END TRANSMISSIVE BOUNDARIES ====================
 
 
   if(neicell->child!=NULL){

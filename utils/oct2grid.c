@@ -14,6 +14,8 @@
 
  mpicc  -I./silo/include -DPIC -DWGRAV -DTESTCOSMO -DFASTGRAV -DGRAFIC -DONFLYRED -DGPUAXL -o ./oct2grid ./oct2grid.c ./silo/lib/libsilo.a
 
+avconv -i mpeg_link%04d.jpeg -r 24 -b 65536k video.mp4
+
  */
 int main(int argc, char *argv[])
 {

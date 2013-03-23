@@ -262,13 +262,13 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXM
-	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSYM
-	      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+	      if((oct->y==0.)&&(inei2==2)){
 		Wm=&(cell->field);
 	      }
 #endif
@@ -277,12 +277,6 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
 	      if((oct->z==0.)&&(inei2==4)){
 		Wm=&(cell->field);
-#ifdef REFZM
-		// !!!!DANGEREUX CA !
-		Wm->w*=-1.0;
-		dxcur=1./pow(2,oct->level);
-		Wm->p=Wm->p+GRAV*Wm->d*dxcur;
-#endif
 	      }
 #endif
 
@@ -298,27 +292,20 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXP
-	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 		Wp=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSYP
-	      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+	      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
 		Wp=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSZP
-	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
 	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 		Wp=&(cell->field);
-#ifdef REFZP
-		Wp->w*=-1.0;
-		dxcur=1./pow(2,oct->level);
-		Wp->p=Wp->p-GRAV*Wp->d*dxcur;
-#endif
-		
 	      }
 #endif
 
@@ -406,27 +393,20 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXM
-	      if((oct->nei[vnei[inei2]]->child->x-oct->x)>0.5){
+	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSYM
-	      if((oct->nei[vnei[inei2]]->child->y-oct->y)>0.5){
+	      if((oct->y==0.)&&(inei2==2)){
 		Wm=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSZM
-	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
 	      if((oct->z==0.)&&(inei2==4)){
 		Wm=&(cell->field);
-#ifdef REFZM
-		// !!!!DANGEREUX CA !
-		Wm->w*=-1.0;
-		dxcur=1./pow(2,oct->level);
-		Wm->p=Wm->p+GRAV*Wm->d*dxcur;
-#endif
 	      }
 #endif
 
@@ -442,27 +422,20 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXP
-	      if((oct->nei[vnei[inei2]]->child->x-oct->x)<0.){
+	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 		Wp=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSYP
-	      if((oct->nei[vnei[inei2]]->child->y-oct->y)<0.){
+	      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
 		Wp=&(cell->field);
 	      }
 #endif
 
 #ifdef TRANSZP
-	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)<0.){
 	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
 		Wp=&(cell->field);
-#ifdef REFZP
-		Wp->w*=-1.0;
-		dxcur=1./pow(2,oct->level);
-		Wp->p=Wp->p-GRAV*Wp->d*dxcur;
-#endif
-		
 	      }
 #endif
 
@@ -2323,7 +2296,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int ioct2;
   int vnei[6],vcell[6];
   int ineiloc;
-  static int face[8]={0,1,2,3,4,5,6,7};
+  int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
   struct Wtype Wi[8];
@@ -2344,64 +2317,44 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   }
 
+
   if(cell->child!=NULL){
     // the oct at the right level exists
     neicell=cell->child->nei[ineiloc];
-  }
-  else{
-    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-    oct=cell2oct(cell);
-    if(vnei[ineiloc]==6){
-      neicell=&(oct->cell[vcell[ineiloc]]);
-    }
-    else{
-      if(oct->nei[ineiloc]->child!=NULL){
-	neicell=&(oct->nei[ineiloc]->child->cell[vcell[ineiloc]]);
-      }
-      else{
-	printf("big problem\n");
-	abort();
-      }
-    }
-  }
+    oct=cell->child;
+    dxcur=pow(0.5,oct->level);
 
-
-  /* oct=cell2oct(cell); */
-  /* neioct=cell2oct(neicell); */
-  /* dxcur=pow(0.5,oct->level); */
-
-  // ============================ TRANSMISSIVE BOUNDARIES ====================
-#ifdef TRANSXP
-    if(ineiloc==1){
-      if((oct->x+2.*dxcur)==1.){
-	neicell=cell;
-	face[0]=1;
-	face[1]=1;
-	face[2]=3;
-	face[3]=3;
-	face[4]=5;
-	face[5]=5;
-	face[6]=7;
-	face[7]=7;
-      }
-    }
+  #ifdef TRANSXP
+	if(ineiloc==1){
+	  if((oct->x+2.*dxcur)==1.){
+	    neicell=cell;
+	    face[0]=1;
+	    face[1]=1;
+	    face[2]=3;
+	    face[3]=3;
+	    face[4]=5;
+	    face[5]=5;
+	    face[6]=7;
+	    face[7]=7;
+	  }
+	}
 #endif
 
 
 #ifdef TRANSYP
-    if(ineiloc==3){
-      if((oct->y+2.*dxcur)==1.){
-	neicell=cell;
-	face[0]=2;
-	face[1]=3;
-	face[2]=2;
-	face[3]=3;
-	face[4]=7;
-	face[5]=6;
-	face[6]=6;
-	face[7]=7;
-      }
-    }
+	if(ineiloc==3){
+	  if((oct->y+2.*dxcur)==1.){
+	    neicell=cell;
+	    face[0]=2;
+	    face[1]=3;
+	    face[2]=2;
+	    face[3]=3;
+	    face[4]=7;
+	    face[5]=6;
+	    face[6]=6;
+	    face[7]=7;
+	  }
+	}
 #endif
 
 #ifdef TRANSZP
@@ -2456,8 +2409,6 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
 #ifdef TRANSZM
     if(ineiloc==4){
-      /* dist=neioct->z-oct->z; */
-      /* if(dist>0.5){ */
       if(oct->z==0.){
 	neicell=cell; 
 	face[0]=0;
@@ -2471,6 +2422,128 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
       }
     }
 #endif
+  }
+  else{
+    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+    oct=cell2oct(cell);
+    dxcur=pow(0.5,oct->level);
+
+    if(vnei[ineiloc]==6){
+      neicell=&(oct->cell[vcell[ineiloc]]);
+    }
+    else{
+      if(oct->nei[ineiloc]->child!=NULL){
+	neicell=&(oct->nei[ineiloc]->child->cell[vcell[ineiloc]]);
+      }
+      else{
+	printf("big problem\n");
+	abort();
+      }
+#ifdef TRANSXP
+      if(ineiloc==1){
+	if((oct->x+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=1;
+	  face[1]=1;
+	  face[2]=3;
+	  face[3]=3;
+	  face[4]=5;
+	  face[5]=5;
+	  face[6]=7;
+	  face[7]=7;
+	}
+      }
+#endif
+
+
+#ifdef TRANSYP
+      if(ineiloc==3){
+	if((oct->y+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=2;
+	  face[1]=3;
+	  face[2]=2;
+	  face[3]=3;
+	  face[4]=7;
+	  face[5]=6;
+	  face[6]=6;
+	  face[7]=7;
+	}
+      }
+#endif
+
+#ifdef TRANSZP
+      if(ineiloc==5){
+	if((oct->z+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=4;
+	  face[1]=5;
+	  face[2]=6;
+	  face[3]=7;
+	  face[4]=4;
+	  face[5]=5;
+	  face[6]=6;
+	  face[7]=7;
+	}
+      }
+#endif
+
+
+      
+#ifdef TRANSXM
+      if(ineiloc==0){
+	if(oct->x==0.){
+	  neicell=cell;
+	  face[0]=0;
+	  face[1]=0;
+	  face[2]=2;
+	  face[3]=2;
+	  face[4]=4;
+	  face[5]=4;
+	  face[6]=6;
+	  face[7]=6;
+	}
+      }
+#endif
+
+#ifdef TRANSYM
+      if(ineiloc==2){
+	if(oct->y==0.){
+	  neicell=cell;
+	  face[0]=0;
+	  face[1]=1;
+	  face[2]=0;
+	  face[3]=1;
+	  face[4]=4;
+	  face[5]=5;
+	  face[6]=4;
+	  face[7]=5;
+	}
+      }
+#endif
+
+#ifdef TRANSZM
+      if(ineiloc==4){
+	if(oct->z==0.){
+	  neicell=cell; 
+	  face[0]=0;
+	  face[1]=1;
+	  face[2]=2;
+	  face[3]=3;
+	  face[4]=0;
+	  face[5]=1;
+	  face[6]=2;
+	  face[7]=3;
+	}
+      }
+#endif
+    }
+    
+  }
+
+
+  //  oct=cell2oct(cell); 
+
 
 
   // ============================ END TRANSMISSIVE BOUNDARIES ====================
@@ -2514,7 +2587,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
 
-    stencil->oct[ioct].cell[icell].split=child[icell];
+    stencil->oct[ioct].cell[icell].split=child[face[icell]];
 
 #ifdef WGRAV
     memcpy(stencil->oct[ioct].cell[icell].f,floc+3*face[icell],sizeof(REAL)*3); //

@@ -153,6 +153,25 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+	      
+#ifdef TRANSXM
+	      if((oct->x==0.)&&(inei2==0)){
+		Wm=&(cell->rfield);
+	      }
+#endif
+	      
+#ifdef TRANSYM
+	      if((oct->y==0.)&&(inei2==2)){
+		Wm=&(cell->rfield);
+	      }
+#endif
+	      
+#ifdef TRANSZM
+	      if((oct->z==0.)&&(inei2==4)){
+		Wm=&(cell->rfield);
+	      }
+#endif
+
 	    }
 	    
 
@@ -162,6 +181,23 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+#ifdef TRANSXP
+	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+		Wp=&(cell->rfield);
+	      }
+#endif
+
+#ifdef TRANSYP
+	      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+		Wp=&(cell->rfield);
+	      }
+#endif
+
+#ifdef TRANSZP
+	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+		Wp=&(cell->rfield);
+	      }
+#endif
 	    }
 
 
@@ -230,9 +266,23 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+#ifdef TRANSXM
+	      if((oct->x==0.)&&(inei2==0)){
+		Wm=&(cell->rfield);
+	      }
+#endif
 
+#ifdef TRANSYM
+	      if((oct->y==0.)&&(inei2==2)){
+		Wm=&(cell->rfield);
+	      }
+#endif
 
-
+#ifdef TRANSZM
+	      if((oct->z==0.)&&(inei2==4)){
+		Wm=&(cell->rfield);
+	      }
+#endif
 	    }
 	    
 
@@ -242,6 +292,24 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+
+#ifdef TRANSXP
+	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+		Wp=&(cell->rfield);
+	      }
+#endif
+
+#ifdef TRANSYP
+	      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+		Wp=&(cell->rfield);
+	      }
+#endif
+
+#ifdef TRANSZP
+	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+		Wp=&(cell->rfield);
+	      }
+#endif
 	    }
 
 	    diffR(W0,Wm,D+2*dir+0); 
@@ -843,6 +911,11 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 
 void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil,char *visit){
 
+
+  // =======================================
+  // This function is pretty much an overkill
+  // Could be simplified
+
   static int ix[6]={-1,1,0,0,0,0};
   static int iy[6]={0,0,-1,1,0,0};
   static int iz[6]={0,0,0,0,-1,1};
@@ -851,7 +924,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   int ioct2;
   int vnei[6],vcell[6];
   int ineiloc;
-  static int face[8]={0,1,2,3,4,5,6,7};
+  int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
   struct Rtype Ri[8];
@@ -863,13 +936,116 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 
   ineiloc=inei;
   
+
   if(cell->child!=NULL){
     // the oct at the right level exists
     neicell=cell->child->nei[ineiloc];
+    oct=cell->child;
+    dxcur=pow(0.5,oct->level);
+
+#ifdef TRANSXP
+    if(ineiloc==1){
+      if((oct->x+2.*dxcur)==1.){
+	neicell=cell;
+	face[0]=1;
+	face[1]=1;
+	face[2]=3;
+	face[3]=3;
+	face[4]=5;
+	face[5]=5;
+	face[6]=7;
+	face[7]=7;
+      }
+    }
+#endif
+ 
+
+#ifdef TRANSYP
+    if(ineiloc==3){
+      if((oct->y+2.*dxcur)==1.){
+	neicell=cell;
+	face[0]=2;
+	face[1]=3;
+	face[2]=2;
+	face[3]=3;
+	face[4]=7;
+	face[5]=6;
+	face[6]=6;
+	face[7]=7;
+      }
+    }
+#endif
+
+#ifdef TRANSZP
+    if(ineiloc==5){
+      if((oct->z+2.*dxcur)==1.){
+	neicell=cell;
+	face[0]=4;
+	face[1]=5;
+	face[2]=6;
+	face[3]=7;
+	face[4]=4;
+	face[5]=5;
+	face[6]=6;
+	face[7]=7;
+      }
+    }
+#endif
+
+
+      
+#ifdef TRANSXM
+    if(ineiloc==0){
+      if(oct->x==0.){
+	neicell=cell;
+	face[0]=0;
+	face[1]=0;
+	face[2]=2;
+	face[3]=2;
+	face[4]=4;
+	face[5]=4;
+	face[6]=6;
+	face[7]=6;
+      }
+    }
+#endif
+
+#ifdef TRANSYM
+    if(ineiloc==2){
+      if(oct->y==0.){
+	neicell=cell;
+	face[0]=0;
+	face[1]=1;
+	face[2]=0;
+	face[3]=1;
+	face[4]=4;
+	face[5]=5;
+	face[6]=4;
+	face[7]=5;
+      }
+    }
+#endif
+
+#ifdef TRANSZM
+    if(ineiloc==4){
+      if(oct->z==0.){
+	neicell=cell; 
+	face[0]=0;
+	face[1]=1;
+	face[2]=2;
+	face[3]=3;
+	face[4]=0;
+	face[5]=1;
+	face[6]=2;
+	face[7]=3;
+      }
+    }
+#endif
   }
   else{
     getcellnei(cell->idx, vnei, vcell); // we get the neighbors
     oct=cell2oct(cell);
+    dxcur=pow(0.5,oct->level);
     if(vnei[ineiloc]==6){
       neicell=&(oct->cell[vcell[ineiloc]]);
     }
@@ -881,7 +1057,109 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	printf("big problem\n");
 	abort();
       }
+    
+#ifdef TRANSXM
+      if(ineiloc==0){
+	if(oct->x==0.){
+	  neicell=cell;
+	  face[0]=0; 
+	  face[1]=0;  
+	  face[2]=2;
+	  face[3]=2;
+	  face[4]=4;
+	  face[5]=4;
+	  face[6]=6;
+	  face[7]=6;
+	}
+      }
+#endif
+#ifdef TRANSXP
+      if(ineiloc==1){
+	if((oct->x+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=1;
+	  face[1]=1;
+	  face[2]=3;
+	  face[3]=3;
+	  face[4]=5;
+	  face[5]=5;
+	  face[6]=7;
+	  face[7]=7;
+	}
+      }
+#endif
+      
+
+#ifdef TRANSYP
+      if(ineiloc==3){
+	if((oct->y+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=2;
+	  face[1]=3;
+	  face[2]=2;
+	  face[3]=3;
+	  face[4]=7;
+	  face[5]=6;
+	  face[6]=6;
+	  face[7]=7;
+	}
+      }
+#endif
+      
+#ifdef TRANSZP
+      if(ineiloc==5){
+	if((oct->z+2.*dxcur)==1.){
+	  neicell=cell;
+	  face[0]=4;
+	  face[1]=5;
+	  face[2]=6;
+	  face[3]=7;
+	  face[4]=4;
+	  face[5]=5;
+	  face[6]=6;
+	  face[7]=7;
+	}
+      }
+#endif
+      
+      
+      
+      
+#ifdef TRANSYM
+      if(ineiloc==2){
+	if(oct->y==0.){
+	  neicell=cell;
+	  face[0]=0;
+	  face[1]=1;
+	  face[2]=0;
+	  face[3]=1;
+	  face[4]=4;
+	  face[5]=5;
+	  face[6]=4;
+	  face[7]=5;
+	}
+      }
+#endif
+
+#ifdef TRANSZM
+      if(ineiloc==4){
+	if(oct->z==0.){
+	  neicell=cell; 
+	  face[0]=0;
+	  face[1]=1;
+	  face[2]=2;
+	  face[3]=3;
+	  face[4]=0;
+	  face[5]=1;
+	  face[6]=2;
+	  face[7]=3;
+	}
+      }
+#endif
+      
     }
+    
+
   }
 
 
@@ -904,13 +1182,9 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   }
 
 
-
-
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].rfield),Ri+face[icell],sizeof(struct Rtype)); //
-    
-    stencil->oct[ioct].cell[icell].split=child[icell];
-
+    stencil->oct[ioct].cell[icell].split=child[face[icell]];
   }
   
 }
@@ -1070,19 +1344,6 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
       for(icell=0;icell<8;icell++){
 	//we scatter the values in the central cell
 	
-
-	// BLOC ==
-	/* memcpy(&deltaR,&(stencil[iread].New.cell[icell].deltaR),sizeof(struct Rtype)); // getting the delta U back */
-	/* memcpy(&R,&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); */
-	/* for(igrp=0;igrp<NGRP;igrp++){ */
-	/*   R.e[igrp]   +=deltaR.e[igrp]; */
-	/*   R.fx[igrp]  +=deltaR.fx[igrp]; */
-	/*   R.fy[igrp]  +=deltaR.fy[igrp]; */
-	/*   R.fz[igrp]  +=deltaR.fz[igrp]; */
-	/* } */
- 	/* memcpy(&(curoct->cell[icell].rfieldnew),&R,sizeof(struct Rtype)); // at this stage the central cell has been updated */
-	// ENDBLOC ==
-
 	memcpy(&(curoct->cell[icell].rfieldnew),&(stencil[iread].New.cell[icell].rfieldnew),sizeof(struct Rtype)); 
 
 
@@ -1090,6 +1351,42 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
 	for(inei=0;inei<6;inei++){
+
+#ifdef TRANSXM
+	  if((curoct->x==0.)&&(inei==0)){
+	    continue;
+	  }
+#endif
+	  
+#ifdef TRANSXP
+	  if(((curoct->x+2.*dxcur)==1.)&&(inei==1)){
+	    continue;
+	  }
+#endif
+
+#ifdef TRANSYM
+	  if((curoct->y==0.)&&(inei==2)){
+	    continue;
+	  }
+#endif
+	  
+#ifdef TRANSYP
+	  if(((curoct->y+2.*dxcur)==1.)&&(inei==3)){
+	    continue;
+	  }
+#endif
+
+#ifdef TRANSZM
+	  if((curoct->z==0.)&&(inei==4)){
+	    continue;
+	  }
+#endif
+	  
+#ifdef TRANSZP
+	  if(((curoct->z+2.*dxcur)==1.)&&(inei==5)){
+	    continue;
+	  }
+#endif
 
 
 	  if(vnei[inei]!=6){

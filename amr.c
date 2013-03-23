@@ -49,38 +49,25 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #ifdef TRANSZM
 	if(ii==4){
-	  //if((curoct->nei[vnei[ii]]->child->z-curoct->z)>0.5){
 	  if(curoct->z==0.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
-#ifdef REFZM
-	    W.w*=-1.0;
-	    //dxcur=1./pow(2,curoct->level);
-	    //W.p=W.p+GRAV*W.d*dxcur;
-#endif
 	  }
 	}
 #endif 
 
 #ifdef TRANSZP
 	if(ii==5){
-	  //if((curoct->nei[vnei[ii]]->child->z-curoct->z)<0.){
 	  if((curoct->z+2.*dxcur)==1.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
-#ifdef REFZP
-	    W.w*=-1.0;
-	    //dxcur=1./pow(2,curoct->level);
-	    //	    W.p=W.p-GRAV*W.d*dxcur;
-#endif
-
 	  }
 	}
 #endif 
 
 #ifdef TRANSXM
 	if(ii==0){
-	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.5){
+	  if(curoct->x==0.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
 	  }
@@ -89,7 +76,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #ifdef TRANSXP
 	if(ii==1){
-	  if((curoct->nei[vnei[ii]]->child->x-curoct->x)<0.){
+	  if(curoct->x+2.*dxcur==1.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
 	  }
@@ -98,23 +85,20 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 #ifdef TRANSYM
 	if(ii==2){
-	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
+	  if(curoct->y==0.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-    if(vnei[3]>6) abort();
-
 #endif 
 
 #ifdef TRANSYP
 	if(ii==3){
-	  if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
+	  if(curoct->y+2.*dxcur==1.){
 	    // the neighbor is a periodic mirror 
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-    if(vnei[3]>6) abort();
 #endif 
  
       }
@@ -185,6 +169,61 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
       // Note that the neibourgh cell may not exist therefore we have to check
       if(curoct->nei[vnei[ii]]->child!=NULL){
 	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].rfield),sizeof(struct Rtype));
+
+#ifdef TRANSZM
+	if(ii==4){
+	  if(curoct->z==0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSZP
+	if(ii==5){
+	  if((curoct->z+2.*dxcur)==1.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSXM
+	if(ii==0){
+	  if(curoct->x==0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSXP
+	if(ii==1){
+	  if(curoct->x+2.*dxcur==1.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSYM
+	if(ii==2){
+	  if(curoct->y==0.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+
+#ifdef TRANSYP
+	if(ii==3){
+	  if(curoct->y+2.*dxcur==1.){
+	    // the neighbor is a periodic mirror 
+	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	  }
+	}
+#endif 
+ 
 
       }
       else{
@@ -740,32 +779,47 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				// Note that the neibourgh cell may not exist therefore we have to check
 				if(curoct->nei[vnei[ii]]->child!=NULL){
 #ifdef TRANSXM
-				  if((curoct->nei[vnei[ii]]->child->x-curoct->x)>0.5){
+				  if((ii==0)&&(curoct->x==0.)){
 				    newcell=NULL;
 				    continue;
 				  }
 #endif
 
 #ifdef TRANSXP
-				  if((curoct->nei[vnei[ii]]->child->x-curoct->x)<0.){
+				  if((ii==1)&&(curoct->x+2.*dx==1.)){
 				    newcell=NULL;
 				    continue;
 				  }
 #endif
 
-#ifdef TRANSYM
-				  if((curoct->nei[vnei[ii]]->child->y-curoct->y)>0.5){
+#ifdef TRANSXM
+				  if((ii==2)&&(curoct->y==0.)){
 				    newcell=NULL;
 				    continue;
 				  }
 #endif
 
-#ifdef TRANSYP
-				  if((curoct->nei[vnei[ii]]->child->y-curoct->y)<0.){
+#ifdef TRANSXP
+				  if((ii==3)&&(curoct->y+2.*dx==1.)){
 				    newcell=NULL;
 				    continue;
 				  }
 #endif
+
+#ifdef TRANSZM
+				  if((ii==4)&&(curoct->z==0.)){
+				    newcell=NULL;
+				    continue;
+				  }
+#endif
+
+#ifdef TRANSZP
+				  if((ii==5)&&(curoct->z+2.*dx==1.)){
+				    newcell=NULL;
+				    continue;
+				  }
+#endif
+
 
 
 				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
@@ -794,6 +848,48 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				  }
 				  else{
 				    if(newoct->nei[vnei2[il]]->child!=NULL){
+#ifdef TRANSXM
+				      if((il==0)&&(newoct->x==0.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+				      
+#ifdef TRANSXP
+				      if((il==1)&&(newoct->x+2.*dx==1.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+
+#ifdef TRANSXM
+				      if((il==2)&&(newoct->y==0.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+
+#ifdef TRANSXP
+				      if((il==3)&&(newoct->y+2.*dx==1.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+
+#ifdef TRANSZM
+				      if((il==4)&&(newoct->z==0.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+
+#ifdef TRANSZP
+				      if((il==5)&&(newoct->z+2.*dx==1.)){
+					newcell2=NULL;
+					continue;
+				      }
+#endif
+				  
 				      newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
 				      if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
 					newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
@@ -819,8 +915,44 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				      }
 				      else{
 					if(desoct->nei[vnei3[ip]]->child!=NULL){
+#ifdef TRANSXM
+					  if((ip==0)&&(desoct->x==0.)){
+					    continue;
+					  }
+#endif
+					  
+#ifdef TRANSXP
+					  if((ip==1)&&(desoct->x+2.*dx==1.)){
+					    continue;
+					  }
+#endif
+					  
+#ifdef TRANSXM
+					  if((ip==2)&&(desoct->y==0.)){
+					    continue;
+					  }
+#endif
+					  
+#ifdef TRANSXP
+					  if((ip==3)&&(desoct->y+2.*dx==1.)){
+					    continue;
+					  }
+#endif
+					  
+#ifdef TRANSZM
+					  if((ip==4)&&(desoct->z==0.)){
+					    continue;
+					  }
+#endif
+					  
+#ifdef TRANSZP
+					  if((ip==5)&&(desoct->z+2.*dx==1.)){
+					    continue;
+					  }
+#endif
 					  if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
 					    desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
+					    
 					    nmark++;stati[1]++;
 					  }
 					}
