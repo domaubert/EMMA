@@ -24,9 +24,10 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 	      
   
   //  if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){
-  if((fabs(xc-0.75)<=X0)*(fabs(yc-0.5)<=X0)*(fabs(zc-0.5)<=X0)){
-    if((xc>0.75)*(yc>0.5)*(zc>0.5)){
+  if((fabs(xc-0.5)<=X0)*(fabs(yc-0.5)<=X0)*(fabs(zc-0.5)<=X0)){
+    if((xc>0.5)*(yc>0.5)*(zc>0.5)){
       cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
+      cell->rfieldnew.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
       flag=1;
     }
     else{
@@ -35,6 +36,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   }
   else{
     cell->rfield.src=0.;
+    cell->rfieldnew.src=0.;
     flag=0;
   }
 #else
@@ -46,6 +48,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   }
   else{
     cell->rfield.src=0.;
+    cell->rfield.srcnew=0.;
     flag=0;
   }
 #endif
@@ -68,7 +71,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   REAL d;
   int nc=0;
   int igrp;
-  //aaazzzzzzzzzeeeeeeeeeeeeeeeeeeeeeeeerrrrrtyyuuuuuuuuuklmsqqqqqqqqqqqqqqqwqsqsdfghjklmwxccvb  nn&é
+  //Anouk Inputs: aaazzzzzzzzzeeeeeeeeeeeeeeeeeeeeeeeerrrrrtyyuuuuuuuuuklmsqqqqqqqqqqqqqqqwqsqsdfghjklmwxccvb  nn&é
   int flag;
 
   curoct=firstoct[level-1];
@@ -94,7 +97,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
 	curoct->cell[icell].rfield.nh=d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass); // switch to atom/unit_length^3
 	curoct->cell[icell].rfieldnew.nh=d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass); // switch to atom/unit_length^3
-
 
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
 	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
@@ -131,20 +133,10 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #endif
 
 	  for(igrp=0;igrp<NGRP;igrp++){
-	    /* REAL  dxcur=pow(0.5,curoct->level); */
-	    /* REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5; */
-	    /* if(((xc-0.5)<3*dxcur)&&(xc>0.5)){ */
-	    /*   curoct->cell[icell].rfield.e[igrp]=1e75;  */
-	    /*   curoct->cell[icell].rfield.fx[igrp]=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v*curoct->cell[icell].rfield.e[igrp]; */
-	    /*   curoct->cell[icell].rfield.fy[igrp]=0.;  */
-	    /*   curoct->cell[icell].rfield.fz[igrp]=0.;  */
-	    /* } */
-	    /* else{ */
 	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
 	    curoct->cell[icell].rfield.fy[igrp]=0.; 
 	    curoct->cell[icell].rfield.fz[igrp]=0.; 
-	    /* } */
 
 	    curoct->cell[icell].rfieldnew.e[igrp] =curoct->cell[icell].rfield.e[igrp];
 	    curoct->cell[icell].rfieldnew.fx[igrp]=curoct->cell[icell].rfield.fx[igrp]; 
@@ -156,7 +148,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #ifdef WRADHYD
 	E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 	E2T(&curoct->cell[icell].rfield,aexp,param);
-	//printf("temp=%e nh=%e\n",curoct->cell[icell].rfieldnew.temp,curoct->cell[icell].rfieldnew.nh/pow(param->unit.unit_l,3.));
 #endif
 
 	nc+=flag;

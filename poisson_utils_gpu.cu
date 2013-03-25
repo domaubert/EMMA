@@ -6,6 +6,9 @@
 #include <mpi.h>
 #include <cudpp.h>
 
+#ifdef WGRAV
+
+
 #define NTHREAD 16
 
 extern "C" struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *stencil, int stride, struct CPUINFO *cpu, int *nread);
@@ -826,5 +829,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
   return dres;
 }
+
+#endif
 
 #endif

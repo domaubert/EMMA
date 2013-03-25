@@ -130,6 +130,9 @@ __device__ void dU2W(struct Utype *U, struct Wtype *W)
 #ifdef DUAL_E
   W->p=U->eint*(GAMMA-1.);
   W->E=U->E;
+#ifdef WRADHYD
+  W->X=U->dX/U->d;
+#endif
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
 #endif
@@ -147,6 +150,9 @@ __device__ void dW2U(struct Wtype *W, struct Utype *U)
 #ifdef DUAL_E
   U->eint=W->p/(GAMMA-1.);
   U->E=W->E;
+#ifdef WRADHYD
+  U->dX=W->d*W->X;
+#endif
 #endif
 
 }
@@ -161,7 +167,9 @@ __device__ void dgetflux_X(struct Utype *U, REAL *f)
   f[2]=U->du*U->dv/U->d;
   f[3]=U->du*U->dw/U->d;
   f[4]=GAMMA*U->du/U->d*U->E-0.5*(GAMMA-1.)*U->du/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
-
+#ifdef WRADHYD
+  f[6]=U->du*U->dX/U->d;
+#endif
 }
 
 // ---------------------------------------------------------------
@@ -173,6 +181,9 @@ __device__ void dgetflux_Y(struct Utype *U, REAL *f)
   f[2]=0.5*(3.-GAMMA)*U->dv*U->dv/U->d+(GAMMA-1.)*U->E-0.5*(GAMMA-1.)*(U->du*U->du+U->dw*U->dw)/U->d;
   f[3]=U->dv*U->dw/U->d;
   f[4]=GAMMA*U->dv/U->d*U->E-0.5*(GAMMA-1.)*U->dv/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
+#ifdef WRADHYD
+  f[6]=U->dv*U->dX/U->d;
+#endif
 }
 
 // ---------------------------------------------------------------
@@ -184,6 +195,9 @@ __device__ void dgetflux_Z(struct Utype *U, REAL *f)
   f[2]=U->dw*U->dv/U->d;
   f[3]=0.5*(3.-GAMMA)*U->dw*U->dw/U->d+(GAMMA-1.)*U->E-0.5*(GAMMA-1.)*(U->du*U->du+U->dv*U->dv)/U->d;
   f[4]=GAMMA*U->dw/U->d*U->E-0.5*(GAMMA-1.)*U->dw/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
+#ifdef WRADHYD
+  f[6]=U->dw*U->dX/U->d;
+#endif
 }
 
 
@@ -569,7 +583,10 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 	    //Wi[idir].E=Wi[idir].p/(GAMMA-1.)+0.5*Wi[idir].d*(Wi[idir].u*Wi[idir].u+Wi[idir].v*Wi[idir].v+Wi[idir].w*Wi[idir].w);
 	    dgetE(Wi+idir);
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
-	   
+
+#ifdef WRADHYD
+	    Wi[idir].X=W0->X;
+#endif
 	  }
 
 
@@ -887,7 +904,7 @@ void __device__ dspeedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
 
 // =============================================================================================
 
-__global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL dt){
+__global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt){
 
   int inei,icell,iface;
   int i;
@@ -924,6 +941,7 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
   unsigned int tx=threadIdx.x;
 
   i=bx*blockDim.x+tx;
+  if(i<nread){
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei_gpu_hydro(icell, vnei, vcell); // we get the neighbors
       
@@ -945,6 +963,10 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
       Wold.w=curcell->w;
       Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+
+#ifdef WRADHYD
+      Wold.X=curcell->X;
+#endif
 
       dW2U(&Wold,&Uold); // primitive -> conservative
 
@@ -1016,6 +1038,10 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	Us.dw=(fact*ustar);
 	Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].w)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].w)))));
 #endif
+	
+#ifdef WRADHYD
+	FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+#endif
 
       }
       else if((ustar<=0.)&&(SR>0.)){
@@ -1035,6 +1061,9 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	Us.E =(fact*(UC[0].E/UC[0].d+(ustar-WC[0].w)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].w)))));
 #endif
 
+#ifdef WRADHYD
+	FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+#endif
       }
 
 #ifdef DUAL_E
@@ -1089,7 +1118,9 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	Us.dw=(fact*ustar);
 	Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].w)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].w)))));
 #endif
-
+#ifdef WRADHYD
+	FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+#endif
       }
       else if((ustar<=0.)&&(SR>0.)){
 	dgetflux_Z(&UN[1],FR);
@@ -1106,6 +1137,10 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	Us.dv=(fact*WN[1].v);
 	Us.dw=(fact*ustar);
 	Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].w)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].w)))));
+#endif
+	
+#ifdef WRADHYD
+	FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
 #endif
       }
 
@@ -1135,7 +1170,7 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 
       //ready for the next oct
   }
-
+  }
 }
 
 
@@ -1144,7 +1179,7 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 //============================================================================
 // =============================================================================================
 
-__global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt){
+__global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt){
 
   int inei,icell,iface;
   int i;
@@ -1181,6 +1216,7 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
   unsigned int tx=threadIdx.x;
 	
   i=bx*blockDim.x+tx;
+  if(i<nread){
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei_gpu_hydro(icell, vnei, vcell); // we get the neighbors
       
@@ -1203,7 +1239,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
       Wold.w=curcell->w;
       Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
-
+#ifdef WRADHYD
+      Wold.X=curcell->X;
+#endif
       dW2U(&Wold,&Uold); // primitive -> conservative
 
       REAL eold=Uold.eint;
@@ -1279,7 +1317,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
 	  Us.dw=(fact*WN[0].w);
 	  Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].v)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].v)))));
 #endif
-
+#ifdef WRADHYD
+	  FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+#endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
 	  dgetflux_Y(&UC[0],FL);
@@ -1297,7 +1337,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
 	  Us.dw=(fact*WC[0].w);
 	  Us.E =(fact*(UC[0].E/UC[0].d+(ustar-WC[0].v)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].v)))));
 #endif
-
+#ifdef WRADHYD
+	  FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+#endif
 	}
 
 
@@ -1355,7 +1397,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
 	  Us.dw=(fact*WC[1].w);
 	  Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].v)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].v)))));
 #endif
-
+#ifdef WRADHYD
+	  FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+#endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
 	  dgetflux_Y(&UN[1],FR);
@@ -1372,6 +1416,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
 	  Us.dv=(fact*ustar);
 	  Us.dw=(fact*WN[1].w);
 	  Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].v)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].v)))));
+#endif
+#ifdef WRADHYD
+	  FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
 #endif
 	}
 
@@ -1399,13 +1446,13 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int curcpu,REAL dx, REAL dt
 	
     //ready for the next oct
   }
-  
+  }
 }
 
 //===================================================================================================
 //===================================================================================================
 
-__global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL dt){
+__global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt){
 
   int inei,icell,iface;
   int i;
@@ -1442,7 +1489,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
   unsigned int tx=threadIdx.x;
   
   i=bx*blockDim.x+tx;
-  
+  if(i<nread){
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei_gpu_hydro(icell, vnei, vcell); // we get the neighbors
       
@@ -1465,7 +1512,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
       Wold.w=curcell->w;;
       Wold.p=curcell->p;;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
-
+#ifdef WRADHYD
+      Wold.X=curcell->X;
+#endif
       dW2U(&Wold,&Uold); // primitive -> conservative
       REAL eold=Uold.eint;
 
@@ -1533,7 +1582,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	  Us.dw=(fact*WN[0].w);
 	  Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].u)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].u)))));
 #endif
-
+#ifdef WRADHYD
+	 FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+#endif
 	}
       else if((ustar<=0.)&&(SR>0.)){
 	dgetflux_X(&UC[0],FL);
@@ -1551,7 +1602,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	  Us.dw=(fact*WC[0].w);
 	  Us.E =(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u)))));
 #endif
-
+#ifdef WRADHYD
+	  FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+#endif
 	}
 
 
@@ -1611,7 +1664,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	  Us.dw=(fact*WC[1].w);
 	  Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].u)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].u)))));
 #endif
-
+#ifdef WRADHYD
+	  FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+#endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
 	  dgetflux_X(&UN[1],FR);
@@ -1628,6 +1683,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 	  Us.dv=(fact*WN[1].v);
 	  Us.dw=(fact*WN[1].w);
 	  Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].u)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].u)))));
+#endif
+#ifdef WRADHYD
+	  FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
 #endif
 	}
 
@@ -1658,7 +1716,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int curcpu,REAL dx, REAL d
 
     //ready for the next oct
   }
-
+  }
 }
 
 
@@ -1675,7 +1733,7 @@ __global__ void dupdatefield(struct HGRID *stencil, int nread, int stride, struc
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
   i=bx*blockDim.x+tx;
-  
+  if(i<nread){
   for(icell=0;icell<8;icell++){ // we scan the cells
       
     if(stencil[i].oct[13].cell[icell].split) continue;
@@ -1693,12 +1751,16 @@ __global__ void dupdatefield(struct HGRID *stencil, int nread, int stride, struc
 #ifdef DUAL_E
       U.eint+=stencil[i].New.cell[icell].flux[5+flx*NVAR]*dtsurdx*one;
 #endif
+#ifdef WRADHYD
+	U.dX+=stencil[i].New.cell[icell].flux[6+flx*NVAR]*dtsurdx*one;
+#endif
       one*=-1.;
     }
     // scatter back the delta Uwithin the stencil
     
     memcpy(&(stencil[i].New.cell[icell].deltaU),&U,sizeof(struct Utype));
 
+  }
   }
 }
 
@@ -1720,6 +1782,8 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   nreadtot=0;
+  int ng;
+  int nt;
 
   cudaStream_t stream[cpu->nstream];
 
@@ -1739,11 +1803,19 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
   
       // ------------ gathering the stencil value values
       nextoct= gatherstencil(curoct,stencil,stride,cpu, &nread);
+      ng=((nread-1)/cpu->nthread/cpu->nstream)+1; // +1 is for leftovers
 
-      dim3 gridoct((nread/cpu->nthread/cpu->nstream)>1?(nread/cpu->nthread/cpu->nstream):1);
-      //printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-      dim3 blockoct(cpu->nthread);
-      //printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+      if(ng==1){
+	nt=nread;
+      }
+      else{
+	nt=cpu->nthread;
+      }
+
+      /* dim3 gridoct((nread/cpu->nthread/cpu->nstream)>1?(nread/cpu->nthread/cpu->nstream):1); */
+      /* dim3 blockoct(cpu->nthread); */
+      dim3 gridoct(ng);
+      dim3 blockoct(nt);
 
       // streaming ====================
       for(is=0;is<cpu->nstream;is++){
@@ -1752,14 +1824,14 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	
 	offset=is*nread/cpu->nstream;
 	cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,nread*sizeof(struct HGRID)/cpu->nstream,cudaMemcpyHostToDevice,stream[is]);  
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+	//printf("Start Error Hyd =%s\n",cudaGetErrorString(cudaGetLastError()));
       
 	// ------------ solving the hydro
-	dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread/cpu->nstream,dxcur,dtnew);
+	dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew);
 	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-	dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread/cpu->nstream,dxcur,dtnew); 
+	dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew); 
 	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-	dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread/cpu->nstream,dxcur,dtnew); 
+	dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew); 
 	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
 	
 	// ------------ updating values within the stencil
@@ -1767,7 +1839,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	/* t[4]=MPI_Wtime(); */
 
 	dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,stride,cpu,dxcur,dtnew);
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+	//	printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
 
 	/* cudaDeviceSynchronize(); */
 	/* t[6]=MPI_Wtime(); */
@@ -1775,7 +1847,6 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	cudaMemcpyAsync(stencil+offset,cpu->hyd_stencil+offset,nread/cpu->nstream*sizeof(struct HGRID),cudaMemcpyDeviceToHost,stream[is]);  
 	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
       }
-
       /* dim3 gridoct2((nread/cpu->nthread)>1?(nread/cpu->nthread):1); */
       /* dim3 blockoct2(cpu->nthread); */
 
@@ -1796,10 +1867,8 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
       tu+=(t[6]-t[4]);
       th+=(t[4]-t[2]);
       tg+=(t[2]-t[0]);
-      
     }while(nextoct!=NULL);
   }
-  
   //printf("GPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
 
   // Destroying the streams

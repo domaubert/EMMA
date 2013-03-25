@@ -1,6 +1,6 @@
 require,"utils/readamr.i";
 
-i=10;lvl=5;
+i=20;lvl=7;
 rep="data/";
 dxcur=1./32.;
 

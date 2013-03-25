@@ -383,20 +383,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef WRAD
-
-
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
-
  
     //=============== Radiation Update ======================
-    printf("aexp=%e\n",aexp);
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
-    
     sanity_rad(level,param,firstoct,cpu,aexp);
-
-
-
 #endif
 
 

@@ -220,9 +220,15 @@ struct CPUINFO{
   struct HGRID *hyd_stencil;
 #endif
 
+#ifdef WRAD
+  struct RGRID *rad_stencil;
+#endif
+
 
   int nstream;
   int nthread;
+
+  struct RUNPARAMS *dparam;
 #endif
 };
 

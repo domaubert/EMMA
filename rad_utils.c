@@ -1285,9 +1285,9 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
       }
 #endif
 
-      // scatter back the delta Uwithin the stencil
+      /* // scatter back the delta Uwithin the stencil */
 
-      memcpy(&(stencil[i].New.cell[icell].deltaR),&R,sizeof(struct Rtype));
+      /* memcpy(&(stencil[i].New.cell[icell].deltaR),&R,sizeof(struct Rtype)); */
 
       // TESTING FULL UPDATE IN STENCIL APPROACH
       
@@ -1522,8 +1522,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifndef GPUAXL
   nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #else
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
-  //  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
+  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #endif
 
   // FINAL UPDATE OF THE VALUES
@@ -1588,8 +1587,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifndef GPUAXL
   printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
-  //printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
-  printf(" === GPU (DISABLED) RAD TOTAL TIME =%e\n",t[9]-t[0]);
+  printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
   
 }

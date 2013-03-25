@@ -49,6 +49,7 @@
 #ifdef GPUAXL
 #include "poisson_utils_gpu.h"
 #include "hydro_utils_gpu.h"
+#include "rad_utils_gpu.h"
 #endif
 
 
@@ -124,8 +125,9 @@ int main(int argc, char *argv[])
   int nref=0,ndes=0;
 
   REAL xc,yc,zc;
-  int hstride;
-  int gstride;
+  int hstride; 
+  int rstride;
+ int gstride;
   int ncomp;
   REAL acc;
   REAL dt;
@@ -405,6 +407,7 @@ int main(int argc, char *argv[])
   threshold=param.amrthresh;
   gstride=fmax(8,param.gstride);//pow(2,levelcoarse);
   hstride=fmax(8,param.hstride);//pow(2,levelcoarse);
+  rstride=hstride;
   ncomp=10;
   acc=param.poissonacc;
   dt=param.dt;
@@ -508,14 +511,24 @@ int main(int argc, char *argv[])
 
 #ifdef WHYDRO2 
 
-  printf("stencil=%p with stride=%d\n",stencil,hstride);
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
-  printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
+  printf("hstencil=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
   
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
   create_pinned_stencil(&stencil,hstride);  
   create_hydstencil_GPU(&cpu,hstride); 
 #endif 
+
+#ifdef WRAD
+  rstencil=(struct RGRID*)calloc(rstride,sizeof(struct RGRID));
+  printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
+
+  // UNCOMMENT BELOW FOR FASTRT GPU
+  create_pinned_stencil_rad(&rstencil,rstride);  
+  create_radstencil_GPU(&cpu,rstride); 
+#endif
+
+
   // ====================END GPU ALLOCATIONS ===============
 #endif
     
@@ -1456,7 +1469,6 @@ int main(int argc, char *argv[])
 	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
 	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
 	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-	      
 	      for(igrp=0;igrp<NGRP;igrp++){
 
 #ifdef WCHEM
@@ -1477,14 +1489,18 @@ int main(int argc, char *argv[])
 		nh=0.2;
 #endif
 		
-		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
 		REAL pstar;
 		pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+
+		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 		eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
 		curoct->cell[icell].rfield.eint=eint; 
 		curoct->cell[icell].rfield.xion=xion; 
 		E2T(&curoct->cell[icell].rfield,1.0,&param);
+
+		
+		
 
 		curoct->cell[icell].field.d=1.0;
 		curoct->cell[icell].field.u=0.0;
@@ -1683,6 +1699,12 @@ int main(int argc, char *argv[])
 
     // preparing freeocts
     cpu.freeoct=freeoct;
+    
+
+#ifdef GPUAXL
+    // creating params on GPU
+    create_param_GPU(&param,&cpu); 
+#endif
 
 
     // Loop over time
@@ -1762,8 +1784,13 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-    /* destroy_pinned_stencil(&stencil,stride); */
-    /* destroy_hydstencil_GPU(&cpu,stride); */
+    destroy_pinned_stencil(&stencil,hstride); 
+    destroy_hydstencil_GPU(&cpu,hstride); 
+#endif
+
+#ifdef WRAD
+    destroy_pinned_stencil_rad(&rstencil,rstride); 
+    destroy_radstencil_GPU(&cpu,rstride); 
 #endif
 
 #endif

@@ -1,5 +1,5 @@
 ########################################## 
-ARCH = CPU
+ARCH = GPU
 C_LIBS = -lm -g -lstdc++
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
@@ -43,8 +43,8 @@ DEFINES  += -DCOOLING
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-DEFINES  +=  -DTRANSXM
-DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================
@@ -52,7 +52,7 @@ DEFINES  +=  -DTRANSXP
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartzgpu
-CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o # cic_gpu.o 
+CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o 
 CUDA_LIBS = -lcudpp -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -I/usr/local/cuda/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
 else
 DEFINESGLOB= $(DEFINES) 
