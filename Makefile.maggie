@@ -20,7 +20,7 @@ DEFINES  +=  -DWRADHYD
 #DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST
+DEFINES  +=  -DWRADTEST -DTESTCLUMP
 
 #------------ PIC OPTIONS ----------------------
 
@@ -43,8 +43,8 @@ DEFINES  += -DCOOLING
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-#DEFINES  +=  -DTRANSXM
-#DEFINES  +=  -DTRANSXP
+DEFINES  +=  -DTRANSXM
+DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================

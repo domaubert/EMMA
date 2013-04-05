@@ -1421,11 +1421,20 @@ int main(int argc, char *argv[])
   REAL X0=1./pow(2,levelcoarse);
   int igrp;
 
-#ifndef TESTCOSMO
-  param.unit.unit_l=30.e3*PARSEC;
   param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
-  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
   param.unit.unit_n=1.;
+#ifndef TESTCOSMO
+#ifndef TESTCLUMP
+  param.unit.unit_l=30.e3*PARSEC;
+#else
+  param.unit.unit_l=6.6e3*PARSEC;
+  REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
+  param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+  REAL pstar;
+  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
+  
+#endif
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
   ainit=1.;
 #else
   ainit=1./(16.);;
@@ -1479,19 +1488,40 @@ int main(int argc, char *argv[])
 		temperature=1e4;
 		xion=1.2e-3;
 #else
+#ifndef TESTCLUMP
 		temperature=1e2;
 		xion=1e-5;
+#else
+		temperature=8000.;
+		xion=1e-5;
+#endif
 #endif
 
 #ifndef TESTCOSMO
+#ifndef TESTCLUMP
 		nh=1000.;
+#else
+		nh=200.;
+#endif
 #else
 		nh=0.2;
 #endif
-		
+
+#ifdef TESTCLUMP
+		// defining the clump
+		REAL X0=5.5/6.6;
+		REAL rc=sqrt(pow(xc-X0,2)+pow(yc-0.5,2)+pow(zc-0.5,2));
+		if(rc<=(0.8/6.6)){
+		  temperature=40.;
+		  nh=4000.;
+		}
+#endif
+
+#ifndef TESTCLUMP		
 		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
 		REAL pstar;
 		pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+#endif
 
 		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 		eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
@@ -1502,7 +1532,7 @@ int main(int argc, char *argv[])
 		
 		
 
-		curoct->cell[icell].field.d=1.0;
+		curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		curoct->cell[icell].field.u=0.0;
 		curoct->cell[icell].field.v=0.0;
 		curoct->cell[icell].field.w=0.0;

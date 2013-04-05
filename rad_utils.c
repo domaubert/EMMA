@@ -436,6 +436,7 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	up=RC[0].e[igrp];
 	um=RN[0].e[igrp];
 
+
 	fp=RC[0].fx[igrp];
 	fm=RN[0].fx[igrp];
 

@@ -16,6 +16,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   int flag;
 
 #ifdef WRADTEST
+  int igrp;
   REAL  dxcur=pow(0.5,curoct->level);
   int icell=cell->idx;
   REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
@@ -24,6 +25,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 	      
   
   //  if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){
+#ifndef TESTCLUMP
   if((fabs(xc-0.5)<=X0)*(fabs(yc-0.5)<=X0)*(fabs(zc-0.5)<=X0)){
     if((xc>0.5)*(yc>0.5)*(zc>0.5)){
       cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
@@ -39,6 +41,24 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
     cell->rfieldnew.src=0.;
     flag=0;
   }
+#else
+  cell->rfield.src=0.;
+  cell->rfieldnew.src=0.;
+  if(xc<=X0){
+    for(igrp=0;igrp<NGRP;igrp++){
+      curoct->cell[icell].rfield.e[igrp]=1e10*param->unit.unit_t*pow(param->unit.unit_l,2)/param->clight; 
+      curoct->cell[icell].rfield.fx[igrp]=1e10*param->unit.unit_t*pow(param->unit.unit_l,2);
+      curoct->cell[icell].rfield.fy[igrp]=0.; 
+      curoct->cell[icell].rfield.fz[igrp]=0.; 
+      
+      curoct->cell[icell].rfieldnew.e[igrp] =curoct->cell[icell].rfield.e[igrp];
+      curoct->cell[icell].rfieldnew.fx[igrp]=curoct->cell[icell].rfield.fx[igrp]; 
+      curoct->cell[icell].rfieldnew.fy[igrp]=curoct->cell[icell].rfield.fy[igrp]; 
+      curoct->cell[icell].rfieldnew.fz[igrp]=curoct->cell[icell].rfield.fz[igrp]; 
+    }
+  }
+#endif
+
 #else
 #ifdef WHYDRO2
   if(cell->field.d>param->srcthresh){
@@ -132,6 +152,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 #endif
 
+#ifndef TESTCLUMP
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN; 
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
@@ -143,6 +164,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	    curoct->cell[icell].rfieldnew.fy[igrp]=curoct->cell[icell].rfield.fy[igrp]; 
 	    curoct->cell[icell].rfieldnew.fz[igrp]=curoct->cell[icell].rfield.fz[igrp]; 
 	  }
+#endif
 	}
 
 #ifdef WRADHYD

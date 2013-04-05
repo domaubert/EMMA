@@ -149,6 +149,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
 REAL comp_grad_rad(struct OCT *curoct, int icell){
   REAL gradd[3]={0.,0.,0.};
+  REAL avgd[3]={0.,0.,0.};
 
 
   int vcell[6],vnei[6];
@@ -160,6 +161,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   REAL dxcur=pow(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
+  //printf("__\n");
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
     if(vnei[ii]==6){
       memcpy(&W,&(curoct->cell[vcell[ii]].rfield),sizeof(struct Rtype));
@@ -174,7 +176,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==4){
 	  if(curoct->z==0.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -183,7 +185,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==5){
 	  if((curoct->z+2.*dxcur)==1.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -192,7 +194,8 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==0){
 	  if(curoct->x==0.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Rtype));
+	    //printf("clunk\n");
+	    memcpy(&W,&(curoct->cell[ii].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -201,7 +204,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==1){
 	  if(curoct->x+2.*dxcur==1.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Rtype));
+	    memcpy(&W,&(curoct->cell[ii].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -210,7 +213,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==2){
 	  if(curoct->y==0.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -219,7 +222,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	if(ii==3){
 	  if(curoct->y+2.*dxcur==1.){
 	    // the neighbor is a periodic mirror 
-	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Rtype));
+	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
 #endif 
@@ -229,19 +232,25 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
       else{
 	// the neighbour does not exist we need to interpolate the value at the correct position
 	//coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
-	coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
-	memcpy(&W,Wi+vcell[ii],sizeof(struct Rtype));
-    
+	/* coarse2fine_radlin(curoct->nei[vnei[ii]],Wi); */
+	/* for(il=0;il<8;il++) memcpy(&Wi[il],&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype));  */
+
+	memcpy(&W,&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype)); // straight injection
+	
       }
     }
     
+    //if((curoct->x==0.)&&(curoct->level==6)) printf("l=%d ii=%d  We=%e\n",curoct->level,ii,W.e[0]);
+
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.xion*fact);   
-
+    avgd[ax]+=W.xion*0.5;
   }
 
-  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
+  //  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
+
+  ratiox=fmax(fabs(gradd[0]/(avgd[0]+1e-10)),fmax(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
 
   //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
@@ -510,16 +519,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    //coarse2fine_radlin(&(curoct->cell[icell]),Ri);
 		    
  		    for(il=0;il<8;il++) memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
-		  //sanity check
-		    REAL cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
- 		    for(il=0;il<8;il++) {
-		      E=Ri[il].e[0]*cloc;
-		      F=sqrt(pow(Ri[il].fx[0],2)+pow(Ri[il].fy[0],2)+pow(Ri[il].fz[0],2));
-		      if(F/E>1.0){
-			abort();
-		      }
-		    }
-
 		}
 		
 #endif
@@ -786,7 +785,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #ifdef TRANSXP
-				  if((ii==1)&&(curoct->x+2.*dx==1.)){
+				  if((ii==1)&&((curoct->x+2.*dx)==1.)){
 				    newcell=NULL;
 				    continue;
 				  }
@@ -856,7 +855,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 				      
 #ifdef TRANSXP
-				      if((il==1)&&(newoct->x+2.*dx==1.)){
+				      if((il==1)&&((newoct->x+2.*dx)==1.)){
 					newcell2=NULL;
 					continue;
 				      }
@@ -922,7 +921,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 					  
 #ifdef TRANSXP
-					  if((ip==1)&&(desoct->x+2.*dx==1.)){
+					  if((ip==1)&&((desoct->x+2.*dx)==1.)){
 					    continue;
 					  }
 #endif
@@ -1021,9 +1020,15 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WRADTEST
 			    //mcell=(curoct->cell[icell].rfield.e[0]>1e74) +(curoct->cell[icell].rfield.src>0.);
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+#ifdef TESTCLUMP
+			    den=curoct->cell[icell].field.d;
+			    //den=0.1;
+#else
+			    den=0.1;
+#endif
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
 	
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			    if(((mcell>threshold)||(den>0.6))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }

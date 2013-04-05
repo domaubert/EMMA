@@ -194,7 +194,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
     // refining (and destroying) octs
 #ifdef WRAD
-    sanity_rad(level,param,firstoct,cpu,aexp);
+    //sanity_rad(level,param,firstoct,cpu,aexp);
 #endif
     curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
     cpu->freeoct=curoct;
@@ -237,7 +237,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 #ifdef WRAD
-    sanity_rad(level,param,firstoct,cpu,aexp);
+    //sanity_rad(level,param,firstoct,cpu,aexp);
     clean_new_rad(level,param,firstoct,cpu,aexp);
 #endif
 
@@ -388,7 +388,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  
     //=============== Radiation Update ======================
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
-    sanity_rad(level,param,firstoct,cpu,aexp);
+    //sanity_rad(level,param,firstoct,cpu,aexp);
 #endif
 
 

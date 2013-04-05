@@ -259,27 +259,28 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      Wm=&(oct->cell[vcell[inei2]].field);
 	    }
 	    else{
-	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+	      if(oct->nei[vnei[inei2]]->child!=NULL){
+		Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXM
-	      if((oct->x==0.)&&(inei2==0)){
-		Wm=&(cell->field);
-	      }
+		if((oct->x==0.)&&(inei2==0)){
+		  Wm=&(cell->field);
+		}
 #endif
-
+		
 #ifdef TRANSYM
-	      if((oct->y==0.)&&(inei2==2)){
-		Wm=&(cell->field);
-	      }
+		if((oct->y==0.)&&(inei2==2)){
+		  Wm=&(cell->field);
+		}
 #endif
 
 #ifdef TRANSZM
-	      //if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
-	      if((oct->z==0.)&&(inei2==4)){
-		Wm=&(cell->field);
-	      }
+		//if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
+		if((oct->z==0.)&&(inei2==4)){
+		  Wm=&(cell->field);
+		}
 #endif
-
+	      }
 
 	    }
 	    
@@ -289,26 +290,27 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	      Wp=&(oct->cell[vcell[inei2]].field);
 	    }
 	    else{
-	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
+	      if(oct->nei[vnei[inei2]]->child!=NULL){
+		Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
 #ifdef TRANSXP
-	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
-		Wp=&(cell->field);
-	      }
+		if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+		  Wp=&(cell->field);
+		}
 #endif
 
 #ifdef TRANSYP
-	      if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
-		Wp=&(cell->field);
-	      }
+		if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+		  Wp=&(cell->field);
+		}
 #endif
 
 #ifdef TRANSZP
-	      if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
-		Wp=&(cell->field);
-	      }
+		if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+		  Wp=&(cell->field);
+		}
 #endif
-
+	      }
 	    }
 
 
