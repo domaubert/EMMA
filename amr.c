@@ -47,6 +47,15 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
       if(curoct->nei[vnei[ii]]->child!=NULL){
 	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field),sizeof(struct Wtype));
 
+# 
+      }
+      else{
+	// the neighbour does not exist we need to interpolate the value at the correct position
+	coarse2fine_hydrolin(curoct->nei[vnei[ii]],Wi);
+	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
+    
+      }
+
 #ifdef TRANSZM
 	if(ii==4){
 	  if(curoct->z==0.){
@@ -101,13 +110,6 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 	}
 #endif 
  
-      }
-      else{
-	// the neighbour does not exist we need to interpolate the value at the correct position
-	coarse2fine_hydrolin(curoct->nei[vnei[ii]],Wi);
-	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
-    
-      }
     }
     
     int ax=ii/2;
@@ -150,14 +152,16 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 REAL comp_grad_rad(struct OCT *curoct, int icell){
   REAL gradd[3]={0.,0.,0.};
   REAL avgd[3]={0.,0.,0.};
-
+  REAL grade[3]={0.,0.,0.};
+  REAL avge[3]={0.,0.,0.};
+  REAL val[6];
 
   int vcell[6],vnei[6];
   struct Rtype W;
   struct Rtype Wi[8];
   int ii;
 
-  REAL ratiox,ratio;
+  REAL ratiox,ratio,ratioe;
   REAL dxcur=pow(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
@@ -172,7 +176,19 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
       if(curoct->nei[vnei[ii]]->child!=NULL){
 	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].rfield),sizeof(struct Rtype));
 
-#ifdef TRANSZM
+
+      }
+      else{
+	// the neighbour does not exist we need to interpolate the value at the correct position
+	//coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
+	/* coarse2fine_radlin(curoct->nei[vnei[ii]],Wi); */
+	/* for(il=0;il<8;il++) memcpy(&Wi[il],&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype));  */
+
+	memcpy(&W,&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype)); // straight injection
+	
+      }
+
+      #ifdef TRANSZM
 	if(ii==4){
 	  if(curoct->z==0.){
 	    // the neighbor is a periodic mirror 
@@ -191,7 +207,9 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 #endif 
 
 #ifdef TRANSXM
+	//printf("clunk3\n");
 	if(ii==0){
+	  //printf("clunk2\n");
 	  if(curoct->x==0.){
 	    // the neighbor is a periodic mirror 
 	    //printf("clunk\n");
@@ -227,34 +245,33 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	}
 #endif 
  
-
-      }
-      else{
-	// the neighbour does not exist we need to interpolate the value at the correct position
-	//coarse2fine_radlin(curoct->nei[vnei[ii]],Wi);
-	/* coarse2fine_radlin(curoct->nei[vnei[ii]],Wi); */
-	/* for(il=0;il<8;il++) memcpy(&Wi[il],&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype));  */
-
-	memcpy(&W,&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype)); // straight injection
-	
-      }
+ 
+      
     }
     
-    //if((curoct->x==0.)&&(curoct->level==6)) printf("l=%d ii=%d  We=%e\n",curoct->level,ii,W.e[0]);
+    //if((curoct->x==0.)&&(curoct->level==6)) printf("l=%d ii=%d  We=%e\n",curoct->level,ii,W.xion);
 
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.xion*fact);   
     avgd[ax]+=W.xion*0.5;
+    grade[ax]+=(W.e[0]*fact);   
+    avge[ax]+=W.e[0]*0.5;
+    val[ii]=W.xion;
   }
 
   //  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
 
   ratiox=fmax(fabs(gradd[0]/(avgd[0]+1e-10)),fmax(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
-
+  ratioe=fmax(fabs(grade[0]/(avge[0]+1e-10)),fmax(fabs(grade[1]/(avge[1]+1e-10)),fabs(grade[2]/(avge[2]+1e-10))))*0;
+  //ratiox=fabs(gradd[0]/(avgd[0]+1e-10));
+  /* if((curoct->x==0.)&&(ratiox>1.9)) if(icell%2==0) if(curoct->level==6) { */
+  /* 	printf("ratiox=%e %e %e %e\n",ratiox,gradd[0],gradd[1],gradd[2]); */
+  /* 	abort(); */
+  /*     } */
   //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
-  ratio=ratiox;
+  ratio=fmax(ratiox,ratioe);
   return ratio; 
   
 }
@@ -418,8 +435,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif	      
 	      // creation of a new oct ==================
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
-
-
+		
+		//if((curoct->x==0.))printf("mark=%f %f l=%d\n",curoct->cell[icell].marked,curoct->x,curoct->level);
 #ifdef WMPI
 		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(levelcoarse))){
 		  int segok;
@@ -435,6 +452,25 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		getcellnei(icell, vnei, vcell);
 		for(ii=0;ii<6;ii++){
 		  if(vnei[ii]!=6){
+#ifdef TRANSXM
+		    if((curoct->x==0.)&&(ii==0)) continue;
+#endif
+#ifdef TRANSYM
+		    if((curoct->y==0.)&&(ii==2)) continue;
+#endif
+#ifdef TRANSZM
+		    if((curoct->z==0.)&&(ii==4)) continue;
+#endif
+
+#ifdef TRANSXP
+		    if((curoct->x+2*dxcur==1.)&&(ii==1)) continue;
+#endif
+#ifdef TRANSYP
+		    if((curoct->y+2*dxcur==1.)&&(ii==2)) continue;
+#endif
+#ifdef TRANSZP
+		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
+#endif
 		    if(curoct->nei[vnei[ii]]!=NULL){	
 		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
 			// refinement rule is violated so skip
@@ -487,9 +523,24 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  if(vnei[ii]!=6){
 		    if(curoct->nei[vnei[ii]]!=NULL){	
 		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
+#ifdef TRANSXM
+			continue;
+#endif
+#ifndef TRANSXM
+#ifndef TRANSXP
+#ifndef TRANSYM
+#ifndef TRANSYP
+#ifndef TRANSZP
+#ifndef TRANSZM
 			// here we refine too much
 			printf("ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 			abort();
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
 		      }
 		      // Note that boundary octs are refined but may have missing neighbors
 		      if(curoct->nei[vnei[ii]]->child!=NULL) newoct->nei[ii]=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
@@ -579,8 +630,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 		}
 
-
-
+  
 #ifdef PIC
 		// splitting the particles
 		nexp=curoct->cell[icell].phead;
@@ -791,14 +841,14 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				  }
 #endif
 
-#ifdef TRANSXM
+#ifdef TRANSYM
 				  if((ii==2)&&(curoct->y==0.)){
 				    newcell=NULL;
 				    continue;
 				  }
 #endif
 
-#ifdef TRANSXP
+#ifdef TRANSYP
 				  if((ii==3)&&(curoct->y+2.*dx==1.)){
 				    newcell=NULL;
 				    continue;
@@ -818,7 +868,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				    continue;
 				  }
 #endif
-
 
 
 				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
@@ -861,14 +910,14 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				      }
 #endif
 
-#ifdef TRANSXM
+#ifdef TRANSYM
 				      if((il==2)&&(newoct->y==0.)){
 					newcell2=NULL;
 					continue;
 				      }
 #endif
 
-#ifdef TRANSXP
+#ifdef TRANSYP
 				      if((il==3)&&(newoct->y+2.*dx==1.)){
 					newcell2=NULL;
 					continue;
@@ -926,13 +975,13 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 					  }
 #endif
 					  
-#ifdef TRANSXM
+#ifdef TRANSYM
 					  if((ip==2)&&(desoct->y==0.)){
 					    continue;
 					  }
 #endif
 					  
-#ifdef TRANSXP
+#ifdef TRANSYP
 					  if((ip==3)&&(desoct->y+2.*dx==1.)){
 					    continue;
 					  }
@@ -1027,8 +1076,13 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=0.1;
 #endif
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
-	
 			    if(((mcell>threshold)||(den>0.6))&&(curoct->cell[icell].marked==0)) {
+			      if((curoct->x==0.)&&(curoct->level==6)) {
+				/* if(icell/2==0){ */
+				/* printf("l=%d icell=%d mcell=%e den=%e y=%e\n",curoct->level,icell,mcell,den,curoct->y); */
+				/* } */
+				if(icell==0) abort();
+			      }
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
@@ -1064,7 +1118,13 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  }
 			  
 			}
-
+			if(curoct->x==0.)
+			  if(pass==3)
+			    //if(curoct->y>0.5)
+			      if(icell==0)
+				if(level==6)
+				  if(curoct->cell[icell].marked!=5)
+				    abort();
 		      }
 		  }while(nextoct!=NULL);
 		//printf("pass=%d nmark=%d\n",pass,nmark);
@@ -1082,7 +1142,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 	    }
 	  //printf("\n");
-	}
+    }
   printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
 
 }

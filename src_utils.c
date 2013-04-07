@@ -103,10 +103,12 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
       if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){	
 
+#ifndef TESTCLUMP
 	if(curoct->cell[icell].child!=NULL){
 	  curoct->cell[icell].rfield.src=0.;
 	  continue; // src are built on the finest level
 	}
+#endif
 	
         flag=putsource(&(curoct->cell[icell]),param,level,aexp,curoct); // creating sources if required
 	

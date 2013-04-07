@@ -1,6 +1,6 @@
 require,"utils/readamr.i";
 
-i=20;lvl=7;
+i=340;lvl=7;
 rep="data/";
 dxcur=1./32.;
 
@@ -13,6 +13,7 @@ l=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,0,a);
 d=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,708,a);
 // P=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,105,a);
 d2=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,101,a);
+//m=oct2cube(swrite(format=rep+"grid.%05d",i-1),lvl,4,a);
 
 //X=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,108,a);
 

@@ -1347,7 +1347,9 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	
 	memcpy(&(curoct->cell[icell].rfieldnew),&(stencil[iread].New.cell[icell].rfieldnew),sizeof(struct Rtype)); 
 
-
+	/* if(curoct->x<1./32.) */
+	/*   if(icell==2)  */
+	/*     if(curoct->cell[0].rfieldnew.xion!=curoct->cell[2].rfieldnew.xion) abort(); */
 	// let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
