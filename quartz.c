@@ -249,12 +249,12 @@ int main(int argc, char *argv[])
   
   /* Setup description of the 8 MPI_REAL fields data */
   offsets[0] = 0;
-  oldtypes[0] = MPI_REAL;
+  oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 8;
   
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REAL */
-  MPI_Type_extent(MPI_REAL, &extent);
+  MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[1] = 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
@@ -705,6 +705,9 @@ int main(int argc, char *argv[])
     sendbuffer[i]=(struct PACKET *) (calloc(cpu.nbuff,sizeof(struct PACKET)));
     recvbuffer[i]=(struct PACKET *) (calloc(cpu.nbuff,sizeof(struct PACKET)));
   }
+
+  cpu.sendbuffer=sendbuffer;
+  cpu.recvbuffer=recvbuffer;
 
 #ifdef PIC
   psendbuffer=(struct PART_MPI **)(calloc(cpu.nnei,sizeof(struct PART_MPI*)));
@@ -1407,7 +1410,7 @@ int main(int argc, char *argv[])
 #ifdef WRAD
 
 #ifdef WCHEM
-  param.fudgecool=0.01;
+  param.fudgecool=1.0;
   param.ncvgcool=0;
   if(NGRP!=NGRP_ATOMIC){
     printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");

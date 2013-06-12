@@ -190,15 +190,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e\n",level,gstride,hstride,stencil,aexp);
   }
 
-  // ================= I we refine the current level
-  if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-    // refining (and destroying) octs
-#ifdef WRAD
-    //sanity_rad(level,param,firstoct,cpu,aexp);
-#endif
-    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
-    cpu->freeoct=curoct;
-  }
 
   // ==================================== Check the number of particles and octs
   mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
@@ -244,7 +235,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // == Ready to advance
 
 
-    // ================= IV advance solution at the current level
+  // ================= I we refine the current level
+  if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+    // refining (and destroying) octs
+#ifdef WRAD
+    //sanity_rad(level,param,firstoct,cpu,aexp);
+#endif
+    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+    cpu->freeoct=curoct;
+  }
+
+  // ==================================== Check the number of particles and octs
+  mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+
+  // ================= IV advance solution at the current level
 
 
     printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
@@ -253,6 +257,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
+#ifdef WMPI
+  mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+#endif
 #endif
  
     /* //==================================== Getting Density ==================================== */

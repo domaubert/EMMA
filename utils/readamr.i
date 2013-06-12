@@ -24,14 +24,16 @@ func readcube(fname,&time){
   fp=open(fname,"rb");
   adress=0;
   nmap=array(int);
+  nmapz=array(int);
   time=array(float);
   _read,fp,adress,nmap;adress+=sizeof(nmap);
+  _read,fp,adress,nmapz;adress+=sizeof(nmapz);
   _read,fp,adress,time;adress+=sizeof(time);
-  map=array(double,nmap^3);
+  map=array(double,nmap^2*nmapz);
   _read,fp,adress,map;
   close,fp;
 
-  map=reform(map,[3,nmap,nmap,nmap]);
+  map=reform(map,[3,nmap,nmap,nmapz]);
   return map;
 }
 
@@ -126,11 +128,13 @@ func ext_amr1D(levmap,field,color=,lmin=)
 }
 
 
-func oct2cube(fname,lvl,field,&time,ncpu=,execut=){
+func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=){
   if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
+  if(is_void(zmin)) zmin=0.;
+  if(is_void(zmax)) zmax=1.;
   time=array(double);
-  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0";
+  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(zmin)+" "+pr1(zmax);
   system(commande);
   cube=readcube(swrite(format=fname+".f"+pr1(field)+".p%05d",ncpu-1),time);
   return cube;

@@ -147,9 +147,9 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
 
   // some displays
-  /* printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank); */
-  /* for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]); */
-  /* printf("\n"); */
+  printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank);
+  for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]);
+  printf("\n");
 
 #ifdef WMPI
   int nvois_loc=cpu->nebnd;
@@ -213,7 +213,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     countpacket[icpu]++;
   }
   
-  //for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
+  for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
   free(countpacket);
 
 }
@@ -353,7 +353,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
 		case 2:
-		  pack->data[icell]=curoct->cell[icell].pot; // potential
+		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
 		case 3:
 		  pack->data[icell]=curoct->cell[icell].marked*(curoct->level>=cpu->levelcoarse); //refinment mark
@@ -448,7 +448,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
 		case 2:
-		  pack->data[icell]=curoct->cell[icell].pot; // potential
+		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
 		case 3:
 		  pack->data[icell]=curoct->cell[icell].marked; //refinment mark
@@ -519,13 +519,19 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
 	      case 0:
+		if(cpu->rank==0)
+		  /* if(pack->data[icell]>0) */
+		  if(curoct->x==0.46875) 
+		    if(icell%2==1) 
+		  /* 	if((curoct->cell[icell].density>0.87)&&((curoct->cell[icell].density<0.88))) */
+			  printf("%e %e %d\n",curoct->cell[icell].density,pack->data[icell],(int)(curoct->y*64.));
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
 	      case 1:
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
 	      case 2:
-		curoct->cell[icell].pot=pack->data[icell]; // potential
+		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
 	      case 3:
 		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
@@ -600,7 +606,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
 	      case 2:
-		curoct->cell[icell].pot=pack->data[icell]; // potential
+		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
 	      case 3:
 		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
@@ -960,6 +966,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
 //===========================================================================================
 //===========================================================================================
 
+#ifdef WHYDRO2
 void gather_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 
   int i,j;
@@ -1342,6 +1349,7 @@ void mpi_exchange_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer, struct
 
 }
 
+#endif
 
 
 // -------------------------------------------------------------------------------
@@ -1457,6 +1465,8 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
 
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
+
+  printf("correcting CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff(cpu,sendbuffer,recvbuffer);

@@ -1,5 +1,5 @@
 ########################################## 
-ARCH = GPU
+ARCH = CPU
 C_LIBS = -lm -g -lstdc++
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
@@ -8,24 +8,32 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-#DEFINES  +=  -DPIC
-DEFINES  +=  -DWHYDRO2
-#DEFINES  +=  -DWGRAV -DFASTGRAV -DONFLYRED
-DEFINES  +=  -DWRAD
-DEFINES  +=  -DWRADHYD
-#DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DPIC
+#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWGRAV 
+#DEFINES  +=  -DWRAD
+#DEFINES  +=  -DWRADHYD
+DEFINES  +=  -DTESTCOSMO
+
+#------------ MPI OPTIONS ---------------------
+
+DEFINES  +=  -DWMPI
+
 
 #------------ ICs OPTIONS ---------------------
 
-#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST -DTESTCLUMP
+#DEFINES  +=  -DWRADTEST -DTESTCLUMP
 
 #------------ PIC OPTIONS ----------------------
 
 #DEFINES += -DPART_EGY
 #DEFINES += -DPERFECT
+
+#------------ GRAV OPTIONS ----------------------
+#DEFINES  +=  -DFASTGRAV -DONFLYRED
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
 DEFINES  +=  -DRIEMANN_HLLC
@@ -37,14 +45,15 @@ DEFINES  +=  -DDUAL_E
 DEFINES  += -DWCHEM 
 DEFINES  += -DS_50000
 DEFINES  += -DCOOLING
+DEFINES  += -DUVBKG
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-DEFINES  +=  -DTRANSXM
-DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================

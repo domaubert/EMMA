@@ -1367,6 +1367,12 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	  update_pot_in_stencil(stencil,level,cpu->rank,nread,stride,0); 
 	} 
 #endif
+
+#ifdef WMPI
+    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1); // potential field exchange
+#endif
+
+
 	tall+=temps[9]-temps[0];
 	tcal+=temps[7]-temps[3];
 	tscat+=temps[9]-temps[7];
@@ -1547,9 +1553,9 @@ int PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   }
 
 #ifdef WMPI
-    mpi_exchange(cpu,sendbuffer,recvbuffer,5,1); // fx field
-    mpi_exchange(cpu,sendbuffer,recvbuffer,6,1); // fy field
-    mpi_exchange(cpu,sendbuffer,recvbuffer,7,1); // fz field
+    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,5,1); // fx field
+    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,6,1); // fy field
+    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,7,1); // fz field
 #endif
 }
 

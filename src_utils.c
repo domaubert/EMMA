@@ -68,7 +68,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   }
   else{
     cell->rfield.src=0.;
-    cell->rfield.srcnew=0.;
+    cell->rfieldnew.src=0.;
     flag=0;
   }
 #endif

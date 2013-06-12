@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   struct UNITS unit;
 #endif
 
-  if(argc!=7){
+  if(argc<7){
     printf("USAGE: /a.out input level field output nproc\n");
     printf("Ex : data/grid.00002 7 101 data/grid.den 8\n");
     printf("field values :\n");
@@ -60,7 +60,6 @@ int main(int argc, char *argv[])
   //getting the resolution
   sscanf(argv[2],"%d",&lmap);
   nmap=pow(2,lmap);
-  map=(REAL *)calloc(nmap*nmap*nmap,sizeof(REAL));
   dxmap=1./nmap;
 
   // getting the number of CPUs
@@ -70,11 +69,31 @@ int main(int argc, char *argv[])
   // silo file
   int dumpsilo=0;
   sscanf(argv[6],"%d",&dumpsilo);
+  REAL zmin,zmax;
+  int nmapz;
+
+  if(argc>7) {
+    sscanf(argv[7],"%lf",&zmin);
+    sscanf(argv[8],"%lf",&zmax);
+  }
+  else{
+    zmin=0;
+    zmax=1.;
+  }
+
+  nmapz=(zmax-zmin)/dxmap;
+ 
+  if((dumpsilo==1)&&(nmapz!=nmap)) {
+    printf("Silo can only handle cubic data !\n");
+    abort();
+  }
+ 
+  map=(REAL *)calloc(nmap*nmap*nmapz,sizeof(REAL));
 
   // scanning the cpus
+  
   for(icpu=0;icpu<ncpu;icpu++){
     
-    memset(map,0,nmap*nmap*nmap*sizeof(REAL));
     
     // building the input file name
     strcpy(format,argv[1]);
@@ -97,10 +116,10 @@ int main(int argc, char *argv[])
       return 1;
     }
     else{
-      printf("Casting Rays on %dx%dx%d cube from %s\n",nmap,nmap,nmap,fname);
+      printf("Casting Rays on %dx%dx%d cube from %s\n",nmap,nmap,nmapz,fname);
     }
     
-    printf("size= %ld\n",nmap*nmap*nmap*sizeof(REAL)+sizeof(int)*2);
+    printf("size= %ld\n",nmap*nmap*nmapz*sizeof(REAL)+sizeof(int)*2);
     // reading the time
     fread(&tsim,sizeof(REAL),1,fp);
 #ifdef WRAD
@@ -125,21 +144,23 @@ int main(int argc, char *argv[])
     fread(&oct,sizeof(struct OCT),1,fp);
     while(!feof(fp)){
       if(oct.level<=lmap){
-      ic++;
-      dxcur=1./pow(2.,oct.level);
-      for(icell=0;icell<8;icell++) // looping over cells in oct
-	{
-	  if((oct.cell[icell].child==NULL)||(oct.level==lmap))
+	ic++;
+	dxcur=1./pow(2.,oct.level);
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
-	      yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
-	      zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
-	      imap=xc/dxmap;
-	      jmap=yc/dxmap;
-	      kmap=zc/dxmap;
+	      if((oct.cell[icell].child==NULL)||(oct.level==lmap))
+		{
+		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
+		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
+		  zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
+		  if((zc<zmin)||(zc>zmax)) continue;
+		  imap=xc/dxmap;
+		  jmap=yc/dxmap;
+		  kmap=zc/dxmap;
 	      
 	      for(kk=0;kk<pow(2,lmap-oct.level);kk++)
 		{
+		  if((kmap+kk)>=nmapz) continue;
 		  for(jj=0;jj<pow(2,lmap-oct.level);jj++)
 		    {
 		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
@@ -151,7 +172,7 @@ int main(int argc, char *argv[])
 			    break;
 #ifdef WGRAV
  			  case 1:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].gdata.d;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].density*(oct.cpu==icpu);
 			    break;
 			  case 2:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].gdata.p;
@@ -242,13 +263,11 @@ int main(int argc, char *argv[])
 			}
 		    }
 		} 
+	      }
 	    }
-	}
+	  fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
       }
-      fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
-      
-    }
-    
+    }    
     fclose(fp);
     printf("done with %d octs\n",ic);
       
@@ -258,8 +277,9 @@ int main(int argc, char *argv[])
       printf("dumping %s with nmap=%d\n",fname2,nmap*nmap*nmap);
       fp=fopen(fname2,"wb");
       fwrite(&nmap,1,sizeof(int),fp);
+      fwrite(&nmapz,1,sizeof(int),fp);
       fwrite(&tsimf,1,sizeof(float),fp);
-      for(I=0;I<nmap;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(REAL),fp);
+      for(I=0;I<nmapz;I++) fwrite(map+I*nmap*nmap,nmap*nmap,sizeof(REAL),fp);
       status=ferror(fp);
       fclose(fp);
     }

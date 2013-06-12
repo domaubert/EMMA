@@ -553,6 +553,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   //double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
   if(om==1.) {
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
+    printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
     printf("No temperature law for cosmologies other than SCDM\n");

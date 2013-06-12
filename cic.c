@@ -94,6 +94,9 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
       }
       else{
 	if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
+	  /* if(curoct->nei[vnei[neip[i1]]]->child->cpu!=curoct->cpu){ */
+	  /*   printf("hello %d diffuse in %d\n",curoct->cpu,curoct->nei[vnei[neip[i1]]]->child->cpu); */
+	  /* } */
 	  curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density+=vcont[idx1];
 	  newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	}
@@ -1160,6 +1163,10 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	     
 	}
     }while(nextoct!=NULL);
+
+
+
+
 }
 
 

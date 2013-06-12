@@ -180,6 +180,10 @@ struct CPUINFO{
 
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
+  struct PACKET **sendbuffer;
+  struct PACKET **recvbuffer;
+
+
 #ifdef PIC
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
 #endif
@@ -190,6 +194,9 @@ struct CPUINFO{
 #endif
 
   MPI_Comm comm; // the communicator
+  
+  
+
 #endif
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses

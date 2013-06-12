@@ -1,30 +1,30 @@
 ##==MemoryManagement=========
-max_number_of_octs 300000
-max_number_of_part 2
-mpi_buffer_size 131072
+max_number_of_octs 40000
+max_number_of_part 262144
+mpi_buffer_size 3000
 ##==TimestepManagement=======
-output_frequency 10
-max_nuber_of_steps 30000
+output_frequency 1
+max_nuber_of_steps 0
 time_step_max  100.
 ##==AMRGrid==================
-level_coarse 5
-level_max 7
-amr_thresh 0.8
+level_coarse 6
+level_max 6
+amr_thresh 3e-5
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 100
+max_number_of_relaxation_poisson 10
 poisson_accuracy 1e-3
-mgrid_lmin 2
+mgrid_lmin 6
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
 restart_snap 0
 ##==ThreadManagement======
-grav_stencil_size 4096
-cons_stencil_size 4096
+grav_stencil_size 262144
+cons_stencil_size 65536
 max_subcycles 2
 nthread 128
 nstream 1
 ##==RadTransfert======
-clight 0.01
-src_threshold 0.45
-src_int 5e48
+clight 1e-1
+src_threshold 1.5
+src_int 1e59
