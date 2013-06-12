@@ -274,12 +274,12 @@ int main(int argc, char *argv[])
 
   /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz */
   offsets[0] = 0;
-  oldtypes[0] = MPI_REAL;
+  oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 7;
   
   /* Setup description of the 4 MPI_INT fields idx key level icell*/
   /* Need to first figure offset by getting size of MPI_REAL */
-  MPI_Type_extent(MPI_REAL, &extent);
+  MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[1] = 7 * extent;
   oldtypes[1] = MPI_INT;
   blockcounts[1] = 3;
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 
   /* Setup description of the 6 MPI_REAL fields d,u,v,w,p,a */
   offsets[0] = 0;
-  oldtypes[0] = MPI_REAL;
+  oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 6;
 
   /* Now define structured type and commit it */
@@ -340,12 +340,12 @@ int main(int argc, char *argv[])
 
   /* Setup description of the 8 MPI_WTYPE fields one per oct*/
   offsets[0] = 0;
-  oldtypes[0] = MPI_REAL;
+  oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = NFLUX*8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REAL */
-  MPI_Type_extent(MPI_REAL, &extent);
+  MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[1] = NFLUX * 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
@@ -1834,7 +1834,10 @@ int main(int argc, char *argv[])
     if(cpu.rank==0){
       printf("Done .....\n");
     }
-    
+#ifdef WMPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Finalize();
+#endif
     return 0;
 }
 

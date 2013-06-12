@@ -327,6 +327,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     printf("\n");
 
+#ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
+#endif
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];

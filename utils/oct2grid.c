@@ -165,29 +165,29 @@ int main(int argc, char *argv[])
 		    {
 		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
 			{
-			
+			  if(oct.cpu==icpu) {
 			  switch(field){
 			  case 0:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.level;
 			    break;
 #ifdef WGRAV
  			  case 1:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].density*(oct.cpu==icpu);
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].density;
 			    break;
 			  case 2:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].gdata.p;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].gdata.p;
 			    break;
 			  case 6:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].res;
 			    break;
 			  case 201:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
 			    break;
 			  case 202:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[1];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[1];
 			    break;
 			  case 203:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].f[2];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[2];
 			    break;
 #endif
 			  case 3:
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-
+			  }
 			  }
 			}
 		    }

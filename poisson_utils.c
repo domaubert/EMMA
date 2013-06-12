@@ -1368,9 +1368,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	} 
 #endif
 
-#ifdef WMPI
-    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1); // potential field exchange
-#endif
 
 
 	tall+=temps[9]-temps[0];
@@ -1387,9 +1384,26 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
     tt=MPI_Wtime();
     // at this stage an iteration has been completed : let's update the potential in the tree
-    if(cpu->noct[level-1]>nread){
-      if(nreadtot>0) update_pot_in_tree(level,firstoct,cpu,param);
+#ifdef FASTGRAV
+    if(cpu->noct[level-1]>nread){ 
+#endif
+      if(nreadtot>0){
+	update_pot_in_tree(level,firstoct,cpu,param);
+      }
+#ifdef FASTGRAV
+      }
+#endif
+
+#ifdef WMPI
+    //printf("iter=%d\n",iter);
+    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0)); // potential field exchange
+    if(iter==0){
+      MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
     }
+    else{
+      MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    }
+#endif
 
     tstop=MPI_Wtime();
     tup+=(tstop-tt);
@@ -1402,6 +1416,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       else{
 	dres=sqrt(residual/fnorm);
       }
+
+
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }
@@ -1416,10 +1432,10 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #endif
 
   if(level>param->lcoarse){
-    printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
+    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
   }
   return dres;
 }
@@ -1644,7 +1660,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 
   if((level==param->lcoarse)&&(param->lcoarse!=param->mgridlmin)){
     for(igrid=0;igrid<param->nvcycles;igrid++){ // V-Cycles
-      printf("----------------------------------------\n");
+      if(cpu->rank==0) printf("----------------------------------------\n");
       res=PoissonMgrid(level,param,firstoct,cpu,stencil,stride,aexp);
       if(res<param->poissonacc) break;
     }

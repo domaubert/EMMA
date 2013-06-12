@@ -519,12 +519,12 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
 	      case 0:
-		if(cpu->rank==0)
-		  /* if(pack->data[icell]>0) */
-		  if(curoct->x==0.46875) 
-		    if(icell%2==1) 
-		  /* 	if((curoct->cell[icell].density>0.87)&&((curoct->cell[icell].density<0.88))) */
-			  printf("%e %e %d\n",curoct->cell[icell].density,pack->data[icell],(int)(curoct->y*64.));
+		/* if(cpu->rank==1) */
+		/*   if(pack->data[icell]>0) */
+		/*   if(curoct->x==0.5) */
+		/*     if(icell%2==0) */
+		/*       if((curoct->cell[icell].density>0.80)&&((curoct->cell[icell].density<0.85))) */
+		/*   	printf("%e %e %d\n",curoct->cell[icell].density,pack->data[icell],(int)(curoct->y*64.)); */
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
 	      case 1:
@@ -925,7 +925,9 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   }
 
   // ----------- III/ the server gather the data
+  MPI_Barrier(MPI_COMM_WORLD);
   gather_mpi(cpu, sendbuffer, field);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   //if(cpu->rank==0) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
@@ -943,7 +945,6 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
     MPI_Irecv(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],MPI_COMM_WORLD,&req[i+cpu->nnei]);
   }
   MPI_Waitall(2*cpu->nnei,req,stat);
-  MPI_Barrier(MPI_COMM_WORLD);
 
 
 
@@ -1472,8 +1473,8 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   clean_mpibuff(cpu,sendbuffer,recvbuffer);
 
   // ---------  first we collect the data from EXTERNAL boundaries (keys are computed by remote)
+  MPI_Barrier(MPI_COMM_WORLD);
   gather_ex(cpu,sendbuffer,field);
-
   MPI_Barrier(MPI_COMM_WORLD);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
