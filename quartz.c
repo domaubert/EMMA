@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
-  //gdb_debug();
+  //  gdb_debug();
 
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2

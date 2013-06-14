@@ -243,12 +243,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
     curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
     cpu->freeoct=curoct;
+
+
   }
 
   // ==================================== Check the number of particles and octs
   mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
-  // ================= IV advance solution at the current level
+#ifdef WMPI
+  //reset the setup in case of refinement
+    setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
+#endif
+ 
+ // ================= IV advance solution at the current level
 
 
     printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
@@ -259,9 +266,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     L_cic(level,firstoct,param,cpu);
 #ifdef WMPI
     mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
-
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
-    
 #endif
 #endif
  
@@ -350,8 +355,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
    // ================= III Recursive call to finer level
+    int nlevel=cpu->noct[level];
+#ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+
     if(level<param->lmax){
-      if(cpu->noct[level]>0){
+      if(nlevel>0){
 	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
@@ -436,6 +446,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
       L_mark_cells(level,param,firstoct,2,param->amrthresh,cpu,sendbuffer,recvbuffer);
+
+#ifdef WRAD
+      mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 1);
+      mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,3,1);
+#endif
+
     }
 
 

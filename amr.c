@@ -468,27 +468,30 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef TRANSZP
 		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
 #endif
-		    if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){
-		      // refinement rule is violated so skip
-		      vrule=1;
-		    }
-		    else{
-		      struct OCT *oct;
-		      oct=curoct->nei[ii]->child;
-		      int ii2;
-		      for(ii2=0;ii2<6;ii2++){
-			if(ii2/2==ii/2) continue;
-			if(oct->nei[ii2]->child==NULL){
-			  vrule=1;
-			}
-			else{
-			  struct OCT *oct2;
-			  oct2=oct->nei[ii2]->child;
-			  int ii3;
-			  for(ii3=0;ii3<6;ii3++){
-			    if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
-			    if(oct2->nei[ii3]->child==NULL) vrule=1;
-			   }
+		    //if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){
+		    if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
+		      if(curoct->nei[ii]->child==NULL){
+			// refinement rule is violated so skip
+			vrule=1;
+		      }
+		      else{
+			struct OCT *oct;
+			oct=curoct->nei[ii]->child;
+			int ii2;
+			for(ii2=0;ii2<6;ii2++){
+			  if(ii2/2==ii/2) continue;
+			  if(oct->nei[ii2]->child==NULL){
+			    vrule=1;
+			  }
+			  else{
+			    struct OCT *oct2;
+			    oct2=oct->nei[ii2]->child;
+			    int ii3;
+			    for(ii3=0;ii3<6;ii3++){
+			      if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
+			      if(oct2->nei[ii3]->child==NULL) vrule=1;
+			    }
+			  }
 			}
 		      }
 		    }

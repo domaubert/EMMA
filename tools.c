@@ -100,7 +100,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	    }
 	  noct++;
 	}while(nextoct!=NULL);
-      if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
+      //if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
       
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;

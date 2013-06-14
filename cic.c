@@ -1039,6 +1039,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 
   dxcur=1./pow(2,level);
   nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
   do // sweeping level
     {
       curoct=nextoct;
@@ -1165,7 +1166,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
     }while(nextoct!=NULL);
 
 
-
+}
 
 }
 

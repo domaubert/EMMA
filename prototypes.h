@@ -409,7 +409,6 @@ struct PART_MPI // For mpi communications
 //=======================================
 
 
-
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
@@ -417,13 +416,13 @@ struct HYDRO_MPI{
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
-
+#ifdef WRAD
 struct RAD_MPI{
   struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
-
+#endif
 
 // this structure is for the communication of Flux data
 struct FLUX_MPI{

@@ -1396,12 +1396,14 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 #ifdef WMPI
     //printf("iter=%d\n",iter);
-    mpi_exchange(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0)); // potential field exchange
-    if(iter==0){
-      MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-    }
-    else{
-      MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    if((iter<=param->niter)||(iter%10==0)){
+      mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
+      if(iter==0){
+	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+      }
+      else{
+	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+      }
     }
 #endif
 

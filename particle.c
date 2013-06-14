@@ -287,7 +287,8 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   // setting the first oct
   mdisp=0.;
   nextoct=firstoct[level-1];
-      
+  
+  if(nextoct!=NULL){
   do // sweeping through the octs of level
     {
       oct=(*nextoct);
@@ -317,6 +318,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 	  }
 	}
     }while(nextoct!=NULL);
+  }
   if(cpu->rank==0) printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
 
   return dt;
@@ -336,7 +338,7 @@ void L_levpart(int level,struct OCT** firstoct, int is){
   
   // setting the first oct
   nextoct=firstoct[level-1];
-      
+  if(nextoct!=NULL){
   do // sweeping through the octs of level
     {
       oct=(*nextoct);
@@ -356,6 +358,7 @@ void L_levpart(int level,struct OCT** firstoct, int is){
 	  }
 	}
     }while(nextoct!=NULL);
+  }
 }
 
 
@@ -372,7 +375,8 @@ void L_reset_is_part(int level,struct OCT** firstoct){
   
   // setting the first oct
   nextoct=firstoct[level-1];
-      
+  
+  if(nextoct!=NULL){
   do // sweeping through the octs of level
     {
       oct=(*nextoct);
@@ -392,6 +396,7 @@ void L_reset_is_part(int level,struct OCT** firstoct){
 	  }
 	}
     }while(nextoct!=NULL);
+  }
 }
 
 //------------------------------------------------------------------------

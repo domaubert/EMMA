@@ -213,7 +213,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     countpacket[icpu]++;
   }
   
-  for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
+  //for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
   free(countpacket);
 
 }
@@ -245,6 +245,7 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PAR
 	do{ 
 	  curp=nexp; 
 	  nexp=curp->next; 
+	  if(curp->idx==54944) printf("HELLo E on %d \n",cpu->rank);
 	  
 	  part=psendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
 
@@ -313,10 +314,6 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
   int icell;
   int *countpacket;
 
-/*   double t[10]; */
-/*   double th=0,tg=0,tt=0,tc=0; */
-/*   int nt=0; */
-
   // we create a counter of values for each neighbor
   countpacket=(int*)calloc(cpu->nnei,sizeof(int));
 
@@ -379,9 +376,6 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	      printf("error no reception oct found !");
 	      abort();
 	    }
-	    //t[2]=MPI_Wtime();
-
-	    
 	  }else{
 	    printf("error no hash key obtained !!\n");
 	    abort();
@@ -682,6 +676,11 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
 	      printf("oum\n");
 	      abort();
 	    }
+	    if(part->idx==54944){
+	      printf("HELLo R on proc %d\n",cpu->rank);
+	      //abort();
+	    }
+
 	    // copying the data
 	    (*lastp)->x =part->x;
 	    (*lastp)->y =part->y;
@@ -693,6 +692,8 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
 	      
 	    (*lastp)->mass=part->mass;
 	    (*lastp)->idx=part->idx;
+	    (*lastp)->level=part->level;
+
 	    nadd++;
   
 	    //if(part->idx==128352) printf("BUG icell=%d\n",part->icell);
@@ -783,6 +784,7 @@ void compute_bndkeys_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
   free(countpacket);
 }
 
+#ifdef WRAD
 void compute_bndkeys_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
 
   // we create a counter of values for each neighbor
@@ -810,7 +812,7 @@ void compute_bndkeys_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
 
   free(countpacket);
 }
-
+#endif
 
 
 void compute_bndkeys_flux(struct CPUINFO *cpu, struct FLUX_MPI **recvbuffer){
@@ -897,6 +899,7 @@ void  clean_mpibuff_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, st
 
 }
 
+#ifdef WRAD
 void  clean_mpibuff_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RAD_MPI **recvbuffer){
   int i;
   
@@ -906,6 +909,7 @@ void  clean_mpibuff_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct
   }
 
 }
+#endif
 
 void  clean_mpibuff_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer, struct FLUX_MPI **recvbuffer){
   int i;
@@ -1683,8 +1687,6 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
 
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-
-
 }
 
 
