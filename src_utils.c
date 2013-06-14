@@ -67,6 +67,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
     flag=1;
   }
   else{
+    //printf("d=%e\n",cell->field.d);
     cell->rfield.src=0.;
     cell->rfieldnew.src=0.;
     flag=0;

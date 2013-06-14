@@ -138,7 +138,6 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=){
   system(commande);
   cube=readcube(swrite(format=fname+".f"+pr1(field)+".p%05d",ncpu-1),time);
   return cube;
-                                                                                             
 }
 
 func gensilo(fname,lvl,field,&time,ncpu=,execut=,fnameout=){

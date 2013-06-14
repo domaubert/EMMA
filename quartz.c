@@ -169,8 +169,11 @@ int main(int argc, char *argv[])
   struct HYDRO_MPI **hsendbuffer;
   struct HYDRO_MPI **hrecvbuffer;
 
-  struct FLUX_MPI **fsendbuffer;
-  struct FLUX_MPI **frecvbuffer;
+  struct RAD_MPI **Rsendbuffer;
+  struct RAD_MPI **Rrecvbuffer;
+
+  /* struct FLUX_MPI **fsendbuffer; */
+  /* struct FLUX_MPI **frecvbuffer; */
 
   struct RUNPARAMS param;
 
@@ -197,6 +200,8 @@ int main(int argc, char *argv[])
   struct COSMOPARAM cosmo;
   param.cosmo=&cosmo;
 #endif
+
+  //gdb_debug();
 
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
@@ -299,11 +304,14 @@ int main(int argc, char *argv[])
   //========= creating a WTYPE MPI type =======
   MPI_Datatype MPI_WTYPE;
 
-  /* Setup description of the 6 MPI_REAL fields d,u,v,w,p,a */
+  /* Setup description of the 7/8 MPI_REAL fields d,u,v,w,p,a */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = 6;
-
+#ifdef WRADHYD
+  blockcounts[0] = 8;
+#else
+  blockcounts[0] = 7;
+#endif
   /* Now define structured type and commit it */
   MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
   MPI_Type_commit(&MPI_WTYPE);
@@ -335,18 +343,64 @@ int main(int argc, char *argv[])
 
 
 
-  //========= creating a FLUX MPI type =======
-  MPI_Datatype MPI_FLUX;
+  /* //========= creating a FLUX MPI type ======= */
+  /* MPI_Datatype MPI_FLUX; */
+
+  /* /\* Setup description of the 8 MPI_WTYPE fields one per oct*\/ */
+  /* offsets[0] = 0; */
+  /* oldtypes[0] = MPI_DOUBLE; */
+  /* blockcounts[0] = NFLUX*8; */
+
+  /* /\* Setup description of the 2 MPI_INT fields key, level *\/ */
+  /* /\* Need to first figure offset by getting size of MPI_REAL *\/ */
+  /* MPI_Type_extent(MPI_DOUBLE, &extent); */
+  /* offsets[1] = NFLUX * 8 * extent; */
+  /* oldtypes[1] = MPI_LONG; */
+  /* blockcounts[1] = 1; */
+
+  /* MPI_Type_extent(MPI_LONG, &extent); */
+  /* offsets[2] = offsets[1]+extent; */
+  /* oldtypes[2] = MPI_INT; */
+  /* blockcounts[2] = 1; */
+
+  /* /\* Now define structured type and commit it *\/ */
+  /* MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_FLUX); */
+  /* MPI_Type_commit(&MPI_FLUX); */
+
+
+  
+#endif
+
+
+#ifdef WRAD
+  //========= creating a RTYPE MPI type =======
+  MPI_Datatype MPI_RTYPE;
+
+  /* Setup description of the 7/8 MPI_REAL fields d,u,v,w,p,a */
+  offsets[0] = 0;
+  oldtypes[0] = MPI_DOUBLE;
+#ifdef WCHEM
+  blockcounts[0] = NGRP*4+5;
+#else
+  blockcounts[0] = NGRP*4+1;
+#endif
+  /* Now define structured type and commit it */
+  MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_RTYPE);
+  MPI_Type_commit(&MPI_RTYPE);
+
+
+  //========= creating a RAD MPI type =======
+  MPI_Datatype MPI_RAD;
 
   /* Setup description of the 8 MPI_WTYPE fields one per oct*/
   offsets[0] = 0;
-  oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = NFLUX*8;
+  oldtypes[0] = MPI_RTYPE;
+  blockcounts[0] = 8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REAL */
-  MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[1] = NFLUX * 8 * extent;
+  MPI_Type_extent(MPI_RTYPE, &extent);
+  offsets[1] = 8 * extent;
   oldtypes[1] = MPI_LONG;
   blockcounts[1] = 1;
 
@@ -356,10 +410,8 @@ int main(int argc, char *argv[])
   blockcounts[2] = 1;
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_FLUX);
-  MPI_Type_commit(&MPI_FLUX);
-
-
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
+  MPI_Type_commit(&MPI_RAD);
   
 #endif
 
@@ -373,7 +425,10 @@ int main(int argc, char *argv[])
 
 #ifdef WHYDRO2
   cpu.MPI_HYDRO=&MPI_HYDRO;
-  cpu.MPI_FLUX=&MPI_FLUX;
+#endif
+
+#ifdef WRAD
+  cpu.MPI_RAD=&MPI_RAD;
 #endif
 
   cpu.comm=MPI_COMM_WORLD;
@@ -716,6 +771,10 @@ int main(int argc, char *argv[])
     psendbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
     precvbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
   }
+
+  cpu.psendbuffer=psendbuffer;
+  cpu.precvbuffer=precvbuffer;
+
 #endif 
 
 #ifdef WHYDRO2
@@ -725,13 +784,28 @@ int main(int argc, char *argv[])
     hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
     hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
   }
+  
+  cpu.hsendbuffer=hsendbuffer;
+  cpu.hrecvbuffer=hrecvbuffer;
 
-  fsendbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*)));
-  frecvbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*)));
+  /* fsendbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
+  /* frecvbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
+  /* for(i=0;i<cpu.nnei;i++) { */
+  /*   fsendbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
+  /*   frecvbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
+  /* } */
+#endif 
+
+#ifdef WRAD
+  Rsendbuffer=(struct RAD_MPI **)(calloc(cpu.nnei,sizeof(struct RAD_MPI*)));
+  Rrecvbuffer=(struct RAD_MPI **)(calloc(cpu.nnei,sizeof(struct RAD_MPI*)));
   for(i=0;i<cpu.nnei;i++) {
-    fsendbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI)));
-    frecvbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI)));
+    Rsendbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
+    Rrecvbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
   }
+  
+  cpu.Rsendbuffer=Rsendbuffer;
+  cpu.Rrecvbuffer=Rrecvbuffer;
 #endif 
 
 
@@ -1740,6 +1814,15 @@ int main(int argc, char *argv[])
 #endif
 
 
+#ifdef WMPI
+    // some bookeeping for WMPI
+    // cramming data into cpu
+    
+    cpu.lastpart=lastpart;
+
+#endif
+
+
     // Loop over time
     for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
 
@@ -1791,7 +1874,7 @@ int main(int argc, char *argv[])
 	  printf("Dumping .......");
 	  printf("%s\n",filename);
 	}
-	dumppart(firstoct,filename,npart,levelcoarse,levelmax,tdump);
+	dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
 #endif
 
 	ndumps++;
@@ -1835,7 +1918,7 @@ int main(int argc, char *argv[])
       printf("Done .....\n");
     }
 #ifdef WMPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(cpu.comm);
     MPI_Finalize();
 #endif
     return 0;

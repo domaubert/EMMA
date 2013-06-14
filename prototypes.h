@@ -178,11 +178,18 @@ struct CPUINFO{
   int *nrecv;
   int *nsend;
 
+  struct PART *lastpart;
+
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
   struct PACKET **sendbuffer;
   struct PACKET **recvbuffer;
-
+  struct PART_MPI **psendbuffer; 
+  struct PART_MPI **precvbuffer;
+  struct HYDRO_MPI **hsendbuffer; 
+  struct HYDRO_MPI **hrecvbuffer;
+  struct RAD_MPI **Rsendbuffer; 
+  struct RAD_MPI **Rrecvbuffer;
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
@@ -191,6 +198,10 @@ struct CPUINFO{
 #ifdef WHYDRO2
   MPI_Datatype *MPI_HYDRO; // the structured type for MPI messages (particles)
   MPI_Datatype *MPI_FLUX; // the structured type for MPI messages (particles)
+#endif
+
+#ifdef WRAD
+  MPI_Datatype *MPI_RAD; // the structured type for MPI messages (particles)
 #endif
 
   MPI_Comm comm; // the communicator
@@ -289,6 +300,10 @@ struct Wtype_MPI{
   REAL w;   // velocity
   REAL p;   // pressure
   REAL a;   // sound speed
+  REAL E; 
+#ifdef WRADHYD
+  REAL X;
+#endif
 };
 
 
@@ -385,10 +400,10 @@ struct PART_MPI // For mpi communications
 
   REAL mass;
   int idx;
-
-  long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
+
+  long key; // the destination hilbert key
 };
 
 //=======================================
@@ -398,6 +413,13 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
+  long key; // the destination hilbert key
+  int level; // the level of the destination (to remove the key degeneracy)
+};
+
+
+struct RAD_MPI{
+  struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
   long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };

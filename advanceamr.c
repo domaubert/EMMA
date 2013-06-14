@@ -258,7 +258,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
 #ifdef WMPI
-  mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+
+    mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
+    
 #endif
 #endif
  
@@ -328,7 +331,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("\n");
 
 #ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
 #endif
 
     /// ================= Assigning a new timestep for the current level
@@ -377,10 +380,30 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
     L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
+
+#ifdef WMPI
+    int deltan;
+    deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer, &(cpu->lastpart));
+
+    //printf("proc %d receives %d particles\n",cpu->rank,deltan);
+    //update the particle number within this process
+    npart=npart+deltan;
+    
+    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 #endif
 
 
+#endif
+
+
+
+
 #ifdef WHYDRO2
+
+#ifdef WMPI
+    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
+#endif
+
       //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
@@ -396,6 +419,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
  
+#ifdef WMPI
+    mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1);
+#endif
     //=============== Radiation Update ======================
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
     //sanity_rad(level,param,firstoct,cpu,aexp);

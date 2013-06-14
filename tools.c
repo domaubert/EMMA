@@ -90,8 +90,8 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 		nexp=curp->next;
 		
 		if((fabs(curp->x-xc)>0.5*dx)*(fabs(curp->y-yc)>0.5*dx)*(fabs(curp->z-zc)>0.5*dx)){
-		  printf("particle not in cell: abort\n");
-		  printf("xp=%e xc=%e yp=%e yc=%e zp=%e zc=%e\n",curp->x,xc,curp->y,yc,curp->z,zc);
+		  printf("proc %d particle %d not in cell %d: abort\n",cpu->rank,curp->idx,icell);
+		  printf("xp=%e xc=%e yp=%e yc=%e zp=%e zc=%e \n DX=%e DY=%e DZ=%e dx=%e\n",curp->x,xc,curp->y,yc,curp->z,zc,curp->x-xc,curp->y-yc,curp->z-zc,0.5*dx);
 		  abort();
 		}
 	      }while(nexp!=NULL);
@@ -100,7 +100,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	    }
 	  noct++;
 	}while(nextoct!=NULL);
-      //if((noct!=0)&&(level>=levelcoarse)) printf("level=%d npart=%d npartd=%f noct=%d\n",level,nlev,nlevd,noct);
+      if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
       
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;

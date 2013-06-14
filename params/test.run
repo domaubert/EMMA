@@ -4,14 +4,14 @@ max_number_of_part 262144
 mpi_buffer_size 3000
 ##==TimestepManagement=======
 output_frequency 1
-max_nuber_of_steps 1
+max_nuber_of_steps 10
 time_step_max  100.
 ##==AMRGrid==================
 level_coarse 6
 level_max 6
 amr_thresh 3e-5
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 1000
+max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3
 mgrid_lmin 4
 mgrid_nvcycles 3
@@ -26,5 +26,5 @@ nthread 128
 nstream 1
 ##==RadTransfert======
 clight 1e-1
-src_threshold 1.5
+src_threshold 0.07
 src_int 1e59

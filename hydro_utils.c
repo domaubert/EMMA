@@ -2813,7 +2813,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	getE(&(curoct->cell[icell].fieldnew));
 
-	// let us now deal with coarser neighbors
+	// ==================== let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
 	for(inei=0;inei<6;inei++){
@@ -2857,7 +2857,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	  if(vnei[inei]!=6){
 	    if(curoct->nei[vnei[inei]]->child==NULL){
-	      // the neighbor cell is unsplit we update its value with fluxes
+	      // the COARSE neighbor cell is unsplit we update its value with fluxes
 	   
 	      // initial data from the new value
 	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));

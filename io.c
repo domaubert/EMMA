@@ -86,7 +86,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 
   //------------------------------------------------------------------------
 #ifdef PIC
-void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, int levelmax, REAL tsim){
+void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
   FILE *fp;
   float val;
@@ -101,6 +101,9 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
   int icell;
   float tsimf=tsim;
 
+  int npart=0; 
+  for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
+
   fp=fopen(filename,"wb");
   fwrite(&npart,1,sizeof(int),fp);
   fwrite(&tsimf,1,sizeof(float),fp);
@@ -110,7 +113,6 @@ void dumppart(struct OCT **firstoct,char filename[],int npart, int levelcoarse, 
       // setting the first oct
       
       nextoct=firstoct[level-1];
-      
       do // sweeping through the octs of level
 	{
 	  if(nextoct==NULL) continue; // in case the level is empty
@@ -655,7 +657,10 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  ifound++;
 	}
 	else{
-	  printf("euh pas trouve!");
+
+	  // this branch corresponds to cell out of the domain
+	  //	  printf("euh pas trouve! hidx=%d %p",hidx,cpu->htable[hidx]);
+	  //	  abort();
 	}
 
 

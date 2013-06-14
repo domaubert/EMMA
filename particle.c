@@ -444,6 +444,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 		      curp=nexp; 
 		      nexp=curp->next; 
 		      out=0;
+
 		      switch(dir){
 
 		      case 0: // ======================================   x displacement============
@@ -779,6 +780,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 		      
 		      if(out!=0){
 			// ========= assigning the particle to the newcell + pointer management
+
 
 			// removing the cell from its old list
 			if(curp->prev !=NULL){
@@ -1208,6 +1210,10 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		if(out!=0){
 		  // ========= assigning the particle to the newcell + pointer management
 
+		  /* if(curp->idx==128352){ */
+		  /*   printf("COUCOUC idx cell=%d pos=%e\n",newcell->idx,curp->x); */
+		  /* } */
+		  
 		  // removing the cell from its old list
 		  if(curp->prev !=NULL){
 		    curp->prev->next=curp->next;
