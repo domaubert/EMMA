@@ -9,7 +9,7 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
 #DEFINES  +=  -DWRAD
 #DEFINES  +=  -DWRADHYD

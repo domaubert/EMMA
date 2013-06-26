@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
-  //  gdb_debug();
+  //gdb_debug();
 
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
@@ -261,10 +261,10 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_LONG;
+  oldtypes[1] = MPI_UNSIGNED_LONG;
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_LONG, &extent);
+  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
   offsets[2] = offsets[1]+extent;
   oldtypes[2] = MPI_INT;
   blockcounts[2] = 1;
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
   MPI_Type_extent(MPI_INT, &extent);
   offsets[2] = 3 * extent+offsets[1];
-  oldtypes[2] = MPI_LONG;
+  oldtypes[2] = MPI_UNSIGNED_LONG;
   blockcounts[2] = 1;
 
   /* Now define structured type and commit it */
@@ -329,10 +329,10 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_WTYPE, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_LONG;
+  oldtypes[1] = MPI_UNSIGNED_LONG;
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_LONG, &extent);
+  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
   offsets[2] = offsets[1]+extent;
   oldtypes[2] = MPI_INT;
   blockcounts[2] = 1;
@@ -401,10 +401,10 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_RTYPE, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_LONG;
+  oldtypes[1] = MPI_UNSIGNED_LONG;
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_LONG, &extent);
+  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
   offsets[2] = offsets[1]+extent;
   oldtypes[2] = MPI_INT;
   blockcounts[2] = 1;

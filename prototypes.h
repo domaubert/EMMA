@@ -138,7 +138,7 @@ struct RUNPARAMS{
 
 struct PACKET{
   REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
-  long key; // the destination hilbert key
+  unsigned long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -403,7 +403,7 @@ struct PART_MPI // For mpi communications
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
 
-  long key; // the destination hilbert key
+  unsigned long key; // the destination hilbert key
 };
 
 //=======================================
@@ -412,14 +412,14 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  long key; // the destination hilbert key
+  unsigned long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
 #ifdef WRAD
 struct RAD_MPI{
   struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  long key; // the destination hilbert key
+  unsigned long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 #endif
@@ -427,7 +427,7 @@ struct RAD_MPI{
 // this structure is for the communication of Flux data
 struct FLUX_MPI{
   REAL data[8*NFLUX]; // the data to be transfered (8 since we transmit data per octs)
-  long key; // the destination hilbert key
+  unsigned long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 

@@ -179,6 +179,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int nsource;
   int hstride=param->hstride;
   int gstride=param->gstride;
+  int nsub=param->nsubcycles;
+
 
 #ifdef TESTCOSMO
   aexp=cosmo->aexp;
@@ -186,9 +188,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   aexp=1.0;
 #endif
 
-  if(cpu->rank==0){
-    printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e\n",level,gstride,hstride,stencil,aexp);
-  }
+  //if(cpu->rank==0){
+  printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
+    //}
 
 
   // ==================================== Check the number of particles and octs
@@ -235,26 +237,32 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // == Ready to advance
 
 
+
+
   // ================= I we refine the current level
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
     // refining (and destroying) octs
 #ifdef WRAD
     //sanity_rad(level,param,firstoct,cpu,aexp);
 #endif
+#ifdef WMPI
+    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
+#endif
     curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
     cpu->freeoct=curoct;
-
-
   }
-
+  
   // ==================================== Check the number of particles and octs
   mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
 #ifdef WMPI
   //reset the setup in case of refinement
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
+    MPI_Barrier(cpu->comm);
 #endif
  
+
+
  // ================= IV advance solution at the current level
 
 
@@ -267,17 +275,21 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
+#endif 
 #endif
-#endif
- 
+    
     /* //==================================== Getting Density ==================================== */
 #ifdef WGRAV
+
     FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp); 
 
     /* //====================================  Force Field ========================== */
+#ifdef WMPI
+    mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
+#endif 
     PoissonForce(level,param,firstoct,cpu,gstencil,gstride,aexp);
 #endif
 
@@ -331,19 +343,23 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dtrad<dtnew?dtrad:dtnew);
 #endif
 
+    // REALLY WEIRD ===
+    // Apparently there are some truncation errors in REDUCTION operation on double
+    // that makes multi-processor dt different than the mono processor ones !
+    // the few lines below removes this...
 
-
+    REAL dtf=floor(dtnew*1e5)/1e5;
+    dtnew=dtf;
     printf("\n");
-
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&dtnew,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-#endif
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
     printf("inital dtnew=%e\n",dtnew);
-
+    if(dtnew==0.){
+      printf("ERROR rank %d n %d t %e\n",cpu->rank,cpu->noct[level-1],dtnew);
+      abort();
+    }
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
 
     // the coarser level may be shorter than the finer one
@@ -354,11 +370,25 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
     }
 
+#ifdef WMPI
+    REAL tdum=0.;
+    REAL tdum2=0.;
+    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-1,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
+
+    adt[level-1]=tdum;
+    adt[level-2]=tdum2;
+#endif
+
    // ================= III Recursive call to finer level
-    int nlevel=cpu->noct[level];
+    int nlevel=cpu->noct[level]; // number at next level
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
+
 
     if(level<param->lmax){
       if(nlevel>0){
@@ -368,6 +398,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
       }
     }
+
+#ifdef WMPI
+    tdum=0.;
+    tdum2=0.;
+    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-1,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
+
+    adt[level-1]=tdum;
+    adt[level-2]=tdum2;
+#endif
 
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
@@ -414,14 +457,22 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
 #endif
 
-      //=============== Hydro Update ======================
+    //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
-
-      // ================================= gravitational correction for Hydro
+    
 
 #ifdef WGRAV
+    // ================================= gravitational correction for Hydro
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
+
+#ifdef WMPI
+    if(level>param->lcoarse){
+      mpi_hydro_correct(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,level);
+    }
+    MPI_Barrier(cpu->comm);
+#endif
+
 #endif
 
 
@@ -434,7 +485,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
     //=============== Radiation Update ======================
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
-    //sanity_rad(level,param,firstoct,cpu,aexp);
+
+#ifdef WMPI
+    if(level>param->lcoarse){
+      mpi_rad_correct(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,level);
+    }
+    MPI_Barrier(cpu->comm);
+#endif
+
+
 #endif
 
 
@@ -446,12 +505,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
       L_mark_cells(level,param,firstoct,2,param->amrthresh,cpu,sendbuffer,recvbuffer);
-
-#ifdef WRAD
-      mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 1);
-      mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,3,1);
-#endif
-
     }
 
 
@@ -461,13 +514,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     is++;
     ndt[level-1]++;
 
+    printf("is=%d ndt=%d dt=%le tloc=%le\n",is,ndt[level-1],tloc,dt);
+
     // Some Eye candy for timesteps display
 
     if(cpu->rank==0) dispndt(param,cpu,ndt);
     
     // === Loop
 
-  }while((dt<adt[level-2])&&(is<param->nsubcycles));
+  }while((dt<adt[level-2])&&(is<nsub));
   
   
   if(cpu->rank==0){

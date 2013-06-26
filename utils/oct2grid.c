@@ -168,10 +168,13 @@ int main(int argc, char *argv[])
 			  if(oct.cpu==icpu) {
 			  switch(field){
 			  case 0:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.level;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.level;
 			    break;
 #ifdef WGRAV
  			  case 1:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].gdata.d;
+			    break;
+ 			  case -1:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].density;
 			    break;
 			  case 2:
@@ -197,7 +200,7 @@ int main(int argc, char *argv[])
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].marked;
 			    break;
 			  case 5:
-			    //map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].fx;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
 			    break;
 #ifdef WHYDRO2
 			  case 101:

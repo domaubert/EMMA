@@ -110,7 +110,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	}
 	else
 	  {
-	      res=1;
+	    res=1;
 	  }
 	// No need to go furhter if the intersection exists
 	if(res==1) break;

@@ -785,7 +785,8 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 		      
 		      if(out!=0){
 			// ========= assigning the particle to the newcell + pointer management
-
+			
+			
 
 			// removing the cell from its old list
 			if(curp->prev !=NULL){
@@ -1219,6 +1220,13 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		  /*   printf("COUCOUC idx cell=%d pos=%e\n",newcell->idx,curp->x); */
 		  /* } */
 		  
+
+		  struct OCT *ooct;
+		  ooct=cell2oct(newcell);
+		  
+		  // we change the level of the particle
+		  curp->level=ooct->level;
+
 		  // removing the cell from its old list
 		  if(curp->prev !=NULL){
 		    curp->prev->next=curp->next;

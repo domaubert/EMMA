@@ -1,15 +1,15 @@
 ##==MemoryManagement=========
-max_number_of_octs 60000
+max_number_of_octs 120000
 max_number_of_part 2097152
 mpi_buffer_size 8192
 ##==TimestepManagement=======
-output_frequency 1
-max_nuber_of_steps 60
-time_step_max  100.
+output_frequency 10
+max_nuber_of_steps 1000
+time_step_max  1.0
 ##==AMRGrid==================
 level_coarse 6
-level_max 7
-amr_thresh 1.5e-5
+level_max 9
+amr_thresh 5e-5
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3

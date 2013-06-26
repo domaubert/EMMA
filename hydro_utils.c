@@ -2569,6 +2569,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   }
   else{
     coarse2fine_hydro2(neicell,Wi);
+    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype))
+    
 #ifdef WRADHYD
     for(icell=0;icell<8;icell++) Wi[icell].X=neicell->field.X;
 #endif
@@ -2632,11 +2634,13 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   int iread=0;
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
-  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+  char visit[27];
   static int ix[6]={-1,1,0,0,0,0};
   static int iy[6]={0,0,-1,1,0,0};
   static int iz[6]={0,0,0,0,-1,1};
   int ioct;
+  
+  memset(visit,0,27*sizeof(char));
 
   nextoct=octstart;
   if(nextoct!=NULL){
@@ -2651,6 +2655,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
 	//memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
+
 
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
@@ -2672,6 +2677,19 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 	  visit[ioct]=1;
 	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
+
+      /* if(curoct->level==7 && curoct->cpu==0){ */
+      /* 	if(curoct->x==(0.5-1./64)){ */
+      /* 	  int i3; */
+      /* 	  for(i3=1;i3<=7;i3+=2) { */
+      /* 	    struct Wtype field=stencil[iread].oct[13].cell[i3].field; */
+      /* 	    struct Wtype field2=stencil[iread].oct[14].cell[i3-1].field; */
+      /* 	    printf("rank=%d icell=%d d=%e %e %e ||| %e %e %e ||| s=%d\n",curoct->cpu,i3,field.d,field.u,field.p,field2.d,field2.u,field2.p,stencil[iread].oct[14].cell[i3-1].split); */
+      /* 	  } */
+      /* 	} */
+      /* } */
+
+
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -2781,7 +2799,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	//if(U.eint+deltaU.eint<0) abort();
 
 	U.d  +=deltaU.d;
-	U.du +=deltaU.du;
+  	U.du +=deltaU.du;
 	U.dv +=deltaU.dv;
 	U.dw +=deltaU.dw;
 	U.E  +=deltaU.E;
@@ -2810,8 +2828,18 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 #endif
 	
+	/* if(curoct->level==7){ */
+	/*   if((icell%2==1 && curoct->cpu==0)||(icell%2==0 && curoct->cpu==1)){ */
+	/*     if(curoct->x==(0.5-1./64)){ */
+	/*       printf("rank=%d icell=%d d=%e\n",curoct->cpu,icell,deltaU.d); */
+	/*     } */
+	/*   } */
+	/* } */
+
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	getE(&(curoct->cell[icell].fieldnew));
+
+
 
 	// ==================== let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -2983,7 +3011,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   double t[10];
 
   t[0]=MPI_Wtime();
-  if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
+  printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
 
   // ===== COMPUTING THE FLUXES
   
@@ -3000,6 +3028,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
     do {
       curoct=nextoct;
       nextoct=curoct->next; 
+#ifdef WMPI
+      if(curoct->cpu!=cpu->rank) continue; // bnd octs are updated by transmission hence not required
+#endif
       for(icell=0;icell<8;icell++){
 	if(curoct->cell[icell].child==NULL){
 	  // unsplit case
@@ -3055,6 +3086,9 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
   struct OCT *nextoct;
   int icell;
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
@@ -3062,11 +3096,31 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
       curoct=nextoct;
       nextoct=curoct->next; 
 
-      //for(icell=0;icell<8;icell++) memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
-      for(icell=0;icell<8;icell++) memcpy(&(curoct->cell[icell].fieldnew),&(curoct->cell[icell].field),sizeof(struct Wtype));
-      
+      for(icell=0;icell<8;icell++) {
+	memcpy(&(curoct->cell[icell].fieldnew),&(curoct->cell[icell].field),sizeof(struct Wtype));
+      }
+     
     }while(nextoct!=NULL);
   }
+
+#ifdef WMPI
+  // --------------- init for coarse octs in boundaries
+  if(level>param->lcoarse){
+    nextoct=firstoct[level-2];
+    if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
+      do {
+	curoct=nextoct;
+	nextoct=curoct->next; 
+	if(curoct->cpu!=cpu->rank){
+	  for(icell=0;icell<8;icell++) {
+	    memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
+	  }
+	}
+      }while(nextoct!=NULL);
+    }
+  }
+#endif
+
 }
 
 

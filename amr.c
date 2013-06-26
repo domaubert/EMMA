@@ -329,7 +329,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
   newoct=freeoct; // the new oct will be the first freeoct
 
-  if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d\n",cpu->rank,param->lcoarse,param->lmax);
+  printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
 
   dxcur=1./pow(2,level);
   nextoct=firstoct[level-1];
@@ -441,7 +441,10 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(param->lcoarse))){
 		  int segok;
 		  segok=segment_cell(curoct,icell,cpu,param->lcoarse);// the current cell will be splitted according to a segmentation condition
-		  if(!segok) continue;
+		  if(!segok) {
+		    //printf("skipping on proc %d\n",cpu->rank);
+		    continue;
+		  }
  		}
 #endif
 
@@ -469,7 +472,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
 #endif
 		    //if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){
-		    if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
+		    //if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
 		      if(curoct->nei[ii]->child==NULL){
 			// refinement rule is violated so skip
 			vrule=1;
@@ -495,20 +498,13 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 			}
 		      }
 		    }
-		}
+		//}
 		if(vrule) continue;
 		
 		// Past here the rule are respected
 		
 
 
-		/* #ifdef WMPI */
-		/* 		if(curoct->cpu!=cpu->rank){ */
-		/* 		  if(curoct->level<levelcoarse){ */
-		/* 		    if(curoct->cell[icell].marked==4) continue; */
-		/* 		  } */
-		/* 		} */
-		/* #endif */
 
 		if(curoct->cpu==cpu->rank) nref++;
 		
@@ -744,10 +740,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   ndes=ndestot;
 #endif
 
-  if(cpu->rank==0){
-    printf("octs created   = %d ",nref);
-    printf("octs destroyed = %d\n",ndes);
-  }
+  printf("rank %d octs created   = %d ",cpu->rank,nref);
+  printf("octs destroyed = %d\n",ndes);
 
   return freeoct;
 

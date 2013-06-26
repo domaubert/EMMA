@@ -1602,7 +1602,7 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
     do{
       curoct=nextoct;
       nextoct=curoct->next;
-      if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
+      //if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){	
 	locdens=0.;
 #ifdef PIC
@@ -1684,11 +1684,12 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+	if(curoct->cpu!=cpu->rank) continue;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    curcell=&(curoct->cell[icell]);
 	    if(curcell->child!=NULL){
-
+	      
 	      coarse2fine_gravlin(curcell,Wi);
 	      for(icell2=0;icell2<8;icell2++){
 		//		Wi[icell2].p=0.;
