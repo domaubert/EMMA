@@ -435,7 +435,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif	      
 	      // creation of a new oct ==================
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
-		
+		if(curoct->cell[icell].marked<10){
 		//if((curoct->x==0.))printf("mark=%f %f l=%d\n",curoct->cell[icell].marked,curoct->x,curoct->level);
 #ifdef WMPI
 		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(param->lcoarse))){
@@ -448,59 +448,60 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
  		}
 #endif
 
-		// First we check if we don't violate the refinement rule (adaptative time step)
-		int vrule=0;
-		getcellnei(icell, vnei, vcell);
-		for(ii=0;ii<6;ii++){
-#ifdef TRANSXM
-		    if((curoct->x==0.)&&(ii==0)) continue;
-#endif
-#ifdef TRANSYM
-		    if((curoct->y==0.)&&(ii==2)) continue;
-#endif
-#ifdef TRANSZM
-		    if((curoct->z==0.)&&(ii==4)) continue;
-#endif
+ 		getcellnei(icell, vnei, vcell); 
 
-#ifdef TRANSXP
-		    if((curoct->x+2*dxcur==1.)&&(ii==1)) continue;
-#endif
-#ifdef TRANSYP
-		    if((curoct->y+2*dxcur==1.)&&(ii==2)) continue;
-#endif
-#ifdef TRANSZP
-		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
-#endif
-		    //if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){
-		    //if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
-		      if(curoct->nei[ii]->child==NULL){
-			// refinement rule is violated so skip
-			vrule=1;
-		      }
-		      else{
-			struct OCT *oct;
-			oct=curoct->nei[ii]->child;
-			int ii2;
-			for(ii2=0;ii2<6;ii2++){
-			  if(ii2/2==ii/2) continue;
-			  if(oct->nei[ii2]->child==NULL){
-			    vrule=1;
-			  }
-			  else{
-			    struct OCT *oct2;
-			    oct2=oct->nei[ii2]->child;
-			    int ii3;
-			    for(ii3=0;ii3<6;ii3++){
-			      if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
-			      if(oct2->nei[ii3]->child==NULL) vrule=1;
-			    }
-			  }
-			}
-		      }
-		    }
-		//}
-		if(vrule) continue;
-		
+/* 		// First we check if we don't violate the refinement rule (adaptative time step) */
+/* 		int vrule=0; */
+/* 		for(ii=0;ii<6;ii++){ */
+/* #ifdef TRANSXM */
+/* 		    if((curoct->x==0.)&&(ii==0)) continue; */
+/* #endif */
+/* #ifdef TRANSYM */
+/* 		    if((curoct->y==0.)&&(ii==2)) continue; */
+/* #endif */
+/* #ifdef TRANSZM */
+/* 		    if((curoct->z==0.)&&(ii==4)) continue; */
+/* #endif */
+
+/* #ifdef TRANSXP */
+/* 		    if((curoct->x+2*dxcur==1.)&&(ii==1)) continue; */
+/* #endif */
+/* #ifdef TRANSYP */
+/* 		    if((curoct->y+2*dxcur==1.)&&(ii==2)) continue; */
+/* #endif */
+/* #ifdef TRANSZP */
+/* 		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue; */
+/* #endif */
+/* 		    //if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){ */
+/* 		    if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs */
+/* 		      if(curoct->nei[ii]->child==NULL){ */
+/* 			// refinement rule is violated so skip */
+/* 			vrule=1; */
+/* 		      } */
+/* 		      else{ */
+/* 			struct OCT *oct; */
+/* 			oct=curoct->nei[ii]->child; */
+/* 			int ii2; */
+/* 			for(ii2=0;ii2<6;ii2++){ */
+/* 			  if(ii2/2==ii/2) continue; */
+/* 			  if(oct->nei[ii2]->child==NULL){ */
+/* 			    vrule=1; */
+/* 			  } */
+/* 			  else{ */
+/* 			    struct OCT *oct2; */
+/* 			    oct2=oct->nei[ii2]->child; */
+/* 			    int ii3; */
+/* 			    for(ii3=0;ii3<6;ii3++){ */
+/* 			      if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue; */
+/* 			      if(oct2->nei[ii3]->child==NULL) vrule=1; */
+/* 			    } */
+/* 			  } */
+/* 			} */
+/* 		      } */
+/* 		    } */
+/* 		} */
+/* 		if(vrule) continue; */
+		 
 		// Past here the rule are respected
 		
 
@@ -723,8 +724,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  printf("\n ERROR === Allocated grid full, please increase ngridmax");
 		  abort();
 		}
+		}
 	      }
-
 	      
 	    }
 	  //printf("nextoct=%p endoct=%p\n",nextoct,endoct);
@@ -744,6 +745,94 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   printf("octs destroyed = %d\n",ndes);
 
   return freeoct;
+
+}
+
+// ============================================================
+// ============================================================
+
+void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu)
+{
+  struct OCT *newoct;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  struct OCT *desoct;
+  int icell;
+  int ii;
+  int vnei[6],vcell[6];
+  int ic;
+  REAL dxcur=1./pow(2,level);
+
+
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do // sweeping level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    if(curoct->cell[icell].marked==0) continue;
+	    // First we check if we don't violate the refinement rule (adaptative time step)
+	    int vrule=0;
+	    getcellnei(icell, vnei, vcell);
+	    for(ii=0;ii<6;ii++){
+#ifdef TRANSXM
+	      if((curoct->x==0.)&&(ii==0)) continue;
+#endif
+#ifdef TRANSYM
+	      if((curoct->y==0.)&&(ii==2)) continue;
+#endif
+#ifdef TRANSZM
+	      if((curoct->z==0.)&&(ii==4)) continue;
+#endif
+	      
+#ifdef TRANSXP
+	      if((curoct->x+2*dxcur==1.)&&(ii==1)) continue;
+#endif
+#ifdef TRANSYP
+	      if((curoct->y+2*dxcur==1.)&&(ii==2)) continue;
+#endif
+#ifdef TRANSZP
+	      if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
+#endif
+	      
+	      if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
+		if(curoct->nei[ii]->child==NULL){
+		  // refinement rule is violated so skip
+		  vrule=1;
+		}
+		else{
+		  struct OCT *oct;
+		  oct=curoct->nei[ii]->child;
+		  int ii2;
+		  for(ii2=0;ii2<6;ii2++){
+		    if(ii2/2==ii/2) continue;
+		    if(oct->nei[ii2]->child==NULL){
+		      vrule=1;
+		    }
+		    else{
+		      struct OCT *oct2;
+		      oct2=oct->nei[ii2]->child;
+		      int ii3;
+		      for(ii3=0;ii3<6;ii3++){
+			if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
+			if(oct2->nei[ii3]->child==NULL) vrule=1;
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+
+	    if(vrule) {
+	      curoct->cell[icell].marked=10; // the mark is cancelled
+	    }
+
+	  }
+      }while(nextoct!=NULL);
+  }
 
 }
 

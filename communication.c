@@ -253,6 +253,7 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 // ====================================================================================
 // ====================================================================================
 
+#ifdef WRAD
 void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
   
   /*
@@ -282,7 +283,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
   //for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
   free(countpacket);
 }
-
+#endif
 
 //======================================================================================
 int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PART **lastp){
@@ -1330,13 +1331,13 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 
 
 //=====================================================================
+#ifdef WRAD
+void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int level){
 
-void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,int level){
-
-  int i,j;
+  int i,j,igrp;
   int found=0;
   int hidx;
-  struct HYDRO_MPI *pack;
+  struct RAD_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;
@@ -1367,13 +1368,13 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,int 
 
 	      for(igrp=0;igrp<NGRP;igrp++){
 		// update
-		R.e[igrp] += Re.e[igrp];
-		R.fx[igrp]+= Re.fx[igrp];
-		R.fy[igrp]+= Re.fy[igrp];
-		R.fz[igrp]+= Re.fz[igrp];
+		R->e[igrp] += Re->e[igrp];
+		R->fx[igrp]+= Re->fx[igrp];
+		R->fy[igrp]+= Re->fy[igrp];
+		R->fz[igrp]+= Re->fz[igrp];
 	      }
  	      
-	      memcpy(&(curoct->cell[icell].rfieldnew),&R,sizeof(struct Rtype));
+	      memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype));
 	    }
 	  }
 	  else{
@@ -1392,7 +1393,7 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,int 
       
 }
 
-
+#endif
 //=============================================================================================
 
 /* void scatter_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **recvbuffer){ */

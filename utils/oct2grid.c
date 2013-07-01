@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
   sscanf(argv[6],"%d",&dumpsilo);
   REAL zmin,zmax;
   int nmapz;
+  int k0;
 
   if(argc>7) {
     sscanf(argv[7],"%lf",&zmin);
@@ -82,7 +83,8 @@ int main(int argc, char *argv[])
   }
 
   nmapz=(zmax-zmin)/dxmap;
- 
+  k0=zmin/dxmap;
+
   if((dumpsilo==1)&&(nmapz!=nmap)) {
     printf("Silo can only handle cubic data !\n");
     abort();
@@ -153,110 +155,116 @@ int main(int argc, char *argv[])
 		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
 		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
 		  zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
-		  if((zc<zmin)||(zc>zmax)) continue;
+		  if((zc<zmin)||(zc>zmax)){
+		    //printf("zc=%e SKIP\n",zc);
+		    continue;
+		  }
 		  imap=xc/dxmap;
 		  jmap=yc/dxmap;
 		  kmap=zc/dxmap;
 	      
-	      for(kk=0;kk<pow(2,lmap-oct.level);kk++)
-		{
-		  if((kmap+kk)>=nmapz) continue;
-		  for(jj=0;jj<pow(2,lmap-oct.level);jj++)
+		  for(kk=0;kk<pow(2,lmap-oct.level);kk++)
 		    {
+		      if((kmap+kk)>=(nmapz+k0)){
+			//printf("zc=%e kmap=%d kk=%d nmpaz=%d k0=%d SKIP2\n",zc,kmap,kk,nmapz,k0);
+			continue;
+		      }
+		      for(jj=0;jj<pow(2,lmap-oct.level);jj++)
+			{
 		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
 			{
 			  if(oct.cpu==icpu) {
 			  switch(field){
 			  case 0:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.level;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.level;
 			    break;
 #ifdef WGRAV
  			  case 1:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].gdata.d;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].gdata.d;
 			    break;
  			  case -1:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].density;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].density;
 			    break;
 			  case 2:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].gdata.p;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].gdata.p;
 			    break;
 			  case 6:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]+=oct.cell[icell].res;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]+=oct.cell[icell].res;
 			    break;
 			  case 201:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].f[0];
 			    break;
 			  case 202:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[1];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].f[1];
 			    break;
 			  case 203:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[2];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].f[2];
 			    break;
 #endif
 			  case 3:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cpu;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cpu;
 			    break;
 			  case 4:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].marked;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].marked;
 			    break;
 			  case 5:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].f[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].f[0];
 			    break;
 #ifdef WHYDRO2
 			  case 101:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.d;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.d;
 			    //printf("%f\n",oct.cell[icell].field.d);
 			    break;
 			  case 102:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.u;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.u;
 			    break;
 			  case 103:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.v;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.v;
 			    break;
 			  case 104:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.w;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.w;
 			    break;
 			  case 105:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.p;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.p;
 			    break;
 			  case 106:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.E;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.E;
 			    break;
 			  case 107:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
 			    break;
 #ifdef WRADHYD
 			  case 108:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].field.X;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.X;
 			    break;
 #endif
 #endif			  
 
 #ifdef WRAD
 			  case 701:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.e[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.e[0];
 			    break;
 			  case 702:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fx[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fx[0];
 			    break;
 			  case 703:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fy[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fy[0];
 			    break;
 			  case 704:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.fz[0];
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fz[0];
 			    break;
 			  case 705:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.src;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.src;
 			    break;
 #ifdef WCHEM
 			  case 706:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.xion;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.xion;
 			    break;
 			  case 707:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.temp;
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.temp;
 			    break;
 			  case 708:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk)*nmap*nmap]=oct.cell[icell].rfield.nh/pow(unit.unit_l,3.);
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.nh/pow(unit.unit_l,3.);
 			    break;
 #endif
 #endif

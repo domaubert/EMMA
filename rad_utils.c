@@ -1534,6 +1534,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
     do {
       curoct=nextoct;
       nextoct=curoct->next; 
+#ifdef WMPI
+      if(curoct->cpu!=cpu->rank) continue; // bnd octs are updated by transmission hence not required
+#endif    
       for(icell=0;icell<8;icell++){
 	if(curoct->cell[icell].child==NULL){
 	  // unsplit case
@@ -1603,6 +1606,9 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
   struct OCT *nextoct;
   int icell;
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
 
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
@@ -1616,6 +1622,26 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
       
     }while(nextoct!=NULL);
   }
+
+#ifdef WMPI
+  // --------------- init for coarse octs in boundaries
+  if(level>param->lcoarse){
+    nextoct=firstoct[level-2];
+    if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
+      do {
+	curoct=nextoct;
+	nextoct=curoct->next; 
+	if(curoct->cpu!=cpu->rank){
+	  for(icell=0;icell<8;icell++) {
+	    memset(&(curoct->cell[icell].rfieldnew),0,sizeof(struct Rtype));
+	  }
+	}
+      }while(nextoct!=NULL);
+    }
+  }
+#endif
+
+
 }
 
 

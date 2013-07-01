@@ -135,10 +135,13 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=){
   if(is_void(zmax)) zmax=1.;
   time=array(double);
   commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(zmin)+" "+pr1(zmax);
+  commande;
   system(commande);
   cube=readcube(swrite(format=fname+".f"+pr1(field)+".p%05d",ncpu-1),time);
   return cube;
 }
+
+
 
 func gensilo(fname,lvl,field,&time,ncpu=,execut=,fnameout=){
   if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";

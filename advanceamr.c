@@ -230,7 +230,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 #ifdef WRAD
-    //sanity_rad(level,param,firstoct,cpu,aexp);
     clean_new_rad(level,param,firstoct,cpu,aexp);
 #endif
 
@@ -241,13 +240,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   // ================= I we refine the current level
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-    // refining (and destroying) octs
-#ifdef WRAD
-    //sanity_rad(level,param,firstoct,cpu,aexp);
-#endif
+
+    // enforcing the 2 levels rule
+    L_check_rule(level,param,firstoct,cpu);
+
 #ifdef WMPI
-    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
+    mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
+    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1); // propagate hydro for refinement
+    mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1); // propagate rad for refinement
 #endif
+    // refining (and destroying) octs
     curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
     cpu->freeoct=curoct;
   }
@@ -488,7 +490,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WMPI
     if(level>param->lcoarse){
-      mpi_rad_correct(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,level);
+      mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
     }
     MPI_Barrier(cpu->comm);
 #endif
