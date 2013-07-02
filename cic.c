@@ -479,12 +479,12 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
    }
 #endif
    
-   if(curp->idx==54944) printf("vel = %e %e %e \n",curp->vx,curp->vy,curp->vz);
+   //if(curp->idx==54944) printf("vel = %e %e %e \n",curp->vx,curp->vy,curp->vz);
    curp->vx+=-accel[0]*dt;
    curp->vy+=-accel[1]*dt;
    curp->vz+=-accel[2]*dt;
 
-   if(curp->idx==54944) printf("pos= %e %e %e vel = %e %e %e accel =%e %e %e dt=%e lp=%d\n",curp->x,curp->y,curp->z,curp->vx,curp->vy,curp->vz,accel[0],accel[1],accel[2],dt,curp->level);
+   //if(curp->idx==54944) printf("pos= %e %e %e vel = %e %e %e accel =%e %e %e dt=%e lp=%d\n",curp->x,curp->y,curp->z,curp->vx,curp->vy,curp->vz,accel[0],accel[1],accel[2],dt,curp->level);
    //printf("idx=%d fx=%e/%e fy=%e/%e fz=%e/%e\n",curp->idx,accel[ic]2,accel[ic],accely2,accely,accelz2,accelz);
    
 #ifndef TESTCOSMO
@@ -1191,7 +1191,7 @@ void L_clean_dens(int level,struct RUNPARAMS *param, struct OCT **firstoct, stru
 
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
-  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
+  if((nextoct!=NULL)){
     do {
       curoct=nextoct;
       nextoct=curoct->next; 

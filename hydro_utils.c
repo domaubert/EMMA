@@ -2989,7 +2989,7 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
     }while(nextoct!=NULL);
   }
   
-  printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
 
   return nreadtot;
 }
@@ -3011,7 +3011,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   double t[10];
 
   t[0]=MPI_Wtime();
-  printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
+  if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
 
   // ===== COMPUTING THE FLUXES
   
@@ -3068,12 +3068,14 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 
   t[9]=MPI_Wtime();
   
+  if(cpu->rank==0){
 #ifndef GPUAXL
-  printf("==== CPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+    printf("==== CPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
 #else
-  printf(" === GPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
-  //printf(" === GPU (DISABLED) HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+    printf(" === GPU HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
+    //printf(" === GPU (DISABLED) HYDRO TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
+  }
   
 }
 

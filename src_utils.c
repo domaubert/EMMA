@@ -180,8 +180,16 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
     }while(nextoct!=NULL);
   }
 
-  printf("== SRC STAT === > Found %d sources \n",nc);
+#ifdef WMPI
+  int nctot;
+  MPI_Allreduce(&nc,&nctot,1,MPI_INT,MPI_SUM,cpu->comm);
+  nc=nctot;
+#endif
 
+
+
+  if(cpu->rank==0) printf("== SRC STAT === > Found %d sources \n",nc);
+    
   return nc;
 }
 

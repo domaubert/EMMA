@@ -329,7 +329,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
   newoct=freeoct; // the new oct will be the first freeoct
 
-  printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
+  if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
 
   dxcur=1./pow(2,level);
   nextoct=firstoct[level-1];
@@ -741,8 +741,10 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   ndes=ndestot;
 #endif
 
-  printf("rank %d octs created   = %d ",cpu->rank,nref);
-  printf("octs destroyed = %d\n",ndes);
+  if(cpu->rank==0){
+    printf("octs created   = %d ",nref);
+    printf("octs destroyed = %d\n",ndes);
+  }
 
   return freeoct;
 
@@ -1246,7 +1248,22 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	    }
 	  //printf("\n");
     }
-  printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
+
+#ifdef WMPI
+  int stat0,stat1,stat2;
+  REAL MMAX;
+  MPI_Allreduce(&stati[0],&stat0,1,MPI_INT,MPI_SUM,cpu->comm);
+  stati[0]=stat0;
+  MPI_Allreduce(&stati[1],&stat1,1,MPI_INT,MPI_SUM,cpu->comm);
+  stati[1]=stat1;
+  MPI_Allreduce(&stati[2],&stat2,1,MPI_INT,MPI_SUM,cpu->comm);
+  stati[2]=stat2;
+
+  MPI_Allreduce(&mmax,&MMAX,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  mmax=MMAX;
+#endif
+
+  if(cpu->rank==0) printf(" RANK 0 ONLY STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
 
 }
 

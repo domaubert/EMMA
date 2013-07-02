@@ -20,28 +20,40 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
   int level;
   int ndtmax=pow(param->nsubcycles,param->lmax-param->lcoarse+1);
   int i,j,na;
+  int nl;
 
-  printf("\n");
-  for(j=0;j<ndtmax;j++)printf("#");
-  printf("\n");
-
+  if(cpu->rank==0){
+    printf("\n");
+    for(j=0;j<ndtmax;j++)printf("#");
+    printf("\n");
+  }
   for(level=param->lcoarse;level<=param->lmax;level++){
     na=pow(2,param->lmax-level+1);
+    nl=ndt[level-1];
 
-    for(j=0;j<ndt[level-1];j++){
+#ifdef WMPI
+    int nlmax;
+    MPI_Allreduce(&nl,&nlmax,1,MPI_INT,MPI_MAX,cpu->comm);
+    //printf("levef=%d rank=%d nl=%d nmax=%d\n",level,cpu->rank,nl,nlmax);
+    nl=nlmax;
+#endif
+
+    if(cpu->rank==0){
+      for(j=0;j<nl;j++){
       //one arrow
       for(i=0;i<(na-1);i++) printf("~");
       printf(">");
+      }
+      for(j=nl;j<ndtmax;j++) printf(" ");
+      printf("\n");
     }
-    for(j=ndt[level-1];j<ndtmax;j++) printf(" ");
-    printf("\n");
-
   }
   
 
+  if(cpu->rank==0){
   for(j=0;j<ndtmax;j++)printf("#");
   printf("\n \n");
-  
+  }  
 }
 
 // ===============================================================
@@ -188,9 +200,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   aexp=1.0;
 #endif
 
-  //if(cpu->rank==0){
-  printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
-    //}
+  if(cpu->rank==0){
+    printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
+  }
 
 
   // ==================================== Check the number of particles and octs
@@ -209,9 +221,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
   do{
-    printf("----\n");
-    printf("subscyle #%d subt=%e\n",is,dt);
-    
+    if(cpu->rank==0){
+      printf("----\n");
+      printf("subscyle #%d subt=%e\n",is,dt);
+    }
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
@@ -241,17 +254,23 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   // ================= I we refine the current level
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
 
-    // enforcing the 2 levels rule
-    L_check_rule(level,param,firstoct,cpu);
-
+    if(ndt[level-1]%2==0){
+      // enforcing the 2 levels rule
+      L_check_rule(level,param,firstoct,cpu);
+      
 #ifdef WMPI
-    mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
-    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1); // propagate hydro for refinement
-    mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1); // propagate rad for refinement
+      mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
+#ifdef WHYDRO2
+      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1); // propagate hydro for refinement
 #endif
-    // refining (and destroying) octs
-    curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
-    cpu->freeoct=curoct;
+#ifdef WRAD
+      mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1); // propagate rad for refinement
+#endif
+#endif
+      // refining (and destroying) octs
+      curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+      cpu->freeoct=curoct;
+    }
   }
   
   // ==================================== Check the number of particles and octs
@@ -268,14 +287,18 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  // ================= IV advance solution at the current level
 
 
-    printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
+    if(cpu->rank==0) printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
 
 
 #ifdef PIC
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
 #ifdef WMPI
-    mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    /* if((level==7)&&(is==1)){ */
+    /* } */
+    /* else{ */
+      mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    /* } */
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
 #endif 
 #endif
@@ -312,14 +335,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.1,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-    printf("dtcosmo= %e ",dtcosmo);
+    //printf("dtcosmo= %e ",dtcosmo);
 
 #ifdef WGRAV
     REAL dtff;
     dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
 
     dtnew=(dtff<dtnew?dtff:dtnew);
-    printf("dtff= %e ",dtff);
+    //printf("dtff= %e ",dtff);
 #endif
 
 #endif
@@ -328,20 +351,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
-    printf("dthydro= %e ",dthydro);
+    //printf("dthydro= %e ",dthydro);
 #endif
 
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-    printf("dtpic= %e ",dtpic);
+    //printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
 #ifdef WRAD
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-    printf("dtrad= %e ",dtrad);
+    //printf("dtrad= %e ",dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
 #endif
 
@@ -350,14 +373,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // that makes multi-processor dt different than the mono processor ones !
     // the few lines below removes this...
 
-    REAL dtf=floor(dtnew*1e5)/1e5;
+    REAL dtf=floor(dtnew*1e8)/1e8;
     dtnew=dtf;
-    printf("\n");
+    //printf("\n");
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
-    printf("inital dtnew=%e\n",dtnew);
+    //printf("inital dtnew=%e\n",dtnew);
     if(dtnew==0.){
       printf("ERROR rank %d n %d t %e\n",cpu->rank,cpu->noct[level-1],dtnew);
       abort();
@@ -379,7 +402,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
     MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
+    //printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
 
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
@@ -408,7 +431,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
     MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
+    //    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
 
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
@@ -419,8 +442,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef PIC
     //================ Part. Update ===========================
-
-    if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",cpu->npart[level-1],adt[level-1],level);
+#ifdef WMPI
+    int maxnpart;
+    MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+#endif
+    if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
 #ifdef PART_EGY
     //computing energy
@@ -440,7 +466,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     int deltan;
     deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer, &(cpu->lastpart));
 
-    //printf("proc %d receives %d particles\n",cpu->rank,deltan);
+    printf("proc %d receives %d particles\n",cpu->rank,deltan);
     //update the particle number within this process
     npart=npart+deltan;
     
@@ -465,7 +491,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
-    grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
+    //grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
 #ifdef WMPI
@@ -516,11 +542,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     is++;
     ndt[level-1]++;
 
-    printf("is=%d ndt=%d dt=%le tloc=%le\n",is,ndt[level-1],tloc,dt);
+    if(cpu->rank==0) printf("is=%d ndt=%d dt=%le tloc=%le\n",is,ndt[level-1],tloc,dt);
 
     // Some Eye candy for timesteps display
 
-    if(cpu->rank==0) dispndt(param,cpu,ndt);
+    dispndt(param,cpu,ndt);
     
     // === Loop
 

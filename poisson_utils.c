@@ -1399,6 +1399,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if((iter<=param->niter)||(iter%10==0)){
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
       if(iter==0){
+	if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
 	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
       }
       else{
@@ -1703,13 +1704,13 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   }
 
  t[9]=MPI_Wtime();
-  
+ if(cpu->rank==0){  
 #ifndef GPUAXL
- printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
+   printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #else
- printf(" === GPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
+   printf(" === GPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
-  
+ }
   return 0;
 }
 #endif

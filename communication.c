@@ -34,7 +34,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   /* mpinei =(int*)calloc(ngridmax,sizeof(int)); */
   /* neicpu =(int*)calloc(ngridmax,sizeof(int)); */
-  flagcpu=(int*) calloc(cpu->nproc,sizeof(REAL));
+  flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
 
   if(cpu->bndoct!=NULL) free(cpu->bndoct);
   cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
@@ -103,7 +103,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
 
   // computing the mpi neighbor list
-  neicpu=(int*) calloc(cpu->nproc,sizeof(REAL));
+  neicpu=(int*) calloc(cpu->nproc,sizeof(int));
   for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
   for(i=0;i<cpu->nproc;i++){ // we scan the list
@@ -219,6 +219,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 }
 
 //======================================================================================
+#ifdef WHYDRO2
 void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
   
   /*
@@ -249,7 +250,7 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
   free(countpacket);
 
 }
-
+#endif
 // ====================================================================================
 // ====================================================================================
 
@@ -1904,7 +1905,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  printf("correcting CIC on rank %d\n",cpu->rank);
+  if(cpu->rank==0) printf("correcting CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff(cpu,sendbuffer,recvbuffer);
@@ -1940,6 +1941,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
 // ==============================================================================
 // ==============================================================================
 
+#ifdef WHYDRO2
 void mpi_hydro_correct(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, struct HYDRO_MPI **recvbuffer,int level)
 {
   int i,icpu;
@@ -1952,7 +1954,7 @@ void mpi_hydro_correct(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, struc
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  printf("correcting hydro CIC on rank %d\n",cpu->rank);
+  if(cpu->rank==0) printf("correcting hydro CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff_hydro(cpu,sendbuffer,recvbuffer);
@@ -1982,6 +1984,7 @@ void mpi_hydro_correct(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, struc
 
   
 }
+#endif
 
 // ==================================================================
 #ifdef WRAD
@@ -1997,7 +2000,7 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  printf("correcting Rad CIC on rank %d\n",cpu->rank);
+  if(cpu->rank==0) printf("correcting Rad CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff_rad(cpu,sendbuffer,recvbuffer);

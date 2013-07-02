@@ -55,7 +55,6 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 #endif
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
 
-  printf("size of the OCT= %ld\n",sizeof(struct OCT));
 
   for(level=1;level<=levelmax;level++) // looping over octs
     {

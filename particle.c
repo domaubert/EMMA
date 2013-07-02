@@ -261,7 +261,7 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 
 #ifdef WMPI
   // reducing by taking the smallest time step
-  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
 #endif  
 
   dt=(dt>tmax?tmax:dt);
@@ -319,7 +319,14 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 	}
     }while(nextoct!=NULL);
   }
-  if(cpu->rank==0) printf("level=%d maxdisp=%f or %f dx\n",level,mdisp,mdisp/dxcur);
+
+#ifdef WMPI
+  REAL mmdisp;
+  MPI_Allreduce(&mdisp,&mmdisp,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  //  mdisp=mmdisp;
+#endif
+
+  if(cpu->rank==0) printf("level=%d maxdisp=%e or %e dx\n",level,mmdisp,mmdisp/dxcur);
 
   return dt;
 }

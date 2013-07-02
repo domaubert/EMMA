@@ -1655,7 +1655,7 @@ int main(int argc, char *argv[])
   compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
 
   tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
-  printf("tmax=%e\n",tmax);
+  if(cpu.rank==0) printf("tmax=%e\n",tmax);
   cosmo.tab_aexp=tab_aexp;
   cosmo.tab_ttilde=tab_ttilde;
 #endif

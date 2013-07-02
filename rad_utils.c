@@ -1440,7 +1440,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   REAL cloc; // the speed of light in code units
 
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
-  printf("cloc=%e aexp=%e\n",cloc,aexp);
+  if(cpu->rank==0) printf("cloc=%e aexp=%e\n",cloc,aexp);
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   nreadtot=0;
@@ -1492,7 +1492,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
     }while(nextoct!=NULL);
   }
   
-  printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
 
   return nreadtot;
 }
@@ -1589,12 +1589,13 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   }
 
   t[9]=MPI_Wtime();
-  
+  if(cpu->rank==0){
 #ifndef GPUAXL
-  printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
-  printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
+  }
   
 }
 

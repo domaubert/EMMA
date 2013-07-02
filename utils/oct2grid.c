@@ -73,9 +73,12 @@ int main(int argc, char *argv[])
   int nmapz;
   int k0;
 
-  if(argc>7) {
-    sscanf(argv[7],"%lf",&zmin);
-    sscanf(argv[8],"%lf",&zmax);
+  int mono;
+  sscanf(argv[7],"%d",&mono);
+
+  if(argc>8) {
+    sscanf(argv[8],"%lf",&zmin);
+    sscanf(argv[9],"%lf",&zmax);
   }
   else{
     zmin=0;
@@ -94,7 +97,19 @@ int main(int argc, char *argv[])
 
   // scanning the cpus
   
-  for(icpu=0;icpu<ncpu;icpu++){
+  int icpustart,icpustop;
+  if(mono<0){
+    icpustart=0;
+    icpustop=ncpu;
+  }
+  else{
+    icpustart=mono;
+    icpustop=mono+1;
+    printf("Cast single cpu #%d\n",mono) ;
+  }
+
+
+  for(icpu=icpustart;icpu<icpustop;icpu++){
     
     
     // building the input file name
@@ -105,9 +120,9 @@ int main(int argc, char *argv[])
     // building the output file name
     strcpy(format,argv[4]);
 
-    if(!dumpsilo){
-      strcat(format,".p%05d");
-    }
+    /* if(!dumpsilo){ */
+    /*   strcat(format,".p%05d"); */
+    /* } */
     sprintf(fname2,format,icpu);
 
 
@@ -173,7 +188,15 @@ int main(int argc, char *argv[])
 			{
 		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
 			{
-			  if(oct.cpu==icpu) {
+
+			  int flag;
+			  if(mono>=0){
+			    flag=(oct.cpu>=0);
+			  }
+			  else{
+			    flag=(oct.cpu==icpu);
+			  }
+			  if(flag) {
 			  switch(field){
 			  case 0:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.level;

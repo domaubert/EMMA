@@ -165,6 +165,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     MPI_Allreduce(&ltot,&nomax,1,MPI_INT,MPI_MAX,cpu->comm);
     MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&lpart,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
     if(cpu->rank==0){
       if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d npart=%9d",level,ltot,nomin,nomax,lpart);
@@ -179,7 +180,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
-  printf("\n");
+  if(cpu->rank==0) printf("\n");
 
   if(cpu->rank==0){
     int I;
