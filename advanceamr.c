@@ -491,7 +491,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
-    //grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
+    grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
 #ifdef WMPI

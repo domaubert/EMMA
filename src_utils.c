@@ -62,7 +62,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 #else
 #ifdef WHYDRO2
   if(cell->field.d>param->srcthresh){
-    cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units
+    cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2)*(rand()%10<3); // switch to code units //RAND TO TEST STOCHASTICITY
     cell->rfieldnew.src=cell->rfield.src;
     flag=1;
   }

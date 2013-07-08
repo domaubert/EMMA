@@ -293,8 +293,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   printf("============================================\n");
 
 
-  if(np1*np2*np3>param->npartmax){
-    printf("Error : Number of particles greater than npartmax Np(grafic)=%d Npartmax=%d!\n",np1*np2*np3,param->npartmax);
+  if((np1*np2*np3)/(cpu->nproc)*1.1>param->npartmax){
+    printf("Error : Number of particles greater than npartmax Np(grafic, est. )=%d Npartmax=%d!\n",(np1*np2*np3)/(cpu->nproc),param->npartmax);
     abort();
   }
 
