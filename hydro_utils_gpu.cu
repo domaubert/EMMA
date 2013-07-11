@@ -1,3 +1,6 @@
+
+#ifdef WHYDRO2
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1823,6 +1826,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	/* t[2]=MPI_Wtime(); */
 	
 	offset=is*nread/cpu->nstream;
+	//printf("Start Error Hyd =%s\n",cudaGetErrorString(cudaGetLastError()));
 	cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,nread*sizeof(struct HGRID)/cpu->nstream,cudaMemcpyHostToDevice,stream[is]);  
 	//printf("Start Error Hyd =%s\n",cudaGetErrorString(cudaGetLastError()));
       
@@ -1839,7 +1843,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	/* t[4]=MPI_Wtime(); */
 
 	dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,stride,cpu,dxcur,dtnew);
-	//	printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
 
 	/* cudaDeviceSynchronize(); */
 	/* t[6]=MPI_Wtime(); */
@@ -1880,3 +1884,4 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
   return nreadtot;
 }
 
+#endif

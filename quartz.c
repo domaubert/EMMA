@@ -556,6 +556,7 @@ int main(int argc, char *argv[])
   checkdevice(0);
 #ifdef WGRAV
   create_pinned_gravstencil(&gstencil,gstride);
+  printf("coucou\n");
 #ifdef FASTGRAV
   struct STENGRAV dev_stencil;
   cpu.dev_stencil=&dev_stencil;
@@ -565,10 +566,8 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2 
-
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
-  printf("hstencil=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
-  
+  printf("hstencil=%p mem=%f mem/elem=%f \n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.),sizeof(struct HGRID)/(1024.*1024.));
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
   create_pinned_stencil(&stencil,hstride);  
   create_hydstencil_GPU(&cpu,hstride); 
@@ -1810,7 +1809,10 @@ int main(int argc, char *argv[])
 
 #ifdef GPUAXL
     // creating params on GPU
+#ifdef WRAD
     create_param_GPU(&param,&cpu); 
+    // Note : present only in radiation routines but could be useful elsewhere ... to check
+#endif
 #endif
 
 

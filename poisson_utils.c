@@ -1256,7 +1256,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   int nitmax;
   REAL factdens;
   REAL rloc;
-  REAL res0;
+  REAL res0=0.;
 
   // Computing the factor of the density
   if(level>=param->lcoarse){
@@ -1462,7 +1462,8 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
 
 
@@ -1489,7 +1490,8 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
     PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #else
-    PoissonJacobiGPU(level-1,param,firstoct,cpu,stencil,stride,tsim);
+    //PoissonJacobiGPU(level-1,param,firstoct,cpu,stencil,stride,tsim);
+    PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   }
   else{
@@ -1517,7 +1519,8 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  //  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   return dres;
 }

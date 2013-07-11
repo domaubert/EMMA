@@ -1,6 +1,6 @@
 ########################################## 
-ARCH = CPU
-C_LIBS = -lm -lstdc++  -g
+ARCH = GPU
+C_LIBS = -lm -lstdc++ # -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
 DEFINES  =  
@@ -33,7 +33,8 @@ DEFINES  +=  -DGRAFIC
 #DEFINES += -DPERFECT
 
 #------------ GRAV OPTIONS ----------------------
-#DEFINES  +=  -DFASTGRAV -DONFLYRED
+#DEFINES  +=  -DFASTGRAV 
+DEFINES  += -DONFLYRED
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
 DEFINES  +=  -DRIEMANN_HLLC
@@ -45,7 +46,7 @@ DEFINES  +=  -DDUAL_E
 DEFINES  += -DWCHEM 
 DEFINES  += -DS_50000
 DEFINES  += -DCOOLING
-DEFINES  += -DUVBKG
+#DEFINES  += -DUVBKG
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM

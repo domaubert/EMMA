@@ -21,6 +21,7 @@ extern "C" void create_gravstencil_GPU(struct CPUINFO *cpu, int stride);
 extern "C" void create_pinned_gravstencil(struct STENGRAV *gstencil, int stride);
 extern "C" void destroy_pinned_gravstencil(struct STENGRAV *gstencil, int stride);
 extern "C" void destroy_gravstencil_GPU(struct CPUINFO *cpu, int stride);
+extern "C" void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field, int cmp_keys, int level);
 
 
 // ====================== structure for CUDPP =======
@@ -52,7 +53,7 @@ void create_pinned_gravstencil(struct STENGRAV *gstencil, int stride){
   cudaMallocHost( (void**)&resLR, sizeof(REAL)*stride);
   gstencil->resLR=resLR;
 #endif
-  abort();
+  //abort();
 }
 #else
 void create_pinned_gravstencil(struct STENGRAV *gstencil, int stride){
@@ -300,7 +301,7 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
 
     // we store the local residual
     if(flag) {
-      vres[icell+i*8]=factdens*curcell->d; 
+      vres[icell+i*8]=factdens*curcell->d*factdens*curcell->d; 
       stockres[icell+i*8]=factdens*curcell->d;
     }
     else{
@@ -435,7 +436,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   int icell;
   int nitmax;
   REAL factdens;
-
+  REAL fnorm,res0=0.;
   REAL *rloc;
   cudaMallocHost((void**)&rloc,sizeof(REAL)*cpu->nstream);
 
@@ -458,10 +459,9 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   cudppCreate(&(cuparam.theCudpp));
     
   cuparam.config.algorithm = CUDPP_SCAN;
-  cuparam.config.op = CUDPP_MAX;
   cuparam.config.datatype = CUDPP_DOUBLE;
   cuparam.config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE;
-  cuparam.config.op=CUDPP_MAX;
+  cuparam.config.op=CUDPP_ADD;
 
   cuparam.scanplan =0;
   cudppPlan(cuparam.theCudpp,&(cuparam.scanplan), cuparam.config, stride*8, 1, 0);
@@ -504,7 +504,8 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
   // Scanning the Octs
-
+  
+  fnorm=0.;
   for(iter=0;iter<nitmax;iter++){
     // --------------- some inits for iterative solver
     residual=0.;
@@ -545,8 +546,13 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	  cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(nread/cpu->nstream)*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);   
 
 	  cudaStreamSynchronize(stream[is]);
-	  residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);
-	 
+	  //residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);
+	  if(iter==0){
+	    fnorm+=rloc[is];
+	  }
+	  else{
+	    residual+=rloc[is];
+	  }
 	}
 
 
@@ -577,16 +583,48 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
       }
     }
 
+#ifdef WMPI
+    //printf("iter=%d\n",iter);
+    if((iter<=param->niter)||(iter%10==0)){
+      mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
+      if(iter==0){
+	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
+	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+      }
+      else{
+	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+      }
+    }
+#endif
+
+
+    if((iter==1)&&(level>=param->lcoarse)) res0=residual;
+    
     if(iter>0){
-      dres=sqrt(residual);
+      if(level<param->lcoarse){
+	dres=sqrt(residual);
+      }
+      else{
+	dres=sqrt(residual/fnorm);
+      }
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }
     }
     
   }
+
+
+  if(level>param->lcoarse){
+    printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+  }
+  else{
+    printf("GPU === | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
+  }
+
+
   //  printf("GPU | level=%d iter=%d res=%e tgat=%e tcal=%e tscat=%e tall=%e tup=%e tglob=%e\n",level,iter,dres,tgat/iter,tcal/iter,tscat/iter,tall/iter,tup/iter,tglob/iter);
-  printf("GPU | level=%d iter=%d res=%e \n",level,iter,dres);
+  //printf("GPU | level=%d iter=%d res=%e \n",level,iter,dres);
 
   cudppDestroyPlan(cuparam.scanplan);
   cudppDestroy(cuparam.theCudpp);

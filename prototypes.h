@@ -483,7 +483,7 @@ struct CELLFLUX
 {
 
 #ifdef WHYDRO2
-  struct Wtype field;
+  //struct Wtype field;
   struct Utype deltaU;
   REAL flux[NFLUX]; // 6 fluxes of 5 variables each
   REAL divu;
@@ -505,9 +505,6 @@ struct CELLFLUX
 
 struct CELLLIGHT
 {
-#ifdef WGRAV
-  REAL f[3];
-#endif
 
 #ifdef WHYDRO2
   struct Wtype field; // hydrodynamical data
@@ -517,6 +514,9 @@ struct CELLLIGHT
   struct Rtype rfield; // radiation data
 #endif
 
+#ifdef WGRAV
+  REAL f[3];
+#endif
   char split;
 };
 

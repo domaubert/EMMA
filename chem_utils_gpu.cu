@@ -141,7 +141,7 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
   unsurtc=fmax(unsurtc,fabs(c5));
   unsurtc=fmax(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
-  *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
+  *tcool=1.5e0*nh2*(1.)*KBOLTZ*temp/unsurtc; //Myr
 }
 
 // ===========================================================================================================================
@@ -218,14 +218,13 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
     
       fudgecool=param->fudgecool;
       if(stencil[i].oct[6].cell[icell].split) continue;
-    memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
+      memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
     
   
     // switch to physical units, chemistry remains unchanged with and without cosmo
     for (igrp=0;igrp<NGRP;igrp++)
       {			
 	egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n+ebkg[igrp];
-	//	printf("e=%e ebkg=%e \n",egyloc[idloc],ebkg[igrp]);
 	floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
 	floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
 	floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
@@ -237,6 +236,8 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
     eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
     srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
       
+    if(R.src>1.19398e77){printf("s=%e d=%e e=%e x=%e eint=%e | ",srcloc[idloc],nH[idloc],egyloc[idloc],x0[idloc],eint[idloc]);}
+
       // at this stage we are ready to do the calculations
 
       // DEALING WITH CLUMPING ----------------------
@@ -267,9 +268,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	{
 	  nitcool++;
 
-	  //eint=1.5*nH[idloc]*KBOLTZ*(1.f+x0[idloc])*tloc[idloc];
-	  
-	  //tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.));
 	  
 	  //== Getting a timestep
@@ -279,16 +277,12 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
-	    ai_tmp1=0.;
+	  ai_tmp1=0.;
+	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	    
-	    dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
-	    /* if(nitcool>10){ */
-	    /*   printf("dtcool=%e dt=%e eint=%e x=%e nh=%e\n",dtcool,dt,eint[idloc],x0[idloc],nH[idloc]); */
-	    /* } */
-	    
-	    alpha=dcucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	    alphab=dcucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
-	    beta=dcucompute_beta(tloc,1.,1.)*CLUMPF2;
+	  alpha=dcucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
+	  alphab=dcucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
+	  beta=dcucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
 	  
@@ -298,7 +292,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	    {
 	      ai_tmp1 = alphai[igrp];
 	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factgrp[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3.*hubblet));
-	      //et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 	      
 	      if(et[igrp]<0) 	{test=1;}
 	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
@@ -308,7 +301,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if (test) 
 	    {
 	      fudgecool/=10.; 
-	      //intf("et=%e\n",et[igrp]);
 	      continue;	
 	    } 
 	  
@@ -331,8 +323,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if((xt>1.)||(xt<0.)) 
  	    {
 	      fudgecool/=10.; 
-	      //intf("xt=%e\n",xt);
-
 	      continue;	
 	    } 
 
@@ -362,7 +352,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if(eintt<0.) 
  	    {
 	      fudgecool/=10.; 
-	      //intf("eintt=%e eint[idloc]=%e\n",eintt,eint[idloc]);
 	      continue;
 	    } 
 
@@ -371,25 +360,18 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	    {
 	      if(srcloc[idloc]==0.){
 	  	fudgecool=fudgecool/10.;
-		//intf("eintt=%e eint[idloc]=%e\n",eintt,eint[idloc]);
 	  	continue;
 	      }
 	    }
 
-	  /* if(fabs(eintt-eint[idloc])<0.2*FRAC_VAR*eint[idloc]) */
-	  /*   { */
-	  /*     if(srcloc[idloc]==0.){ */
-	  /* 	fudgecool=fudgecool*2.; */
-	  /* 	printf("eintt=%e eint[idloc]=%e\n",eintt,eint[idloc]); */
-	  /* 	continue; */
-	  /*     } */
-	  /*   } */
+
 #else
 	  eintt=eint[idloc];
 #endif
 	  
 	  for(igrp =0;igrp<NGRP;igrp++)
-	    {egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
+	    {
+	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
 	      floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
 	      floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
 	      floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp];	
@@ -399,7 +381,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
 #ifdef COOLING
 	  eint[idloc]=eintt;
-	  //tloc=eint/(1.5f*nH[idloc]*KBOLTZ*(1.f+x0[idloc]));
 #endif
 	  currentcool_t+=dtcool;
 	  fudgecool=param->fudgecool;
@@ -408,6 +389,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
       // ====================== End of the cooling loop
       
+      if(R.src>1.19398e77){printf("s=%e d=%e e=%e x=%e eint=%e \n ",srcloc[idloc],nH[idloc],egyloc[idloc],x0[idloc],eint[idloc]);}
       // FIlling the rad structure to send it back
       for(igrp=0;igrp<NGRP;igrp++)
 	{
@@ -419,7 +401,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
        
       //R.temp=tloc;
       R.xion=x0[idloc];
-
       R.eint=eint[idloc]*pow(aexp,5)*pow(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/pow(param->unit.unit_v,2);
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
       
