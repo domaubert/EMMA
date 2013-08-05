@@ -1675,7 +1675,8 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
 #else
-    PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
+    PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
+    //    PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
 #endif
 
   }

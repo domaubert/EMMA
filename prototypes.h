@@ -160,6 +160,8 @@ struct CPUINFO{
   REAL load;
 
   struct OCT **bndoct; // the list of external boundary octs
+  int *noct_local; // has size nnei => noct_local[inei] stores the number of remote octs from inei required by the local proc;
+  int *noct_remot; // has size nnei => noct_remot[inei] stores the number of local octs required by the proc inei;
 
   int nebnd; // the number of external boundary octs
   int nnei; // the number of neighbors procs

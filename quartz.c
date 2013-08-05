@@ -596,6 +596,8 @@ int main(int argc, char *argv[])
 
   // We segment the oct distributions at levelcoarse 
     cpu.bndoct=NULL;
+    cpu.noct_remot=NULL;
+    cpu.noct_local=NULL;
     cpu.mpinei=NULL;
     cpu.dict=NULL;
 
@@ -1489,16 +1491,14 @@ int main(int argc, char *argv[])
     printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
     abort();
   }
-
-
 #endif
 
 #ifdef WRADTEST
   REAL X0=1./pow(2,levelcoarse);
   int igrp;
-
   param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
   param.unit.unit_n=1.;
+
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
   param.unit.unit_l=30.e3*PARSEC;
@@ -1508,7 +1508,6 @@ int main(int argc, char *argv[])
   param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
   REAL pstar;
   pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
-  
 #endif
   param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
   ainit=1.;
@@ -1607,7 +1606,7 @@ int main(int argc, char *argv[])
 
 		
 		
-
+#ifdef WRADHYD
 		curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		curoct->cell[icell].field.u=0.0;
 		curoct->cell[icell].field.v=0.0;
@@ -1615,7 +1614,7 @@ int main(int argc, char *argv[])
 		curoct->cell[icell].field.p=eint*(GAMMA-1.);
 		curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		getE(&(curoct->cell[icell].field));
-
+#endif
 
 #endif
 	      }

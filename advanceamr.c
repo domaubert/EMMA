@@ -505,22 +505,37 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef WRAD
+    double tcomp[10];
+    MPI_Barrier(cpu->comm);
+    tcomp[0]=MPI_Wtime();
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
  
 #ifdef WMPI
-    mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1);
+    MPI_Barrier(cpu->comm);
+    tcomp[1]=MPI_Wtime();
+    mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,(nsteps==0),level);
+    //mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,(nsteps==0),level);
+    MPI_Barrier(cpu->comm);
+    tcomp[2]=MPI_Wtime();
 #endif
     //=============== Radiation Update ======================
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
 
 #ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
       mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
     }
     MPI_Barrier(cpu->comm);
+    tcomp[4]=MPI_Wtime();
 #endif
 
+    MPI_Barrier(cpu->comm);
+    tcomp[5]=MPI_Wtime();
+
+    if(cpu->rank==0) printf("Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
 #endif
 

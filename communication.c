@@ -1,4 +1,3 @@
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -200,9 +199,11 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     pack->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
     for(ii=0;ii<8;ii++){
       switch(field){
+#ifdef WGRAV
       case 0:
 	pack->data[ii]=cpu->bndoct[i]->cell[ii].density;
 	break;
+#endif
       case 1:
 	pack->data[ii]=cpu->bndoct[i]->cell[ii].marked;
 	break;
@@ -287,6 +288,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
 #endif
 
 //======================================================================================
+#ifdef PIC
 int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PART **lastp){
   
   /*
@@ -364,7 +366,7 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PAR
 
   return nrem; // we return the number of exiting particles
 }
-
+#endif
 
 
 //======================================================================================
@@ -409,6 +411,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
 	      for(icell=0;icell<8;icell++){
 		switch(field){
+#ifdef WGRAV
 		case 0:
 		  pack->data[icell]=curoct->cell[icell].density; // density
 		  break;
@@ -418,11 +421,12 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		case 2:
 		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
-		case 3:
-		  pack->data[icell]=curoct->cell[icell].marked*(curoct->level>=cpu->levelcoarse); //refinment mark
-		  break;
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  break;
+#endif
+		case 3:
+		  pack->data[icell]=curoct->cell[icell].marked*(curoct->level>=cpu->levelcoarse); //refinment mark
 		  break;
 #ifdef WGRAV
 		case 5:
@@ -501,6 +505,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 
 	      for(icell=0;icell<8;icell++){
 		switch(field){
+#ifdef WGRAV
 		case 0:
 		  pack->data[icell]=curoct->cell[icell].density; // density
 		  break;
@@ -510,11 +515,12 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		case 2:
 		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
-		case 3:
-		  pack->data[icell]=curoct->cell[icell].marked; //refinment mark
-		  break;
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  break;
+#endif
+		case 3:
+		  pack->data[icell]=curoct->cell[icell].marked; //refinment mark
 		  break;
 #ifdef WGRAV
 		case 5:
@@ -578,6 +584,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	  if(found){ // the reception oct has been found
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
+#ifdef WGRAV
 	      case 0:
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
@@ -587,11 +594,12 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	      case 2:
 		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
-	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
-		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
+	      case 3:
+		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 #ifdef WGRAV
 	      case 5:
@@ -653,6 +661,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	  if(found){ // the reception oct has been found
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
+#ifdef WGRAV
 	      case 0:
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
@@ -662,11 +671,12 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	      case 2:
 		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
-	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
-		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
+	      case 3:
+		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 #ifdef WGRAV
 	      case 5:
@@ -700,6 +710,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 
 
  //------------------------------------------------------------------------
+#ifdef PIC
 int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct PART **lastp){
 
   int i,j;
@@ -792,6 +803,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
     
   return nadd; // returning the new number of particles
 }
+#endif
 
 //------------------------------------------------------------------------
 void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
@@ -818,6 +830,7 @@ void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
 
     countpacket[inei]++;
   }  
+
 
   free(countpacket);
 }
@@ -866,6 +879,8 @@ void compute_bndkeys_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
     int keyloc;
     int cpuloc;
     int inei;
+
+
     keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
     cpuloc=cpu->bndoct[i]->cpu;
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
@@ -877,8 +892,54 @@ void compute_bndkeys_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
     countpacket[inei]++;
   }  
 
+
   free(countpacket);
 }
+
+// ======================================================================================
+// ======================================================================================
+
+void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **recvbuffer){
+
+  // we create a counter of values for each neighbor
+  int *countpacket;
+  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+
+  // filling the keys in the reception buffer (which will be processed by the remote cpus)
+  struct RAD_MPI *pack;
+
+  int i;
+  for(i=0;i<cpu->nebnd;i++) {
+    int keyloc;
+    int cpuloc;
+    int inei;
+
+    if(cpu->bndoct[i]->level != level) continue; // we skip the borders which do not belong to current level
+
+    keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
+    cpuloc=cpu->bndoct[i]->cpu;
+    inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
+
+    pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
+    pack->key=keyloc;
+    pack->level=cpu->bndoct[i]->level;
+
+    countpacket[inei]++;
+  }  
+
+  // saving the number of octs per neighbor procs
+  if(cpu->noct_local!=NULL) free(cpu->noct_local);
+  if(cpu->noct_remot!=NULL) free(cpu->noct_remot);
+  cpu->noct_local=(int*)calloc(cpu->nnei,sizeof(int));
+  cpu->noct_remot=(int*)calloc(cpu->nnei,sizeof(int));
+
+  for(i=0;i<cpu->nnei;i++){
+    cpu->noct_local[i]=countpacket[i];
+  }
+
+  free(countpacket);
+}
+
 #endif
 
 
@@ -1330,120 +1391,6 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
       
 }
 
-
-//=====================================================================
-#ifdef WRAD
-void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int level){
-
-  int i,j,igrp;
-  int found=0;
-  int hidx;
-  struct RAD_MPI *pack;
-  struct OCT *curoct;
-  struct OCT *nextoct;
-  int icell;
-  struct Rtype *R;
-  struct Rtype *Re;
-
-  for(j=0;j<cpu->nnei;j++){
-    for(i=0;i<cpu->nbuff;i++){
-      pack=recvbuffer[j]+i;
-      if(pack->level!=0){ // we do something
-
-	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
-	nextoct=cpu->htable[hidx];
-	if(nextoct!=NULL){
-	  do{ // resolving collisions
-	    curoct=nextoct;
-	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
-	  }while((nextoct!=NULL)&&(!found));
-
-	  if(found){ // the reception oct has been found
-	    if(curoct->level!=(level-1)) continue; // we update only coarse neighbours relative to the current level
-	    for(icell=0;icell<8;icell++){
-	      
-	      R=&(curoct->cell[icell].rfieldnew);
-	      Re=&(pack->data[icell]);
-
-	      for(igrp=0;igrp<NGRP;igrp++){
-		// update
-		R->e[igrp] += Re->e[igrp];
-		R->fx[igrp]+= Re->fx[igrp];
-		R->fy[igrp]+= Re->fy[igrp];
-		R->fz[igrp]+= Re->fz[igrp];
-	      }
- 	      
-	      memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype));
-	    }
-	  }
-	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
-	    abort();
-	  }
-	    
-	}else{
-	  printf("error no hash key obtained !!\n");
-	  abort();
-	}
-      }
-    }
-  }
-    
-      
-}
-
-#endif
-//=============================================================================================
-
-/* void scatter_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **recvbuffer){ */
-
-/*   int i,j; */
-/*   int found=0; */
-/*   int hidx; */
-/*   struct FLUX_MPI *pack; */
-/*   struct OCT *curoct; */
-/*   struct OCT *nextoct; */
-/*   int icell; */
-
-/*   for(j=0;j<cpu->nnei;j++){ */
-/*     for(i=0;i<cpu->nbuff;i++){ */
-/*       pack=recvbuffer[j]+i; */
-/*       if(pack->level!=0){ // we do something */
-
-/* 	// first we compute the adress from the hashfunction */
-/* 	hidx=hfun(pack->key,cpu->maxhash); */
-/* 	nextoct=cpu->htable[hidx]; */
-/* 	if(nextoct!=NULL){ */
-/* 	  do{ // resolving collisions */
-/* 	    curoct=nextoct; */
-/* 	    nextoct=curoct->nexthash; */
-/* 	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level)); */
-/* 	  }while((nextoct!=NULL)&&(!found)); */
-
-/* 	  if(found){ // the reception oct has been found */
-/* 	    for(icell=0;icell<8;icell++){ */
-/* 	      memcpy(curoct->cell[icell].flux,&(pack->data[icell*NFLUX]),NFLUX*sizeof(REAL)); */
-/* 	    } */
-/* 	  } */
-/* 	  else{ */
-/* 	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key); */
-/* 	    abort(); */
-/* 	  } */
-	    
-/* 	}else{ */
-/* 	  printf("error no hash key obtained !!\n"); */
-/* 	  abort(); */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-    
-      
-/* } */
-
-
 //=======================================================================================================
 //=======================================================================================================
 
@@ -1521,90 +1468,71 @@ void mpi_exchange_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, stru
 
 }
 
-// =======================================================================
-// =======================================================================
-
-
-//=======================================================================================================
-
-/* void mpi_exchange_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer, struct FLUX_MPI **recvbuffer, int cmp_keys) */
-/* { */
-/*   int i; */
-/*   int icpu; */
-/*   MPI_Status *stat; */
-/*   MPI_Request *req; */
-/*   MPI_Datatype MPI_PACKET=*(cpu->MPI_FLUX); */
-/*   int mpitag=1; */
-  
-/*   double t[10]; */
-/*   double tot; */
-/*   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request)); */
-/*   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status)); */
-
-
-/*   // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1) */
-
-/*   if(cmp_keys){ */
-/*     // ----------- 0  / we clean the mpi buffers */
-/*     clean_mpibuff_flux(cpu,sendbuffer,recvbuffer); */
-
-/*     // ----------- I  / we compute the boundary keys and store them in recvbuffer */
-/*     compute_bndkeys_flux(cpu,recvbuffer); */
-
-/*     // ----------- II / we send the keys to the server */
-
-/*     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys */
-/*       MPI_Isend(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  ); */
-/*     } */
-/*     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys */
-/*       MPI_Irecv(sendbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]); */
-/*     } */
-/*     MPI_Waitall(2*cpu->nnei,req,stat); */
-/*     MPI_Barrier(cpu->comm); */
-/*   } */
-
-/*   // ----------- III/ the server gather the data */
-/*   gather_mpi_flux(cpu, sendbuffer); */
-
-/*   //if(cpu->rank==0) printf("--- X ---\n"); */
-/*   memset(req,0,2*cpu->nnei*sizeof(MPI_Request)); */
-/*   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status)); */
-/*   MPI_Barrier(cpu->comm); */
-
-/*   // ----------- IV / the server send the data back to the client */
-
-
-/*   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys */
-/*     MPI_Isend(sendbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  ); */
-/*   } */
-
-/*   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys */
-/*     MPI_Irecv(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]); */
-/*   } */
-/*   MPI_Waitall(2*cpu->nnei,req,stat); */
-/*   MPI_Barrier(cpu->comm); */
-
-
-
-/*   t[5]=MPI_Wtime(); */
-/*   // ----------- V  / the client scatter the data back in the oct tree */
-/*   scatter_mpi_flux(cpu,recvbuffer); */
-  
-/*   t[6]=MPI_Wtime(); */
-
-/*   // */
-/*   free(req); */
-/*   free(stat); */
-/*   t[7]=MPI_Wtime(); */
-/*   tot=t[7]-t[0]; */
-/*   //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot); */
-
-/* } */
 
 #endif
 
-
+//=====================================================================
 #ifdef WRAD
+void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int level){
+
+  int i,j,igrp;
+  int found=0;
+  int hidx;
+  struct RAD_MPI *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  struct Rtype *R;
+  struct Rtype *Re;
+
+  for(j=0;j<cpu->nnei;j++){
+    for(i=0;i<cpu->nbuff;i++){
+      pack=recvbuffer[j]+i;
+      if(pack->level!=0){ // we do something
+
+	// first we compute the adress from the hashfunction
+	hidx=hfun(pack->key,cpu->maxhash);
+	nextoct=cpu->htable[hidx];
+	if(nextoct!=NULL){
+	  do{ // resolving collisions
+	    curoct=nextoct;
+	    nextoct=curoct->nexthash;
+	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	  }while((nextoct!=NULL)&&(!found));
+
+	  if(found){ // the reception oct has been found
+	    if(curoct->level!=(level-1)) continue; // we update only coarse neighbours relative to the current level
+	    for(icell=0;icell<8;icell++){
+	      
+	      R=&(curoct->cell[icell].rfieldnew);
+	      Re=&(pack->data[icell]);
+
+	      for(igrp=0;igrp<NGRP;igrp++){
+		// update
+		R->e[igrp] += Re->e[igrp];
+		R->fx[igrp]+= Re->fx[igrp];
+		R->fy[igrp]+= Re->fy[igrp];
+		R->fz[igrp]+= Re->fz[igrp];
+	      }
+ 	      
+	      memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype));
+	    }
+	  }
+	  else{
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    abort();
+	  }
+	    
+	}else{
+	  printf("error no hash key obtained !!\n");
+	  abort();
+	}
+      }
+    }
+  }
+    
+      
+}
 
 // ============================================================================================
 // ============================================================================================
@@ -1672,6 +1600,79 @@ void gather_mpi_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
 }
 
 // =======================================================================
+
+void gather_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, int level){
+
+  int i,j;
+  int found=0;
+  int hidx;
+  struct RAD_MPI *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  int *countpacket;
+
+
+  // we create a counter of values for each neighbor
+  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+
+    for(j=0;j<cpu->nnei;j++){
+      for(i=0;i<cpu->nbuff;i++){
+	pack=sendbuffer[j]+i; // we assume that the sendbuffer already contains the keys
+	if(pack->level==level){ // we do something
+	  //t[0]=MPI_Wtime();
+	  countpacket[j]++;
+
+	  // first we compute the adress from the hashfunction
+	  hidx=hfun(pack->key,cpu->maxhash);
+	  nextoct=cpu->htable[hidx];
+	  //t[3]=MPI_Wtime();
+	  if(nextoct!=NULL){
+	    do{ // resolving collisions
+	      curoct=nextoct;
+	      nextoct=curoct->nexthash;
+	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    }while((nextoct!=NULL)&&(!found));
+
+	    //t[1]=MPI_Wtime();
+	    if(found){ // the reception oct has been found
+
+	      // we set the current oct as a border one (for vector based communications)
+	      curoct->border=1;
+
+	      for(icell=0;icell<8;icell++){
+		memcpy(&(pack->data[icell]),&(curoct->cell[icell].rfield),sizeof(struct Rtype));
+	      }
+	    }
+	    else{
+	      printf("error no reception oct found !");
+	      abort();
+	    }
+	    //t[2]=MPI_Wtime();
+
+	    
+	  }else{
+	    printf("error no hash key obtained !!\n");
+	    abort();
+	  }
+	}
+      }
+    }
+    
+    // check consistency
+    for(j=0;j<cpu->nnei;j++){
+      if(countpacket[j]!=cpu->noct_remot[j]){
+	printf("inconsistent number of transmission \n");
+	abort();
+      }
+    }
+
+
+    free(countpacket);
+}
+
+// =======================================================================
+// =======================================================================
 void scatter_mpi_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
 
   int i,j;
@@ -1717,6 +1718,57 @@ void scatter_mpi_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
     
       
 }
+
+
+// =======================================================================
+// =======================================================================
+void scatter_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int level){
+
+  int i,j;
+  int found=0;
+  int hidx;
+  struct RAD_MPI *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  for(j=0;j<cpu->nnei;j++){
+    for(i=0;i<cpu->nbuff;i++){
+      pack=recvbuffer[j]+i;
+      if(pack->level==level){ // we do something
+
+	// first we compute the adress from the hashfunction
+	hidx=hfun(pack->key,cpu->maxhash);
+	nextoct=cpu->htable[hidx];
+	if(nextoct!=NULL){
+	  do{ // resolving collisions
+	    curoct=nextoct;
+	    nextoct=curoct->nexthash;
+	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	  }while((nextoct!=NULL)&&(!found));
+
+	  if(found){ // the reception oct has been found
+	    for(icell=0;icell<8;icell++){
+	      memcpy(&(curoct->cell[icell].rfield),&(pack->data[icell]),sizeof(struct Rtype));
+	    }
+	  }
+	  else{
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    abort();
+	  }
+	    
+	}else{
+	  printf("error no hash key obtained !!\n");
+	  abort();
+	}
+      }
+    }
+  }
+    
+      
+}
+
+
 // =======================================================================
 
 void mpi_exchange_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RAD_MPI **recvbuffer, int cmp_keys)
@@ -1780,6 +1832,93 @@ void mpi_exchange_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct R
   t[5]=MPI_Wtime();
   // ----------- V  / the client scatter the data back in the oct tree
   scatter_mpi_rad(cpu,recvbuffer);
+  MPI_Barrier(cpu->comm);
+  t[6]=MPI_Wtime();
+
+  //
+  free(req);
+  free(stat);
+  t[7]=MPI_Wtime();
+  tot=t[7]-t[0];
+
+}
+
+// =======================================================================================================
+
+void mpi_exchange_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RAD_MPI **recvbuffer, int cmp_keys,int level)
+{
+  int i;
+  int icpu;
+  MPI_Status *stat;
+  MPI_Request *req;
+  MPI_Datatype MPI_PACKET=*(cpu->MPI_RAD);
+  int mpitag=1;
+  
+  double t[10];
+  double tot;
+  req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
+  stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
+
+
+  // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1)
+  if(cmp_keys){
+    // ----------- 0  / we clean the mpi buffers
+    clean_mpibuff_rad(cpu,sendbuffer,recvbuffer);
+
+    // ----------- I  / we compute the boundary keys and store them in recvbuffer
+    compute_bndkeys_rad_level(cpu,level,recvbuffer);
+
+    // ----------- II / we send the number of octs required from each neighbors
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(cpu->noct_local+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(cpu->noct_remot+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(cpu->comm);
+
+    // ----------- II / we send the keys to the server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(cpu->comm);
+
+
+  }
+
+  // ----------- III/ the server gather the data
+  gather_mpi_rad_level(cpu, sendbuffer,level);
+
+  //if(cpu->rank==0) printf("--- X ---\n");
+  memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
+  memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
+  MPI_Barrier(cpu->comm);
+
+  // ----------- IV / the server send the data back to the client
+
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Isend(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
+  }
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Irecv(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+  }
+  MPI_Waitall(2*cpu->nnei,req,stat);
+  MPI_Barrier(cpu->comm);
+
+
+
+  t[5]=MPI_Wtime();
+  // ----------- V  / the client scatter the data back in the oct tree
+  scatter_mpi_rad_level(cpu,recvbuffer,level);
   MPI_Barrier(cpu->comm);
   t[6]=MPI_Wtime();
 

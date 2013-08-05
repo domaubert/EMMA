@@ -230,9 +230,6 @@ int main(int argc, char *argv[])
 			  case 4:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].marked;
 			    break;
-			  case 5:
-			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].f[0];
-			    break;
 #ifdef WHYDRO2
 			  case 101:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].field.d;
