@@ -480,19 +480,28 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef WHYDRO2
-
+    double th[10];
+    MPI_Barrier(cpu->comm);
+    th[0]=MPI_Wtime();
 #ifdef WMPI
-    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
+    mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
 #endif
 
+    MPI_Barrier(cpu->comm);
+    th[1]=MPI_Wtime();
     //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
-    
+
+    MPI_Barrier(cpu->comm);
+    th[2]=MPI_Wtime();
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
+
+    MPI_Barrier(cpu->comm);
+    th[3]=MPI_Wtime();
 
 #ifdef WMPI
     if(level>param->lcoarse){
@@ -500,6 +509,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
     MPI_Barrier(cpu->comm);
 #endif
+
+    MPI_Barrier(cpu->comm);
+    th[4]=MPI_Wtime();
+
+    if(cpu->rank==0) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
 #endif
 
@@ -514,7 +528,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcomp[1]=MPI_Wtime();
-    mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,(nsteps==0),level);
+    mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
     //mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,(nsteps==0),level);
     MPI_Barrier(cpu->comm);
     tcomp[2]=MPI_Wtime();
@@ -535,7 +549,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     tcomp[5]=MPI_Wtime();
 
-    if(cpu->rank==0) printf("Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
+    if(cpu->rank==0) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
+
+
+#ifdef WRADHYD
+    if(cpu->rank==0) printf("TRADHYD Total=%e\n",tcomp[5]-th[0]);
+#endif
 
 #endif
 

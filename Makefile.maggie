@@ -1,6 +1,6 @@
 ########################################## 
 ARCH = CPU
-C_LIBS = -lm -lstdc++  -g
+C_LIBS = -lm -lstdc++ #  -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
 DEFINES  =  
@@ -9,10 +9,10 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 #DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 #DEFINES  +=  -DWGRAV 
 DEFINES  +=  -DWRAD
-#DEFINES  +=  -DWRADHYD
+DEFINES  +=  -DWRADHYD
 #DEFINES  +=  -DTESTCOSMO
 
 #------------ MPI OPTIONS ---------------------
@@ -37,9 +37,9 @@ DEFINES  +=  -DWRADTEST
 DEFINES  += -DONFLYRED
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
-#DEFINES  +=  -DRIEMANN_HLLC
-#DEFINES  +=  -DPRIMITIVE
-#DEFINES  +=  -DDUAL_E
+DEFINES  +=  -DRIEMANN_HLLC
+DEFINES  +=  -DPRIMITIVE
+DEFINES  +=  -DDUAL_E
 
 
 # ----------- RADIATION OPTIONS ------------
