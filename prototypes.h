@@ -160,8 +160,6 @@ struct CPUINFO{
   REAL load;
 
   struct OCT **bndoct; // the list of external boundary octs
-  int *noct_local; // has size nnei => noct_local[inei] stores the number of remote octs from inei required by the local proc;
-  int *noct_remot; // has size nnei => noct_remot[inei] stores the number of local octs required by the proc inei;
 
   int nebnd; // the number of external boundary octs
   int nnei; // the number of neighbors procs
@@ -177,8 +175,11 @@ struct CPUINFO{
 
   int nbuff; // the max number of buffer cells
 
-  int *nrecv;
-  int *nsend;
+  int *nrecv; // the number of octs to be received by the local cpu, e.g cpu->nrecv[5] = nb of octs to be received from neigh # 5
+  int *nsend; // the number of octs to be sent     by the local cpu, e.g cpu->nrecv[5] = nb of octs to be sent to       neigh # 5
+
+  int *nrecv_coarse; // the number of l-1 octs to be received by the local cpu, e.g cpu->nrecv[5] = nb of l-1 octs to be received from neigh # 5
+  int *nsend_coarse; // the number of l-1 octs to be sent     by the local cpu, e.g cpu->nrecv[5] = nb of l-1 octs to be sent to       neigh # 5
 
   struct PART *lastpart;
 

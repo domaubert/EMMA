@@ -593,11 +593,11 @@ int main(int argc, char *argv[])
 
   cpu.nsend=NULL;
   cpu.nrecv=NULL;
+  cpu.nsend_coarse=NULL;
+  cpu.nrecv_coarse=NULL;
 
   // We segment the oct distributions at levelcoarse 
     cpu.bndoct=NULL;
-    cpu.noct_remot=NULL;
-    cpu.noct_local=NULL;
     cpu.mpinei=NULL;
     cpu.dict=NULL;
 

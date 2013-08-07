@@ -1249,6 +1249,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	  //printf("\n");
     }
 
+  //printf("stat0=%d stat1=%d stat2=%d on rank %d\n",stati[0],stati[1],stati[2],cpu->rank);
+
 #ifdef WMPI
   int stat0,stat1,stat2;
   REAL MMAX;
@@ -1263,7 +1265,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   mmax=MMAX;
 #endif
 
-  if(cpu->rank==0) printf(" RANK 0 ONLY STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
+  if(cpu->rank==0) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
 
 }
 

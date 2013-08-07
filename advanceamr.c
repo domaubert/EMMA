@@ -219,12 +219,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   L_reset_is_part(level,firstoct);
 #endif
 
+  
+
+  // ========================== subcycling starts here ==================
 
   do{
+
     if(cpu->rank==0){
       printf("----\n");
       printf("subscyle #%d subt=%e\n",is,dt);
     }
+
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
@@ -264,7 +269,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1); // propagate hydro for refinement
 #endif
 #ifdef WRAD
-      mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1); // propagate rad for refinement
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level); // propagate rad for refinement
 #endif
 #endif
       // refining (and destroying) octs
@@ -548,6 +553,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     MPI_Barrier(cpu->comm);
     tcomp[5]=MPI_Wtime();
+    //mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
 
     if(cpu->rank==0) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
@@ -562,6 +568,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //}
   // ================= V Computing the new refinement map
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+
+#ifdef WHYDRO2
+      mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level); // propagate hydro for refinement
+#endif
+#ifdef WRAD
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level); // propagate rad for refinement
+#endif
       
       // cleaning the marks
       L_clean_marks(level,firstoct);

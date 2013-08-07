@@ -146,9 +146,9 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
 
   // some displays
-  printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank);
-  for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]);
-  printf("\n");
+  /* printf("Found %d neighbors and %d bnd octs  on rank %d :",cpu->nnei,cpu->nebnd,cpu->rank); */
+  /* for(i=0;i<cpu->nnei;i++) printf("%d ",cpu->mpinei[i]); */
+  /* printf("\n"); */
 
 #ifdef WMPI
   int nvois_loc=cpu->nebnd;
@@ -256,21 +256,21 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 // ====================================================================================
 
 #ifdef WRAD
-void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
+void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, int *countpacket){
   
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
     USed for coarse cell update of hydro at boundaries
    */
-  int *countpacket;
+
   int icpu;
   struct RAD_MPI *pack;
   int i,ii;
 
-  // we create a counter of values for each neighbor
-  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+  memset(countpacket,0,cpu->nnei*sizeof(int));
 
   for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
+    if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
     icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
     pack=sendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
     
@@ -281,9 +281,6 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer){
     // counting the number of packets for icpu
     countpacket[icpu]++;
   }
-  
-  //for(i=0;i<cpu->nnei;i++) printf("rank=%d cpu %d nbnd=%d\n",cpu->rank,cpu->mpinei[i],countpacket[i]);
-  free(countpacket);
 }
 #endif
 
@@ -867,11 +864,13 @@ void compute_bndkeys_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
 }
 
 
-void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MPI **recvbuffer){
+void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MPI **recvbuffer, int *countpacket){
 
-  // we create a counter of values for each neighbor
-  int *countpacket;
-  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+  /* // we create a counter of values for each neighbor */
+  /* int *countpacket; */
+  /* countpacket=(int*)calloc(cpu->nnei,sizeof(int)); */
+
+  memset(countpacket,0,cpu->nnei*sizeof(int));
 
   // filling the keys in the reception buffer (which will be processed by the remote cpus)
   struct HYDRO_MPI *pack;
@@ -895,18 +894,6 @@ void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MP
     countpacket[inei]++;
   }  
 
-  
-  // saving the number of octs per neighbor procs
-  if(cpu->noct_local!=NULL) free(cpu->noct_local);
-  if(cpu->noct_remot!=NULL) free(cpu->noct_remot);
-  cpu->noct_local=(int*)calloc(cpu->nnei,sizeof(int));
-  cpu->noct_remot=(int*)calloc(cpu->nnei,sizeof(int));
-
-  for(i=0;i<cpu->nnei;i++){
-    cpu->noct_local[i]=countpacket[i];
-  }
-  
-  free(countpacket);
 }
 
 
@@ -945,11 +932,13 @@ void compute_bndkeys_rad(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer){
 // ======================================================================================
 // ======================================================================================
 
-void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **recvbuffer){
+void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **recvbuffer, int *countpacket){
 
   // we create a counter of values for each neighbor
-  int *countpacket;
-  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+  /* int *countpacket; */
+  /* countpacket=(int*)calloc(cpu->nnei,sizeof(int)); */
+
+  memset(countpacket,0,cpu->nnei*sizeof(int));
 
   // filling the keys in the reception buffer (which will be processed by the remote cpus)
   struct RAD_MPI *pack;
@@ -973,17 +962,6 @@ void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **
     countpacket[inei]++;
   }  
 
-  // saving the number of octs per neighbor procs
-  if(cpu->noct_local!=NULL) free(cpu->noct_local);
-  if(cpu->noct_remot!=NULL) free(cpu->noct_remot);
-  cpu->noct_local=(int*)calloc(cpu->nnei,sizeof(int));
-  cpu->noct_remot=(int*)calloc(cpu->nnei,sizeof(int));
-
-  for(i=0;i<cpu->nnei;i++){
-    cpu->noct_local[i]=countpacket[i];
-  }
-
-  free(countpacket);
 }
 
 #endif
@@ -1026,7 +1004,6 @@ void compute_bndkeys_level(struct CPUINFO *cpu, struct PACKET **recvbuffer, int 
   /* countpacket=(int*)calloc(cpu->nnei,sizeof(int)); */
 
   memset(countpacket,0,cpu->nnei*sizeof(int));
-
 
   // filling the keys in the reception buffer (which will be processed by the remote cpus)
   struct PACKET *pack;
@@ -1320,73 +1297,6 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 }
 
 
-// ================================================================================================================================
-/* void gather_mpi_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer){ */
-
-/*   int i,j; */
-/*   int found=0; */
-/*   int hidx; */
-/*   struct FLUX_MPI *pack; */
-/*   struct OCT *curoct; */
-/*   struct OCT *nextoct; */
-/*   int icell; */
-/*   int *countpacket; */
-
-/* /\*   double t[10]; *\/ */
-/* /\*   double th=0,tg=0,tt=0,tc=0; *\/ */
-/* /\*   int nt=0; *\/ */
-
-/*   // we create a counter of values for each neighbor */
-/*   countpacket=(int*)calloc(cpu->nnei,sizeof(int)); */
-
-/*     for(j=0;j<cpu->nnei;j++){ */
-/*       for(i=0;i<cpu->nbuff;i++){ */
-/* 	pack=sendbuffer[j]+i; // we assume that the sendbuffer already contains the keys */
-/* 	if(pack->level!=0){ // we do something */
-/* 	  //t[0]=MPI_Wtime(); */
-/* 	  countpacket[j]++; */
-
-/* 	  // first we compute the adress from the hashfunction */
-/* 	  hidx=hfun(pack->key,cpu->maxhash); */
-/* 	  nextoct=cpu->htable[hidx]; */
-/* 	  //t[3]=MPI_Wtime(); */
-/* 	  if(nextoct!=NULL){ */
-/* 	    do{ // resolving collisions */
-/* 	      curoct=nextoct; */
-/* 	      nextoct=curoct->nexthash; */
-/* 	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level)); */
-/* 	    }while((nextoct!=NULL)&&(!found)); */
-
-/* 	    //t[1]=MPI_Wtime(); */
-/* 	    if(found){ // the reception oct has been found */
-
-/* 	      // we set the current oct as a border one (for vector based communications) */
-/* 	      curoct->border=1; */
-
-/* 	      for(icell=0;icell<8;icell++){ */
-/* 		memcpy(&(pack->data[icell*NFLUX]),curoct->cell[icell].flux,sizeof(REAL)*NFLUX); */
-/* 	      } */
-/* 	    } */
-/* 	    else{ */
-/* 	      printf("error no reception oct found !"); */
-/* 	      abort(); */
-/* 	    } */
-/* 	    //t[2]=MPI_Wtime(); */
-
-	    
-/* 	  }else{ */
-/* 	    printf("error no hash key obtained !!\n"); */
-/* 	    abort(); */
-/* 	  } */
-/* 	} */
-/*       } */
-/*     } */
-    
-
-/*     free(countpacket); */
-/* } */
-
-
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 void scatter_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
@@ -1658,16 +1568,32 @@ void mpi_exchange_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer
     // ----------- 0  / we clean the mpi buffers
     clean_mpibuff_hydro(cpu,sendbuffer,recvbuffer);
 
+    // ----------- 0.5  / we allocate the number of octs to transmit
+    if(cpu->nsend!=NULL){
+      free(cpu->nsend);
+      free(cpu->nrecv);
+
+      free(cpu->nsend_coarse);
+      free(cpu->nrecv_coarse);
+    }
+
+    cpu->nsend=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+
+    cpu->nsend_coarse=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv_coarse=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+
+
     // ----------- I  / we compute the boundary keys and store them in recvbuffer
-    compute_bndkeys_hydro_level(cpu,level,recvbuffer);
+    compute_bndkeys_hydro_level(cpu,level,recvbuffer,cpu->nrecv);
 
     // ----------- II / we send the number of octs required from each neighbors
 
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Isend(cpu->noct_local+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+      MPI_Isend(cpu->nrecv+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
     }
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Irecv(cpu->noct_remot+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+      MPI_Irecv(cpu->nsend+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
     }
     MPI_Waitall(2*cpu->nnei,req,stat);
     MPI_Barrier(cpu->comm);
@@ -1675,10 +1601,10 @@ void mpi_exchange_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer
    // ----------- II / we send the keys to the server
 
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Isend(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+      MPI_Isend(recvbuffer[i],cpu->nrecv[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
     }
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Irecv(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+      MPI_Irecv(sendbuffer[i],cpu->nsend[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
     }
     MPI_Waitall(2*cpu->nnei,req,stat);
     MPI_Barrier(cpu->comm);
@@ -1696,11 +1622,11 @@ void mpi_exchange_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer
   // ----------- IV / the server send the data back to the client
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Isend(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
+    MPI_Isend(sendbuffer[i],cpu->nsend[i],MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
   }
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Irecv(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    MPI_Irecv(recvbuffer[i],cpu->nrecv[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
   }
 
   MPI_Waitall(2*cpu->nnei,req,stat);
@@ -1913,15 +1839,6 @@ void gather_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, int 
 	}
       }
     }
-    
-    // check consistency
-    for(j=0;j<cpu->nnei;j++){
-      if(countpacket[j]!=cpu->noct_remot[j]){
-	printf("inconsistent number of transmission \n");
-	abort();
-      }
-    }
-
 
     free(countpacket);
 }
@@ -2120,16 +2037,31 @@ void mpi_exchange_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, st
     // ----------- 0  / we clean the mpi buffers
     clean_mpibuff_rad(cpu,sendbuffer,recvbuffer);
 
+
+    // ----------- 0.5  / we allocate the number of octs to transmit
+    if(cpu->nsend!=NULL){
+      free(cpu->nsend);
+      free(cpu->nrecv);
+      free(cpu->nsend_coarse);
+      free(cpu->nrecv_coarse);
+    }
+
+    cpu->nsend=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+    cpu->nsend_coarse=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv_coarse=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+
     // ----------- I  / we compute the boundary keys and store them in recvbuffer
-    compute_bndkeys_rad_level(cpu,level,recvbuffer);
+    compute_bndkeys_rad_level(cpu,level,recvbuffer,cpu->nrecv);
 
     // ----------- II / we send the number of octs required from each neighbors
 
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Isend(cpu->noct_local+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+      MPI_Isend(cpu->nrecv+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
     }
+
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Irecv(cpu->noct_remot+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+      MPI_Irecv(cpu->nsend+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
     }
     MPI_Waitall(2*cpu->nnei,req,stat);
     MPI_Barrier(cpu->comm);
@@ -2137,10 +2069,10 @@ void mpi_exchange_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, st
     // ----------- II / we send the keys to the server
 
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Isend(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+      MPI_Isend(recvbuffer[i],cpu->nrecv[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
     }
     for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-      MPI_Irecv(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+      MPI_Irecv(sendbuffer[i],cpu->nsend[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
     }
     MPI_Waitall(2*cpu->nnei,req,stat);
     MPI_Barrier(cpu->comm);
@@ -2160,11 +2092,11 @@ void mpi_exchange_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, st
 
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Isend(sendbuffer[i],cpu->noct_remot[i],MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
+    MPI_Isend(sendbuffer[i],cpu->nsend[i],MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
   }
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Irecv(recvbuffer[i],cpu->noct_local[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    MPI_Irecv(recvbuffer[i],cpu->nrecv[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
   }
   MPI_Waitall(2*cpu->nnei,req,stat);
   MPI_Barrier(cpu->comm);
@@ -2401,15 +2333,29 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
 
   // ---------  first we collect the data from EXTERNAL boundaries (keys are computed by remote)
   MPI_Barrier(cpu->comm);
-  gather_ex_rad(cpu,sendbuffer);
+  gather_ex_rad(cpu,sendbuffer,level,cpu->nsend_coarse);
   MPI_Barrier(cpu->comm);
 
+
+  // -----------
+
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Isend(sendbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+    MPI_Isend(cpu->nsend_coarse+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+  }
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Irecv(cpu->nrecv_coarse+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+  }
+  MPI_Waitall(2*cpu->nnei,req,stat);
+  MPI_Barrier(cpu->comm);
+  
+  // ----------------------- second we send the data
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Isend(sendbuffer[i],cpu->nsend_coarse[i],MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
   }
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
-    MPI_Irecv(recvbuffer[i],cpu->nbuff,MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    MPI_Irecv(recvbuffer[i],cpu->nrecv_coarse[i],MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
   }
   MPI_Waitall(2*cpu->nnei,req,stat);
   MPI_Barrier(cpu->comm);
