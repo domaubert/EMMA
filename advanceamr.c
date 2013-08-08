@@ -266,26 +266,26 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
 #ifdef WHYDRO2
-      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1); // propagate hydro for refinement
+      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0); // propagate hydro for refinement
 #endif
 #ifdef WRAD
-      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level); // propagate rad for refinement
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement
 #endif
 #endif
       // refining (and destroying) octs
       curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
       cpu->freeoct=curoct;
     }
-  }
-  
-  // ==================================== Check the number of particles and octs
-  mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
-
+    // ==================================== Check the number of particles and octs
+    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+    
 #ifdef WMPI
-  //reset the setup in case of refinement
+    //reset the setup in case of refinement
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
     MPI_Barrier(cpu->comm);
 #endif
+  }
+  
  
 
 
@@ -334,6 +334,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     // ================= II We compute the timestep of the current level
+
     dtnew=param->dt;//*(cpu->nsteps>2);
     
 #ifdef TESTCOSMO
@@ -380,12 +381,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     REAL dtf=floor(dtnew*1e8)/1e8;
     dtnew=dtf;
-    //printf("\n");
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
-    //printf("inital dtnew=%e\n",dtnew);
     if(dtnew==0.){
       printf("ERROR rank %d n %d t %e\n",cpu->rank,cpu->noct[level-1],dtnew);
       abort();
@@ -403,17 +402,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     REAL tdum=0.;
     REAL tdum2=0.;
-    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-1,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
-    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
     MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    //printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
-
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
 
+
    // ================= III Recursive call to finer level
+
+  double tt2,tt1;
+    MPI_Barrier(cpu->comm);
+    tt1=MPI_Wtime();
+
     int nlevel=cpu->noct[level]; // number at next level
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
@@ -432,16 +433,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
-    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-1,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
-    /* MPI_Allreduce(MPI_IN_PLACE,adt+level-2,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
     MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    //    printf("adt=%le on rank %d dif=%le tdum=%le\n",adt[level-1],cpu->rank,tdum-adt[level-1],tdum);
-
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
 
+    MPI_Barrier(cpu->comm);
+    tt2=MPI_Wtime();
+    
+    if(cpu->rank==0) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
     mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
 
@@ -559,7 +560,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef WRADHYD
-    if(cpu->rank==0) printf("TRADHYD Total=%e\n",tcomp[5]-th[0]);
+    if(cpu->rank==0) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
 #endif
 
 #endif
@@ -567,19 +568,23 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     //}
   // ================= V Computing the new refinement map
-    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+    
 
+    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+      if((ndt[level-1]%2==1)||(level==param->lcoarse)){
+      
 #ifdef WHYDRO2
-      mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level); // propagate hydro for refinement
+      mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level); // propagate hydro for refinement
 #endif
 #ifdef WRAD
-      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level); // propagate rad for refinement
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement
 #endif
       
       // cleaning the marks
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
       L_mark_cells(level,param,firstoct,2,param->amrthresh,cpu,sendbuffer,recvbuffer);
+      }
     }
 
 

@@ -1848,8 +1848,14 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
+      double tg1,tg2;
+      MPI_Barrier(cpu.comm);
+      tg1=MPI_Wtime();
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps,tsim);
-      
+      MPI_Barrier(cpu.comm);
+      tg2=MPI_Wtime();
+      if(cpu.rank==0) printf("GLOBAL TIME = %e\n",tg2-tg1);
+
 
       // ==================================== dump
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){

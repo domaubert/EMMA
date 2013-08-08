@@ -7,8 +7,8 @@ output_frequency 10
 max_nuber_of_steps 100
 time_step_max  1.0
 ##==AMRGrid==================
-level_coarse 5
-level_max 6
+level_coarse 7
+level_max 9
 amr_thresh 5e-1
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 100
