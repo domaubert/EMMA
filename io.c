@@ -307,7 +307,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   
   double vfact;
   vfact=fomega(astart,om,ov)*h0*dladt(astart,om,ov)/astart;
-  printf("vfact=%f\n",vfact);
+  if(cpu->rank==0) printf("vfact=%f\n",vfact);
   // reading the grafic planes
 
   float *velx;
@@ -502,13 +502,14 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   // setting baryon density parameter
   ob=OMEGAB;
   
-  printf("============================================\n");
-  printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
-  printf("om=%f ov=%f ob=%f h0=%f\n",om,ov,ob,h0);
-  printf("dx=%f np1*dx=%f\n",dx,np1*dx);
-  printf("astart=%f zstart=%f\n",astart,1./astart-1.);
-  printf("============================================\n");
-
+  if(cpu->rank==0){
+    printf("============================================\n");
+    printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
+    printf("om=%f ov=%f ob=%f h0=%f\n",om,ov,ob,h0);
+    printf("dx=%f np1*dx=%f\n",dx,np1*dx);
+    printf("astart=%f zstart=%f\n",astart,1./astart-1.);
+    printf("============================================\n");
+  }
 
   if(np1!=(int)pow(2,cpu->levelcoarse)){
     printf("ERROR !ABORT! Grafic file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,cpu->levelcoarse));
@@ -661,9 +662,6 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  //	  printf("euh pas trouve! hidx=%d %p",hidx,cpu->htable[hidx]);
 	  //	  abort();
 	}
-
-
-
       }
     }
   }

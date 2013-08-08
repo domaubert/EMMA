@@ -8,12 +8,12 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-#DEFINES  +=  -DPIC
+DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
-#DEFINES  +=  -DWGRAV 
+DEFINES  +=  -DWGRAV 
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
-#DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DTESTCOSMO
 
 #------------ MPI OPTIONS ---------------------
 
@@ -22,10 +22,10 @@ DEFINES  +=  -DWMPI
 
 #------------ ICs OPTIONS ---------------------
 
-#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST 
+#DEFINES  +=  -DWRADTEST 
 #DEFINES  +=  -DTESTCLUMP
 #------------ PIC OPTIONS ----------------------
 

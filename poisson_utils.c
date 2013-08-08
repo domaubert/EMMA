@@ -1396,7 +1396,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 #ifdef WMPI
     //printf("iter=%d\n",iter);
-    if((iter<=param->niter)||(iter%10==0)){
+
+    if((iter<=param->niter)||(iter%1==0)){
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
       if(iter==0){
 	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);

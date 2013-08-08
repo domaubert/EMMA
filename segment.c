@@ -13,6 +13,8 @@
 #endif
 
 #include "communication.h"
+#define LCO 0
+
 
 int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelcoarse)
 {
@@ -28,6 +30,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
   char first=1;
   int max,min;
   unsigned long keyloc;
+
 
   // First we compute the current cell position (lower left corner)
   // Note : this is equivalenet to the position of the next level oct
@@ -190,23 +193,29 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
   unsigned long keyloc;
   int cpuloc;
 
-  xc=curoct->x;
-  yc=curoct->y;
-  zc=curoct->z;
+  if(curoct->level<=LCO){
+    curoct->cpu=0;
+  }
+  else{
+
+    xc=curoct->x;
+    yc=curoct->y;
+    zc=curoct->z;
 	
-  // we convert it in dxcoarse octs unit
+    // we convert it in dxcoarse octs unit
   
-  ix=(int)(xc/pow(0.5,levelcoarse-1));
-  iy=(int)(yc/pow(0.5,levelcoarse-1));
-  iz=(int)(zc/pow(0.5,levelcoarse-1));
+    ix=(int)(xc/pow(0.5,levelcoarse-1));
+    iy=(int)(yc/pow(0.5,levelcoarse-1));
+    iz=(int)(zc/pow(0.5,levelcoarse-1));
 	
-  // we compute the keys of the lowest corners 
-  c[0]=ix;
-  c[1]=iy;
-  c[2]=iz;
-  keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
-  cpuloc=keyloc/cpu->nkeys;
-  curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
+    // we compute the keys of the lowest corners 
+    c[0]=ix;
+    c[1]=iy;
+    c[2]=iz;
+    keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
+    cpuloc=keyloc/cpu->nkeys;
+    curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
+  }
 }
 
 //------------------------------------------------------------------------
