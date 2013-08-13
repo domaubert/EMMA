@@ -1192,7 +1192,7 @@ int main(int argc, char *argv[])
   int ncellhydro;
   ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
 
-  printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
+  if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
   amax=1.0;
 #else
   //===================================================================================================================================

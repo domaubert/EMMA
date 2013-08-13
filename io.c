@@ -237,62 +237,80 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   struct PART *lastpart;
   int ip;
 
-  fx=fopen("utils/grafic_src/ic_velcx","rb");
-  fy=fopen("utils/grafic_src/ic_velcy","rb");
-  fz=fopen("utils/grafic_src/ic_velcz","rb");
-  
 
-  // reading the headers
+  if(cpu->rank==0){
+    fx=fopen("utils/grafic_src/ic_velcx","rb");
+    fy=fopen("utils/grafic_src/ic_velcy","rb");
+    fz=fopen("utils/grafic_src/ic_velcz","rb");
 
-  fread(&dummy,1,sizeof(dummy),fx);
-  fread(&np1,1,4,fx);
-  fread(&np2,1,4,fx);
-  fread(&np3,1,4,fx);
-  fread(&dx,1,4,fx);
-  fread(&x1o,1,4,fx);
-  fread(&x2o,1,4,fx);
-  fread(&x3o,1,4,fx);
-  fread(&astart,1,4,fx);
-  fread(&om,1,4,fx);
-  fread(&ov,1,4,fx);
-  fread(&h0,1,4,fx);
-  fread(&dummy,1,sizeof(dummy),fx);
+    // reading the headers
 
-  fread(&dummy,1,sizeof(dummy),fy);
-  fread(&np1,1,4,fy);
-  fread(&np2,1,4,fy);
-  fread(&np3,1,4,fy);
-  fread(&dx,1,4,fy);
-  fread(&x1o,1,4,fy);
-  fread(&x2o,1,4,fy);
-  fread(&x3o,1,4,fy);
-  fread(&astart,1,4,fy);
-  fread(&om,1,4,fy);
-  fread(&ov,1,4,fy);
-  fread(&h0,1,4,fy);
-  fread(&dummy,1,sizeof(dummy),fy);
+    fread(&dummy,1,sizeof(dummy),fx);
+    fread(&np1,1,4,fx);
+    fread(&np2,1,4,fx);
+    fread(&np3,1,4,fx);
+    fread(&dx,1,4,fx);
+    fread(&x1o,1,4,fx);
+    fread(&x2o,1,4,fx);
+    fread(&x3o,1,4,fx);
+    fread(&astart,1,4,fx);
+    fread(&om,1,4,fx);
+    fread(&ov,1,4,fx);
+    fread(&h0,1,4,fx);
+    fread(&dummy,1,sizeof(dummy),fx);
 
-  fread(&dummy,1,sizeof(dummy),fz);
-  fread(&np1,1,4,fz);
-  fread(&np2,1,4,fz);
-  fread(&np3,1,4,fz);
-  fread(&dx,1,4,fz);
-  fread(&x1o,1,4,fz);
-  fread(&x2o,1,4,fz);
-  fread(&x3o,1,4,fz);
-  fread(&astart,1,4,fz);
-  fread(&om,1,4,fz);
-  fread(&ov,1,4,fz);
-  fread(&h0,1,4,fz);
-  fread(&dummy,1,sizeof(dummy),fz);
+    fread(&dummy,1,sizeof(dummy),fy);
+    fread(&np1,1,4,fy);
+    fread(&np2,1,4,fy);
+    fread(&np3,1,4,fy);
+    fread(&dx,1,4,fy);
+    fread(&x1o,1,4,fy);
+    fread(&x2o,1,4,fy);
+    fread(&x3o,1,4,fy);
+    fread(&astart,1,4,fy);
+    fread(&om,1,4,fy);
+    fread(&ov,1,4,fy);
+    fread(&h0,1,4,fy);
+    fread(&dummy,1,sizeof(dummy),fy);
 
-  printf("============================================\n");
-  printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
-  printf("om=%f ov=%f h0=%f\n",om,ov,h0);
-  printf("dx=%f np1*dx=%f\n",dx,np1*dx);
-  printf("astart=%f zstart=%f\n",astart,1./astart-1.);
-  printf("============================================\n");
+    fread(&dummy,1,sizeof(dummy),fz);
+    fread(&np1,1,4,fz);
+    fread(&np2,1,4,fz);
+    fread(&np3,1,4,fz);
+    fread(&dx,1,4,fz);
+    fread(&x1o,1,4,fz);
+    fread(&x2o,1,4,fz);
+    fread(&x3o,1,4,fz);
+    fread(&astart,1,4,fz);
+    fread(&om,1,4,fz);
+    fread(&ov,1,4,fz);
+    fread(&h0,1,4,fz);
+    fread(&dummy,1,sizeof(dummy),fz);
+  }
 
+#ifdef WMPI
+  // Massive broadcast of grafic header
+  MPI_Bcast(&np1,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&np2,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&np3,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&dx,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x1o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x2o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&astart,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&om,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&ov,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&h0,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Barrier(cpu->comm);
+#endif
+
+  if(cpu->rank==0){
+    printf("============================================\n");
+    printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
+    printf("om=%f ov=%f h0=%f\n",om,ov,h0);
+    printf("dx=%f np1*dx=%f\n",dx,np1*dx);
+    printf("astart=%f zstart=%f\n",astart,1./astart-1.);
+    printf("============================================\n");
+  }
 
   if((np1*np2*np3)/(cpu->nproc)*1.1>param->npartmax){
     printf("Error : Number of particles greater than npartmax Np(grafic, est. )=%d Npartmax=%d!\n",(np1*np2*np3)/(cpu->nproc),param->npartmax);
@@ -343,18 +361,28 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   ip=0;
   for(i3=1;i3<=np3;i3++){
 
-    fread(&dummy,1,sizeof(dummy),fx);
-    fread(velx,np1*np2,sizeof(float),fx);
-    fread(&dummy,1,sizeof(dummy),fx);
+    if(cpu->rank==0){
+      fread(&dummy,1,sizeof(dummy),fx);
+      fread(velx,np1*np2,sizeof(float),fx);
+      fread(&dummy,1,sizeof(dummy),fx);
+      
+      fread(&dummy,1,sizeof(dummy),fy);
+      fread(vely,np1*np2,sizeof(float),fy);
+      fread(&dummy,1,sizeof(dummy),fy);
+      
+      fread(&dummy,1,sizeof(dummy),fz);
+      fread(velz,np1*np2,sizeof(float),fz);
+      fread(&dummy,1,sizeof(dummy),fz);
+    }
 
-    fread(&dummy,1,sizeof(dummy),fy);
-    fread(vely,np1*np2,sizeof(float),fy);
-    fread(&dummy,1,sizeof(dummy),fy);
 
-    fread(&dummy,1,sizeof(dummy),fz);
-    fread(velz,np1*np2,sizeof(float),fz);
-    fread(&dummy,1,sizeof(dummy),fz);
-
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    MPI_Bcast(velx,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(vely,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(velz,np1*np2,MPI_FLOAT,0,cpu->comm);
+#endif
+    
     z0=(i3-0.5)*dx;
     for(i2=1;i2<=np2;i2++){
       y0=(i2-0.5)*dx;
@@ -399,9 +427,12 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   free(velx);
   free(vely);
   free(velz);
-  fclose(fx);
-  fclose(fy);
-  fclose(fz);
+
+  if(cpu->rank==0){
+    fclose(fx);
+    fclose(fy);
+    fclose(fz);
+  }
 
   *munit=mass;
   *ainit=astart;
@@ -411,8 +442,13 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   //param->cosmo->Hubble=h0;
   *npart=ip;
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
 
-  printf("Grafic Particle Read ok\n");
+  if(cpu->rank==0){
+    printf("Grafic Particle Read ok\n");
+  }
   return lastpart;
 }
 #endif
@@ -435,73 +471,91 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   int ip;
   struct Wtype W;
 
-  fdx=fopen("utils/grafic_src/ic_deltab","rb");
-  fx=fopen("utils/grafic_src/ic_velcx","rb");
-  fy=fopen("utils/grafic_src/ic_velcy","rb");
-  fz=fopen("utils/grafic_src/ic_velcz","rb");
+  // Note only the rank 0 reads the file.
+ 
+  if(cpu->rank==0){
+    fdx=fopen("utils/grafic_src/ic_deltab","rb");
+    fx=fopen("utils/grafic_src/ic_velcx","rb");
+    fy=fopen("utils/grafic_src/ic_velcy","rb");
+    fz=fopen("utils/grafic_src/ic_velcz","rb");
   
-  
-  // reading the headers
+    // reading the headers
 
-  fread(&dummy,1,sizeof(dummy),fdx);
-  fread(&np1,1,4,fdx);
-  fread(&np2,1,4,fdx);
-  fread(&np3,1,4,fdx);
-  fread(&dx,1,4,fdx);
-  fread(&x1o,1,4,fdx);
-  fread(&x2o,1,4,fdx);
-  fread(&x3o,1,4,fdx);
-  fread(&astart,1,4,fdx);
-  fread(&om,1,4,fdx);
-  fread(&ov,1,4,fdx);
-  fread(&h0,1,4,fdx);
-  fread(&dummy,1,sizeof(dummy),fdx);
+    fread(&dummy,1,sizeof(dummy),fdx);
+    fread(&np1,1,4,fdx);
+    fread(&np2,1,4,fdx);
+    fread(&np3,1,4,fdx);
+    fread(&dx,1,4,fdx);
+    fread(&x1o,1,4,fdx);
+    fread(&x2o,1,4,fdx);
+    fread(&x3o,1,4,fdx);
+    fread(&astart,1,4,fdx);
+    fread(&om,1,4,fdx);
+    fread(&ov,1,4,fdx);
+    fread(&h0,1,4,fdx);
+    fread(&dummy,1,sizeof(dummy),fdx);
 
-  fread(&dummy,1,sizeof(dummy),fx);
-  fread(&np1,1,4,fx);
-  fread(&np2,1,4,fx);
-  fread(&np3,1,4,fx);
-  fread(&dx,1,4,fx);
-  fread(&x1o,1,4,fx);
-  fread(&x2o,1,4,fx);
-  fread(&x3o,1,4,fx);
-  fread(&astart,1,4,fx);
-  fread(&om,1,4,fx);
-  fread(&ov,1,4,fx);
-  fread(&h0,1,4,fx);
-  fread(&dummy,1,sizeof(dummy),fx);
+    fread(&dummy,1,sizeof(dummy),fx);
+    fread(&np1,1,4,fx);
+    fread(&np2,1,4,fx);
+    fread(&np3,1,4,fx);
+    fread(&dx,1,4,fx);
+    fread(&x1o,1,4,fx);
+    fread(&x2o,1,4,fx);
+    fread(&x3o,1,4,fx);
+    fread(&astart,1,4,fx);
+    fread(&om,1,4,fx);
+    fread(&ov,1,4,fx);
+    fread(&h0,1,4,fx);
+    fread(&dummy,1,sizeof(dummy),fx);
 
-  fread(&dummy,1,sizeof(dummy),fy);
-  fread(&np1,1,4,fy);
-  fread(&np2,1,4,fy);
-  fread(&np3,1,4,fy);
-  fread(&dx,1,4,fy);
-  fread(&x1o,1,4,fy);
-  fread(&x2o,1,4,fy);
-  fread(&x3o,1,4,fy);
-  fread(&astart,1,4,fy);
-  fread(&om,1,4,fy);
-  fread(&ov,1,4,fy);
-  fread(&h0,1,4,fy);
-  fread(&dummy,1,sizeof(dummy),fy);
+    fread(&dummy,1,sizeof(dummy),fy);
+    fread(&np1,1,4,fy);
+    fread(&np2,1,4,fy);
+    fread(&np3,1,4,fy);
+    fread(&dx,1,4,fy);
+    fread(&x1o,1,4,fy);
+    fread(&x2o,1,4,fy);
+    fread(&x3o,1,4,fy);
+    fread(&astart,1,4,fy);
+    fread(&om,1,4,fy);
+    fread(&ov,1,4,fy);
+    fread(&h0,1,4,fy);
+    fread(&dummy,1,sizeof(dummy),fy);
 
-  fread(&dummy,1,sizeof(dummy),fz);
-  fread(&np1,1,4,fz);
-  fread(&np2,1,4,fz);
-  fread(&np3,1,4,fz);
-  fread(&dx,1,4,fz);
-  fread(&x1o,1,4,fz);
-  fread(&x2o,1,4,fz);
-  fread(&x3o,1,4,fz);
-  fread(&astart,1,4,fz);
-  fread(&om,1,4,fz);
-  fread(&ov,1,4,fz);
-  fread(&h0,1,4,fz);
-  fread(&dummy,1,sizeof(dummy),fz);
-
+    fread(&dummy,1,sizeof(dummy),fz);
+    fread(&np1,1,4,fz);
+    fread(&np2,1,4,fz);
+    fread(&np3,1,4,fz);
+    fread(&dx,1,4,fz);
+    fread(&x1o,1,4,fz);
+    fread(&x2o,1,4,fz);
+    fread(&x3o,1,4,fz);
+    fread(&astart,1,4,fz);
+    fread(&om,1,4,fz);
+    fread(&ov,1,4,fz);
+    fread(&h0,1,4,fz);
+    fread(&dummy,1,sizeof(dummy),fz);
+  }
 
   // setting baryon density parameter
   ob=OMEGAB;
+
+#ifdef WMPI
+  // Massive broadcast of grafic header
+  MPI_Bcast(&np1,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&np2,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&np3,1,MPI_INT,0,cpu->comm);
+  MPI_Bcast(&dx,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x1o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x2o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&astart,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&om,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&ov,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&h0,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Barrier(cpu->comm);
+
+#endif
   
   if(cpu->rank==0){
     printf("============================================\n");
@@ -511,6 +565,8 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     printf("astart=%f zstart=%f\n",astart,1./astart-1.);
     printf("============================================\n");
   }
+
+
 
   if(np1!=(int)pow(2,cpu->levelcoarse)){
     printf("ERROR !ABORT! Grafic file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,cpu->levelcoarse));
@@ -556,7 +612,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   //double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
   if(om==1.) {
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
-    printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
+    if(cpu->rank==0) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
     printf("No temperature law for cosmologies other than SCDM\n");
@@ -580,25 +636,35 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   vstar=rstar/tstar; //m/s
   pstar=rhostar*vstar*vstar;
   
-  printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
+  if(cpu->rank==0) printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
 
   for(i3=0;i3<np3;i3++){
 
-    fread(&dummy,1,sizeof(dummy),fdx);
-    fread(deltab,np1*np2,sizeof(float),fdx);
-    fread(&dummy,1,sizeof(dummy),fdx);
+    if(cpu->rank==0){
+      fread(&dummy,1,sizeof(dummy),fdx);
+      fread(deltab,np1*np2,sizeof(float),fdx);
+      fread(&dummy,1,sizeof(dummy),fdx);
 
-    fread(&dummy,1,sizeof(dummy),fx);
-    fread(velx,np1*np2,sizeof(float),fx);
-    fread(&dummy,1,sizeof(dummy),fx);
+      fread(&dummy,1,sizeof(dummy),fx);
+      fread(velx,np1*np2,sizeof(float),fx);
+      fread(&dummy,1,sizeof(dummy),fx);
 
-    fread(&dummy,1,sizeof(dummy),fy);
-    fread(vely,np1*np2,sizeof(float),fy);
-    fread(&dummy,1,sizeof(dummy),fy);
+      fread(&dummy,1,sizeof(dummy),fy);
+      fread(vely,np1*np2,sizeof(float),fy);
+      fread(&dummy,1,sizeof(dummy),fy);
 
-    fread(&dummy,1,sizeof(dummy),fz);
-    fread(velz,np1*np2,sizeof(float),fz);
-    fread(&dummy,1,sizeof(dummy),fz);
+      fread(&dummy,1,sizeof(dummy),fz);
+      fread(velz,np1*np2,sizeof(float),fz);
+      fread(&dummy,1,sizeof(dummy),fz);
+    }
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    MPI_Bcast(deltab,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(velx,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(vely,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(velz,np1*np2,MPI_FLOAT,0,cpu->comm);
+#endif
 
     z0=(i3*1.0)/(np3);
     for(i2=0;i2<np2;i2++){
@@ -667,10 +733,13 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     }
   }
 
-  fclose(fdx);
-  fclose(fx);
-  fclose(fy);
-  fclose(fz);
+  if(cpu->rank==0){
+    fclose(fdx);
+    fclose(fx);
+    fclose(fy);
+    fclose(fz);
+  }
+
 
   free(deltab);
   free(velx);
@@ -692,7 +761,10 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 #endif
 
   
-  printf("Grafic hydro read ok\n");
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
+  if(cpu->rank==0) printf("Grafic hydro read ok\n");
   return ifound;
 }
 
