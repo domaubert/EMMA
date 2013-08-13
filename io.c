@@ -211,7 +211,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef WRAD
       fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcthresh=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->denthresh=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
 #endif
       fclose(buf);

@@ -16,6 +16,9 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   int flag;
 
 #ifdef WRADTEST
+  // ========================== FOR TESTS ============================
+  // =================================================================
+
   int igrp;
   REAL  dxcur=pow(0.5,curoct->level);
   int icell=cell->idx;
@@ -60,8 +63,12 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 #endif
 
 #else
+  // ========================== FOR COSMOLOGY CASES ============================
+  // ===========================================================================
+
+
 #ifdef WHYDRO2
-  if(cell->field.d>param->srcthresh){
+  if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
     cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2)*(rand()%10<3); // switch to code units //RAND TO TEST STOCHASTICITY
     cell->rfieldnew.src=cell->rfield.src;
     flag=1;

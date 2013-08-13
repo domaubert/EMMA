@@ -232,7 +232,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
       srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
       
-      if(R.src>1.19398e77){printf("s=%e d=%e e=%e x=%e eint=%e | ",srcloc[idloc],nH[idloc],egyloc[idloc],x0[idloc],eint[idloc]);}
       // at this stage we are ready to do the calculations
 
       // DEALING WITH CLUMPING ----------------------
@@ -380,7 +379,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	}
 
       // ====================== End of the cooling loop
-      if(R.src>1.19398e77){printf("s=%e d=%e e=%e x=%e eint=%e \n ",srcloc[idloc],nH[idloc],egyloc[idloc],x0[idloc],eint[idloc]);}
 
       // FIlling the rad structure to send it back
       for(igrp=0;igrp<NGRP;igrp++)

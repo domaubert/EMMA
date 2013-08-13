@@ -123,7 +123,8 @@ struct RUNPARAMS{
   REAL fudgecool; // cooling fraction
   int ncvgcool; // cooling max iterations
   
-  REAL srcthresh; // threshold to turn the sources on
+  REAL denthresh; // density threshold to turn the sources on
+  REAL tmpthresh; // temperature threshold to turn the sources on
   REAL srcint; // intensity of the sources
 
 #endif
