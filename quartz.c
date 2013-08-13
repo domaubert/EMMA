@@ -1097,6 +1097,57 @@ int main(int argc, char *argv[])
   // we set all the "remaining" particles mass to -1
   for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
+  if(cpu.rank==0) printf("start populating coarse grid with particles\n");
+
+  for(i=0;i<npart;i++){
+    unsigned long int key;
+    int hidx;
+    int found=0;
+    key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
+    hidx=hfun(key,cpu.maxhash);
+    nextoct=cpu.htable[hidx];
+    if(nextoct!=NULL){
+      do{ // resolving collisions
+	curoct=nextoct;
+	nextoct=curoct->nexthash;
+	found=((oct2key(curoct,curoct->level)==key)&&(levelcoarse==curoct->level));
+      }while((nextoct!=NULL)&&(!found));
+    }
+
+    if(found){ // the reception oct has been found
+
+      REAL dxcur=1./pow(2.,levelcoarse);
+				
+      int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+      int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+      int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+      int ip=xp+yp*2+zp*4;
+      
+      if((ip>7)||(i<0)){
+	printf("%e %e %e oct= %e %e %e xp=%d %d %d ip=%d\n",part[i].x,part[i].y,part[i].z,curoct->x,curoct->y,curoct->z,xp,yp,zp,ip);
+	abort();
+      }
+      
+      //part[i].icell=ip;
+      part[i].level=levelcoarse;
+  
+      // the reception cell 
+      struct CELL *newcell=&(curoct->cell[ip]);
+      curp=findlastpart(newcell->phead);
+      if(curp!=NULL){
+	curp->next=part+i;
+	part[i].next=NULL;
+	part[i].prev=curp;
+      }
+      else{
+	newcell->phead=part+i;
+	part[i].next=NULL;
+	part[i].prev=NULL;
+      }
+    }
+  }
+      
+#if 0
   // assigning particles to cells in coarse octs (assuming octs are aligned)
 
   if(cpu.rank==0) printf("start populating coarse grid with particles\n");
@@ -1169,7 +1220,7 @@ int main(int argc, char *argv[])
 	    }
 	}while(nextoct!=NULL);
     }
-
+#endif
  
 
 #endif
