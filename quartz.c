@@ -1098,6 +1098,13 @@ int main(int argc, char *argv[])
   for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
   if(cpu.rank==0) printf("start populating coarse grid with particles\n");
+  double tp1,tp2;
+  double *tp;
+  
+  tp=(double *)calloc(cpu.nproc,sizeof(double));
+
+  MPI_Barrier(cpu.comm);
+  tp1=MPI_Wtime();
 
   for(i=0;i<npart;i++){
     unsigned long int key;
@@ -1146,7 +1153,17 @@ int main(int argc, char *argv[])
       }
     }
   }
-      
+
+  MPI_Barrier(cpu.comm);
+  tp2=MPI_Wtime();
+
+  tp[cpu.rank]=tp2-tp1;
+  MPI_Allgather(MPI_IN_PLACE,0,MPI_DOUBLE,tp,1,MPI_DOUBLE,cpu.comm);
+  if(cpu.rank==0){
+    int ic;
+    for(ic=0;ic<cpu.nproc;ic++) printf("%e ",tp[ic]);
+    printf("\n");
+  }
 #if 0
   // assigning particles to cells in coarse octs (assuming octs are aligned)
 

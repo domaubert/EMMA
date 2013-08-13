@@ -30,10 +30,11 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int nbnd;
   int icell;
   int *flagcpu;
-
+  int *nfromcpu;
   /* mpinei =(int*)calloc(ngridmax,sizeof(int)); */
   /* neicpu =(int*)calloc(ngridmax,sizeof(int)); */
   flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
+  nfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
 
   if(cpu->bndoct!=NULL) free(cpu->bndoct);
   cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
@@ -88,6 +89,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 	      // a neighbor has been found
 	      //mpinei[nnei]=curoct->cpu;
 	      flagcpu[curoct->cpu]=1;
+	      nfromcpu[curoct->cpu]++;
 	      cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission
 	      //if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
 	      nnei++;
@@ -105,30 +107,22 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   neicpu=(int*) calloc(cpu->nproc,sizeof(int));
   for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
+  int maxn=0;
   for(i=0;i<cpu->nproc;i++){ // we scan the list
     if(flagcpu[i]==1){
       neicpu[j]=i;
       j++;
+      if(nfromcpu[i]>maxn) maxn=nfromcpu[i];
     }
   }
 
   free(flagcpu);
+  free(nfromcpu);
   myradixsort(neicpu,cpu->nproc); // we sort the neighbors list
 
-  /* myradixsort(mpinei,nnei); // we sort the neighbors list */
-  /* neicpu[0]=mpinei[0]; */
-  /* j=0; */
-  /* for(i=1;i<nnei;i++){ // we scan the list */
-  /*   if(mpinei[i]!=neicpu[j]){ */
-  /*     j++; */
-  /*     neicpu[j]=mpinei[i]; */
-  /*   } */
-  /* } */
-
+ 
   nbnd=nnei;
   nnei=j;
-
-
 
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;
@@ -154,15 +148,19 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int nvois_loc=cpu->nebnd;
   int nvois_max;
   MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
-  if(cpu->rank==0) printf("Max number of neighbors=%d\n",nvois_max);
+  if(cpu->rank==0) printf("Max total number of neighbors octs=%d\n",nvois_max);
+  MPI_Allreduce(&maxn,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
+  if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
+  if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
+  cpu->nbuff=nvois_max;
 #endif
   
 #ifdef WMPI
-  if(cpu->nebnd>cpu->nbuff){
-    int err=777;
-    printf("ERROR: mpi buffer size should be increased nbnd=%d nbuff=%d\n",cpu->nebnd,cpu->nbuff);
-    MPI_Abort(cpu->comm,err);
-  }
+  /* if(cpu->nebnd>cpu->nbuff){ */
+  /*   int err=777; */
+  /*   printf("ERROR: mpi buffer size should be increased nbnd=%d nbuff=%d\n",cpu->nebnd,cpu->nbuff); */
+  /*   MPI_Abort(cpu->comm,err); */
+  /* } */
 #endif
   
   // creating a cpu dictionnary to translate from cpu number to inei
