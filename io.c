@@ -151,7 +151,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 	}while(nextoct!=NULL);
     }
   fclose(fp);
-  printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
+  //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 #endif
 
@@ -221,7 +221,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   // computing the maxhash
   int val=(pow(2,param->lmax-1)<64?pow(2,param->lmax-1):64); // limit to 2097152 octs in hash table i.e. 16e6 cells
   param->maxhash=pow(val,3);
-  printf("maxhash=%d\n",param->maxhash);
+  //printf("maxhash=%d\n",param->maxhash);
 }
 
 //==================================================================================

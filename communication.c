@@ -155,13 +155,6 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   cpu->nbuff=nvois_max;
 #endif
   
-#ifdef WMPI
-  /* if(cpu->nebnd>cpu->nbuff){ */
-  /*   int err=777; */
-  /*   printf("ERROR: mpi buffer size should be increased nbnd=%d nbuff=%d\n",cpu->nebnd,cpu->nbuff); */
-  /*   MPI_Abort(cpu->comm,err); */
-  /* } */
-#endif
   
   // creating a cpu dictionnary to translate from cpu number to inei
   

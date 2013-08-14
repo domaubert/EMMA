@@ -1297,7 +1297,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
   struct CELL *newcell;
   int ip;
 
-  printf("particles exchange\n");
+  //if(cpu->rank==0) printf("particles exchange\n");
   for(dir=0;dir<3;dir++) 
     { 
       for(level=levelcoarse;level<=levelmax;level++) // looping over levels

@@ -562,12 +562,12 @@ int main(int argc, char *argv[])
   cpu.dev_stencil=&dev_stencil;
 #endif
   create_gravstencil_GPU(&cpu,gstride);
-  printf("stencil created on device with adress %p\n",cpu.dev_stencil);
+  //printf("stencil created on device with adress %p\n",cpu.dev_stencil);
 #endif
 
 #ifdef WHYDRO2 
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
-  printf("hstencil=%p mem=%f mem/elem=%f \n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.),sizeof(struct HGRID)/(1024.*1024.));
+  //printf("hstencil=%p mem=%f mem/elem=%f \n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.),sizeof(struct HGRID)/(1024.*1024.));
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
   create_pinned_stencil(&stencil,hstride);  
   create_hydstencil_GPU(&cpu,hstride); 
@@ -575,7 +575,7 @@ int main(int argc, char *argv[])
 
 #ifdef WRAD
   rstencil=(struct RGRID*)calloc(rstride,sizeof(struct RGRID));
-  printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
+  //printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
 
   // UNCOMMENT BELOW FOR FASTRT GPU
   create_pinned_stencil_rad(&rstencil,rstride);  

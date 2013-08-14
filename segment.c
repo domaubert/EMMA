@@ -280,5 +280,5 @@ void load_balance(int levelcoarse,struct CPUINFO *cpu){
     cpu->kmax=keymax; // the last proc should go until the end of the chain
   }
     
-  printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
+  //printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
 }

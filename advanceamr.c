@@ -472,7 +472,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     int deltan;
     deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer, &(cpu->lastpart));
 
-    printf("proc %d receives %d particles\n",cpu->rank,deltan);
+    //printf("proc %d receives %d particles\n",cpu->rank,deltan);
     //update the particle number within this process
     npart=npart+deltan;
     
