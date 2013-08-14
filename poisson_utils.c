@@ -1460,7 +1460,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct CELL* curcell;
   // pre-relaxation
 
-#ifdef DWMPI
+#ifdef WMPI
   mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level); // potential field exchange
 #endif
 
@@ -1492,7 +1492,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   // full relaxation at coarsest level or recursive call to mgrid
   
   if((level-1)==param->mgridlmin){
-#ifdef DWMPI
+#ifdef WMPI
   mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level-1); // potential field exchange
 #endif
 
@@ -1525,7 +1525,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   }
   
   // post relaxation
-#ifdef DWMPI
+#ifdef WMPI
   mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level); // potential field exchange
 #endif
 
