@@ -160,20 +160,6 @@ int main(int argc, char *argv[])
 
   struct CPUINFO cpu;
 
-  struct PACKET **sendbuffer; 
-  struct PACKET **recvbuffer; 
-
-  struct PART_MPI **psendbuffer; 
-  struct PART_MPI **precvbuffer; 
-
-  struct HYDRO_MPI **hsendbuffer;
-  struct HYDRO_MPI **hrecvbuffer;
-
-  struct RAD_MPI **Rsendbuffer;
-  struct RAD_MPI **Rrecvbuffer;
-
-  /* struct FLUX_MPI **fsendbuffer; */
-  /* struct FLUX_MPI **frecvbuffer; */
 
   struct RUNPARAMS param;
 
@@ -738,7 +724,7 @@ int main(int argc, char *argv[])
 	    }
 	    lastoct[level]=newoct;
 
-	    // next oct ready
+	    // next oct readys
 	    newoct++; 
 	  }
  	}
@@ -750,68 +736,19 @@ int main(int argc, char *argv[])
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
 
   int newloadb=1;
+#ifdef WMPI
+  cpu.sendbuffer=NULL;
+  cpu.recvbuffer=NULL;
+  cpu.psendbuffer=NULL;
+  cpu.precvbuffer=NULL;
+  cpu.hsendbuffer=NULL;
+  cpu.hrecvbuffer=NULL;
+  cpu.Rsendbuffer=NULL;
+  cpu.Rrecvbuffer=NULL;
+#endif
+
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb); // out of WMPI to compute the hash table
   newloadb=0;
-
-#ifdef WMPI
-  // allocating the communication buffers
-  sendbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
-  recvbuffer=(struct PACKET **)(calloc(cpu.nnei,sizeof(struct PACKET*)));
-  for(i=0;i<cpu.nnei;i++) {
-    sendbuffer[i]=(struct PACKET *) (calloc(cpu.nbuff,sizeof(struct PACKET)));
-    recvbuffer[i]=(struct PACKET *) (calloc(cpu.nbuff,sizeof(struct PACKET)));
-  }
-
-  cpu.sendbuffer=sendbuffer;
-  cpu.recvbuffer=recvbuffer;
-
-#ifdef PIC
-  psendbuffer=(struct PART_MPI **)(calloc(cpu.nnei,sizeof(struct PART_MPI*)));
-  precvbuffer=(struct PART_MPI **)(calloc(cpu.nnei,sizeof(struct PART_MPI*)));
-  for(i=0;i<cpu.nnei;i++) {
-    psendbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
-    precvbuffer[i]=(struct PART_MPI *) (calloc(cpu.nbuff,sizeof(struct PART_MPI)));
-  }
-
-  cpu.psendbuffer=psendbuffer;
-  cpu.precvbuffer=precvbuffer;
-
-#endif 
-
-#ifdef WHYDRO2
-  hsendbuffer=(struct HYDRO_MPI **)(calloc(cpu.nnei,sizeof(struct HYDRO_MPI*)));
-  hrecvbuffer=(struct HYDRO_MPI **)(calloc(cpu.nnei,sizeof(struct HYDRO_MPI*)));
-  for(i=0;i<cpu.nnei;i++) {
-    hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
-    hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
-  }
-  
-  cpu.hsendbuffer=hsendbuffer;
-  cpu.hrecvbuffer=hrecvbuffer;
-
-  /* fsendbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
-  /* frecvbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
-  /* for(i=0;i<cpu.nnei;i++) { */
-  /*   fsendbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
-  /*   frecvbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
-  /* } */
-#endif 
-
-#ifdef WRAD
-  Rsendbuffer=(struct RAD_MPI **)(calloc(cpu.nnei,sizeof(struct RAD_MPI*)));
-  Rrecvbuffer=(struct RAD_MPI **)(calloc(cpu.nnei,sizeof(struct RAD_MPI*)));
-  for(i=0;i<cpu.nnei;i++) {
-    Rsendbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
-    Rrecvbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
-  }
-  
-  cpu.Rsendbuffer=Rsendbuffer;
-  cpu.Rrecvbuffer=Rrecvbuffer;
-#endif 
-
-
-
-#endif
 
 
   //===================================================================================================
@@ -1919,7 +1856,7 @@ int main(int argc, char *argv[])
       double tg1,tg2;
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,sendbuffer,recvbuffer,ndt,nsteps,tsim);
+      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
       if(cpu.rank==0) printf("GLOBAL TIME = %e\n",tg2-tg1);

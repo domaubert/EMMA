@@ -153,8 +153,67 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
   if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
   cpu->nbuff=nvois_max;
-#endif
+
+  // ----------- allocating the communication buffers
+
+  if(cpu->sendbuffer!=NULL) {
+    free(cpu->sendbuffer);
+    free(cpu->recvbuffer);
+  }
+
+  cpu->sendbuffer=(struct PACKET **)(calloc(cpu->nnei,sizeof(struct PACKET*)));
+  cpu->recvbuffer=(struct PACKET **)(calloc(cpu->nnei,sizeof(struct PACKET*)));
+  for(i=0;i<cpu->nnei;i++) {
+    cpu->sendbuffer[i]=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
+    cpu->recvbuffer[i]=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
+  }
+
+
+#ifdef PIC
+  if(cpu->psendbuffer!=NULL) {
+    free(cpu->psendbuffer);
+    free(cpu->precvbuffer);
+  }
+
+  cpu->psendbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
+  cpu->precvbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
+  for(i=0;i<cpu->nnei;i++) {
+    cpu->psendbuffer[i]=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
+    cpu->precvbuffer[i]=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
+  }
+#endif 
+
+#ifdef WHYDRO2
+  if(cpu->hsendbuffer!=NULL) {
+    free(cpu->hsendbuffer);
+    free(cpu->hrecvbuffer);
+  }
+
+  cpu->hsendbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
+  cpu->hrecvbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
+  for(i=0;i<cpu->nnei;i++) {
+    cpu->hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu->nbuff,sizeof(struct HYDRO_MPI)));
+    cpu->hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu->nbuff,sizeof(struct HYDRO_MPI)));
+  }
   
+#endif 
+
+#ifdef WRAD
+  if(cpu->Rsendbuffer!=NULL) {
+    free(cpu->Rsendbuffer);
+    free(cpu->Rrecvbuffer);
+  }
+
+  cpu->Rsendbuffer=(struct RAD_MPI **)(calloc(cpu->nnei,sizeof(struct RAD_MPI*)));
+  cpu->Rrecvbuffer=(struct RAD_MPI **)(calloc(cpu->nnei,sizeof(struct RAD_MPI*)));
+  for(i=0;i<cpu->nnei;i++) {
+    cpu->Rsendbuffer[i]=(struct RAD_MPI *) (calloc(cpu->nbuff,sizeof(struct RAD_MPI)));
+    cpu->Rrecvbuffer[i]=(struct RAD_MPI *) (calloc(cpu->nbuff,sizeof(struct RAD_MPI)));
+  }
+  
+#endif 
+
+#endif  
   
   // creating a cpu dictionnary to translate from cpu number to inei
   
