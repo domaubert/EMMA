@@ -1213,10 +1213,13 @@ void clean_vecpos(int level,struct OCT **firstoct)
 }
 
 //=============================================================================
-void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, struct RUNPARAMS *param){
+void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, struct RUNPARAMS *param, REAL *distout, REAL *normpout){
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;
+  REAL dist=0.;
+  REAL normp=0.;
+  REAL pnew,pold;
 
   curoct=firstoct[level-1];
   if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
@@ -1226,19 +1229,18 @@ void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, 
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){	
-	    
-	REAL w;
-	// TO FIX : DO WE ALLOW OVER-RELAXATION ?
-	if(level>param->lcoarse){
-	  w=1.0;
-	}
-	else{
-	  w=1.0;
-	}
-	curoct->cell[icell].gdata.p=curoct->cell[icell].pnew*w+(1.-w)*curoct->cell[icell].gdata.p;
+	pnew=curoct->cell[icell].pnew;
+	pold=curoct->cell[icell].gdata.p;
+	dist+=pow(pold-pnew,2);
+	normp+=pow(pold,2);
+	curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
       }
     }while(nextoct!=NULL);
   }
+
+  *normpout=normp;
+  *distout=dist;
+
 }
 
 //=============================================================================
@@ -1257,7 +1259,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   REAL factdens;
   REAL rloc;
   REAL res0=0.;
-
+  REAL dist,normp,dresconv;
+  int crit;
   // Computing the factor of the density
   if(level>=param->lcoarse){
 #ifndef TESTCOSMO
@@ -1388,14 +1391,16 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if(cpu->noct[level-1]>nread){ 
 #endif
       if(nreadtot>0){
-	update_pot_in_tree(level,firstoct,cpu,param);
+	update_pot_in_tree(level,firstoct,cpu,param,&dist,&normp);
       }
 #ifdef FASTGRAV
-      }
+    }
 #endif
 
 #ifdef WMPI
     //printf("iter=%d\n",iter);
+
+    // reduction of relevant quantities
 
     if((iter<=param->niter)||(iter%1==0)){
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
@@ -1405,6 +1410,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }
       else{
 	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
       }
     }
 #endif
@@ -1414,6 +1421,11 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     tglob+=(tstop-tstart);
     
     if(iter>0){
+
+      // here we test the convergence of the temporary solution
+      dresconv=sqrt(dist/normp);
+
+      // here we test the zero level of Poisson equation
       if(level<param->lcoarse){
 	dres=sqrt(residual);
       }
@@ -1421,6 +1433,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	dres=sqrt(residual/fnorm);
       }
 
+      // we take the smallest
+      dres=(dres<dresconv?dres:dresconv);
+      crit=(dres<dresconv?0:1);
 
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
@@ -1439,7 +1454,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
+    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
   }
   return dres;
 }
