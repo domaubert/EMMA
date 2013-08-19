@@ -174,7 +174,8 @@ struct CPUINFO{
   int *allkmin;
   int *allkmax;
 
-  int nbuff; // the max number of buffer cells
+  int nbuff; // the number of buffer cells = to the max of # of buffer cell from 1 neighbor 
+  int nbufforg; // the max number of buffer cells (set from the parameter file)
 
   int *nrecv; // the number of octs to be received by the local cpu, e.g cpu->nrecv[5] = nb of octs to be received from neigh # 5
   int *nsend; // the number of octs to be sent     by the local cpu, e.g cpu->nrecv[5] = nb of octs to be sent to       neigh # 5

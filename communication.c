@@ -31,16 +31,81 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int icell;
   int *flagcpu;
   int *nfromcpu;
-  /* mpinei =(int*)calloc(ngridmax,sizeof(int)); */
-  /* neicpu =(int*)calloc(ngridmax,sizeof(int)); */
+
   flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
   nfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
-
-  if(cpu->bndoct!=NULL) free(cpu->bndoct);
-  cpu->bndoct=(struct OCT**)calloc(cpu->nbuff,sizeof(struct OCT*));
+  neicpu=(int*) calloc(cpu->nproc,sizeof(int));
+  
 
   // we clean the hash table
   memset(cpu->htable,0,cpu->maxhash*sizeof(struct OCT*));
+  memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
+
+#if 1
+  // we clean the comm buffers
+
+  if(cpu->sendbuffer!=NULL) {
+    for(i=0;i<cpu->nnei;i++){ 
+      free(cpu->sendbuffer[i]);
+      cpu->sendbuffer[i]=NULL;
+    }
+    for(i=0;i<cpu->nnei;i++){
+      free(cpu->recvbuffer[i]);
+      cpu->recvbuffer[i]=NULL;
+    }
+    free(cpu->sendbuffer);
+    free(cpu->recvbuffer);
+    
+    cpu->sendbuffer=NULL;
+    cpu->recvbuffer=NULL;
+  }
+
+#ifdef PIC
+
+  if(cpu->psendbuffer!=NULL) {
+    for(i=0;i<cpu->nnei;i++) free(cpu->psendbuffer[i]);
+    for(i=0;i<cpu->nnei;i++) free(cpu->precvbuffer[i]);
+    free(cpu->psendbuffer);
+    free(cpu->precvbuffer);
+
+    cpu->psendbuffer=NULL;
+    cpu->precvbuffer=NULL;
+  }
+
+  MPI_Barrier(cpu->comm);
+#endif 
+
+#ifdef WHYDRO2
+  if(cpu->hsendbuffer!=NULL) {
+    for(i=0;i<cpu->nnei;i++) free(cpu->hsendbuffer[i]);
+    for(i=0;i<cpu->nnei;i++) free(cpu->hrecvbuffer[i]);
+
+    free(cpu->hsendbuffer);
+    free(cpu->hrecvbuffer);
+    cpu->hsendbuffer=NULL;
+    cpu->hrecvbuffer=NULL;
+
+  }
+
+#endif 
+
+#ifdef WRAD
+
+  if(cpu->Rsendbuffer!=NULL) {
+    for(i=0;i<cpu->nnei;i++) free(cpu->Rsendbuffer[i]);
+    for(i=0;i<cpu->nnei;i++) free(cpu->Rrecvbuffer[i]);
+
+    free(cpu->Rsendbuffer);
+    free(cpu->Rrecvbuffer);
+    cpu->Rsendbuffer=NULL;
+    cpu->Rrecvbuffer=NULL;
+
+  }
+
+
+#endif 
+
+#endif
 
   // looking for neighbors
 
@@ -103,8 +168,8 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   // =========================================== SETTING UP THE COMMUNICATIONS BETWEEN NEIGHBORS
 
 
+
   // computing the mpi neighbor list
-  neicpu=(int*) calloc(cpu->nproc,sizeof(int));
   for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
   int maxn=0;
@@ -124,9 +189,13 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   nbnd=nnei;
   nnei=j;
 
+
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;
-  if(cpu->mpinei!=NULL) free(cpu->mpinei);
+  if(cpu->mpinei!=NULL){
+    free(cpu->mpinei);
+    cpu->mpinei=NULL;
+  }
   cpu->mpinei=(int*)calloc(nnei,sizeof(int)); // we reallocate the array to free some memory
   for(i=0;i<cpu->nnei;i++) cpu->mpinei[i]=neicpu[i];
   free(neicpu);
@@ -145,6 +214,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   /* printf("\n"); */
 
 #ifdef WMPI
+  MPI_Barrier(cpu->comm);
   int nvois_loc=cpu->nebnd;
   int nvois_max;
   MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
@@ -152,42 +222,32 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   MPI_Allreduce(&maxn,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
   if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
   if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
+#if 1
   cpu->nbuff=nvois_max;
-
+  MPI_Barrier(cpu->comm);
+#endif
   // ----------- allocating the communication buffers
-
-  if(cpu->sendbuffer!=NULL) {
-    free(cpu->sendbuffer);
-    free(cpu->recvbuffer);
-  }
-
+  //  printf("%p %p\n", cpu->sendbuffer, cpu->recvbuffer);
+  
+#if 1
   cpu->sendbuffer=(struct PACKET **)(calloc(cpu->nnei,sizeof(struct PACKET*)));
   cpu->recvbuffer=(struct PACKET **)(calloc(cpu->nnei,sizeof(struct PACKET*)));
   for(i=0;i<cpu->nnei;i++) {
-    cpu->sendbuffer[i]=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
-    cpu->recvbuffer[i]=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
+    *(cpu->sendbuffer+i)=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
+    *(cpu->recvbuffer+i)=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
   }
 
 
 #ifdef PIC
-  if(cpu->psendbuffer!=NULL) {
-    free(cpu->psendbuffer);
-    free(cpu->precvbuffer);
-  }
-
   cpu->psendbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   cpu->precvbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   for(i=0;i<cpu->nnei;i++) {
-    cpu->psendbuffer[i]=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
-    cpu->precvbuffer[i]=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
+    *(cpu->psendbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
+    *(cpu->precvbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
   }
 #endif 
 
 #ifdef WHYDRO2
-  if(cpu->hsendbuffer!=NULL) {
-    free(cpu->hsendbuffer);
-    free(cpu->hrecvbuffer);
-  }
 
   cpu->hsendbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
   cpu->hrecvbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
@@ -199,10 +259,6 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif 
 
 #ifdef WRAD
-  if(cpu->Rsendbuffer!=NULL) {
-    free(cpu->Rsendbuffer);
-    free(cpu->Rrecvbuffer);
-  }
 
   cpu->Rsendbuffer=(struct RAD_MPI **)(calloc(cpu->nnei,sizeof(struct RAD_MPI*)));
   cpu->Rrecvbuffer=(struct RAD_MPI **)(calloc(cpu->nnei,sizeof(struct RAD_MPI*)));
@@ -212,18 +268,27 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   }
   
 #endif 
+#endif
 
 #endif  
   
   // creating a cpu dictionnary to translate from cpu number to inei
   
-  if(cpu->dict!=NULL) free(cpu->dict);
+  if(cpu->dict!=NULL){
+    free(cpu->dict);
+    cpu->dict=NULL;
+  }
   cpu->dict=(int*)calloc(cpu->nproc,sizeof(int));
   for(i=0;i<cpu->nproc;i++) cpu->dict[i]=-1;
   for(i=0;i<cpu->nnei;i++){
     cpu->dict[cpu->mpinei[i]]=i;
   }
+
+MPI_Barrier(cpu->comm);
+if(cpu->rank==0) printf("setup mpi Done\n");
+
 }
+
 #ifdef WMPI
 
 //======================================================================================
@@ -2035,10 +2100,12 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   MPI_Request *req;
   MPI_Datatype MPI_PACKET=*(cpu->MPI_PACKET);
 
+  MPI_Barrier(cpu->comm);
+  if(cpu->rank==0) printf("correcting CIC on rank %d with %d\n",cpu->rank,cpu->nnei);
+
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  if(cpu->rank==0) printf("correcting CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff(cpu,sendbuffer,recvbuffer);

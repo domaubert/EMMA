@@ -298,14 +298,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
+    MPI_Barrier(cpu->comm);
+    if(cpu->rank==0) printf("Local CIC done\n");
 #ifdef WMPI
-    /* if((level==7)&&(is==1)){ */
-    /* } */
-    /* else{ */
-      mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
-    /* } */
-    mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
+    mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1); 
 #endif 
+    MPI_Barrier(cpu->comm);
+    if(cpu->rank==0) printf("CIC done\n");
 #endif
     
     /* //==================================== Getting Density ==================================== */
