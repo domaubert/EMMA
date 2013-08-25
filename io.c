@@ -219,7 +219,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
 
   // computing the maxhash
-  int val=(pow(2,param->lmax-1)<64?pow(2,param->lmax-1):64); // limit to 2097152 octs in hash table i.e. 16e6 cells
+  int val=(pow(2,param->lmax-1)<256?pow(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
   param->maxhash=pow(val,3);
   //printf("maxhash=%d\n",param->maxhash);
 }
@@ -362,6 +362,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   for(i3=1;i3<=np3;i3++){
 
     if(cpu->rank==0){
+      printf("\r %f percent done",(i3*1.0)/np3*100.);
       fread(&dummy,1,sizeof(dummy),fx);
       fread(velx,np1*np2,sizeof(float),fx);
       fread(&dummy,1,sizeof(dummy),fx);
@@ -373,6 +374,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       fread(&dummy,1,sizeof(dummy),fz);
       fread(velz,np1*np2,sizeof(float),fz);
       fread(&dummy,1,sizeof(dummy),fz);
+      
+
     }
 
 
@@ -586,7 +589,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   unsigned long key;
   struct OCT *curoct;
   struct OCT *nextoct;
-  int hidx;
+  unsigned long hidx;
   int found;
   float z0,y0,x0;
   int ifound=0;
@@ -641,6 +644,8 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   for(i3=0;i3<np3;i3++){
 
     if(cpu->rank==0){
+      printf("\r %f percent done",(i3*1.0)/np3*100.);
+
       fread(&dummy,1,sizeof(dummy),fdx);
       fread(deltab,np1*np2,sizeof(float),fdx);
       fread(&dummy,1,sizeof(dummy),fdx);

@@ -330,6 +330,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   newoct=freeoct; // the new oct will be the first freeoct
 
   if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
+  long int dorg=freeoct-firstoct[0];
 
   dxcur=1./pow(2,level);
   nextoct=firstoct[level-1];
@@ -341,15 +342,13 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      if(newoct->level!=0) {
-		printf("newoct level=%d\n",newoct->level);
+		printf("Error newoct level=%d\n",newoct->level);
 		abort();
 	      }
 	  
 #if 1
 	      // destroying octs with level>levelcoarse ==========================
 	      if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))&&(curoct->level>=param->lcoarse)){
-		//if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))){
-		//if((curoct->level==(levelcoarse-1))&&(curoct->cpu==cpu->rank)) continue; // we don't want to destroy the cpu coarse grid
 
 		if(cpu->rank==curoct->cpu) ndes++;
 		
@@ -399,10 +398,12 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		desoct->level=0;
 
 		// we fix the freeoct list
+		desoct->prev=NULL;
 		freeoct->prev=desoct;
 		desoct->next=freeoct;
 		freeoct=desoct;
-		
+		// if destruction, newoct should be updated
+		newoct=freeoct;
 #ifdef PIC
 		//======== dealing with particles
 		// we gather the particles of the oct to be destroyed in the parent cell
@@ -450,57 +451,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
  		getcellnei(icell, vnei, vcell); 
 
-/* 		// First we check if we don't violate the refinement rule (adaptative time step) */
-/* 		int vrule=0; */
-/* 		for(ii=0;ii<6;ii++){ */
-/* #ifdef TRANSXM */
-/* 		    if((curoct->x==0.)&&(ii==0)) continue; */
-/* #endif */
-/* #ifdef TRANSYM */
-/* 		    if((curoct->y==0.)&&(ii==2)) continue; */
-/* #endif */
-/* #ifdef TRANSZM */
-/* 		    if((curoct->z==0.)&&(ii==4)) continue; */
-/* #endif */
-
-/* #ifdef TRANSXP */
-/* 		    if((curoct->x+2*dxcur==1.)&&(ii==1)) continue; */
-/* #endif */
-/* #ifdef TRANSYP */
-/* 		    if((curoct->y+2*dxcur==1.)&&(ii==2)) continue; */
-/* #endif */
-/* #ifdef TRANSZP */
-/* 		    if((curoct->z+2*dxcur==1.)&&(ii==5)) continue; */
-/* #endif */
-/* 		    //if((curoct->nei[ii]->child==NULL)&&(curoct->cpu==cpu->rank)){ */
-/* 		    if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs */
-/* 		      if(curoct->nei[ii]->child==NULL){ */
-/* 			// refinement rule is violated so skip */
-/* 			vrule=1; */
-/* 		      } */
-/* 		      else{ */
-/* 			struct OCT *oct; */
-/* 			oct=curoct->nei[ii]->child; */
-/* 			int ii2; */
-/* 			for(ii2=0;ii2<6;ii2++){ */
-/* 			  if(ii2/2==ii/2) continue; */
-/* 			  if(oct->nei[ii2]->child==NULL){ */
-/* 			    vrule=1; */
-/* 			  } */
-/* 			  else{ */
-/* 			    struct OCT *oct2; */
-/* 			    oct2=oct->nei[ii2]->child; */
-/* 			    int ii3; */
-/* 			    for(ii3=0;ii3<6;ii3++){ */
-/* 			      if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue; */
-/* 			      if(oct2->nei[ii3]->child==NULL) vrule=1; */
-/* 			    } */
-/* 			  } */
-/* 			} */
-/* 		      } */
-/* 		    } */
-/* 		} */
-/* 		if(vrule) continue; */
 		 
 		// Past here the rule are respected
 		
@@ -515,13 +465,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->x=curoct->x+( icell   %2)*dxcur;
 		newoct->y=curoct->y+((icell/2)%2)*dxcur;
 		newoct->z=curoct->z+( icell   /4)*dxcur;
-
-
-	
-		/* if((newoct->x==0.296875)*(newoct->y==0.25)*(newoct->z==0.)){ */
-		/*   printf("SOCT2 FOUND\n"); */
-		/*   SOCTX2=newoct; */
-		/* } */
 
 		// the new oct is connected to parent
 		curoct->cell[icell].child=newoct;
@@ -548,7 +491,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifndef TRANSZP
 #ifndef TRANSZM
 			// here we refine too much
-			printf("ouhlaÂ rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
+			printf("ERROR ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 			abort();
 #endif
 #endif
@@ -743,7 +686,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
   if(cpu->rank==0){
     printf("octs created   = %d ",nref);
-    printf("octs destroyed = %d\n",ndes);
+    printf("octs destroyed = %d freeoctorg=%ld freeoct=%ld\n",ndes,dorg,freeoct-firstoct[0]);
   }
 
   return freeoct;

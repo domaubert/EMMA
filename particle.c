@@ -288,11 +288,12 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   mdisp=0.;
   nextoct=firstoct[level-1];
   
+  dxcur=1./pow(2,level);
+
   if(nextoct!=NULL){
   do // sweeping through the octs of level
     {
       oct=(*nextoct);
-      dxcur=1./pow(2,oct.level);
       nextoct=oct.next;
 
       //if(oct.cpu!=cpu->rank) continue;

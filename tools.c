@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu){
+REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, int label){
 
   int ntot;
   REAL ntotd;
@@ -41,7 +41,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   int *vnoct=cpu->noct;
   int *vnpart=cpu->npart;
 
-  //if(rank==0) printf("Check\n");
+  if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;
@@ -54,7 +54,8 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       nlevd=0.;
       noct=0;
       if(nextoct==NULL){
-	vnoct[level-1]=noct;
+	vnoct[level-1]=0;
+	vnpart[level-1]=0;
 	continue;
       }
       do // sweeping level
@@ -62,8 +63,10 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	  curoct=nextoct;
 	  nextoct=curoct->next;
 	  if(curoct->cpu!=rank) continue;
+
 	  if(level>=levelcoarse)
 	    {
+	      //if(rank==0) printf("np=%d nlev\n",nlev);
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
 	      {
 	      
@@ -71,29 +74,25 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	      yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
 	      zc=curoct->z+(icell>>2)*dx+dx*0.5;
 #ifdef PIC
+	     
 	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
 	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
 	      
 	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 
+	      //if(rank==0) printf("ic=%d %p\n",icell,nexp);
 	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		printf("check: split cell with particles !\n");
 		printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
 		abort();
 	      }
-
+	      
 	      if(nexp==NULL)continue;
 	      do{ 
 		nlev++;
 		ntot++;
 		curp=nexp;
 		nexp=curp->next;
-		
-		if((fabs(curp->x-xc)>0.5*dx)*(fabs(curp->y-yc)>0.5*dx)*(fabs(curp->z-zc)>0.5*dx)){
-		  printf("proc %d particle %d not in cell %d: abort\n",cpu->rank,curp->idx,icell);
-		  printf("xp=%e xc=%e yp=%e yc=%e zp=%e zc=%e \n DX=%e DY=%e DZ=%e dx=%e\n",curp->x,xc,curp->y,yc,curp->z,zc,curp->x-xc,curp->y-yc,curp->z-zc,0.5*dx);
-		  abort();
-		}
 	      }while(nexp!=NULL);
 #endif
 	      }
@@ -107,7 +106,18 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       vnpart[level-1]=nlev;
     }
   
-
+  //ultimate check
+  if(npart!=0){ // for initial call to multicheck that always provide a zero
+  if(ntot!=npart) {
+    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart,ntot,cpu->rank,label);
+    abort();
+  }
+  }
+#ifdef WMPI
+  // printf("Check done on %d \n",rank);
+ MPI_Barrier(cpu->comm);
+#endif
+ 
   return mtot;
 }
  //------------------------------------------------------------------------
@@ -198,6 +208,9 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
     printf("]\n");
   }
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&ptot,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
 #endif
 
   if(cpu->rank==0){
@@ -207,6 +220,13 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
     printf("]\n\n");
   }
+
+#ifdef TESTCOSMO
+  if(ptot!=pow(2,param->lcoarse*3)){
+    printf("Error on total number of particles %d found (%d expected)\n",ptot,(int)pow(2,3*param->lcoarse));
+    abort();
+  }
+#endif
 
 
 }

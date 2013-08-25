@@ -282,15 +282,15 @@ int main(int argc, char *argv[])
   oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 7;
   
-  /* Setup description of the 4 MPI_INT fields idx key level icell*/
+  /* Setup description of the 4 MPI_INT fields idx level icell is*/
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[1] = 7 * extent;
   oldtypes[1] = MPI_INT;
-  blockcounts[1] = 3;
+  blockcounts[1] = 4;
 
   MPI_Type_extent(MPI_INT, &extent);
-  offsets[2] = 3 * extent+offsets[1];
+  offsets[2] = 4 * extent+offsets[1];
   oldtypes[2] = MPI_UNSIGNED_LONG;
   blockcounts[2] = 1;
 
@@ -516,9 +516,9 @@ int main(int argc, char *argv[])
   struct RGRID *rstencil;
 
 #ifndef GPUAXL
-  printf("stencil=%p with stride=%d\n",stencil,hstride);
+  //printf("stencil=%p with stride=%d\n",stencil,hstride);
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
-  printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
+  //printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
 
 #ifdef WRAD
   rstencil=(struct RGRID*)calloc(hstride,sizeof(struct RGRID));
@@ -749,10 +749,14 @@ int main(int argc, char *argv[])
     if(cpu.rank==0) printf("level=%d noct=%d\n",level,noct2);
   }
 
+  if(cpu.rank==0) printf("Initial Mesh done \n");
+  
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
 
 #ifdef WMPI
+  if(cpu.rank==0) printf("Set up MPI \n");
+
   cpu.sendbuffer=NULL;
   cpu.recvbuffer=NULL;
   cpu.psendbuffer=NULL;
@@ -850,6 +854,7 @@ int main(int argc, char *argv[])
     curoct->next=NULL;
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
+
   //curoct->next=NULL; // for the last free oct
   //printf("freeoct=%p\n",freeoct);
 
@@ -1125,7 +1130,7 @@ int main(int argc, char *argv[])
 
   for(i=0;i<npart;i++){
     unsigned long int key;
-    int hidx;
+    unsigned long hidx;
     int found=0;
     key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
     hidx=hfun(key,cpu.maxhash);

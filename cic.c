@@ -93,12 +93,14 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	newcell=&(curoct->cell[vcell[neip[i1]]]);
       }
       else{
-	if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
-	  /* if(curoct->nei[vnei[neip[i1]]]->child->cpu!=curoct->cpu){ */
-	  /*   printf("hello %d diffuse in %d\n",curoct->cpu,curoct->nei[vnei[neip[i1]]]->child->cpu); */
-	  /* } */
-	  curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density+=vcont[idx1];
-	  newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
+	if(curoct->nei[vnei[neip[i1]]]!=NULL){
+	  if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
+	    curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].density+=vcont[idx1];
+	    newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
+	  }
+	  else{
+	    newcell=NULL;
+	  }
 	}
 	else{
 	  newcell=NULL;
@@ -120,12 +122,17 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	    visit[idx2]=1;
 	  }
 	  else{
-	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
-	      newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density+=vcont[idx2];
-	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
-	      visit[idx2]=1;
+	    if(newoct->nei[vnei2[neip[i2]]]!=NULL){
+	      if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+		newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].density+=vcont[idx2];
+		newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
+		visit[idx2]=1;
+	      }
+	      else{
+		newcell2=NULL;
+	      }
 	    }
-	    else{
+ 	    else{
 	      newcell2=NULL;
 	    }
 	  }
@@ -143,9 +150,11 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 	      visit[7]=1;
 	    }
 	    else{
-	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
-		newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density+=vcont[7];
-		visit[7]=1;
+	      if(newoct2->nei[vnei3[neip[i3]]]!=NULL){
+		if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+		  newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].density+=vcont[7];
+		  visit[7]=1;
+		}
 	      }
 	    }
 	  }
@@ -1038,6 +1047,11 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
   int il,ip;
 
   double t[10];
+  
+  static int ix[6]={-1,1,0,0,0,0};
+  static int iy[6]={0,0,-1,1,0,0};
+  static int iz[6]={0,0,0,0,-1,1};
+
 
   dxcur=1./pow(2,level);
   nextoct=firstoct[level-1];
@@ -1054,6 +1068,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
 	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
+
 	  if(nexp!=NULL){ 
 	    do{  
 	      curp=nexp; 
@@ -1065,19 +1080,20 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	    // THEN WE LOOK FOR THE PARTICLES IN THE CHILD OCTS
 	    cic_child(curoct->cell[icell].child,curoct,icell);
 	  }
-
+#if 1
 	  if(level>param->lcoarse){
 	    //==== SECOND WE CONSIDER THE PARTICLES INSIDE THE NEIGHBORS AT LEVEL L-1
 
-	    int visit[27];
-	    int iv;
+ 	    int visit[27];
+	    int iv,iv2,iv3;
 	    for(inei=0;inei<27;inei++) visit[inei]=0;
 	    int tot=0;
 	    // first the cartesian neighbors (6)
 	    for(inei=0;inei<6;inei++){
 	      if(curoct->nei[inei] !=NULL){ // required for MPI boundaries
 		nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
-		iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+		//iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+		iv=13+ix[inei]+iy[inei]*3+iz[inei]*9;
 		visit[iv]=1;
 		if(nexp!=NULL){
 		  do{ 
@@ -1092,14 +1108,20 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		newcell=curoct->nei[inei];
 		newoct=cell2oct(newcell); // we get the parent oct;
 		getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
+
+#if 1
 		for(il=0;il<6;il++){
-		  iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1);
 		  if((il>>1)==(inei>>1)) continue;
-		  if(visit[iv]) continue;
+		  iv2=iv+ix[il]+iy[il]*3+iz[il]*9;
+		  if(visit[iv2]) continue;
+		  newcell2=NULL;
+
+#if 1
 		  if(vnei[il]==6){
-		    visit[iv]=1;
+		    visit[iv2]=1;
 		    nexp=newoct->cell[vcell[il]].phead;
 		    newcell2=&(newoct->cell[vcell[il]]);
+#if 1
 		    if(nexp!=NULL){
 		      do{ 
 			curp=nexp;
@@ -1107,13 +1129,15 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 			part2cell_cic(curp, curoct, icell,0);
 		      }while(nexp!=NULL);
 		    }
+#endif
 		  }
+#if 1
 		  else{
 		    if(newoct->nei[vnei[il]] !=NULL){
 		      if(newoct->nei[vnei[il]]->child!=NULL){ // FOR MPI BOUNDARIES
 			nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
 			newcell2=&(newoct->nei[vnei[il]]->child->cell[vcell[il]]);
-			visit[iv]=1;
+			visit[iv2]=1;
 			if(nexp!=NULL){
 			  do{ 
 			    curp=nexp;
@@ -1122,22 +1146,28 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 			  }while(nexp!=NULL);
 			}
 		      }
+		      else{
+			newcell2=NULL;
+		      }
 		    }
 		    else{
 		      newcell2=NULL;
 		    }
 		  }
-
+#endif
+#endif
+#if 0
 		  // ecah of the 4 side neighbors will mark 2 corners
 		  if(newcell2!=NULL){
 		    newoct2=cell2oct(newcell2);
 		    getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
 		    for(ip=0;ip<6;ip++){
-		      iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
+		      //		      iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
 		      if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
-		      if(visit[iv]) continue;
+		      iv3=iv2+ix[ip]+iy[ip]*3+iz[ip]*9;
+		      if(visit[iv3]) continue;
 		      if(vnei2[ip]==6){
-			visit[iv]=1;
+			visit[iv3]=1;
 			nexp=newoct2->cell[vcell2[ip]].phead;
 			if(nexp!=NULL){
 			  do{ 
@@ -1150,7 +1180,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		      else{
 			if(newoct2->nei[vnei2[ip]]!=NULL){
 			  if(newoct2->nei[vnei2[ip]]->child!=NULL){
-			    visit[iv]=1;
+			    visit[iv3]=1;
 			    nexp=newoct2->nei[vnei2[ip]]->child->cell[vcell2[ip]].phead;
 			    if(nexp!=NULL){
 			      do{ 
@@ -1164,10 +1194,13 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		      }
 		    }
 		  }
+#endif
 		}
+#endif
 	      }
 	    }
 	  }
+#endif
 
 	     
 	}

@@ -129,7 +129,7 @@ func ext_amr1D(levmap,field,color=,lmin=)
 
 
 func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
-  if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";
+  if(is_void(execut)) execut="/home/observatoire/aubert/Quartz-ADT/utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(zmin)) zmin=0.;
   if(is_void(zmax)) zmax=1.;

@@ -152,6 +152,7 @@ unsigned long oct2key(struct OCT *curoct,int level){
   c[1]=iy;
   c[2]=iz;
   keyloc=(unsigned long)(hilbert_c2i(3,level,c));
+  
 
   return keyloc;
 
@@ -258,7 +259,7 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
  //------------------------------------------------------------------------
 
  // the hash function
-int hfun(unsigned long key, unsigned long maxval){
+unsigned long hfun(unsigned long key, unsigned long maxval){
   // warnign maxval must be a power of two
   //return key>>6;
   return key&(maxval-1);
@@ -268,7 +269,7 @@ int hfun(unsigned long key, unsigned long maxval){
  //------------------------------------------------------------------------
 void load_balance(int levelcoarse,struct CPUINFO *cpu){
 
-  int keymax=pow(2,3*(levelcoarse-1))-1; // the maximal key along the Hilbert curve
+  unsigned long keymax=pow(2,3*(levelcoarse-1))-1; // the maximal key along the Hilbert curve
   
   cpu->kmin=((keymax+1)/cpu->nproc)*cpu->rank; // the min key of the current cpu
   cpu->nkeys=((keymax+1)/cpu->nproc); // the number of keys per cpu

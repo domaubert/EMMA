@@ -192,7 +192,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int hstride=param->hstride;
   int gstride=param->gstride;
   int nsub=param->nsubcycles;
-
+  int ptot=0;
+  int ip;
+  
 
 #ifdef TESTCOSMO
   aexp=cosmo->aexp;
@@ -206,7 +208,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
   // ==================================== Check the number of particles and octs
-  mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+  ptot=0; for(ip=1;ip<=param->lmax;ip++){
+    ptot+=cpu->npart[ip-1]; // total of local particles
+    /* if((level==12)&&(cpu->rank==217)){ */
+    /*   printf("l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
+    /* } */
+  }
+  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,0);
 
   if(level==param->lcoarse){
     // =========== Grid Census ========================================
@@ -264,6 +272,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       L_check_rule(level,param,firstoct,cpu);
       
 #ifdef WMPI
+      mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 3);
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
 #ifdef WHYDRO2
       mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0); // propagate hydro for refinement
@@ -277,7 +286,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       cpu->freeoct=curoct;
     }
     // ==================================== Check the number of particles and octs
-    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+    ptot=0; for(ip=1;ip<=param->lmax;ip++){
+      ptot+=cpu->npart[ip-1]; // total of local particles
+    }
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,1);
+
+    ptot=0; for(ip=1;ip<=param->lmax;ip++){
+      ptot+=cpu->npart[ip-1]; // total of local particles
+      /* if((level==11)&&(cpu->rank==217)){ */
+      /* 	printf("AP l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
+      /* } */
+    }
     
 #ifdef WMPI
     //reset the setup in case of refinement
@@ -444,7 +463,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
     if(cpu->rank==0) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
-    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+    ptot=0; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
 
 #ifdef PIC
     //================ Part. Update ===========================
@@ -469,14 +489,22 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
 
 #ifdef WMPI
+    //reset the setup in case of refinement
+    setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
+    MPI_Barrier(cpu->comm);
+#endif
+
+#ifdef WMPI
+
     int deltan;
+
     deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer, &(cpu->lastpart));
 
     //printf("proc %d receives %d particles\n",cpu->rank,deltan);
     //update the particle number within this process
-    npart=npart+deltan;
-    
-    mtot=multicheck(firstoct,npart,param->lcoarse,param->lmax,cpu->rank,cpu);
+    //npart=npart+deltan;
+    ptot=deltan; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,3);
 #endif
 
 
@@ -567,6 +595,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     //}
+
+
+
   // ================= V Computing the new refinement map
     
 

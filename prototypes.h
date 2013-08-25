@@ -154,8 +154,8 @@ struct CPUINFO{
   int rank;
   int nproc;
 
-  int kmin;
-  int kmax;
+  unsigned long kmin;
+  unsigned long kmax;
   int nkeys;
 
   REAL load;
@@ -407,6 +407,7 @@ struct PART_MPI // For mpi communications
   int idx;
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
+  int is; //current step of particle
 
   unsigned long key; // the destination hilbert key
 };
