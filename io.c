@@ -85,7 +85,7 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
     }
 
   
-  printf("%d octs dumped by proc %d\n",ic,cpu->rank);
+  //printf("%d octs dumped by proc %d\n",ic,cpu->rank);
 
 
   fclose(fp);
@@ -100,6 +100,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   FILE *fp;
   int level,lcoarse,lmax;
   struct OCT * curoct;
+  struct OCT * nextoct;
 
   struct OCT * root_sna;
   struct CELL * rootcell_sna;
@@ -167,7 +168,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   fread(&rootpart_sna,sizeof(struct PART*),1,fp);
   
   
-  if(cpu->rank==0) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
+  //if(cpu->rank==0) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
   // reading the octs sequence
    
   fread(&oct_ad,sizeof(struct OCT *),1,fp);
@@ -213,10 +214,6 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     
     for(ic=0;ic<8;ic++){
       curoct->cell[ic].phead=(curoct->cell[ic].phead==NULL?NULL:(curoct->cell[ic].phead-rootpart_sna)+rootpart_mem);
-      if(curoct->cell[ic].phead!=NULL)
-	if(curoct->cell[ic].phead->level!=7)
-	  abort();
-      
     }
 
 
@@ -240,7 +237,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 
   }
 
-  printf("%d octs recovered by proc %d with root=%p firstoct=%p\n",ioct,cpu->rank,root_mem,firstoct[0]);
+  //printf("%d octs recovered by proc %d with root=%p firstoct=%p\n",ioct,cpu->rank,root_mem,firstoct[0]);
 
   // done
   fclose(fp);
@@ -260,10 +257,25 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
       else{
 	curoct->next=NULL;
 	curoct->prev=loct;
+	loct->next=curoct;
 	loct=curoct;
       }
     }
   }
+
+  /* // check and count the number of freeocts */
+  
+  /* nextoct=freeoct; */
+  /* int ifree=0; */
+  /* while(nextoct!=NULL){ */
+  /*   curoct=nextoct; */
+  /*   ifree++; */
+  /*   nextoct=curoct->next; */
+  /* } */
+
+  /* printf("ifree=%d\n",ifree); */
+
+
   
   return freeoct;
 
@@ -450,7 +462,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 	}while(nextoct!=NULL);
     }
   fclose(fp);
-  printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
+  //printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
 
 }
 
@@ -518,7 +530,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   }
 
-  printf("%d part recovered by proc %d\n",ipart,cpu->rank);
+  //printf("%d part recovered by proc %d\n",ipart,cpu->rank);
 
   // done
   fclose(fp);
