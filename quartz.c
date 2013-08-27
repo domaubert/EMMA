@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
   int cinext,cjnext,cknext;
   REAL threshold;
   REAL tsim=0.;
+  REAL tinit;
   struct OCT oct;
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -113,7 +114,6 @@ int main(int argc, char *argv[])
   int tag;
   REAL dxcur;
   REAL *dens;
-  int firstoct_currl;
   int nxoct;
   int lmap;
   int npart;
@@ -157,24 +157,11 @@ int main(int argc, char *argv[])
   REAL faexp, faexp2;
   REAL aexp;
   unsigned key;
+  int nsteps;
+  int nstepstart=0;
+  int ndumps=0;
 
   struct CPUINFO cpu;
-
-  /* struct PACKET **sendbuffer=NULL;  */
-  /* struct PACKET **recvbuffer=NULL;  */
-
-  /* struct PART_MPI **psendbuffer=NULL;  */
-  /* struct PART_MPI **precvbuffer=NULL;  */
-
-  /* struct HYDRO_MPI **hsendbuffer=NULL; */
-  /* struct HYDRO_MPI **hrecvbuffer=NULL; */
-
-  /* struct RAD_MPI **Rsendbuffer=NULL; */
-  /* struct RAD_MPI **Rrecvbuffer=NULL; */
-
-  /* struct FLUX_MPI **fsendbuffer; */
-  /* struct FLUX_MPI **frecvbuffer; */
-
   struct RUNPARAMS param;
 
   size_t rstat;
@@ -482,6 +469,8 @@ int main(int argc, char *argv[])
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 #ifdef PIC
   part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+  // we set all the particles mass to -1
+  for(ii=0;ii<npartmax;ii++) part[ii].mass=-1.0;
 #endif
  
   if(cpu.rank==0){
@@ -835,14 +824,6 @@ int main(int argc, char *argv[])
 #endif
 
 
-  //===================================================================================================
-  
-  // ==== some initial dump
-
-  /* sprintf(filename,"data/levstart.%05d.p%05d",0,cpu.rank); */
-  /* dumpcube(lmap,firstoct,0,filename,0.); */
-  /* sprintf(filename,"data/cpustart.%05d.p%05d",0,cpu.rank); */
-  /* dumpcube(lmap,firstoct,3,filename,tsim); */
 
   // =====================  computing the memory location of the first freeoct and linking the freeocts
 
@@ -855,867 +836,836 @@ int main(int argc, char *argv[])
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
 
-  //curoct->next=NULL; // for the last free oct
-  //printf("freeoct=%p\n",freeoct);
+  //=================================  building the array of timesteps
 
+  REAL *adt;
+  adt=(REAL *)malloc(sizeof(REAL)*levelmax);
+  for(level=1;level<=levelmax;level++) adt[level-1]=param.dt;
+  
+  int *ndt;
+  ndt=(int *)malloc(sizeof(int)*levelmax);
+
+  // INITIALISATION FROM INITIAL CONDITIONS =========================
+  if(param.nrestart==0){
 
 #ifdef PIC
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
 
-  // ==================================== assigning particles to cells
-  //breakmpi();
-  if(cpu.rank==0) printf("==> starting part\n");
-  firstoct_currl=0;
-  for(il=1;il<levelcoarse;il++) firstoct_currl+=pow(pow(2,il-1),3); // the index of the first oct of current level
+    // ==================================== assigning particles to cells
+    //breakmpi();
+    if(cpu.rank==0) printf("==> starting part\n");
  
-  // initialisation of particles
+    // initialisation of particles
   
 
 #ifdef PART2
 
-  int ir,nr=5;
-  ip=0;
-  REAL dxcell=1./pow(2.,levelcoarse);
-  REAL epsilon=0.;
-  REAL r0=0.12;
-  REAL vf=0.8;
-  for(ir=0;ir<nr;ir++) {
-    // first we read the position etc... (eventually from the file)
-    if(ir==0){
-      x=0.5;
-      y=0.5;
-      z=0.5;
+    int ir,nr=5;
+    ip=0;
+    REAL dxcell=1./pow(2.,levelcoarse);
+    REAL epsilon=0.;
+    REAL r0=0.12;
+    REAL vf=0.8;
+    for(ir=0;ir<nr;ir++) {
+      // first we read the position etc... (eventually from the file)
+      if(ir==0){
+	x=0.5;
+	y=0.5;
+	z=0.5;
 
-      vx=0.;
-      vy=0.;
-      vz=0.;
+	vx=0.;
+	vy=0.;
+	vz=0.;
       
-      mass=1.0-epsilon;
-    }
-    else if(ir==1){
+	mass=1.0-epsilon;
+      }
+      else if(ir==1){
 
-      x=0.5+r0;
-      y=0.5;
-      z=0.5;
+	x=0.5+r0;
+	y=0.5;
+	z=0.5;
 
-      vx=0.;
-      vy=sqrt((1.-epsilon)/r0)*1.0; // this one is circular
-      vz=0.;
+	vx=0.;
+	vy=sqrt((1.-epsilon)/r0)*1.0; // this one is circular
+	vz=0.;
       
-      mass=epsilon;
-    }
-    else if(ir==2){
+	mass=epsilon;
+      }
+      else if(ir==2){
 
-      x=0.5;
-      y=0.5+r0*0.3;
-      z=0.5;
+	x=0.5;
+	y=0.5+r0*0.3;
+	z=0.5;
 
-      vy=0.;
-      vx=-sqrt((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
-      vz=0.;
+	vy=0.;
+	vx=-sqrt((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
+	vz=0.;
       
-      mass=epsilon;
-    }
-    else if(ir==3){
+	mass=epsilon;
+      }
+      else if(ir==3){
 
-      x=0.5-r0;
-      y=0.5;
-      z=0.5;
+	x=0.5-r0;
+	y=0.5;
+	z=0.5;
 
-      vx=0.;
-      vy=-sqrt((1.-epsilon)/r0)*vf;
-      vz=0.;
+	vx=0.;
+	vy=-sqrt((1.-epsilon)/r0)*vf;
+	vz=0.;
       
-      mass=epsilon;
-    }
-    else if(ir==4){
+	mass=epsilon;
+      }
+      else if(ir==4){
 
-      x=0.5;
-      y=0.5-r0;
-      z=0.5;
+	x=0.5;
+	y=0.5-r0;
+	z=0.5;
 
-      vy=0.;
-      vx=sqrt((1.-epsilon)/r0)*vf;
-      vz=0.;
+	vy=0.;
+	vx=sqrt((1.-epsilon)/r0)*vf;
+	vz=0.;
       
-      mass=epsilon;
-    }
+	mass=epsilon;
+      }
     
-    // periodic boundary conditions
+      // periodic boundary conditions
     
-    x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-    y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-    z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
     
-    // it it belongs to the current cpu, we proceed and assign the particle to the particle array
-    if(segment_part(x,y,z,&cpu,levelcoarse)){
-      part[ip].x=x;
-      part[ip].y=y;
-      part[ip].z=z;
+      // it it belongs to the current cpu, we proceed and assign the particle to the particle array
+      if(segment_part(x,y,z,&cpu,levelcoarse)){
+	part[ip].x=x;
+	part[ip].y=y;
+	part[ip].z=z;
       
-      part[ip].vx=vx;
-      part[ip].vy=vy;
-      part[ip].vz=vz;
+	part[ip].vx=vx;
+	part[ip].vy=vy;
+	part[ip].vz=vz;
       
-      part[ip].mass=mass;
-      lastpart=part+ip;
-      part[ip].idx=ir;
-      ip++;
+	part[ip].mass=mass;
+	lastpart=part+ip;
+	part[ip].idx=ir;
+	ip++;
+      }
     }
-  }
   
-  npart=ip; // we compute the localnumber of particle
+    npart=ip; // we compute the localnumber of particle
 
 #endif
 
 
 #ifdef PARTN
 
-  int ir,nr=32768;
-  ip=0;
-  REAL dxcell=1./pow(2.,levelcoarse);
-  REAL th,ph,r;
-  for(ir=0;ir<nr;ir++) {
-    // first we read the position etc... (eventually from the file)
-    if(ir==0){
-      x=0.5;
-      y=0.5;
-      z=0.5;
+    int ir,nr=32768;
+    ip=0;
+    REAL dxcell=1./pow(2.,levelcoarse);
+    REAL th,ph,r;
+    for(ir=0;ir<nr;ir++) {
+      // first we read the position etc... (eventually from the file)
+      if(ir==0){
+	x=0.5;
+	y=0.5;
+	z=0.5;
 
-      vx=0.;
-      vy=0.;
-      vz=0.;
+	vx=0.;
+	vy=0.;
+	vz=0.;
       
-      mass=1.;
-    }
-    else{
+	mass=1.;
+      }
+      else{
 
 
-      th=acos(((REAL)(rand())/RAND_MAX*2-1.));
-      ph=2*M_PI*(REAL)(rand())/RAND_MAX;
-      //r=(REAL)(rand())/RAND_MAX*0.3;
-      r=0.12;
+	th=acos(((REAL)(rand())/RAND_MAX*2-1.));
+	ph=2*M_PI*(REAL)(rand())/RAND_MAX;
+	//r=(REAL)(rand())/RAND_MAX*0.3;
+	r=0.12;
 
-      x=r*sin(th)*cos(ph)+0.5;
-      y=r*sin(th)*sin(ph)+0.5;
-      z=r*cos(th)+0.5;
+	x=r*sin(th)*cos(ph)+0.5;
+	y=r*sin(th)*sin(ph)+0.5;
+	z=r*cos(th)+0.5;
 
-      vx=(REAL)(rand())/RAND_MAX*2.-1.;
-      vy=(REAL)(rand())/RAND_MAX*2.-1.;
-      vz=(REAL)(rand())/RAND_MAX*2.-1.;
+	vx=(REAL)(rand())/RAND_MAX*2.-1.;
+	vy=(REAL)(rand())/RAND_MAX*2.-1.;
+	vz=(REAL)(rand())/RAND_MAX*2.-1.;
       
-      mass=0.;
-    }
+	mass=0.;
+      }
     
-    // periodic boundary conditions
-    
-    x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-    y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-    z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-    
-    // it it belongs to the current cpu, we proceed and assign the particle to the particle array
-    if(segment_part(x,y,z,&cpu,levelcoarse)){
-      part[ip].x=x;
-      part[ip].y=y;
-      part[ip].z=z;
-      
-      part[ip].vx=vx;
-      part[ip].vy=vy;
-      part[ip].vz=vz;
-      
-      part[ip].mass=mass;
-      lastpart=part+ip;
-      part[ip].idx=ir;
-      ip++;
-    }
-  }
-  
-  npart=ip; // we compute the localnumber of particle
-
-#endif
-
-#ifdef TESTPLUM
-  int dummy;
-  REAL dummyf;
-  int npartf;
-
-  //breakmpi();
-  fd=fopen("utils/data.inp","r");
-  if(fd==NULL) {
-    printf("Error while reading particle file ABORT\n");
-    abort();
-  }
-  fscanf(fd,"%d",&dummy);
-  fscanf(fd,"%d",&npartf);
-  fscanf(fd,"%f",&dummyf);
-
-  ip=0.;
-  for(i=0;i<npartf;i++)
-    {
-      //fscanf(fd,"%d %f %f %f %f %f %f %f",&part[i].idx,&part[i].mass,&(part[i].x),&(part[i].y),&(part[i].z),&(part[i].vx),&(part[i].vy),&(part[i].vz));
-      fscanf(fd,"%d %f %f %f %f %f %f %f",&dummy,&mass,&x,&y,&z,&vx,&vy,&vz);
-      
-      x+=0.5;
-      y+=0.5;
-      z+=0.5;
       // periodic boundary conditions
     
       x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
       y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
       z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-
+    
       // it it belongs to the current cpu, we proceed and assign the particle to the particle array
       if(segment_part(x,y,z,&cpu,levelcoarse)){
 	part[ip].x=x;
 	part[ip].y=y;
 	part[ip].z=z;
-	
+      
 	part[ip].vx=vx;
 	part[ip].vy=vy;
 	part[ip].vz=vz;
-	
+      
 	part[ip].mass=mass;
 	lastpart=part+ip;
+	part[ip].idx=ir;
 	ip++;
       }
-      
     }
-  fclose(fd);
-  npart=ip; // we compute the localnumber of particle
+  
+    npart=ip; // we compute the localnumber of particle
+
+#endif
+
+#ifdef TESTPLUM
+    int dummy;
+    REAL dummyf;
+    int npartf;
+
+    //breakmpi();
+    fd=fopen("utils/data.inp","r");
+    if(fd==NULL) {
+      printf("Error while reading particle file ABORT\n");
+      abort();
+    }
+    fscanf(fd,"%d",&dummy);
+    fscanf(fd,"%d",&npartf);
+    fscanf(fd,"%f",&dummyf);
+
+    ip=0.;
+    for(i=0;i<npartf;i++)
+      {
+	//fscanf(fd,"%d %f %f %f %f %f %f %f",&part[i].idx,&part[i].mass,&(part[i].x),&(part[i].y),&(part[i].z),&(part[i].vx),&(part[i].vy),&(part[i].vz));
+	fscanf(fd,"%d %f %f %f %f %f %f %f",&dummy,&mass,&x,&y,&z,&vx,&vy,&vz);
+      
+	x+=0.5;
+	y+=0.5;
+	z+=0.5;
+	// periodic boundary conditions
+    
+	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+
+	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
+	if(segment_part(x,y,z,&cpu,levelcoarse)){
+	  part[ip].x=x;
+	  part[ip].y=y;
+	  part[ip].z=z;
+	
+	  part[ip].vx=vx;
+	  part[ip].vy=vy;
+	  part[ip].vz=vz;
+	
+	  part[ip].mass=mass;
+	  lastpart=part+ip;
+	  ip++;
+	}
+      
+      }
+    fclose(fd);
+    npart=ip; // we compute the localnumber of particle
 
 #endif  
 
 #ifdef TESTCOSMO // =================PARTICLE COSMOLOGICAL CASE
 
 #ifdef HPC
-  long dummy;
+    long dummy;
 #else
-  int dummy;
+    int dummy;
 #endif
-  REAL dummyf;
-  int npartf;
+    REAL dummyf;
+    int npartf;
 
-  int nploc;
-  REAL munit;
-  REAL lbox;
+    int nploc;
+    REAL munit;
+    REAL lbox;
 
 #ifdef GRAFIC // ==================== read grafic file
 
-  lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param);
-  amax=1.;
+    lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param);
+    amax=1.;
 #endif
 
 #endif
   
-  // we set all the "remaining" particles mass to -1
-  for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
+    // we set all the "remaining" particles mass to -1
+    for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
-  if(cpu.rank==0) printf("start populating coarse grid with particles\n");
-  double tp1,tp2;
-  double *tp;
+    if(cpu.rank==0) printf("start populating coarse grid with particles\n");
+    double tp1,tp2;
+    double *tp;
   
-  tp=(double *)calloc(cpu.nproc,sizeof(double));
+    tp=(double *)calloc(cpu.nproc,sizeof(double));
 
-  MPI_Barrier(cpu.comm);
-  tp1=MPI_Wtime();
+    MPI_Barrier(cpu.comm);
+    tp1=MPI_Wtime();
 
-  for(i=0;i<npart;i++){
-    unsigned long int key;
-    unsigned long hidx;
-    int found=0;
-    key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
-    hidx=hfun(key,cpu.maxhash);
-    nextoct=cpu.htable[hidx];
-    if(nextoct!=NULL){
-      do{ // resolving collisions
-	curoct=nextoct;
-	nextoct=curoct->nexthash;
-	found=((oct2key(curoct,curoct->level)==key)&&(levelcoarse==curoct->level));
-      }while((nextoct!=NULL)&&(!found));
-    }
-
-    if(found){ // the reception oct has been found
-
-      REAL dxcur=1./pow(2.,levelcoarse);
-				
-      int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-      int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-      int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
-      int ip=xp+yp*2+zp*4;
-      
-      if((ip>7)||(i<0)){
-	printf("%e %e %e oct= %e %e %e xp=%d %d %d ip=%d\n",part[i].x,part[i].y,part[i].z,curoct->x,curoct->y,curoct->z,xp,yp,zp,ip);
-	abort();
-      }
-      
-      //part[i].icell=ip;
-      part[i].level=levelcoarse;
-  
-      // the reception cell 
-      struct CELL *newcell=&(curoct->cell[ip]);
-      curp=findlastpart(newcell->phead);
-      if(curp!=NULL){
-	curp->next=part+i;
-	part[i].next=NULL;
-	part[i].prev=curp;
-      }
-      else{
-	newcell->phead=part+i;
-	part[i].next=NULL;
-	part[i].prev=NULL;
-      }
-    }
-  }
-
-  MPI_Barrier(cpu.comm);
-  tp2=MPI_Wtime();
-
-  tp[cpu.rank]=tp2-tp1;
-  MPI_Allgather(MPI_IN_PLACE,0,MPI_DOUBLE,tp,1,MPI_DOUBLE,cpu.comm);
-  if(cpu.rank==0){
-    int ic;
-    for(ic=0;ic<cpu.nproc;ic++) printf("%e ",tp[ic]);
-    printf("\n");
-  }
-#if 0
-  // assigning particles to cells in coarse octs (assuming octs are aligned)
-
-  if(cpu.rank==0) printf("start populating coarse grid with particles\n");
-  struct PART* lastp[8]; // will contain the last particle of the 8 cells in each oct
-
-  // FIRST WE CONSIDER THE LEVEL 1
-  for(ii=0;ii<8;ii++) lastp[ii]=NULL; // we initialise the last part of each sub cell
-  dxcur=0.5;
-  for(i=0;i<npart;i++)
-    {
-      curc=(int)((part[i].x-grid[0].x)/dxcur)+(int)((part[i].y-grid[0].y)/dxcur)*2+(int)((part[i].z-grid[0].z)/dxcur)*4;
-      
-      if(grid[0].cell[curc].phead==NULL){
-	grid[0].cell[curc].phead=&part[i];
-	lastp[curc]=&part[i];
-      }
-      else{
-	lastp[curc]->next=&part[i];
-	part[i].prev=lastp[curc];
-	lastp[curc]=&part[i];
-      }
-    }
-  if(cpu.rank==0) printf("Part assigned root level ok\n");
-  
-  // WE POPULATE THE NEXT LEVELS BY SUBDIVISIONS
-  int np=0;
-  for(level=1;level<=levelcoarse-1;level++) // we stop at level coarse -1 because it will be assigned from levelcoarse-1
-    {
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
+    for(i=0;i<npart;i++){
+      unsigned long int key;
+      unsigned long hidx;
+      int found=0;
+      key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
+      hidx=hfun(key,cpu.maxhash);
+      nextoct=cpu.htable[hidx];
+      if(nextoct!=NULL){
+	do{ // resolving collisions
 	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  dxcur=1./pow(2,level+1); // size of a CELL at level +1
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      if(curoct->cell[icell].child!=NULL){ // a child has been detected so we split the particle in 8 cells
-		for(ii=0;ii<8;ii++) lastp[ii]=NULL; // we initialise the last part of each sub cell
-		newoct=curoct->cell[icell].child; // temp oct for practical reasons
-		nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-		if(nexp!=NULL){ 
-		  do{  
-		    curp=nexp; 
-		    nexp=curp->next; 
-		    
-		    //curc is the index of the new cell at level+1
-		    curc=(int)((curp->x-newoct->x)/dxcur)+(int)((curp->y-newoct->y)/dxcur)*2+(int)((curp->z-newoct->z)/dxcur)*4;
-		    if(lastp[curc]==NULL){
-		      // first particle in the current subcell
-		      newoct->cell[curc].phead=curp;
-		      curp->prev=NULL;
-		      curp->next=NULL;
-		      lastp[curc]=curp;
-		    }
-		    else{
-		      // the current particle is linked to the last one in the current part
-		      curp->prev=lastp[curc];
-		      lastp[curc]->next=curp;
-		      curp->next=NULL;
-		      lastp[curc]=curp;
-		    }
-		  }while(nexp!=NULL); 
-		  
-		  // we empty the mother cell from particles
-		  curoct->cell[icell].phead=NULL;
-		  
-		}
-	      }
-	    }
-	}while(nextoct!=NULL);
+	  nextoct=curoct->nexthash;
+	  found=((oct2key(curoct,curoct->level)==key)&&(levelcoarse==curoct->level));
+	}while((nextoct!=NULL)&&(!found));
+      }
+
+      if(found){ // the reception oct has been found
+
+	REAL dxcur=1./pow(2.,levelcoarse);
+				
+	int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+	int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+	int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+	int ip=xp+yp*2+zp*4;
+      
+	if((ip>7)||(i<0)){
+	  printf("%e %e %e oct= %e %e %e xp=%d %d %d ip=%d\n",part[i].x,part[i].y,part[i].z,curoct->x,curoct->y,curoct->z,xp,yp,zp,ip);
+	  abort();
+	}
+      
+	//part[i].icell=ip;
+	part[i].level=levelcoarse;
+  
+	// the reception cell 
+	struct CELL *newcell=&(curoct->cell[ip]);
+	curp=findlastpart(newcell->phead);
+	if(curp!=NULL){
+	  curp->next=part+i;
+	  part[i].next=NULL;
+	  part[i].prev=curp;
+	}
+	else{
+	  newcell->phead=part+i;
+	  part[i].next=NULL;
+	  part[i].prev=NULL;
+	}
+      }
     }
-#endif
+
+    MPI_Barrier(cpu.comm);
+    tp2=MPI_Wtime();
+
+    tp[cpu.rank]=tp2-tp1;
+    MPI_Allgather(MPI_IN_PLACE,0,MPI_DOUBLE,tp,1,MPI_DOUBLE,cpu.comm);
+    if(cpu.rank==0){
+      int ic;
+      for(ic=0;ic<cpu.nproc;ic++) printf("%e ",tp[ic]);
+      printf("\n");
+    }
  
 
 #endif
 
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
 
 
 #ifdef WHYDRO2
   
 #ifdef GRAFIC
-  int ncellhydro;
-  ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
+    int ncellhydro;
+    ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
 
-  if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
-  amax=1.0;
+    if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
+    amax=1.0;
 #else
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
-  //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
+    //===================================================================================================================================
 
-  // initialisation of hydro quantities
-  // Shock Tube
+    // initialisation of hydro quantities
+    // Shock Tube
 
-  struct Wtype WL, WR;
-  struct Utype UL, UR;
-  //  REAL X0;
-  if(cpu.rank==0) printf("Init Hydro\n");
+    struct Wtype WL, WR;
+    struct Utype UL, UR;
+    //  REAL X0;
+    if(cpu.rank==0) printf("Init Hydro\n");
 
-  /* /\*  /\\* // TEST 1 *\\/ *\/ */
+    /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
-  /* WL.d=1.; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=0.75; */
-  /* WL.p=1.0; */
+    /* WL.d=1.; */
+    /* WL.u=0.; */
+    /* WL.v=0.; */
+    /* WL.w=0.75; */
+    /* WL.p=1.0; */
 
-  /* WR.d=0.125; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.1; */
+    /* WR.d=0.125; */
+    /* WR.u=0.; */
+    /* WR.v=0.; */
+    /* WR.w=0.; */
+    /* WR.p=0.1; */
  
-  /* X0=0.3125; */
-  /* tmax=0.15; */
+    /* X0=0.3125; */
+    /* tmax=0.15; */
 
 
-  /*  /\* // TEST 123 *\/ */
+    /*  /\* // TEST 123 *\/ */
 
-  /* WL.d=1.; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=-2.0; */
-  /* WL.p=0.4; */
+    /* WL.d=1.; */
+    /* WL.u=0.; */
+    /* WL.v=0.; */
+    /* WL.w=-2.0; */
+    /* WL.p=0.4; */
 
-  /* WR.d=1.; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=2.0; */
-  /* WR.p=0.4; */
-  /* X0=0.5; */
-  /* tmax=0.15; */
+    /* WR.d=1.; */
+    /* WR.u=0.; */
+    /* WR.v=0.; */
+    /* WR.w=2.0; */
+    /* WR.p=0.4; */
+    /* X0=0.5; */
+    /* tmax=0.15; */
 
-  /*  /\* // TEST 3 *\/ */
+    /*  /\* // TEST 3 *\/ */
 
-  /* WL.d=1.; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=1000.; */
+    /* WL.d=1.; */
+    /* WL.u=0.; */
+    /* WL.v=0.; */
+    /* WL.w=0.; */
+    /* WL.p=1000.; */
 
-  /* WR.d=1.; */
-  /* WR.u=0.; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.01; */
-  /* X0=0.5; */
-  /* tmax=0.012; */
+    /* WR.d=1.; */
+    /* WR.u=0.; */
+    /* WR.v=0.; */
+    /* WR.w=0.; */
+    /* WR.p=0.01; */
+    /* X0=0.5; */
+    /* tmax=0.012; */
 
 
-  /*  /\* // TEST 5 *\/ */
+    /*  /\* // TEST 5 *\/ */
 
-  /* WL.d=1.; */
-  /* WL.u=-19.59745; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=1000.; */
+    /* WL.d=1.; */
+    /* WL.u=-19.59745; */
+    /* WL.v=0.; */
+    /* WL.w=0.; */
+    /* WL.p=1000.; */
 
-  /* WR.d=1.; */
-  /* WR.u=-19.59745; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=0.01; */
-  /* X0=0.8; */
-  /* tmax=0.012; */
+    /* WR.d=1.; */
+    /* WR.u=-19.59745; */
+    /* WR.v=0.; */
+    /* WR.w=0.; */
+    /* WR.p=0.01; */
+    /* X0=0.8; */
+    /* tmax=0.012; */
 
-  /*  /\* // TEST 4 *\/ */
+    /*  /\* // TEST 4 *\/ */
 
-  /* WR.d=5.99924; */
-  /* WR.v=-19.5975; */
-  /* WR.u=0.; */
-  /* WR.w=0.; */
-  /* WR.p=460.894; */
+    /* WR.d=5.99924; */
+    /* WR.v=-19.5975; */
+    /* WR.u=0.; */
+    /* WR.w=0.; */
+    /* WR.p=460.894; */
 
-  /* WL.d=5.99242; */
-  /* WL.v=6.19633; */
-  /* WL.u=0.; */
-  /* WL.w=0.; */
-  /* WL.p=46.0950; */
-  /* X0=0.6; */
-  /* tmax=0.035; */
+    /* WL.d=5.99242; */
+    /* WL.v=6.19633; */
+    /* WL.u=0.; */
+    /* WL.w=0.; */
+    /* WL.p=46.0950; */
+    /* X0=0.6; */
+    /* tmax=0.035; */
 
-  /*  /\* // REVERSED TEST 1 *\/ */
+    /*  /\* // REVERSED TEST 1 *\/ */
 
-  /* WL.d=0.125; */
-  /* WL.u=0.; */
-  /* WL.v=0.; */
-  /* WL.w=0.; */
-  /* WL.p=0.1; */
+    /* WL.d=0.125; */
+    /* WL.u=0.; */
+    /* WL.v=0.; */
+    /* WL.w=0.; */
+    /* WL.p=0.1; */
 
-  /* WR.d=1.; */
-  /* WR.u=-0.75; */
-  /* WR.v=0.; */
-  /* WR.w=0.; */
-  /* WR.p=1.; */
-  /* X0=0.7; */
+    /* WR.d=1.; */
+    /* WR.u=-0.75; */
+    /* WR.v=0.; */
+    /* WR.w=0.; */
+    /* WR.p=1.; */
+    /* X0=0.7; */
 
-  WL.a=sqrt(GAMMA*WL.p/WL.d);
-  WR.a=sqrt(GAMMA*WR.p/WR.d);
+    WL.a=sqrt(GAMMA*WL.p/WL.d);
+    WR.a=sqrt(GAMMA*WR.p/WR.d);
 
-  // ======================================================
+    // ======================================================
 
-  REAL dtot=0.;
-  int nc=0;
-  REAL dmax=0.;
-  for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
-    {
-      dxcur=pow(0.5,level);
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+    REAL dtot=0.;
+    int nc=0;
+    REAL dmax=0.;
+    for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 
-	      /* curoct->cell[icell].pot=GRAV*zc; */
+		/* curoct->cell[icell].pot=GRAV*zc; */
 
- 	      /* RT INSTAB */
+		/* RT INSTAB */
 
-	      /* REAL amp=0.05; */
-	      /* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* REAL amp=0.05; */
+		/* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
 
-	      /* REAL vrx=0.; */
-	      /* REAL vry=0.; */
-	      /* REAL vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//\*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.; */
+		/* REAL vrx=0.; */
+		/* REAL vry=0.; */
+		/* REAL vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//\*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.; */
 
-	      /* curoct->cell[icell].field.u=vrx; */
-	      /* curoct->cell[icell].field.v=vry; */
-	      /* curoct->cell[icell].field.w=vrz; */
+		/* curoct->cell[icell].field.u=vrx; */
+		/* curoct->cell[icell].field.v=vry; */
+		/* curoct->cell[icell].field.w=vrz; */
 
 	     
 	      
-	      /* if(zc>0.75){ */
-	      /* sZEL	curoct->cell[icell].field.d=2.; */
-	      /* } */
-	      /* else{ */
-	      /* 	curoct->cell[icell].field.d=1.; */
+		/* if(zc>0.75){ */
+		/* sZEL	curoct->cell[icell].field.d=2.; */
+		/* } */
+		/* else{ */
+		/* 	curoct->cell[icell].field.d=1.; */
 		
-	      /* 	} */
+		/* 	} */
 	      	
-	      /* curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9); */
-	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
+		/* curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9); */
+		/* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
 
 
-	      /* /\* EVRARD ADIABATIC COLLAPSE *\/ */
+		/* /\* EVRARD ADIABATIC COLLAPSE *\/ */
 	      
-	      /* UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5)); */
-	      /* UR.du=0.; */
-	      /* UR.dv=0.; */
-	      /* UR.dw=0.; */
-	      /* UR.E=0.05; */
+		/* UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5)); */
+		/* UR.du=0.; */
+		/* UR.dv=0.; */
+		/* UR.dw=0.; */
+		/* UR.E=0.05; */
 	      
-	      /* U2W(&UR,&WR); */
+		/* U2W(&UR,&WR); */
 
 
-	      /* /\* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); *\/ */
-	      /* /\* WR.u=0.; *\/ */
-	      /* /\* WR.v=0.; *\/ */
-	      /* /\* WR.w=0.; *\/ */
-	      /* /\* WR.p=1e-1; *\/ */
-	      /* /\* WR.a=sqrt(GAMMA*WR.p/WR.d); *\/ */
+		/* /\* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); *\/ */
+		/* /\* WR.u=0.; *\/ */
+		/* /\* WR.v=0.; *\/ */
+		/* /\* WR.w=0.; *\/ */
+		/* /\* WR.p=1e-1; *\/ */
+		/* /\* WR.a=sqrt(GAMMA*WR.p/WR.d); *\/ */
 
 
-	      /* memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));  */
+		/* memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));  */
 	      
- 	      /* /\* KH INSTAB *\/ */
+		/* /\* KH INSTAB *\/ */
 
-	      /* REAL amp=0.05; */
-	      /* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-	      /* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* REAL amp=0.05; */
+		/* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+		/* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
 
-	      /* REAL vrx=amp*sin(2.*M_PI*xc); */
-	      /* REAL vry=amp*sin(2.*M_PI*xc); */
-	      /* REAL vrz=amp*sin(2.*M_PI*xc); */
+		/* REAL vrx=amp*sin(2.*M_PI*xc); */
+		/* REAL vry=amp*sin(2.*M_PI*xc); */
+		/* REAL vrz=amp*sin(2.*M_PI*xc); */
 
-	      /* if((zc>0.75)||(zc<0.25)){ */
-	      /* 	curoct->cell[icell].field.d=1.0; */
-	      /* 	curoct->cell[icell].field.u=0.5+vrx; */
-	      /* 	curoct->cell[icell].field.v=vry; */
-	      /* 	curoct->cell[icell].field.w=vrz; */
-	      /* 	curoct->cell[icell].field.p=2.5; */
-	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); */
-	      /* } */
-	      /* else{ */
-	      /* 	curoct->cell[icell].field.d=2.0; */
-	      /* 	curoct->cell[icell].field.u=-0.5+vrx; */
-	      /* 	curoct->cell[icell].field.v=vry; */
-	      /* 	curoct->cell[icell].field.w=vrz; */
-	      /* 	curoct->cell[icell].field.p=2.5; */
-	      /* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); */
-	      /* } */
+		/* if((zc>0.75)||(zc<0.25)){ */
+		/* 	curoct->cell[icell].field.d=1.0; */
+		/* 	curoct->cell[icell].field.u=0.5+vrx; */
+		/* 	curoct->cell[icell].field.v=vry; */
+		/* 	curoct->cell[icell].field.w=vrz; */
+		/* 	curoct->cell[icell].field.p=2.5; */
+		/* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); */
+		/* } */
+		/* else{ */
+		/* 	curoct->cell[icell].field.d=2.0; */
+		/* 	curoct->cell[icell].field.u=-0.5+vrx; */
+		/* 	curoct->cell[icell].field.v=vry; */
+		/* 	curoct->cell[icell].field.w=vrz; */
+		/* 	curoct->cell[icell].field.p=2.5; */
+		/* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); */
+		/* } */
 
-	      /* SPHERICAL EXPLOSION */
+		/* SPHERICAL EXPLOSION */
 	      
-	      /* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
-	      /* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
-	      /* } */
-	      /* else{ */
-	      /*  	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
-	      /* } */
+		/* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
+		/* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
+		/* } */
+		/* else{ */
+		/*  	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
+		/* } */
 	      
 
 
-	      /* /\* /\\* ZELDOVICH PANCAKE *\\/ *\/ */
+		/* /\* /\\* ZELDOVICH PANCAKE *\\/ *\/ */
 
-	      /* REAL ZI=100; */
-	      /* REAL ZC=9; */
-	      /* cosmo.om=1.0; */
-	      /* cosmo.ov=0.; */
-	      /* cosmo.ob=OMEGAB; */
+		/* REAL ZI=100; */
+		/* REAL ZC=9; */
+		/* cosmo.om=1.0; */
+		/* cosmo.ov=0.; */
+		/* cosmo.ob=OMEGAB; */
 
-	      /* ainit=1./(1.+ZI); */
-	      /* amax=1.;//(1.+ZC); */
-	      /* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
-	      /* curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
-	      /* curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI); */
-	      /* curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI); */
-	      /* curoct->cell[icell].field.p=1e-14; */
-	      /* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
-	      /* getE(&curoct->cell[icell].field); */
+		/* ainit=1./(1.+ZI); */
+		/* amax=1.;//(1.+ZC); */
+		/* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
+		/* curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
+		/* curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI); */
+		/* curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI); */
+		/* curoct->cell[icell].field.p=1e-14; */
+		/* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
+		/* getE(&curoct->cell[icell].field); */
 
 
 
-	      /* /\* SHOCK TUBE *\/ */
-	      /* if(zc<=X0){ */
+		/* /\* SHOCK TUBE *\/ */
+		/* if(zc<=X0){ */
 
-	      /* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
-	      /* } */
-	      /* else{ */
-	      /* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
-	      /* } */
+		/* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
+		/* } */
+		/* else{ */
+		/* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
+		/* } */
 	      
-	      if(level==levelcoarse) {
-	      	dtot+=curoct->cell[icell].field.d;
-	      	nc++;
+		if(level==levelcoarse) {
+		  dtot+=curoct->cell[icell].field.d;
+		  nc++;
+		}
+
 	      }
-
-	    }
-	}while(nextoct!=NULL);
+	  }while(nextoct!=NULL);
       
-      //printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
-    }
+	//printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
+      }
   
-  avgdens+=dtot/nc;
-  printf("avgdens=%e\n",avgdens);
-  printf("dmax=%e\n",dmax);
+    avgdens+=dtot/nc;
+    printf("avgdens=%e\n",avgdens);
+    printf("dmax=%e\n",dmax);
 #endif
 
-  /* sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank);  */
-  /* dumpcube(lmap,firstoct,101,filename,0.);  */
-  /* sprintf(filename,"data/prehydstart.%05d.p%05d",0,cpu.rank);  */
-  /* dumpcube(lmap,firstoct,105,filename,0.);  */
+    /* sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank);  */
+    /* dumpcube(lmap,firstoct,101,filename,0.);  */
+    /* sprintf(filename,"data/prehydstart.%05d.p%05d",0,cpu.rank);  */
+    /* dumpcube(lmap,firstoct,105,filename,0.);  */
 
 
 
 
 #endif
 
-  //===================================================================================================================================
+    //===================================================================================================================================
 #ifdef WRAD
 
 #ifdef WCHEM
-  param.fudgecool=1.0;
-  param.ncvgcool=0;
-  if(NGRP!=NGRP_ATOMIC){
-    printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
-    abort();
-  }
+    param.fudgecool=1.0;
+    param.ncvgcool=0;
+    if(NGRP!=NGRP_ATOMIC){
+      printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
+      abort();
+    }
 #endif
 
 #ifdef WRADTEST
-  REAL X0=1./pow(2,levelcoarse);
-  int igrp;
-  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
-  param.unit.unit_n=1.;
+    REAL X0=1./pow(2,levelcoarse);
+    int igrp;
+    param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+    param.unit.unit_n=1.;
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-  param.unit.unit_l=30.e3*PARSEC;
+    param.unit.unit_l=30.e3*PARSEC;
 #else
-  param.unit.unit_l=6.6e3*PARSEC;
-  REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
-  param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
-  REAL pstar;
-  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
+    param.unit.unit_l=6.6e3*PARSEC;
+    REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
+    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    REAL pstar;
+    pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
 #endif
-  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
-  ainit=1.;
+    param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+    ainit=1.;
 #else
-  ainit=1./(16.);;
-  REAL om=0.27;
-  REAL ov=0.73;
-  REAL ob=0.045;
-  REAL h0=0.73;
-  REAL H0=h0*100*1e3/1e6/PARSEC;
+    ainit=1./(16.);;
+    REAL om=0.27;
+    REAL ov=0.73;
+    REAL ob=0.045;
+    REAL h0=0.73;
+    REAL H0=h0*100*1e3/1e6/PARSEC;
 
-  param.cosmo->om=om;
-  param.cosmo->ov=ov;
-  param.cosmo->ob=ob;
-  param.cosmo->H0=h0*100.;
+    param.cosmo->om=om;
+    param.cosmo->ov=ov;
+    param.cosmo->ob=ob;
+    param.cosmo->H0=h0*100.;
 
-  REAL rstar= 20.*1e6*PARSEC; // box size in m
-  double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
+    REAL rstar= 20.*1e6*PARSEC; // box size in m
+    double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
 
-  REAL rhostar=rhoc*om;
-  REAL tstar=2./H0/sqrt(om); // sec
-  REAL vstar=rstar/tstar; //m/s
+    REAL rhostar=rhoc*om;
+    REAL tstar=2./H0/sqrt(om); // sec
+    REAL vstar=rstar/tstar; //m/s
 
-  param.unit.unit_l=rstar;
-  param.unit.unit_v=vstar;
-  param.unit.unit_t=tstar;
-  param.unit.unit_n=1.;
-  amax=1.;
+    param.unit.unit_l=rstar;
+    param.unit.unit_v=vstar;
+    param.unit.unit_t=tstar;
+    param.unit.unit_n=1.;
+    amax=1.;
 
 #endif
 
-  for(level=levelcoarse;level<=levelmax;level++) 
-    {
-      dxcur=pow(0.5,level);
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue;
-      do // sweeping level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-	      yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-	      zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-	      for(igrp=0;igrp<NGRP;igrp++){
+    for(level=levelcoarse;level<=levelmax;level++) 
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+		for(igrp=0;igrp<NGRP;igrp++){
 
 #ifdef WCHEM
-		REAL xion,temperature;
-		REAL eint;
-		REAL nh;
+		  REAL xion,temperature;
+		  REAL eint;
+		  REAL nh;
 #ifndef COOLING
-		temperature=1e4;
-		xion=1.2e-3;
+		  temperature=1e4;
+		  xion=1.2e-3;
 #else
 #ifndef TESTCLUMP
-		temperature=1e2;
-		xion=1e-5;
+		  temperature=1e2;
+		  xion=1e-5;
 #else
-		temperature=8000.;
-		xion=1e-5;
+		  temperature=8000.;
+		  xion=1e-5;
 #endif
 #endif
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-		nh=1000.;
+		  nh=1000.;
 #else
-		nh=200.;
+		  nh=200.;
 #endif
 #else
-		nh=0.2;
+		  nh=0.2;
 #endif
 
 #ifdef TESTCLUMP
-		// defining the clump
-		REAL X0=5.5/6.6;
-		REAL rc=sqrt(pow(xc-X0,2)+pow(yc-0.5,2)+pow(zc-0.5,2));
-		if(rc<=(0.8/6.6)){
-		  temperature=40.;
-		  nh=4000.;
-		}
+		  // defining the clump
+		  REAL X0=5.5/6.6;
+		  REAL rc=sqrt(pow(xc-X0,2)+pow(yc-0.5,2)+pow(zc-0.5,2));
+		  if(rc<=(0.8/6.6)){
+		    temperature=40.;
+		    nh=4000.;
+		  }
 #endif
 
 #ifndef TESTCLUMP		
-		param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
-		REAL pstar;
-		pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		  REAL pstar;
+		  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
 
-		curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
-		eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
-		curoct->cell[icell].rfield.eint=eint; 
-		curoct->cell[icell].rfield.xion=xion; 
-		E2T(&curoct->cell[icell].rfield,1.0,&param);
+		  curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
+		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
+		  curoct->cell[icell].rfield.eint=eint; 
+		  curoct->cell[icell].rfield.xion=xion; 
+		  E2T(&curoct->cell[icell].rfield,1.0,&param);
 
 		
 		
 #ifdef WRADHYD
-		curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
-		curoct->cell[icell].field.u=0.0;
-		curoct->cell[icell].field.v=0.0;
-		curoct->cell[icell].field.w=0.0;
-		curoct->cell[icell].field.p=eint*(GAMMA-1.);
-		curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
-		getE(&(curoct->cell[icell].field));
+		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  curoct->cell[icell].field.u=0.0;
+		  curoct->cell[icell].field.v=0.0;
+		  curoct->cell[icell].field.w=0.0;
+		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
+		  curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+		  getE(&(curoct->cell[icell].field));
 #endif
 
 #endif
+		}
 	      }
-	    }
-	}while(nextoct!=NULL);
+	  }while(nextoct!=NULL);
       
       
-    }
+      }
 #endif
 #endif
 
+    // saving the absolute initial time
+#ifdef TESTCOSMO
+    tinit=ainit;
+#else
+    tinit=tsim;
+#endif
+    tsim=tinit;
+  }
+  else{
+    //==================================== Restart =================================================
+    MPI_Barrier(cpu.comm);
+    sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank); 
+    lastpart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
+
+    sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank); 
+    freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt);
+    
+    nstepstart+=1.; // next timestep is n+1
+    ndumps+=1.; // next timestep is n+1
+
+
+    if(cpu.rank==0){
+      printf(" ... Restarting from file #%d with nstep=%d tsim=%e ndumps=%d\n",param.nrestart,nstepstart,tsim,ndumps);
+    }
+
+
+#ifdef TESTCOSMO
+    // temporal boundaries of the full run
+    ainit=tinit;
+    amax=1.0;
+#endif
+
+    MPI_Barrier(cpu.comm);
+    /* int errcode=777; */
+    /* MPI_Abort(cpu.comm,errcode); */
+
+  }
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1731,14 +1681,11 @@ int main(int argc, char *argv[])
 
 #ifdef TESTCOSMO
   // ================== COMPUTATION OF FRIEDMANN TABLES
-
-  tsim=ainit;
-  aexp=ainit;
+  // we compute the friedmann tables
+  aexp=tsim;
 
   // at this stage we have to compute the conformal time
-  tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(ainit,1.0,cosmo.om,cosmo.ov,1e-8);
-
-  // we compute the friedmann tables
+  tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
 
   compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
 
@@ -1762,8 +1709,6 @@ int main(int argc, char *argv[])
   //================================================================================
 
 
-  int nsteps;
-  int ndumps=0;
   int pass;
   int smark;
   int ismooth,nsmooth=2;
@@ -1793,104 +1738,12 @@ int main(int argc, char *argv[])
     
 
 
-    //==================================== Restart =================================================
-
-    if(param.nrestart!=0){
-      FILE *fp;
-      int ioct=0;
-      struct OCT oct;
-      struct OCT *ozero;
-
-      sprintf(filename,"data/grid.%05d.p%05d",param.nrestart,cpu.rank); 
-
-      printf("\n ====> Restarting from %s\n",filename);
-
-      fp=fopen(filename,"rb");
-      
-      if(fp==NULL){
-	printf("--ERROR -- Restart file not found\n");
-	return 1;
-      }
-      
-      // reading the time
-      fread(&tsim,sizeof(REAL),1,fp);
-      printf("tsim=%f\n",tsim);
-      // reading the zero oct
-      fread(&ozero,sizeof(struct OCT *),1,fp);
-
-    
-      fread(&oct,sizeof(struct OCT),1,fp);
-      int curlev=-1;
-      
-      while(!feof(fp)){
-	
-	// copying raw data in the correct oct
-	memcpy(grid+ioct,&oct,sizeof(struct OCT));
-	
-	//dealing with level per level data
-	if(curlev!=oct.level){
-	  // a new level has been found
-	  firstoct[oct.level-1]=grid+ioct;
-	  if(oct.level!=1){
-	    lastoct[oct.level-2]=grid+ioct-1;
-	  }
-	  curlev=oct.level;
-	  printf("curlev=%d\n",curlev);
-	}
-
-
-	//dealing with OCT pointers
-
-	grid[ioct].next+=(grid-ozero);
-	grid[ioct].prev+=(grid-ozero);
-	grid[ioct].nexthash+=(grid-ozero);
-
-	//dealing with CELL pointers
-	long int adr;
-	
-	adr=(long int)grid[ioct].parent;
-	grid[ioct].parent=(struct CELL *) (adr+(long int)(grid-ozero));
-	
-	for(i=0;i<6;i++){
-	  adr=(long int)grid[ioct].nei[i];
-	  grid[ioct].nei[i]=(struct CELL *) (adr+(long int)(grid-ozero));
-	}
-
-
-	// dealing with pointers in CELLS
-	for(i=0;i<8;i++){
-	  grid[ioct].cell[i].child+=(grid-ozero);
-	}
-	
-
-#ifdef PIC
-	//dealing with particles
-	printf("ERROR RESTART NOT YET IMPLEMENTED WITH PARTICLES !\n");
-	abort();
-#endif
-
-	ioct++;
-	fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
-      }
-
-      freeoct=grid+ioct;
-      ndumps=param.nrestart+1;
-    }
-
 
     
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
     
-    // building the array of timesteps
-
-    REAL *adt;
-    adt=(REAL *)malloc(sizeof(REAL)*levelmax);
-    for(level=1;level<=levelmax;level++) adt[level-1]=param.dt;
-
-    int *ndt;
-    ndt=(int *)malloc(sizeof(int)*levelmax);
 
     // preparing freeocts
     cpu.freeoct=freeoct;
@@ -1915,14 +1768,14 @@ int main(int argc, char *argv[])
 
 
     // Loop over time
-    for(nsteps=0;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
+    for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
 
       cpu.nsteps=nsteps;
       
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
       cosmo.tsim=tsim;
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%f t=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%lf t=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
 #ifndef WRAD
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
@@ -1973,6 +1826,12 @@ int main(int argc, char *argv[])
 	}
 	dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
 #endif
+
+	// backups for restart
+	sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
+	save_amr(filename,firstoct,tdump,tinit,nsteps,ndumps,&param, &cpu,part,adt);
+	sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
+	save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
 
 	ndumps++;
       }

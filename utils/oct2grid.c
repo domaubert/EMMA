@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
 			  }
 			  }
 			}
-		    }
-		} 
-	      }
+			}
+		    } 
+		}
 	    }
 	  fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
       }
