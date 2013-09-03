@@ -8,7 +8,6 @@
 #include <mpi.h>
 #include <cudpp.h>
 
-#define NTHREAD 128
 #define NITERMAX 10
 #define ERRTOL 1e-10
 
@@ -1755,7 +1754,7 @@ __global__ void dupdatefield(struct HGRID *stencil, int nread, int stride, struc
       U.eint+=stencil[i].New.cell[icell].flux[5+flx*NVAR]*dtsurdx*one;
 #endif
 #ifdef WRADHYD
-	U.dX+=stencil[i].New.cell[icell].flux[6+flx*NVAR]*dtsurdx*one;
+      U.dX+=stencil[i].New.cell[icell].flux[6+flx*NVAR]*dtsurdx*one;
 #endif
       one*=-1.;
     }
@@ -1776,9 +1775,10 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 
   struct OCT *nextoct;
   struct OCT *curoct;
+  struct OCT *curoct0;
   int nreadtot,nread;
-  double t[10];
-  double tg=0.,th=0.,tu=0.,ts=0.;
+  /* double t[10]; */
+  /* double tg=0.,th=0.,tu=0.,ts=0.; */
   int is;
   int offset;
   
@@ -1788,8 +1788,8 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
   int ng;
   int nt;
 
-  cudaStream_t stream[cpu->nstream];
-
+  cudaStream_t stream[cpu->nstream]; // Not fully regular expression
+  int vnread[cpu->nstream];
   // creating the streams
   for(is=0;is<cpu->nstream;is++){
     cudaStreamCreate(&stream[is]);
@@ -1799,60 +1799,53 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
     do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
-
-      t[0]=MPI_Wtime();
+      curoct0=nextoct;
+      curoct=curoct0;
+      
+      //t[0]=MPI_Wtime();
   
-      // ------------ gathering the stencil value values
-      nextoct= gatherstencil(curoct,stencil,stride,cpu, &nread);
-      ng=((nread-1)/cpu->nthread/cpu->nstream)+1; // +1 is for leftovers
-
-      if(ng==1){
-	nt=nread;
-      }
-      else{
-	nt=cpu->nthread;
-      }
-
-      /* dim3 gridoct((nread/cpu->nthread/cpu->nstream)>1?(nread/cpu->nthread/cpu->nstream):1); */
-      /* dim3 blockoct(cpu->nthread); */
-      dim3 gridoct(ng);
-      dim3 blockoct(nt);
-
+#if 1
+      offset=0;
       // streaming ====================
       for(is=0;is<cpu->nstream;is++){
-	/* cudaDeviceSynchronize(); */
-	/* t[2]=MPI_Wtime(); */
+
+	// ------------ gathering the stencil value values
+	//printf("offser=%d\n",offset);
+	curoct=nextoct;
+	nextoct= gatherstencil(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
+	ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
 	
-	offset=is*nread/cpu->nstream;
-	//printf("Start Error Hyd =%s\n",cudaGetErrorString(cudaGetLastError()));
-	cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,nread*sizeof(struct HGRID)/cpu->nstream,cudaMemcpyHostToDevice,stream[is]);  
-	//printf("Start Error Hyd =%s\n",cudaGetErrorString(cudaGetLastError()));
-      
+	if(ng==1){
+	  nt=vnread[is];
+	}
+	else{
+	  nt=cpu->nthread;
+	}
+
+	dim3 gridoct(ng);
+	dim3 blockoct(nt);
+
+	
+	cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,vnread[is]*sizeof(struct HGRID),cudaMemcpyHostToDevice,stream[is]);  
+
+#if 1     
+	//printf("Sweep hydro\n");
 	// ------------ solving the hydro
-	dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew);
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-	dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew); 
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-	dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,dxcur,dtnew); 
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+	dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew);
+	dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew); 
+	dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew); 
 	
 	// ------------ updating values within the stencil
-	/* cudaDeviceSynchronize(); */
-	/* t[4]=MPI_Wtime(); */
 
-	dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,nread,stride,cpu,dxcur,dtnew);
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
-
-	/* cudaDeviceSynchronize(); */
-	/* t[6]=MPI_Wtime(); */
+	dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew);
+#endif
 	
-	cudaMemcpyAsync(stencil+offset,cpu->hyd_stencil+offset,nread/cpu->nstream*sizeof(struct HGRID),cudaMemcpyDeviceToHost,stream[is]);  
-	//printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+	cudaMemcpyAsync(stencil+offset,cpu->hyd_stencil+offset,vnread[is]*sizeof(struct HGRID),cudaMemcpyDeviceToHost,stream[is]);  
+	
+	offset+=vnread[is];
+
       }
-      /* dim3 gridoct2((nread/cpu->nthread)>1?(nread/cpu->nthread):1); */
-      /* dim3 blockoct2(cpu->nthread); */
+#endif
 
       
       /* dev_updatefield<<<gridoct2,blockoct2>>>(cpu->hyd_stencil,nread,stride,cpu,dxcur,dtnew); */
@@ -1860,17 +1853,19 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
       cudaDeviceSynchronize();
       // ------------ scatter back the FLUXES
       //cudaMemcpy(stencil,cpu->hyd_stencil,nread*sizeof(struct HGRID),cudaMemcpyDeviceToHost);  
-      nextoct=scatterstencil(curoct,stencil, nread, cpu,dxcur,dtnew);
+      nread=offset;
+      nextoct=scatterstencil(curoct0,stencil, nread, cpu,dxcur,dtnew);
       
-      t[8]=MPI_Wtime();
+      //t[8]=MPI_Wtime();
       
       nreadtot+=nread;
       
       
-      ts+=(t[8]-t[6]);
-      tu+=(t[6]-t[4]);
-      th+=(t[4]-t[2]);
-      tg+=(t[2]-t[0]);
+      /* ts+=(t[8]-t[6]); */
+      /* tu+=(t[6]-t[4]); */
+      /* th+=(t[4]-t[2]); */
+      /* tg+=(t[2]-t[0]); */
+      //printf("Start Error Hyd =%s nreadtot=%d\n",cudaGetErrorString(cudaGetLastError()),nreadtot);
     }while(nextoct!=NULL);
   }
   //printf("GPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
@@ -1880,6 +1875,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
     cudaStreamDestroy(stream[is]);
   }
 
+  //printf("Start Error Hyd =%s nreadtot=%d\n",cudaGetErrorString(cudaGetLastError()),nreadtot);
 
   return nreadtot;
 }

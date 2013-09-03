@@ -868,16 +868,18 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 
   struct OCT *nextoct;
   struct OCT *curoct;
+  struct OCT *curoct0;
   int nreadtot,nread;
-  double t[10];
-  double tg=0.,th=0.,tu=0.,ts=0.;//,tfu=0.,ttot=0.;
+  //double t[10];
+  //double tg=0.,th=0.,tu=0.,ts=0.;//,tfu=0.,ttot=0.;
   REAL cloc; // the speed of light in code units
 
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
-  printf("cloc=%e aexp=%e\n",cloc,aexp);
+  //printf("cloc=%e aexp=%e\n",cloc,aexp);
 
 
   cudaStream_t stream[cpu->nstream];
+  int vnread[cpu->nstream];
   int is,offset;
   // creating the streams
   for(is=0;is<cpu->nstream;is++){
@@ -886,87 +888,76 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
-
   nreadtot=0;
   int ng;
   int nt;
 
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
     do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
+      curoct0=nextoct;
+      curoct=curoct0;
 
-      t[0]=MPI_Wtime();
-  
-      // ------------ gathering the stencil value values
-      nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread);
-      ng=((nread-1)/cpu->nthread/cpu->nstream)+1; // +1 to treat leftovers
-      if(ng==1){
-	nt=nread;
-      }
-      else{
-	nt=cpu->nthread;
-      }
-      /* dim3 gridoct((nread/cpu->nthread/cpu->nstream)>1?(nread/cpu->nthread/cpu->nstream):1); */
-      /* dim3 blockoct(cpu->nthread); */
-
-      dim3 gridoct(ng);
-      dim3 blockoct(nt);
-
-#ifdef WCHEM
-      /* int ntchem=cpu->nthread/2; */
-      /* dim3 gridoct_chem((nread/ntchem/cpu->nstream)>1?(nread/ntchem/cpu->nstream):1); */
-      /* dim3 blockoct_chem(ntchem); */
-      dim3 gridoct_chem(ng);
-      dim3 blockoct_chem(nt);
-#endif      
-
+      //t[0]=MPI_Wtime();
 
       // streaming ====================
+      offset=0;
       for(is=0;is<cpu->nstream;is++){
-	t[2]=MPI_Wtime();
+	// ------------ gathering the stencil value values
+	curoct=nextoct;
+	nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
+	ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
+	if(ng==1){
+	  nt=vnread[is];
+	}
+	else{
+	  nt=cpu->nthread;
+	}
 
-	offset=is*nread/cpu->nstream;
-	cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,nread*sizeof(struct RGRID)/cpu->nstream,cudaMemcpyHostToDevice,stream[is]);  
-	//printf("Start Error  1=%s\n",cudaGetErrorString(cudaGetLastError()));
+	dim3 gridoct(ng);
+	dim3 blockoct(nt);
+	
+#ifdef WCHEM
+	dim3 gridoct_chem(ng);
+	dim3 blockoct_chem(nt);
+#endif      
+
+	//t[2]=MPI_Wtime();
+
+	cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
 	
 	/* // ------------ solving the hydro */
-	drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
-	drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);  
-	drad_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);  
+	drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);   
+	drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
+	drad_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
 	
       // ------------ updating values within the stencil
 	
-	t[4]=MPI_Wtime();
+	//t[4]=MPI_Wtime();
 	
-	dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,nread,stride,cpu,dxcur,dtnew); 
+	dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew); 
 	
       // ----------- perform physical cooling and ionisation 
 #ifdef WCHEM
-	dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,nread,stride,cpu,dxcur,dtnew,cpu->dparam,aexp); 
+	dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp); 
 #endif
 	
 	//printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
-	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,nread/cpu->nstream*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);  
+	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
+
+  	offset+=vnread[is];
       }
       
       // ------------ scatter back the FLUXES
       cudaDeviceSynchronize();
-      t[6]=MPI_Wtime();
+      //t[6]=MPI_Wtime();
    
-      nextoct=scatterstencilrad(curoct,stencil, nread, cpu,dxcur,dtnew);
+      nread=offset;
+      nextoct=scatterstencilrad(curoct0,stencil, nread, cpu,dxcur,dtnew);
 
 
-      t[8]=MPI_Wtime();
+      //t[8]=MPI_Wtime();
 
       nreadtot+=nread;
-
-
-      ts+=(t[8]-t[6]);
-      tu+=(t[6]-t[4]);
-      th+=(t[4]-t[2]);
-      tg+=(t[2]-t[0]);
-
     }while(nextoct!=NULL);
   }
 
@@ -974,8 +965,9 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
   for(is=0;is<cpu->nstream;is++){
     cudaStreamDestroy(stream[is]);
   }
+  //printf("Start Error Hyd =%s nreadtot=%d\n",cudaGetErrorString(cudaGetLastError()),nreadtot);
 
-  printf("GPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  //printf("GPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
 
   return nreadtot;
 }

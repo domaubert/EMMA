@@ -252,6 +252,7 @@ struct CPUINFO{
   int nthread;
 
   struct RUNPARAMS *dparam;
+
 #endif
 };
 
@@ -504,6 +505,31 @@ struct CELLFLUX
 
 };
 
+struct CELLFLUX_R
+{
+
+#ifdef WRAD
+  struct Rtype deltaR;
+  struct Rtype rfield;
+  struct Rtype rfieldnew;
+  REAL rflux[NFLUX_R]; 
+#endif
+
+};
+
+struct CELLFLUX_H
+{
+
+#ifdef WHYDRO2
+  //struct Wtype field;
+  struct Utype deltaU;
+  REAL flux[NFLUX]; // 6 fluxes of 5 variables each
+  REAL divu;
+#endif
+
+};
+
+
 
 
 // ----------------------------------------------------------------
@@ -523,6 +549,33 @@ struct CELLLIGHT
 #ifdef WGRAV
   REAL f[3];
 #endif
+  char split;
+};
+
+// =============================================================
+
+struct CELLLIGHT_H
+{
+
+#ifdef WHYDRO2
+  struct Wtype field; // hydrodynamical data
+#endif
+
+#ifdef WGRAV
+  REAL f[3];
+#endif
+  char split;
+};
+
+// =========================================================
+
+struct CELLLIGHT_R
+{
+
+#ifdef WRAD
+  struct Rtype rfield; // radiation data
+#endif
+
   char split;
 };
 
@@ -576,10 +629,18 @@ struct OCT
 
 
 // ========================================
-struct OCTLIGHT
+struct OCTLIGHT_H
 {
   // the cell properties
-  struct CELLLIGHT cell[8]; // MUSTN'T BE MOVED !!
+  struct CELLLIGHT_H cell[8]; // MUSTN'T BE MOVED !!
+};
+
+
+// ========================================
+struct OCTLIGHT_R
+{
+  // the cell properties
+  struct CELLLIGHT_R cell[8]; // MUSTN'T BE MOVED !!
 };
 
 // ========================================
@@ -638,10 +699,22 @@ struct OCTFLUX
   struct CELLFLUX cell[8]; // MUSTN'T BE MOVED !!
 };
 
+struct OCTFLUX_H
+{
+  // the cell properties
+  struct CELLFLUX_H cell[8]; // MUSTN'T BE MOVED !!
+};
+
+struct OCTFLUX_R
+{
+  // the cell properties
+  struct CELLFLUX_R cell[8]; // MUSTN'T BE MOVED !!
+};
+
 // ========================================
 struct HGRID{
-  struct OCTLIGHT oct[27];
-  struct OCTFLUX New;
+  struct OCTLIGHT_H oct[27];
+  struct OCTFLUX_H New;
 };
 
 // ============================================================================
@@ -651,8 +724,8 @@ struct HGRID{
 
 // ========================================
 struct RGRID{
-  struct OCTLIGHT oct[7];
-  struct OCTFLUX New;
+  struct OCTLIGHT_R oct[7];
+  struct OCTFLUX_R New;
 };
 
 
