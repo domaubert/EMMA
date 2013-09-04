@@ -607,6 +607,18 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   int val=(pow(2,param->lmax-1)<256?pow(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
   param->maxhash=pow(val,3);
   //printf("maxhash=%d\n",param->maxhash);
+
+  // ====================== some checks
+
+
+  // stencil/streams conformity
+#ifdef GPUAXL
+  if(param->hstride<(param->nthread*param->nstream)){
+    printf(" Stream Thread granulosity too high : nt=%d ns=%d stencil=%d\n",param->hstride,param->nthread,param->nstream);
+    abort();
+  }
+#endif
+    
 }
 
 //==================================================================================

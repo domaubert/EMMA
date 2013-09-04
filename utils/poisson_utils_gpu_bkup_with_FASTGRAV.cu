@@ -5,15 +5,14 @@
 #include "prototypes.h"
 #include <mpi.h>
 #include <cudpp.h>
-#include "gpu_type.h"
 
 #ifdef WGRAV
 
-extern "C" struct OCT *gatherstencilgrav(struct OCT *octstart, struct GGRID *stencil, int stride, struct CPUINFO *cpu, int *nread);
+extern "C" struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *stencil, int stride, struct CPUINFO *cpu, int *nread);
 extern "C" struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *stencil, int nread, int stride, struct CPUINFO *cpu);
 extern "C" void clean_vecpos(int level,struct OCT **firstoct);
 extern "C" struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread);
-extern "C" void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, struct RUNPARAMS *param, REAL *distout, REAL *normpout);
+extern "C" void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, struct RUNPARAMS *param);
 extern "C" REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct STENGRAV *stencil, int stride, REAL tsim);
 extern "C" void create_gravstencil_GPU(struct CPUINFO *cpu, int stride);
 extern "C" void create_pinned_gravstencil(struct STENGRAV *gstencil, int stride);
@@ -22,6 +21,14 @@ extern "C" void destroy_gravstencil_GPU(struct CPUINFO *cpu, int stride);
 extern "C" void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field, int cmp_keys, int level);
 
 
+// ====================== structure for CUDPP =======
+
+
+struct CUPARAM{
+  CUDPPHandle theCudpp;
+  CUDPPConfiguration config;
+  CUDPPHandle scanplan;
+};
 
 
 // =======================================================
@@ -228,23 +235,14 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   int iter;
   struct OCT *nextoct;
   struct OCT *curoct;
-  struct OCT *curoct0;
-
   int nreadtot;
   int nread;
   REAL residual,dres;
-  //  int icell;
+  int icell;
   int nitmax;
   REAL factdens;
   REAL fnorm,res0=0.;
   REAL *rloc;
-  REAL *resA;
-  REAL *resB;
-  REAL dist,normp,dresconv;
-  int crit;
-  int ng;
-  int nt;
-
   cudaMallocHost((void**)&rloc,sizeof(REAL)*cpu->nstream);
 
   /* double t[10]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.}; */
@@ -253,39 +251,31 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   /* double tt; */
 
   // ======================= some stuf for CUDPP =======================/
-  
-  resA= cpu->gresA;
-  resB= cpu->gresB;
+  REAL *resA;
+  REAL *resB;
 
-  /* cudaMalloc((void **)&resA,sizeof(REAL)*stride*8); */
-  /* cudaMalloc((void **)&resB,sizeof(REAL)*stride*8); */
 
-  /* printf("POINT IN GPU=%p\n",resA); */
-  /* printf("POINT IN GPU=%p\n",resB); */
+  cudaMalloc((void **)&resA,sizeof(REAL)*stride*8);
+  cudaMalloc((void **)&resB,sizeof(REAL)*stride*8);
 
   
-  /* struct CUPARAM cuparam; */
+  struct CUPARAM cuparam;
   
-  /* cudppCreate(&(cuparam.theCudpp)); */
+  cudppCreate(&(cuparam.theCudpp));
     
-  /* cuparam.config.algorithm = CUDPP_SCAN; */
-  /* cuparam.config.datatype = CUDPP_DOUBLE; */
-  /* cuparam.config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE; */
-  /* cuparam.config.op=CUDPP_ADD; */
+  cuparam.config.algorithm = CUDPP_SCAN;
+  cuparam.config.datatype = CUDPP_DOUBLE;
+  cuparam.config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE;
+  cuparam.config.op=CUDPP_ADD;
 
-  /* cuparam.scanplan =0; */
-  /* cudppPlan(cuparam.theCudpp,&(cuparam.scanplan), cuparam.config, stride*8, 1, 0); */
-
-  // THE PLAN
-  struct CUPARAM *cuparam;
-  cuparam=(struct CUPARAM *)cpu->cuparam;
+  cuparam.scanplan =0;
+  cudppPlan(cuparam.theCudpp,&(cuparam.scanplan), cuparam.config, stride*8, 1, 0);
 
 
   //======================== END CUDPP STUFF ========================/
 
   cudaStream_t stream[cpu->nstream];
   int is,offset;
-  int vnread[cpu->nstream];
   // creating the streams
   for(is=0;is<cpu->nstream;is++){
     cudaStreamCreate(&stream[is]);
@@ -330,49 +320,37 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     nreadtot=0;
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
-	curoct0=nextoct;
-	curoct=curoct0;
+	curoct=nextoct;
+	nextoct=curoct->next; 
 	
+	// ------------ gathering the stencil value values
+
+
+	// find a way to stick data on the device
+	
+	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+	dim3 gridoct((nread/(cpu->nthread*cpu->nstream)>1?(nread/(cpu->nthread*cpu->nstream)):1));
+	dim3 blockoct(cpu->nthread);
 		     
 	// streaming data
-	offset=0;
 	for(is=0;is<cpu->nstream;is++){
+	  offset=is*(nread/cpu->nstream);
 	  
-	  // ------------ gathering the stencil value values
-	  
-	  curoct=nextoct;
-	  nextoct=gatherstencilgrav(curoct,stencil->stencil+offset,stride/cpu->nstream,cpu, vnread+is);
-
-	  ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
-	
-	  if(ng==1){
-	    nt=vnread[is];
-	  }
-	  else{
-	    nt=cpu->nthread;
-	  }
-
-	  dim3 gridoct(ng);
-	  dim3 blockoct(nt);
-	  
-	  cudaMemcpyAsync(cpu->dev_stencil+offset,stencil->stencil+offset,vnread[is]*sizeof(struct GGRID),cudaMemcpyHostToDevice,stream[is]);
+	  cudaMemcpyAsync(cpu->dev_stencil+offset,stencil->stencil+offset,nread*sizeof(struct GGRID)/cpu->nstream,cudaMemcpyHostToDevice,stream[is]);
 	  
 	  // ------------ solving the hydro
-	  dev_PoissonJacobi_single<<<gridoct,blockoct,0,stream[is]>>>(cpu->dev_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,(iter==0),factdens,resA+offset*8,cpu->res+offset*8,cpu->pnew+offset*8,cpu->resLR+offset);
+	  dev_PoissonJacobi_single<<<gridoct,blockoct,0,stream[is]>>>(cpu->dev_stencil+offset,level,cpu->rank,nread/cpu->nstream,stride,dxcur,(iter==0),factdens,resA+offset*8,cpu->res+offset*8,cpu->pnew+offset*8,cpu->resLR+offset);
 	  // ------------ computing the residuals
 
-	  //cudaStreamSynchronize(stream[is]);
-	  cudppScan(cuparam->scanplan, resB+offset*8, resA+offset*8, vnread[is]*8);
+	  cudaStreamSynchronize(stream[is]);
+	  cudppScan(cuparam.scanplan, resB+offset*8, resA+offset*8, nread*8/(cpu->nstream));
 	  cudaMemcpyAsync(rloc+is,resB+offset*8,sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);
 
-	  cudaMemcpyAsync(stencil->res+offset*8,cpu->res+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
-	  cudaMemcpyAsync(stencil->pnew+offset*8,cpu->pnew+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
-	  cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(vnread[is])*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);   
+	  cudaMemcpyAsync(stencil->res+offset*8,cpu->res+offset*8,(nread/cpu->nstream)*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
+	  cudaMemcpyAsync(stencil->pnew+offset*8,cpu->pnew+offset*8,(nread/cpu->nstream)*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
+	  cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(nread/cpu->nstream)*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);   
 
-
-	  offset+=vnread[is];
-
-	  //cudaStreamSynchronize(stream[is]);
+	  cudaStreamSynchronize(stream[is]);
 	  //residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);
 	  if(iter==0){
 	    fnorm+=rloc[is];
@@ -385,9 +363,8 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
 	// ------------ scatter back the data
-	cudaDeviceSynchronize();
-	nread=offset;
-	nextoct=scatterstencilgrav(curoct0,stencil, nread, stride,cpu);
+
+	nextoct=scatterstencilgrav(curoct,stencil, nread, stride,cpu);
 
 	nreadtot+=nread;
 	
@@ -396,14 +373,24 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     
     
     // at this stage an iteration has been completed : let's update the potential and compute the residual
-
     if(nreadtot>0){
-      update_pot_in_tree(level,firstoct,cpu,param,&dist,&normp);
+      curoct=firstoct[level-1];
+      if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    	nextoct=curoct;
+    	do{
+    	  curoct=nextoct;
+    	  nextoct=curoct->next;
+    	  if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
+    	  for(icell=0;icell<8;icell++){
+    	    curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
+    	  }
+    	}while(nextoct!=NULL);
+      }
     }
 
 #ifdef WMPI
     //printf("iter=%d\n",iter);
-    if((iter<=param->niter)||(iter%1==0)){
+    if((iter<=param->niter)||(iter%10==0)){
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
       if(iter==0){
 	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
@@ -411,8 +398,6 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
       }
       else{
 	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
       }
     }
 #endif
@@ -421,22 +406,12 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     if((iter==1)&&(level>=param->lcoarse)) res0=residual;
     
     if(iter>0){
-
-      // here we test the convergence of the temporary solution
-      dresconv=sqrt(dist/normp);
-
-      // here we test the zero level of Poisson equation
       if(level<param->lcoarse){
 	dres=sqrt(residual);
       }
       else{
 	dres=sqrt(residual/fnorm);
       }
-
-      // we take the smallest
-      dres=(dres<dresconv?dres:dresconv);
-      crit=(dres<dresconv?0:1);
-
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }
@@ -446,20 +421,20 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
   if(level>param->lcoarse){
-    if(cpu->rank==0) printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+    printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==0) printf("GPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
+    printf("GPU === | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0));
   }
 
 
   //  printf("GPU | level=%d iter=%d res=%e tgat=%e tcal=%e tscat=%e tall=%e tup=%e tglob=%e\n",level,iter,dres,tgat/iter,tcal/iter,tscat/iter,tall/iter,tup/iter,tglob/iter);
   //printf("GPU | level=%d iter=%d res=%e \n",level,iter,dres);
 
-  /* cudppDestroyPlan(cuparam.scanplan); */
-  /* cudppDestroy(cuparam.theCudpp); */
-  /* cudaFree(resA); */
-  /* cudaFree(resB); */
+  cudppDestroyPlan(cuparam.scanplan);
+  cudppDestroy(cuparam.theCudpp);
+  cudaFree(resA);
+  cudaFree(resB);
   cudaFreeHost(rloc);
 
   // Destroying the streams

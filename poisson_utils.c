@@ -604,7 +604,8 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 //================================================================
 
 
-struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
+//struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gatherstencilgrav(struct OCT *octstart, struct GGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -621,7 +622,7 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, i
   char visit[7]={0,0,0,0,0,0,0};
   int ioct;
 
-  struct GGRID *stencil=gstencil->stencil;
+  //struct GGRID *stencil=gstencil->stencil;
 
   nextoct=octstart;
   if(nextoct!=NULL){
@@ -1318,8 +1319,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	
 #ifndef FASTGRAV
 	// ------------ gathering the stencil value 
-	nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
-
+	nextoct=gatherstencilgrav(curoct,stencil->stencil,stride,cpu, &nread);
 #else
 	//printf("iter=%d nread=%d\n",iter,nread);
 	if((iter==0)||(cpu->noct[level-1]>nread)){
@@ -1380,7 +1380,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	nreadtot+=nread;
       }while(nextoct!=NULL);
     }
-    if((iter==1)&&(level>=param->lcoarse)) res0=residual;
 
     //printf("iter=%d nreadtot=%d\n",iter,nreadtot);
 
@@ -1415,6 +1414,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }
     }
 #endif
+
+    if((iter==1)&&(level>=param->lcoarse)) res0=residual;
 
     tstop=MPI_Wtime();
     tup+=(tstop-tt);
@@ -1482,8 +1483,13 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
-  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  if(level==param->lcoarse){
+    dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  }
+  else{
+    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  }
+  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
 
 
@@ -1508,7 +1514,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   
   if((level-1)==param->mgridlmin){
 #ifdef WMPI
-  mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level-1); // potential field exchange
+    mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level-1); // potential field exchange
 #endif
 
 #ifndef GPUAXL
@@ -1547,8 +1553,13 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  //  dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  if(param->lcoarse==level){
+    dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
+  }
+  else{
+    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  }
 #endif
   return dres;
 }
@@ -1575,7 +1586,7 @@ void PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 
 #ifndef FASTGRAV
 	// ------------ gathering the stencil value 
-      nextoct=gatherstencilgrav(curoct,stencil,stride,cpu, &nread);
+      nextoct=gatherstencilgrav(curoct,stencil->stencil,stride,cpu, &nread);
 #else
       // ------------ some cleaning
       clean_vecpos(level,firstoct);
@@ -1703,8 +1714,8 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
 #else
-    PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
-    //    PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
+    //PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
+    PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
 #endif
 
   }

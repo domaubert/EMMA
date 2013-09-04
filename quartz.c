@@ -47,6 +47,7 @@
 #include "advanceamr.h"
 
 #ifdef GPUAXL
+#include "interface.h"
 #include "poisson_utils_gpu.h"
 #include "hydro_utils_gpu.h"
 #include "rad_utils_gpu.h"
@@ -169,7 +170,6 @@ int main(int argc, char *argv[])
 
   REAL avgdens; 
   REAL tmax;
-
 
 #ifdef PIC
   avgdens=1.;//we assume a unit mass in a unit length box
@@ -520,6 +520,8 @@ int main(int argc, char *argv[])
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
+  
+
 #else
   gstencil.d=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.p=(REAL *)calloc(gstride*8,sizeof(REAL));
@@ -545,13 +547,14 @@ int main(int argc, char *argv[])
   checkdevice(0);
 #ifdef WGRAV
   create_pinned_gravstencil(&gstencil,gstride);
-  printf("coucou\n");
 #ifdef FASTGRAV
   struct STENGRAV dev_stencil;
   cpu.dev_stencil=&dev_stencil;
 #endif
   create_gravstencil_GPU(&cpu,gstride);
-  //printf("stencil created on device with adress %p\n",cpu.dev_stencil);
+  cpu.gresA=GPUallocREAL(gstride*8);
+  cpu.gresB=GPUallocREAL(gstride*8);
+  cpu.cuparam=GPUallocScanPlan(gstride*8);
 #endif
 
 #ifdef WHYDRO2 

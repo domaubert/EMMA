@@ -7,6 +7,7 @@ typedef double REAL;
 #include <mpi.h>
 #endif
 
+
 #define GAMMA (5./3.)
 #define CFL (0.4)
 #define GRAV (0.25)
@@ -253,6 +254,10 @@ struct CPUINFO{
 
   struct RUNPARAMS *dparam;
 
+
+  REAL * gresA;
+  REAL * gresB;
+  unsigned long int cuparam;
 #endif
 };
 

@@ -19,7 +19,7 @@ mgrid_nsmooth 5
 ##==Restart==================
 restart_snap 0
 ##==ThreadManagement======
-grav_stencil_size 16
+grav_stencil_size 32768
 cons_stencil_size 8192
 max_subcycles 2
 nthread 32
