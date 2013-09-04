@@ -1,1 +1,1 @@
-Makefile.maggie
+mfiles/Makefile.maggie
