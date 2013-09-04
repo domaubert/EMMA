@@ -169,6 +169,7 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
   struct Gtype *curcell;
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
+  
   i=bx*blockDim.x+tx;
 
 
@@ -192,17 +193,13 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
     res=temp;
       
     // we finish the laplacian
-    temp=temp/6.0;
-    temp=temp-dx*dx*curcell->d/6.0*factdens;
+    stockpnew[icell+i*8]=(temp-dx*dx*curcell->d*factdens)/6.0;
 
     // we finsih the residual
-    res=res-6.0*curcell->p;
-    res=res/(dx*dx)-factdens*curcell->d;
+    res=(res-6.0*curcell->p)/(dx*dx)-factdens*curcell->d;
 
-    // we store the new value of the potential
-    //    stencil[i].pnew[icell]=temp;
-    //stockpnew[icell*nread+i]=temp;
-    stockpnew[icell+i*8]=temp;
+    // low res
+    stockresLR[i]+=res*0.125;
 
     // we store the local residual
     if(flag) {
@@ -214,7 +211,6 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
       stockres[icell+i*8]=res;
     }
 
-    stockresLR[i]+=res*0.125;
   }
 
 

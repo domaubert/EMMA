@@ -1,6 +1,6 @@
 ########################################## 
 ARCH = GPU
-C_LIBS = -lstdc++ -O2 # -g #
+C_LIBS = -O2 -lstdc++ # -g #
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
 DEFINES  =  
@@ -9,10 +9,10 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
-#DEFINES  +=  -DWRAD
-#DEFINES  +=  -DWRADHYD
+DEFINES  +=  -DWRAD
+DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 
 #------------ MPI OPTIONS ---------------------
@@ -57,13 +57,14 @@ DEFINES  += -DCOOLING
 #DEFINES  +=  -DTRANSXP
 
 
-#=================================================================================
+#=================================================================================/usr/local/openmpi-1.6.i13/include/
+
 
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartzgpu
-CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o 
-CUDA_LIBS = -lcudpp -lcuda -L/usr/local/cuda/lib64 -lcudart -I/usr/lib/openmpi/include -I/usr/local/cuda/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lm -ldl
+CUDA_OBJS= interface.o  hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o poisson_utils_gpu.o #cic_gpu.o 
+CUDA_LIBS = -I/home/observatoire/aubert/cudpp_src_2.0/include -L/home/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda5/lib64 -lcudart  -I/usr/local/cuda5/include -I/usr/local/openmpi-1.6.i13/include -L/usr/local/openmpi-1.6.i13/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
 else
 DEFINESGLOB= $(DEFINES) 
 EXECUTABLE = quartzcpu
@@ -71,7 +72,7 @@ CUDA_OBJS=
 CUDA_LIBS =
 endif
 
-NVCC= /usr/local/cuda/bin/nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
+NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
 CC = mpicc 
 OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 .c.o:
@@ -81,7 +82,7 @@ ifeq ($(ARCH),GPU)
 	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_35 -c $*.cu	
 endif
 
-all:$(C_OBJS) $(CUDA_OBJS)
+/usr/local/openmpi-1.6.i13/include/all:$(C_OBJS) $(CUDA_OBJS)
 	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
 
 oct2grid:

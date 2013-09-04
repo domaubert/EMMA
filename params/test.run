@@ -11,19 +11,19 @@ level_coarse 7
 level_max 7
 amr_thresh 7.5e-8
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 100
+max_number_of_relaxation_poisson 10
 poisson_accuracy 1e-3
-mgrid_lmin 4
+mgrid_lmin 7
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
 restart_snap 0
 ##==ThreadManagement======
-grav_stencil_size 32768
+grav_stencil_size 65536
 cons_stencil_size 8192
 max_subcycles 2
 nthread 32
-nstream 4
+nstream 32
 ##==RadTransfert======
 clight 1e-2
 dens_threshold 0.05
