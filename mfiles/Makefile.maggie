@@ -1,5 +1,5 @@
 ########################################## 
-ARCH = GPU
+ARCH = CPU
 C_LIBS = -lstdc++ -O2 # -g #
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
@@ -9,16 +9,18 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
-#DEFINES  +=  -DWRAD
-#DEFINES  +=  -DWRADHYD
+DEFINES  +=  -DWRAD
+DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 
 #------------ MPI OPTIONS ---------------------
 
 DEFINES  +=  -DWMPI
 
+#------------ CUDA OPTIONS ---------------------
+#DEFINES  +=  -DWCUDA_ERR
 
 #------------ ICs OPTIONS ---------------------
 

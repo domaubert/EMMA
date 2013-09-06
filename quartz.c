@@ -1491,8 +1491,6 @@ int main(int argc, char *argv[])
 #ifdef WRAD
 
 #ifdef WCHEM
-    param.fudgecool=1.0;
-    param.ncvgcool=0;
     if(NGRP!=NGRP_ATOMIC){
       printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
       abort();

@@ -162,6 +162,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   fread(&(param->cosmo->ob),sizeof(REAL),1,fp);
   fread(&(param->cosmo->H0),sizeof(REAL),1,fp);
 #endif
+
   // reading pointer informations in the snapshot
   fread(&root_sna,sizeof(struct OCT*),1,fp);
   fread(&rootcell_sna,sizeof(struct CELL*),1,fp);
@@ -599,6 +600,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->denthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
+      param->fudgecool=1.0;
+      param->ncvgcool=0;
+
 #endif
       fclose(buf);
     }

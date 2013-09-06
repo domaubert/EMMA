@@ -10,6 +10,7 @@
 #include <string.h>
 #include <mpi.h>
 #include "atomic_data/Atomic.h"
+#include "gpu_type.h"
 
 
 #define FRAC_VAR (0.1)

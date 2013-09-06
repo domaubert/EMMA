@@ -1350,6 +1350,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 	if(iter==0){
 	  fnorm+=rloc;
+	  //printf("rloc=%e\n",rloc);
 	}
 	else{
 	  //residual=(residual>rloc?residual:rloc);

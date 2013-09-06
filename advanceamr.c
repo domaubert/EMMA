@@ -178,7 +178,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   struct COSMOPARAM *cosmo;
   cosmo=param->cosmo;
 #endif
-  struct OCT *curoct;
+   struct OCT *curoct;
   REAL dtnew;
   REAL dt=0.;
   REAL dtold;
@@ -235,7 +235,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0){
       printf("----\n");
-      printf("subscyle #%d subt=%e\n",is,dt);
+      printf("subscyle #%d subt=%e nsub=%d\n",is,dt,nsub);
     }
 
 #ifdef TESTCOSMO

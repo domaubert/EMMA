@@ -13,6 +13,8 @@
 #include "chem_utils.cuh"
 #endif
 
+#include "gpu_type.h"
+
 extern "C" struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread);
 extern "C" struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew);
 extern "C" int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param);
@@ -873,6 +875,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
   //double t[10];
   //double tg=0.,th=0.,tu=0.,ts=0.;//,tfu=0.,ttot=0.;
   REAL cloc; // the speed of light in code units
+  CUDA_CHECK_ERROR("Rad Start");
 
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
   //printf("cloc=%e aexp=%e\n",cloc,aexp);
@@ -904,6 +907,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
       for(is=0;is<cpu->nstream;is++){
 	// ------------ gathering the stencil value values
 	curoct=nextoct;
+	if(curoct!=NULL){
 	nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
 	ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
 	if(ng==1){
@@ -945,6 +949,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 
   	offset+=vnread[is];
+	}
       }
       
       // ------------ scatter back the FLUXES
@@ -968,6 +973,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
   //printf("Start Error Hyd =%s nreadtot=%d\n",cudaGetErrorString(cudaGetLastError()),nreadtot);
 
   //printf("GPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  CUDA_CHECK_ERROR("Rad Stop");
 
   return nreadtot;
 }
