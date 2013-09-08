@@ -346,7 +346,8 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	  curoct=nextoct;
 	  if(curoct!=NULL){
 	    nextoct=gatherstencilgrav(curoct,stencil->stencil+offset,stride/nstream,cpu, vnread+is);
-	    ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
+	    if(vnread[is]!=0){
+	      ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
 	
 	    if(ng==1){
 	      nt=vnread[is];
@@ -374,19 +375,24 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 	    offset+=vnread[is];
 	    //residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);
-	    if(iter==0){
-	      fnorm+=rloc[is];
-	    }
-	    else{
-	      residual+=rloc[is];
-	    }
+ 	    }
 	  }
 	}
-
+	
 
 
 	// ------------ scatter back the data
 	cudaDeviceSynchronize();
+	for(is=0;is<cpu->nstream;is++) {
+	  if(iter==0){
+	    //printf("rloc=%e\n",rloc[is]);
+	    fnorm+=rloc[is]*(vnread[is]>0);
+	  }
+	  else{
+	    residual+=rloc[is]*(vnread[is]>0);
+	  }
+	}
+
 	nread=offset;
 	nextoct=scatterstencilgrav(curoct0,stencil, nread, stride,cpu);
 

@@ -1816,6 +1816,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	curoct=nextoct;
 	if(curoct!=NULL){
 	  nextoct= gatherstencil(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
+	  if(vnread[is]!=0){
 	  ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
 	
 	  if(ng==1){
@@ -1847,6 +1848,7 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	
 	  offset+=vnread[is];
 	}
+      }
       }
 #endif
 

@@ -1484,7 +1484,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  if(level==param->lcoarse){
+  if(level>=7){
     dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
   }
   else{
@@ -1555,7 +1555,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
   //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  if(param->lcoarse==level){
+  if(level>=7){
     dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
   }
   else{

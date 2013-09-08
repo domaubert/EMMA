@@ -909,6 +909,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	curoct=nextoct;
 	if(curoct!=NULL){
 	nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
+	if(vnread[is]!=0){
 	ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
 	if(ng==1){
 	  nt=vnread[is];
@@ -949,6 +950,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 
   	offset+=vnread[is];
+	}
 	}
       }
       
