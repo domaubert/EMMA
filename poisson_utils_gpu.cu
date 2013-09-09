@@ -359,19 +359,20 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	    dim3 gridoct(ng);
 	    dim3 blockoct(nt);
 	    cudaMemcpyAsync(cpu->dev_stencil+offset,stencil->stencil+offset,vnread[is]*sizeof(struct GGRID),cudaMemcpyHostToDevice,stream[is]);
-	  
+#ifndef NOCOMP
 	    // ------------ solving the hydro
 	    dev_PoissonJacobi_single<<<gridoct,blockoct,0,stream[is]>>>(cpu->dev_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,(iter==0),factdens,resA+offset*8,cpu->res+offset*8,cpu->pnew+offset*8,cpu->resLR+offset);
 	    // ------------ computing the residuals
 
 	    cudaStreamSynchronize(stream[is]);
 	    cudppScan(cuparam->scanplan, resB+offset*8, resA+offset*8, vnread[is]*8);
+#endif
+
 	    cudaMemcpyAsync(rloc+is,resB+offset*8,sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);
 
 	    cudaMemcpyAsync(stencil->res+offset*8,cpu->res+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
 	    cudaMemcpyAsync(stencil->pnew+offset*8,cpu->pnew+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
 	    cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(vnread[is])*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);   
-
 
 	    offset+=vnread[is];
 	    //residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);

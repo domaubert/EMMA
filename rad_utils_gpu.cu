@@ -930,6 +930,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 
 	cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
 	
+#ifndef NOCOMP
 	/* // ------------ solving the hydro */
 	drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);   
 	drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
@@ -945,7 +946,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 #ifdef WCHEM
 	dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp); 
 #endif
-	
+#endif
 	//printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
 	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 

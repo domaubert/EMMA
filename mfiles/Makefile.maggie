@@ -21,6 +21,7 @@ DEFINES  +=  -DWMPI
 
 #------------ CUDA OPTIONS ---------------------
 #DEFINES  +=  -DWCUDA_ERR
+#DEFINES  +=  -DNOCOMP
 
 #------------ ICs OPTIONS ---------------------
 
