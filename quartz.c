@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
   int npart;
   struct PART *part;
   struct PART *nexploc, *curploc;
+  struct PART *freepart;
 
   struct OCT *freeoct; // the first free oct available for refinement
   struct OCT *newoct;
@@ -188,7 +189,9 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
-  //gdb_debug();
+#ifdef WDBG
+  gdb_debug();
+#endif
 
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
@@ -839,6 +842,8 @@ int main(int argc, char *argv[])
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
 
+
+
   //=================================  building the array of timesteps
 
   REAL *adt;
@@ -1104,6 +1109,14 @@ int main(int argc, char *argv[])
     amax=1.;
 #endif
 
+
+#ifdef ZELDOVICH // ==================== read ZELDOVICH file
+
+    lastpart=read_zeldovich_part(part, &cpu, &munit, &ainit, &npart, &param);
+    amax=1.;
+#endif
+
+
 #endif
   
     // we set all the "remaining" particles mass to -1
@@ -1178,6 +1191,18 @@ int main(int argc, char *argv[])
     }
  
 
+
+  // ========================  computing the memory location of the first freepart and linking the free parts
+
+    freepart=lastpart+1; // at this stage the memory is perfectly aligned
+    freepart->prev=NULL;
+    freepart->next=freepart+1;
+    for(curp=freepart+1;curp<(part+npartmax);curp++){
+      curp->prev=curp-1;
+      curp->next=NULL;
+      if(curp!=(freepart+npartmax-1)) curp->next=curp+1;
+    }
+    
 #endif
 
     //===================================================================================================================================
@@ -1642,11 +1667,13 @@ int main(int argc, char *argv[])
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
     sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank); 
-    lastpart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
+    freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
+    cpu.freepart=freepart;
 
     sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank); 
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt);
-    
+    cpu.freeoct=freeoct;
+
     nstepstart+=1.; // next timestep is n+1
     ndumps+=1.; // next timestep is n+1
 
@@ -1748,7 +1775,12 @@ int main(int argc, char *argv[])
 
     // preparing freeocts
     cpu.freeoct=freeoct;
-    
+
+#ifdef PIC
+    // preparing free part
+    cpu.freepart=freepart;
+    cpu.lastpart=part+npartmax-1;
+#endif
 
 #ifdef GPUAXL
     // creating params on GPU
@@ -1758,14 +1790,6 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-
-#ifdef WMPI
-    // some bookeeping for WMPI
-    // cramming data into cpu
-    
-    cpu.lastpart=lastpart;
-
-#endif
 
 
     // Loop over time

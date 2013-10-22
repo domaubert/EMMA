@@ -409,7 +409,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
 
 //======================================================================================
 #ifdef PIC
-int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PART **lastp){
+int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
   
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
@@ -474,13 +474,12 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer,struct PAR
 	    cpu->bndoct[i]->cell[ii].phead=NULL; // we "clear" the cell
 	  }
 
-	  // is it the global last particle ?
-	  if(curp==(*lastp)){
-	    (*lastp)=curp-1;
-	    while((*lastp)->mass<0){ // if true this particle does not exist anymore
-	      (*lastp)=(*lastp)-1;
-	    }
-	  }
+	  // fixing the freepart list
+	  curp->prev=NULL;
+	  cpu->freepart->prev=curp;
+	  curp->next=cpu->freepart;
+	  cpu->freepart=curp;
+
 
 	}while(nexp!=NULL);
       }
@@ -835,7 +834,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 
  //------------------------------------------------------------------------
 #ifdef PIC
-int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct PART **lastp){
+int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 
   int i,j;
   int found=0;
@@ -846,6 +845,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
   struct OCT *nextoct;
   int icell;
   int nadd=0;
+  struct PART *lastp;
 
   for(j=0;j<cpu->nnei;j++){
     for(i=0;i<cpu->nbuff;i++){
@@ -864,24 +864,34 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
 
 	  if(found){ // the reception oct has been found
 	    // we assign the new particle to the global particle list of the client
-	    *lastp=*lastp+1; // getting the next slot in the global particle list
-	    
+
+	    lastp=cpu->freepart;// getting the next slot in the global particle list
+	    if(cpu->freepart->next==NULL){
+	      // particles full
+	      printf("Particle array full, increase npartmax\n");
+	      abort();
+	    }
+	    cpu->freepart=cpu->freepart->next;
+	    cpu->freepart->prev=NULL;
+
+	    //if(cpu->firstoct[0]->next!=NULL) abort();
 
 	    // copying the data
-	    (*lastp)->x =part->x;
-	    (*lastp)->y =part->y;
-	    (*lastp)->z =part->z;
+	    (lastp)->x =part->x;
+	    (lastp)->y =part->y;
+	    (lastp)->z =part->z;
 
-	    (*lastp)->vx=part->vx;
-	    (*lastp)->vy=part->vy;
-	    (*lastp)->vz=part->vz;
+	    (lastp)->vx=part->vx;
+	    (lastp)->vy=part->vy;
+	    (lastp)->vz=part->vz;
 	      
-	    (*lastp)->mass=part->mass;
-	    (*lastp)->idx=part->idx;
-	    (*lastp)->level=part->level;
-	    (*lastp)->is=part->is;
+	    (lastp)->mass=part->mass;
+	    (lastp)->idx=part->idx;
+	    (lastp)->level=part->level;
+	    (lastp)->is=part->is;
 
 	    nadd++;
+	    //if(cpu->firstoct[0]->next!=NULL) abort();
 
 	    // if recepction cell is refined
 	    struct CELL *newcell=&(curoct->cell[part->icell]);
@@ -898,21 +908,25 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, struct 
 
 	      newcell=&(newoct->cell[ip]);
 	      part->icell=ip;
-	      (*lastp)->level=part->level+1;
+	      (lastp)->level=part->level+1;
 	    }
+	    
+	    //if(cpu->firstoct[0]->next!=NULL) abort();
 
 	    // looking for the tail particle in the destination cell
 	    curp=findlastpart(newcell->phead);
 	    if(curp!=NULL){
-	      curp->next=(*lastp);
-	      (*lastp)->next=NULL;
-	      (*lastp)->prev=curp;
+	      curp->next=(lastp);
+	      (lastp)->next=NULL;
+	      (lastp)->prev=curp;
 	    }
 	    else{
-	      newcell->phead=(*lastp);
-	      (*lastp)->next=NULL;
-	      (*lastp)->prev=NULL;
+	      newcell->phead=(lastp);
+	      (lastp)->next=NULL;
+	      (lastp)->prev=NULL;
 	    }
+	    //if(cpu->firstoct[0]->next!=NULL) abort();
+	    
 	  }
 	  else{
 	    printf("error no reception oct found !");
@@ -2289,22 +2303,23 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
 #endif
 
 #ifdef PIC
-int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer, struct PART **lastpart){
+int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
 
   int nrem,nadd;
   int mpitag=1;
   int i;
 
   clean_mpibuff_part(cpu,psendbuffer,precvbuffer);
-  nrem=gather_ex_part(cpu,psendbuffer,lastpart);
+  nrem=gather_ex_part(cpu,psendbuffer);
   MPI_Barrier(cpu->comm);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
     mpitag=cpu->rank+cpu->mpinei[i];
     MPI_Sendrecv(psendbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
   }
-  
-  nadd=scatter_mpi_part(cpu,precvbuffer,lastpart);
+  //printf("17 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
+  nadd=scatter_mpi_part(cpu,precvbuffer);
+  //printf("18 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
   MPI_Barrier(cpu->comm);
 
   // Return delta part

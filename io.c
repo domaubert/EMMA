@@ -264,6 +264,8 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     }
   }
 
+  //abort();
+
   /* // check and count the number of freeocts */
   
   /* nextoct=freeoct; */
@@ -488,7 +490,6 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   struct PART part;
   struct PART *part_ad;
   struct PART *curp;
-  struct PART *lastp;
 
   rootpart_mem=proot; // the root cell of the grid in memory
 
@@ -506,8 +507,6 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   fread(&part_ad,sizeof(struct PART*),1,fp);
   fread(&part,sizeof(struct PART),1,fp);
 
-  lastp=proot;
-
   while(!feof(fp)){
 
     // do stuff
@@ -520,8 +519,6 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
     curp->next=(curp->next==NULL?NULL:(curp->next-rootpart_sna)+rootpart_mem);
     curp->prev=(curp->prev==NULL?NULL:(curp->prev-rootpart_sna)+rootpart_mem);
     
-    // 3. setting the last particle
-    if(curp>lastp) lastp=curp;
 
 
     // read next particle
@@ -531,12 +528,36 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   }
 
+
+  // Building back the freepart chained list
+
+  struct PART * lpart;
+  struct PART *freepart;
+  freepart=NULL;
+
+  for(curp=rootpart_mem;curp<rootpart_mem+param->npartmax;curp++){
+    if(curp->mass==0.){
+      if(freepart==NULL){
+	freepart=curp;
+	curp->prev=NULL;
+	curp->next=NULL;
+	lpart=curp;
+      }
+      else{
+	curp->next=NULL;
+	curp->prev=lpart;
+	lpart->next=curp;
+	lpart=curp;
+      }
+    }
+  }
+
   //printf("%d part recovered by proc %d\n",ipart,cpu->rank);
 
   // done
   fclose(fp);
 
-  return lastp;
+  return freepart;
 }
 
 #endif
@@ -856,6 +877,169 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   return lastpart;
 }
 #endif
+
+// ========================== ZELDOVICH
+// ====================================
+// ====================================
+
+#ifdef ZELDOVICH
+struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param)
+{
+  FILE *fd;
+  int np1,np2,np3;
+  float dx,x1o,x2o,x3o,astart,om,ov,h0,ob;
+  int dummy;
+  struct PART *lastpart;
+  int ip;
+  
+  int nploc;
+  float munit_z;
+  float lbox;
+  float ainit_z;
+  REAL mass;
+
+  fd=fopen("utils/grafic_src/ZEL.PM.0","rb");
+
+  fread(&dummy,sizeof(dummy),1,fd);
+  fread(&nploc,sizeof(int),1,fd);	 
+  fread(&munit_z,sizeof(float),1,fd); 
+  fread(&ainit_z,sizeof(float),1,fd); 
+  fread(&lbox,sizeof(float),1,fd);	 
+  fread(&om,sizeof(float),1,fd);
+  fread(&ov,sizeof(float),1,fd);
+  fread(&h0,sizeof(float),1,fd);
+  fread(&dummy,sizeof(dummy),1,fd);  
+
+  astart=ainit_z;
+
+
+  if(cpu->rank==0){
+    printf("============================================\n");
+    printf("ntot%d\n",nploc);
+    printf("om=%f ov=%f h0=%f\n",om,ov,h0);
+    printf("astart=%f zstart=%f\n",astart,1./astart-1.);
+    printf("============================================\n");
+  }
+
+  if((nploc)/(cpu->nproc)*1.>param->npartmax){
+    printf("Error : Number of particles greater than npartmax Np(grafic, est. )=%d Npartmax=%d!\n",(nploc)/(cpu->nproc),param->npartmax);
+    abort();
+  }
+
+  //setting omegab
+
+  ob=OMEGAB;
+
+  
+#ifdef WHYDRO2
+  mass=(1.-ob/om)/(nploc);
+#else
+  mass=1./(nploc);
+#endif
+
+
+  // reading the grafic planes
+  float *pos;
+  float *vel;
+  int nread=nploc; // quick fixes
+  int npatch=1.; // quick fixes
+  int ipatch;
+  int i;
+  pos=(float *)malloc(sizeof(REAL)*3*nread);
+  vel=(float *)malloc(sizeof(REAL)*3*nread);
+
+  double x;
+  double y;
+  double z;
+
+  double vx;
+  double vy;
+  double vz;
+  size_t rstat;
+
+  int pstart=ftell(fd);
+
+  ip=0.;
+  for(ipatch=0;ipatch<npatch;ipatch++) {
+    //    rstat=fread(&dummy,sizeof(dummy),1,fd); 
+    //    fseek(fd,pstart,SEEK_SET);
+    fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(float)+1*sizeof(dummy),SEEK_SET);
+    fread(pos,sizeof(float),nread,fd);
+    //    fread(&dummy,sizeof(dummy),1,fd);
+
+    //    fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(float)+3*sizeof(dummy),SEEK_SET);
+    fread(pos+nread,sizeof(float),nread,fd);
+    //    fread(&dummy,sizeof(dummy),1,fd);
+
+    //    fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(float)+5*sizeof(dummy),SEEK_SET);
+    fread(pos+2*nread,sizeof(float),nread,fd);
+    //    fread(&dummy,sizeof(dummy),1,fd);
+  
+    //    fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(float)+7*sizeof(dummy),SEEK_SET);
+    fread(vel,sizeof(float),nread,fd);
+    //    fread(&dummy,sizeof(dummy),1,fd);
+
+    //    fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(float)+9*sizeof(dummy),SEEK_SET);
+    fread(vel+nread,sizeof(float),nread,fd);
+    //    fread(&dummy,sizeof(dummy),1,fd);
+
+    //    fread(&dummy,sizeof(dummy),1,fd);
+    fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(float)+11*sizeof(dummy),SEEK_SET);
+    fread(vel+2*nread,sizeof(float),nread,fd);
+    //fread(&dummy,sizeof(dummy),1,fd);
+    
+
+    for(i=0;i<nread;i++)
+      {
+	x=pos[i];
+	y=pos[i+nread];
+	z=pos[i+2*nread];
+	vx=vel[i];
+	vy=vel[i+nread];
+	vz=vel[i+2*nread];
+	// periodic boundary conditions
+	
+	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
+	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
+	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
+	if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
+	  part[ip].x=x;
+	  part[ip].y=y;
+	  part[ip].z=z;
+	  
+	  part[ip].vx=vx;
+	  part[ip].vy=vy;
+	  part[ip].vz=vz;
+	  
+	  part[ip].mass=mass;
+	  part[ip].idx=i;
+	  lastpart=part+ip;
+	  ip++;
+	}
+      }
+  }
+
+
+  *munit=mass;
+  *ainit=astart;
+  param->cosmo->om=om;
+  param->cosmo->ov=ov;
+  param->cosmo->ob=ob;
+  //param->cosmo->Hubble=h0;
+  *npart=ip;
+
+  if(cpu->rank==0){
+    printf("Zeldovich Particle Read ok\n");
+  }
+  return lastpart;
+}
+#endif
+
 #endif
 //==================================================================================
 //==================================================================================
@@ -871,7 +1055,6 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   int np1,np2,np3;
   float dx,x1o,x2o,x3o,astart,om,ov,ob,h0;
   int dummy;
-  struct PART *lastpart;
   int ip;
   struct Wtype W;
 

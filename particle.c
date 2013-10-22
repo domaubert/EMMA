@@ -12,7 +12,7 @@
 #include "communication.h"
 #endif
 
-#define FRACDX 0.3
+#define FRACDX 0.6
 
 #ifdef PIC
 //------------------------------------------------------------------------

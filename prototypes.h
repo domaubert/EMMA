@@ -185,6 +185,7 @@ struct CPUINFO{
   int *nsend_coarse; // the number of l-1 octs to be sent     by the local cpu, e.g cpu->nrecv[5] = nb of l-1 octs to be sent to       neigh # 5
 
   struct PART *lastpart;
+  struct PART *freepart;
 
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
@@ -222,6 +223,7 @@ struct CPUINFO{
   int levelcoarse; // the levelcoarse
 
   struct OCT *freeoct; // the location of the first free oct
+  struct OCT **firstoct; // the location of the first free oct
   int nsteps; // the current coarse step index
 
 #ifdef GPUAXL

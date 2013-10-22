@@ -65,7 +65,8 @@ func Zeldovich(aini,across,&x,&vx,ng=,omegam=,omegav=)
   if(is_void(omegam)) omegam=0.3;
   if(is_void(omegav))  omegav=0.7;
   amp=1./(dplus(across,omegam,omegav)*2*pi/ng);
-  amp;
+  dplus(across,omegam,omegav);
+  amp/ng;
   vfact=dplus(aini,omegam,omegav);
   x=(indgen(ng)-0.5)/ng+vfact*amp*sin((indgen(ng)-0.5)*2*pi/ng)/ng;
   

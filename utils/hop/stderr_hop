@@ -1,0 +1,20 @@
+++ date +%F_%Hh%M
++ export DATE=2010-12-03_13h49
++ DATE=2010-12-03_13h49
++ ./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1.
+++ date +%F_%Hh%M
++ export DATE=2010-12-03_14h20
++ DATE=2010-12-03_14h20
++ ./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1.
+++ date +%F_%Hh%M
++ export DATE=2010-12-03_14h46
++ DATE=2010-12-03_14h46
++ ./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1.
+++ date +%F_%Hh%M
++ export DATE=2010-12-03_15h57
++ DATE=2010-12-03_15h57
++ ./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1.
+++ date +%F_%Hh%M
++ export DATE=2010-12-06_18h41
++ DATE=2010-12-06_18h41
++ ./hop -in /scratch/cont003/pocvirk/localgroup_64proc/output_00015/part_00015.out -p 1.

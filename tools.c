@@ -68,34 +68,34 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	    {
 	      //if(rank==0) printf("np=%d nlev\n",nlev);
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
+		{
 	      
-	      xc=curoct->x+(icell&1)*dx+dx*0.5;
-	      yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
-	      zc=curoct->z+(icell>>2)*dx+dx*0.5;
+		  xc=curoct->x+(icell&1)*dx+dx*0.5;
+		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
+		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
 #ifdef PIC
 	     
-	      ntotd+=curoct->cell[icell].density*dx*dx*dx;
-	      nlevd+=curoct->cell[icell].density*dx*dx*dx;
-	      
-	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
-
-	      //if(rank==0) printf("ic=%d %p\n",icell,nexp);
-	      if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
-		printf("check: split cell with particles !\n");
-		printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
-		abort();
-	      }
-	      
-	      if(nexp==NULL)continue;
-	      do{ 
-		nlev++;
-		ntot++;
-		curp=nexp;
-		nexp=curp->next;
-	      }while(nexp!=NULL);
+		  ntotd+=curoct->cell[icell].density*dx*dx*dx;
+		  nlevd+=curoct->cell[icell].density*dx*dx*dx;
+		  
+		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
+		  
+		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
+		  if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
+		    printf("check: split cell with particles !\n");
+		    printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
+		    abort();
+		  }
+		  
+		  if(nexp==NULL)continue;
+		  do{ 
+		    nlev++;
+		    ntot++;
+		    curp=nexp;
+		    nexp=curp->next;
+		  }while(nexp!=NULL);
 #endif
-	      }
+		}
 	    }
 	  noct++;
 	}while(nextoct!=NULL);

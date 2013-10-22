@@ -1,0 +1,245 @@
+Sender: LSF System <lsfadmin@titane295>
+Subject: Job 266864: <hop> Done
+
+Job <hop> was submitted from host <titane996> by user <p568da> in cluster <titane>.
+Job was executed on host(s) <titane295>, in queue <mono>, as user <p568da> in cluster <titane>.
+</home/cont003/p568da> was used as the home directory.
+</home/cont003/p568da/hop_ramses> was used as the working directory.
+Started at Fri Dec  3 13:49:07 2010
+Results reported at Fri Dec  3 13:54:22 2010
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#MSUB -r hop           # Nom du job                
+#MSUB -n 1                  # Reservation de 4 processus au total
+#MSUB -N 1                  # Les processus sont répartis sur 2 noeuds
+#MSUB -T 86400                # Limite de temps elapsed du job ici 600s      
+#MSUB -o stdout_hop          # Sortie standard
+#MSUB -e stderr_hop          # Sortie d'erreur       
+#MSUB -p gen2191      # Allocation
+#MSUB -q mono                # sélection de la queue GPU (groupe genci ou challenge uniquement)
+
+set -x
+export DATE=`date +%F_%Hh%M`
+./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1. > run_hop$DATE.log
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    306.97 sec.
+    Max Memory :       621 MB
+    Max Swap   :       826 MB
+
+    Max Processes  :         5
+    Max Threads    :         6
+
+The output (if any) follows:
+
+
+
+PS:
+
+Read file <stderr_hop> for stderr output of this job.
+
+Sender: LSF System <lsfadmin@titane662>
+Subject: Job 266893: <hop> Done
+
+Job <hop> was submitted from host <titane996> by user <p568da> in cluster <titane>.
+Job was executed on host(s) <titane662>, in queue <mono>, as user <p568da> in cluster <titane>.
+</home/cont003/p568da> was used as the home directory.
+</home/cont003/p568da/hop_ramses> was used as the working directory.
+Started at Fri Dec  3 14:20:53 2010
+Results reported at Fri Dec  3 14:26:11 2010
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#MSUB -r hop           # Nom du job                
+#MSUB -n 1                  # Reservation de 4 processus au total
+#MSUB -N 1                  # Les processus sont répartis sur 2 noeuds
+#MSUB -T 86400                # Limite de temps elapsed du job ici 600s      
+#MSUB -o stdout_hop          # Sortie standard
+#MSUB -e stderr_hop          # Sortie d'erreur       
+#MSUB -p gen2191      # Allocation
+#MSUB -q mono                # sélection de la queue GPU (groupe genci ou challenge uniquement)
+
+set -x
+export DATE=`date +%F_%Hh%M`
+./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1. > run_hop$DATE.log
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    305.86 sec.
+    Max Memory :       621 MB
+    Max Swap   :       826 MB
+
+    Max Processes  :         5
+    Max Threads    :         6
+
+The output (if any) follows:
+
+
+
+PS:
+
+Read file <stderr_hop> for stderr output of this job.
+
+Sender: LSF System <lsfadmin@titane662>
+Subject: Job 266929: <hop> Done
+
+Job <hop> was submitted from host <titane996> by user <p568da> in cluster <titane>.
+Job was executed on host(s) <titane662>, in queue <mono>, as user <p568da> in cluster <titane>.
+</home/cont003/p568da> was used as the home directory.
+</home/cont003/p568da/hop_ramses> was used as the working directory.
+Started at Fri Dec  3 14:46:02 2010
+Results reported at Fri Dec  3 14:51:16 2010
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#MSUB -r hop           # Nom du job                
+#MSUB -n 1                  # Reservation de 4 processus au total
+#MSUB -N 1                  # Les processus sont répartis sur 2 noeuds
+#MSUB -T 86400                # Limite de temps elapsed du job ici 600s      
+#MSUB -o stdout_hop          # Sortie standard
+#MSUB -e stderr_hop          # Sortie d'erreur       
+#MSUB -p gen2191      # Allocation
+#MSUB -q mono                # sélection de la queue GPU (groupe genci ou challenge uniquement)
+
+set -x
+export DATE=`date +%F_%Hh%M`
+./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1. > run_hop$DATE.log
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    305.80 sec.
+    Max Memory :       733 MB
+    Max Swap   :      1274 MB
+
+    Max Processes  :         5
+    Max Threads    :         6
+
+The output (if any) follows:
+
+
+
+PS:
+
+Read file <stderr_hop> for stderr output of this job.
+
+Sender: LSF System <lsfadmin@titane662>
+Subject: Job 266981: <hop> Done
+
+Job <hop> was submitted from host <titane1000> by user <pocvirk> in cluster <titane>.
+Job was executed on host(s) <titane662>, in queue <mono>, as user <pocvirk> in cluster <titane>.
+</home/cont003/pocvirk> was used as the home directory.
+</home/cont003/pocvirk/hop_ramses> was used as the working directory.
+Started at Fri Dec  3 15:57:20 2010
+Results reported at Fri Dec  3 16:02:34 2010
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#MSUB -r hop           # Nom du job                
+#MSUB -n 1                  # Reservation de 4 processus au total
+#MSUB -N 1                  # Les processus sont répartis sur 2 noeuds
+#MSUB -T 86400                # Limite de temps elapsed du job ici 600s      
+#MSUB -o stdout_hop          # Sortie standard
+#MSUB -e stderr_hop          # Sortie d'erreur       
+#MSUB -p gen2191      # Allocation
+#MSUB -q mono                # sélection de la queue GPU (groupe genci ou challenge uniquement)
+
+set -x
+export DATE=`date +%F_%Hh%M`
+./hop -in /scratch/cont003/pocvirk/localgroup/output_00008/part_00008.out -p 1. > run_hop$DATE.log
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    305.13 sec.
+    Max Memory :       733 MB
+    Max Swap   :      1274 MB
+
+    Max Processes  :         5
+    Max Threads    :         6
+
+The output (if any) follows:
+
+
+
+PS:
+
+Read file <stderr_hop> for stderr output of this job.
+
+Sender: LSF System <lsfadmin@titane995>
+Subject: Job 268364: <hop> Done
+
+Job <hop> was submitted from host <titane1000> by user <pocvirk> in cluster <titane>.
+Job was executed on host(s) <titane995>, in queue <mono>, as user <pocvirk> in cluster <titane>.
+</home/cont003/pocvirk> was used as the home directory.
+</home/cont003/pocvirk/hop_ramses> was used as the working directory.
+Started at Mon Dec  6 18:41:27 2010
+Results reported at Mon Dec  6 18:47:13 2010
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/bash
+#MSUB -r hop           # Nom du job                
+#MSUB -n 1                  # Reservation de 4 processus au total
+#MSUB -N 1                  # Les processus sont répartis sur 2 noeuds
+#MSUB -T 86400                # Limite de temps elapsed du job ici 600s      
+#MSUB -o stdout_hop          # Sortie standard
+#MSUB -e stderr_hop          # Sortie d'erreur       
+#MSUB -p gen2191      # Allocation
+#MSUB -q mono                # sélection de la queue GPU (groupe genci ou challenge uniquement)
+
+set -x
+export DATE=`date +%F_%Hh%M`
+./hop -in /scratch/cont003/pocvirk/localgroup_64proc/output_00015/part_00015.out -p 1. > run_hop$DATE.log
+
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time   :    308.57 sec.
+    Max Memory :       625 MB
+    Max Swap   :       830 MB
+
+    Max Processes  :         5
+    Max Threads    :         6
+
+The output (if any) follows:
+
+
+
+PS:
+
+Read file <stderr_hop> for stderr output of this job.
+

@@ -474,6 +474,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
+    //printf("1 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
 #ifdef PART_EGY
     //computing energy
     L_egypart(level,firstoct); // computing the particle acceleration and velocity
@@ -490,6 +491,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WMPI
     //reset the setup in case of refinement
+    //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
+
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
     MPI_Barrier(cpu->comm);
 #endif
@@ -498,9 +501,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     int deltan;
 
-    deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer, &(cpu->lastpart));
+    //printf("3 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
+    cpu->firstoct=firstoct;
+    deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer);
 
-    //printf("proc %d receives %d particles\n",cpu->rank,deltan);
+    //printf("4 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
+    printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
     //update the particle number within this process
     //npart=npart+deltan;
     ptot=deltan; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles

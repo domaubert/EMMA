@@ -93,11 +93,11 @@ program Grafic2Gadget
   np1=64
   np2=np1
   np3=np1
-  omegam=0.3
-  omegav=0.7
+  omegam=0.03
+  omegav=0.97
   h0=70.
   astart=0.1
-  across=0.5
+  across=0.9
   dx=100./(h0/100.)/np1
   nmult=1
 
@@ -166,7 +166,9 @@ program Grafic2Gadget
   !
   ! WRITING POSITIONS IN DX UNITS
   !
-  write(*,*) 'amp=',amp
+  write(*,*) 'amp=',amp/(np1*dx)
+  write(*,*) 'dplu=',dplus(across,omega0_out,omegaL_out)
+
   vfact=dplus(a_out,omega0_out,omegaL_out)
 
   do i3=1,np3
@@ -210,7 +212,6 @@ program Grafic2Gadget
      end do
   end do
   
-  write(*,*) 'toto'
   
 !!$  write(100+ifile) (((posx(i1,i2,i3),posy(i1,i2,i3)&
 !!$       ,posz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3/nmult)
@@ -220,7 +221,6 @@ program Grafic2Gadget
   write(100+ifile) (((posy(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
   write(100+ifile) (((posz(i1,i2,i3),i1=1,np1),i2=1,np2),i3=1,np3)
            
-  write(*,*) 'toto'
 
   !
   ! SWITCH VELOCITIES TO COMOVING MOMENTUM

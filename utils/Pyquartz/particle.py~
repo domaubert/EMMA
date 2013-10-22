@@ -1,0 +1,64 @@
+
+import numpy as np
+import matplotlib.pylab as plt
+
+# ========================================================
+class Part:
+    def loadfile(self,fname):
+        print 'reading '+fname
+        f=open(fname,"rb")
+        self.npart=np.fromfile(f,dtype=np.int32,count=1)[0]
+        self.time=np.fromfile(f,dtype=np.float32,count=1)[0]
+        print self.npart,self.time
+        self.x=np.zeros(self.npart,dtype=np.float32)
+        self.y=np.zeros(self.npart,dtype=np.float32)
+        self.z=np.zeros(self.npart,dtype=np.float32)
+        self.vx=np.zeros(self.npart,dtype=np.float32)
+        self.vy=np.zeros(self.npart,dtype=np.float32)
+        self.vz=np.zeros(self.npart,dtype=np.float32)
+        self.id=np.zeros(self.npart,dtype=np.float32)
+        
+
+        temp=np.fromfile(f,dtype=np.float32,count=7*self.npart)
+        temp=(temp.reshape([self.npart,7])).transpose()
+        self.x=temp[0,]
+        self.y=temp[1,]
+        self.z=temp[2,]
+        self.vx=temp[3,]
+        self.vy=temp[4,]
+        self.vz=temp[5,]
+        self.id=temp[6,]
+        f.close
+
+    def __init__(self):
+        self.x = []
+        self.y = []
+        self.z = []
+        self.vx = []
+        self.vy = []
+        self.vz = []
+        self.id = []
+        self.npart=[]
+        self.time=[]
+
+# ========================================================
+if __name__ == "__main__":
+    import sys
+    
+    
+    i=0
+    while i<4:
+        print i
+        p=Part()
+        p.loadfile('/home/daubert/Project/Quartz/data/part.00023.p0000'+format(i))
+        dt,b,c=plt.histogram2d(p.x, p.y, bins=257, range=[[0.,1.],[0.,1.]])
+        if i==0:
+            d=dt
+        else :
+            d=d+dt
+        i=i+1
+
+    plt.clf()
+    plt.imshow(np.log(1+d))
+    plt.show()
+
