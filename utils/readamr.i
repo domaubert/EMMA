@@ -37,6 +37,24 @@ func readcube(fname,&time){
   return map;
 }
 
+
+func readcell(fname,&time){
+  fp=open(fname,"rb");
+  adress=0;
+  nc=array(int);
+  time=array(float);
+  _read,fp,adress,nc;adress+=sizeof(nc);
+  _read,fp,adress,time;adress+=sizeof(time);
+  nc;
+  time;
+  map=array(double,nc*5);
+  _read,fp,adress,map;
+  close,fp;
+
+  map=reform(map,[2,5,nc]);
+  return map;
+}
+
 func mapcpu(fname,ncpu){
 
   for(i=0;i<ncpu;i++)
@@ -129,16 +147,31 @@ func ext_amr1D(levmap,field,color=,lmin=)
 
 
 func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
-  if(is_void(execut)) execut="/home/observatoire/aubert/Quartz-ADT/utils/oct2grid ";
+  if(is_void(execut)) execut="../utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(zmin)) zmin=0.;
   if(is_void(zmax)) zmax=1.;
   if(is_void(mono)) mono=-1;
   time=array(double);
-  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(zmin)+" "+pr1(zmax);
+  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(zmin)+" "+pr1(zmax);
   commande;
   system(commande);
   cube=readcube(fname+".f"+pr1(field),time);
+  return cube;
+}
+
+
+func oct2cell(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
+  if(is_void(execut)) execut="../utils/oct2cell ";
+  if(is_void(ncpu)) ncpu=1;
+  if(is_void(zmin)) zmin=0.;
+  if(is_void(zmax)) zmax=1.;
+  if(is_void(mono)) mono=-1;
+  time=array(double);
+  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(zmin)+" "+pr1(zmax);
+  commande;
+  system(commande);
+  cube=readcell(fname+".f"+pr1(field),time);
   return cube;
 }
 
