@@ -102,6 +102,7 @@ struct RUNPARAMS{
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   
   REAL amrthresh; // the refinement criterion (refine if mcell>amrthresh)
+  int nsmooth; // the number of neighbour refinement steps
 
   REAL poissonacc; // relaxation accuracy for Poisson equation
   int mgridlmin;    // coarsest level for multigrid relaxation
@@ -129,6 +130,13 @@ struct RUNPARAMS{
   REAL srcint; // intensity of the sources
 
 #endif
+
+  REAL egy_rhs; // the right hand side of the energy conservation equation (0 in non cosmological case);
+  REAL egy_0; // the initial energy
+  REAL egy_last; // the last integrand for the energy equation (used for trapezoidal rule)
+  REAL egy_timelast; // the last time for the integrand (used for trapezoidal rule)
+  REAL egy_totlast; 
+  FILE *fpegy; // the file with egy stats
 
 };
 
@@ -177,6 +185,7 @@ struct CPUINFO{
 
   int nbuff; // the number of buffer cells = to the max of # of buffer cell from 1 neighbor 
   int nbufforg; // the max number of buffer cells (set from the parameter file)
+  int nbuffpart;  // the number of particles to transmit
 
   int *nrecv; // the number of octs to be received by the local cpu, e.g cpu->nrecv[5] = nb of octs to be received from neigh # 5
   int *nsend; // the number of octs to be sent     by the local cpu, e.g cpu->nrecv[5] = nb of octs to be sent to       neigh # 5
@@ -186,6 +195,7 @@ struct CPUINFO{
 
   struct PART *lastpart;
   struct PART *freepart;
+  struct PART *firstpart;
 
 #ifdef WMPI
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
@@ -394,10 +404,8 @@ struct PART
   int level;
   int is; // local timestep number per particle
 
-#ifdef PART_EGY
   REAL epot;
   REAL ekin;
-#endif
 
 };
 

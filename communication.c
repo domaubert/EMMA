@@ -15,8 +15,7 @@
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
   int nnei=0;
-  /*int *mpinei; // the COMPLETE list of neighbors cpu (can be redundant) */
-   int *neicpu; // the reduced list of neighbors CPU (not redundant); 
+  int *neicpu; // the reduced list of neighbors CPU (not redundant); 
   unsigned long hidx;
   int inidx; // counts the number of inner boundaries octs
   int level;
@@ -35,6 +34,11 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
   nfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
   neicpu=(int*) calloc(cpu->nproc,sizeof(int));
+
+#ifdef PIC
+  int *npartfromcpu;
+  npartfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
+#endif
   
 
   // we clean the hash table
@@ -164,10 +168,19 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 	      
 	      //if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
 	      nnei++;
-	      if(nnei==cpu->nbufforg) {
-		printf("ERROR on nbufforg being too small on level =%d!\n",level);
+	      if(nfromcpu[curoct->cpu]==cpu->nbufforg) {
+		printf("ERROR on nbufforg being too small for octs on level =%d!\n",level);
 		abort();
 	      }
+#ifdef PIC
+	      // counting the particles
+	      for(icell=0;icell<8;icell++) npartfromcpu[curoct->cpu]+=countpart(curoct->cell[icell].phead);
+	      if(npartfromcpu[curoct->cpu]==cpu->nbufforg) {
+		printf("ERROR on nbufforg being too small for particles on level =%d!\n",level);
+		abort();
+	      }
+#endif
+
 	    }
 	  }while(nextoct!=NULL);
 	}
@@ -186,16 +199,23 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   for(i=0;i<cpu->nproc;i++) neicpu[i]=500000+i; // large enough to be at the end
   j=0;
   int maxn=0;
+  int maxnpart=0;
   for(i=0;i<cpu->nproc;i++){ // we scan the list
     if(flagcpu[i]==1){
       neicpu[j]=i;
       j++;
       if(nfromcpu[i]>maxn) maxn=nfromcpu[i];
+#ifdef PIC
+      if(npartfromcpu[i]>maxnpart) maxnpart=npartfromcpu[i];
+#endif
     }
   }
 
   free(flagcpu);
   free(nfromcpu);
+#ifdef PIC
+  free(npartfromcpu);
+#endif
   myradixsort(neicpu,cpu->nproc); // we sort the neighbors list
 
  
@@ -230,15 +250,22 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   MPI_Barrier(cpu->comm);
   int nvois_loc=cpu->nebnd;
   int nvois_max;
+  int nvois_maxpart;
   MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
   if(cpu->rank==0) printf("Max total number of neighbors octs=%d\n",nvois_max);
   MPI_Allreduce(&maxn,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
   if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
   if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
-#if 1
   cpu->nbuff=nvois_max;
-  MPI_Barrier(cpu->comm);
+
+#ifdef PIC
+  MPI_Allreduce(&maxnpart,&nvois_maxpart,1,MPI_INT,MPI_MAX,cpu->comm);
+  if(cpu->rank==0) printf("Max number of neighbors particles from 1 nei=%d\n",nvois_maxpart);
+  if(cpu->rank==0) printf("Overriding param nbuffpart=%d with maxnpart =%d\n",cpu->nbuffpart,nvois_maxpart);
+  cpu->nbuffpart=nvois_maxpart;
 #endif
+
+  MPI_Barrier(cpu->comm);
   // ----------- allocating the communication buffers
   //  printf("%p %p\n", cpu->sendbuffer, cpu->recvbuffer);
   
@@ -255,8 +282,8 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   cpu->psendbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   cpu->precvbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   for(i=0;i<cpu->nnei;i++) {
-    *(cpu->psendbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
-    *(cpu->precvbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuff,sizeof(struct PART_MPI)));
+    *(cpu->psendbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuffpart,sizeof(struct PART_MPI)));
+    *(cpu->precvbuffer+i)=(struct PART_MPI *) (calloc(cpu->nbuffpart,sizeof(struct PART_MPI)));
   }
 #endif 
 
@@ -327,7 +354,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     pack->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
     for(ii=0;ii<8;ii++){
       switch(field){
-#ifdef WGRAV
+#ifdef PIC
       case 0:
 	pack->data[ii]=cpu->bndoct[i]->cell[ii].density;
 	break;
@@ -457,8 +484,8 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 	  
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
-	  if(countpacket[icpu]==cpu->nbuff){
-	    printf("cpu->nbuff %d blasted by particles number %d",cpu->nbuff,countpacket[icpu]);
+	  if(countpacket[icpu]>cpu->nbuffpart){
+	    printf("cpu->nbuffpart %d blasted by particles number %d",cpu->nbuffpart,countpacket[icpu]);
 	    abort();
 	  }
 	  // switching the mass to -1 to flag exiting particles
@@ -535,17 +562,19 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	      for(icell=0;icell<8;icell++){
 		switch(field){
 #ifdef WGRAV
+#ifdef PIC
 		case 0:
 		  pack->data[icell]=curoct->cell[icell].density; // density
 		  break;
 		case 1:
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
-		case 2:
-		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
-		  break;
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  break;
+#endif
+		case 2:
+		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
 #endif
 		case 3:
@@ -629,17 +658,19 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 	      for(icell=0;icell<8;icell++){
 		switch(field){
 #ifdef WGRAV
+#ifdef PIC
 		case 0:
 		  pack->data[icell]=curoct->cell[icell].density; // density
 		  break;
 		case 1:
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
-		case 2:
-		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
-		  break;
 		case 4:
 		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  break;
+#endif
+		case 2:
+		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
 		  break;
 #endif
 		case 3:
@@ -708,17 +739,19 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
 #ifdef WGRAV
+#ifdef PIC
 	      case 0:
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
 	      case 1:
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
-	      case 2:
-		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
-		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
+	      case 2:
+		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
 #endif
 	      case 3:
@@ -785,17 +818,19 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	    for(icell=0;icell<8;icell++){
 	      switch(field){
 #ifdef WGRAV
+#ifdef PIC
 	      case 0:
 		curoct->cell[icell].density+=pack->data[icell]; // density += for CIC correction
 		break;
 	      case 1:
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
-	      case 2:
-		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
-		break;
 	      case 4:
 		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		break;
+#endif
+	      case 2:
+		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 		break;
 #endif
 	      case 3:
@@ -848,7 +883,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
   struct PART *lastp;
 
   for(j=0;j<cpu->nnei;j++){
-    for(i=0;i<cpu->nbuff;i++){
+    for(i=0;i<cpu->nbuffpart;i++){
       part=precvbuffer[j]+i;
       //      if(part==NULL) continue;
       if(part->level!=0){ // we do something
@@ -1174,8 +1209,8 @@ void  clean_mpibuff_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer, stru
 void  clean_mpibuff_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
   int i;
   for(i=0;i<cpu->nnei;i++) {
-    memset(psendbuffer[i],0,cpu->nbuff*sizeof(struct PART_MPI));
-    memset(precvbuffer[i],0,cpu->nbuff*sizeof(struct PART_MPI));
+    memset(psendbuffer[i],0,cpu->nbuffpart*sizeof(struct PART_MPI));
+    memset(precvbuffer[i],0,cpu->nbuffpart*sizeof(struct PART_MPI));
   }
 }
  //------------------------------------------------------------------------
@@ -2315,7 +2350,7 @@ int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
     mpitag=cpu->rank+cpu->mpinei[i];
-    MPI_Sendrecv(psendbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuff,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
+    MPI_Sendrecv(psendbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
   }
   //printf("17 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
   nadd=scatter_mpi_part(cpu,precvbuffer);

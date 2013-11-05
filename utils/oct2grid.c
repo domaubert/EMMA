@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     /* } */
     sprintf(fname2,format,icpu);
 
-
+    printf("Looking for %s\n",fname);
     fp=fopen(fname,"rb");
   
     if(fp==NULL){
@@ -205,9 +205,11 @@ int main(int argc, char *argv[])
  			  case 1:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].gdata.d;
 			    break;
+#ifdef PIC
  			  case -1:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].density;
 			    break;
+#endif
 			  case 2:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].gdata.p;
 			    break;
@@ -252,6 +254,9 @@ int main(int argc, char *argv[])
 			    break;
 			  case 107:
 			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
+			    break;
+			  case 110:
+			    map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=sqrt(pow(oct.cell[icell].field.w,2)+pow(oct.cell[icell].field.v,2)+pow(oct.cell[icell].field.u,2))/oct.cell[icell].field.a;
 			    break;
 #ifdef WRADHYD
 			  case 108:

@@ -10,7 +10,7 @@ func readpart(fname,&time){
   _read,fp,adress,npart;adress+=sizeof(npart);
   _read,fp,adress,time;adress+=sizeof(time);
   if(npart!=0){
-  phase=array(float,7,npart);
+  phase=array(float,10,npart);
   _read,fp,adress,phase;adress+=sizeof(phase);
   write,"found "+pr1(npart)+" particles";
   close,fp;

@@ -1063,42 +1063,49 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  if((curoct->level<=param->lmax)&&(ismooth==0)){ // we don't need to test the finest level
 
 			    REAL den;
-			    
+
+#ifdef EVRARD
+			    // ===================== EVRARD TEST ================
+
+ 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse); 
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+#else			    
 #ifdef TESTCOSMO 
 			    // ===================== AMR COSMO ================
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
 #endif
+
 #else
+
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d;
 #endif
+
 #endif 
 
 			    
 #ifdef PIC
+#ifdef EDBERT
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-
-/* #ifdef WRAD */
-/* #ifdef WCHEM */
-/* 			    int mcell1,mcell2; */
-/* 			    mcell1=(curoct->cell[icell].rfield.src>0.)*(curoct->level>=param->lcoarse); */
-/* 			    //mcell2=(1<0); */
-/* 			    mcell2=(comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse)>1.5); */
-
-/* 			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.); */
-/* 			    if((mcell1||mcell2)&&(curoct->cell[icell].marked==0)) { */
-/* 			      curoct->cell[icell].marked=marker; */
-/* 			      nmark++;stati[2]++; */
-/* 			    } */
-/* #endif */
-/* #endif */
-
+#else
+			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+ 			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif
 #else
 			    // ===================== AMR NO COSMO ================
 
@@ -1119,7 +1126,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 #ifdef TESTCLUMP
 			    den=curoct->cell[icell].field.d;
-			    //den=0.1;
 #else
 			    den=0.1;
 #endif
@@ -1144,7 +1150,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 #endif
-
 #endif
 
 
@@ -1161,32 +1166,20 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 /* 			      nmark++;stati[2]++; */
 /* 			    } */
 /* #endif */
-			      
+#endif			      
 
 			  }
 			  
 			}
-			if(curoct->x==0.)
-			  if(pass==3)
-			    //if(curoct->y>0.5)
-			      if(icell==0)
-				if(level==6)
-				  if(curoct->cell[icell].marked!=5)
-				    abort();
 		      }
 		  }while(nextoct!=NULL);
 		//printf("pass=%d nmark=%d\n",pass,nmark);
 	      }
 #ifdef WMPI
 	      MPI_Barrier(cpu->comm);
-	      // first we correct from the marker diffusion
-	      if((marker==2)||(marker==5)) mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
-		
-	      // second exchange boundaries
-	      //mpi_exchange(cpu,sendbuffer,recvbuffer,3,1);
+	      // we correct from the marker diffusion
+	      if(marker%3==2) mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 	      if(level>=(param->lcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
-	      //mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
-	      //breakmpi();
 #endif
 	    }
 	  //printf("\n");

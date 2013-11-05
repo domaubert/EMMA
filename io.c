@@ -134,46 +134,47 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   // opening the file
   fp=fopen(filename,"rb");
   
+  size_t outf;
 
   // reading snapshot time
-  fread(tsim,sizeof(REAL),1,fp); 
-  fread(tinit,sizeof(REAL),1,fp); 
-  fread(nsteps,sizeof(int),1,fp); 
-  fread(ndumps,sizeof(int),1,fp); 
-  fread(&lcoarse,sizeof(int),1,fp); 
-  fread(&lmax,sizeof(int),1,fp); 
+  outf=fread(tsim,sizeof(REAL),1,fp); 
+  outf=fread(tinit,sizeof(REAL),1,fp); 
+  outf=fread(nsteps,sizeof(int),1,fp); 
+  outf=fread(ndumps,sizeof(int),1,fp); 
+  outf=fread(&lcoarse,sizeof(int),1,fp); 
+  outf=fread(&lmax,sizeof(int),1,fp); 
 
   for(level=1;level<=lmax;level++){
-    fread(adt+level-1,sizeof(REAL),1,fp); 
+    outf=fread(adt+level-1,sizeof(REAL),1,fp); 
   }
   
 #ifdef WRAD
   // reading units
-  fread(&(param->unit.unit_l),sizeof(REAL),1,fp);
-  fread(&(param->unit.unit_v),sizeof(REAL),1,fp);
-  fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
-  fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
-  fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_l),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_v),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
 #endif
 
 #ifdef TESTCOSMO
-  fread(&(param->cosmo->om),sizeof(REAL),1,fp);
-  fread(&(param->cosmo->ov),sizeof(REAL),1,fp);
-  fread(&(param->cosmo->ob),sizeof(REAL),1,fp);
-  fread(&(param->cosmo->H0),sizeof(REAL),1,fp);
+  outf=fread(&(param->cosmo->om),sizeof(REAL),1,fp);
+  outf=fread(&(param->cosmo->ov),sizeof(REAL),1,fp);
+  outf=fread(&(param->cosmo->ob),sizeof(REAL),1,fp);
+  outf=fread(&(param->cosmo->H0),sizeof(REAL),1,fp);
 #endif
 
   // reading pointer informations in the snapshot
-  fread(&root_sna,sizeof(struct OCT*),1,fp);
-  fread(&rootcell_sna,sizeof(struct CELL*),1,fp);
-  fread(&rootpart_sna,sizeof(struct PART*),1,fp);
+  outf=fread(&root_sna,sizeof(struct OCT*),1,fp);
+  outf=fread(&rootcell_sna,sizeof(struct CELL*),1,fp);
+  outf=fread(&rootpart_sna,sizeof(struct PART*),1,fp);
   
   
   //if(cpu->rank==0) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
   // reading the octs sequence
    
-  fread(&oct_ad,sizeof(struct OCT *),1,fp);
-  fread(&oct,sizeof(struct OCT),1,fp);
+  outf=fread(&oct_ad,sizeof(struct OCT *),1,fp);
+  outf=fread(&oct,sizeof(struct OCT),1,fp);
 
   while(!feof(fp)){
 
@@ -211,12 +212,13 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     }
     
 
+#ifdef PIC
     // 2.c modifity the particle pointers within cells
     
     for(ic=0;ic<8;ic++){
       curoct->cell[ic].phead=(curoct->cell[ic].phead==NULL?NULL:(curoct->cell[ic].phead-rootpart_sna)+rootpart_mem);
     }
-
+#endif
 
     // Overall pointer management
     if(firstoct[curoct->level-1]==NULL){
@@ -233,8 +235,8 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 
     // read next oct
 
-    fread(&oct_ad,sizeof(struct OCT *),1,fp);
-    fread(&oct,sizeof(struct OCT),1,fp);
+    outf=fread(&oct_ad,sizeof(struct OCT *),1,fp);
+    outf=fread(&oct,sizeof(struct OCT),1,fp);
 
   }
 
@@ -401,6 +403,9 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=curp->fz;fwrite(&val,1,sizeof(float),fp);
 #endif
 		  val=(REAL)(curp->idx);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->mass);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->epot);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->ekin);fwrite(&val,1,sizeof(float),fp);
 		  ipart++;
 		}while(nexp!=NULL);
 	      }
@@ -498,14 +503,15 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   
 
   // reading snapshot time
-  fread(&npart,1,sizeof(int),fp);
-  fread(tsim,1,sizeof(REAL),fp);
-  fread(&rootpart_sna,1,sizeof(struct PART *),fp);
+  size_t outf;
+  outf=fread(&npart,1,sizeof(int),fp);
+  outf=fread(tsim,1,sizeof(REAL),fp);
+  outf=fread(&rootpart_sna,1,sizeof(struct PART *),fp);
 
   // reading the particle sequence
    
-  fread(&part_ad,sizeof(struct PART*),1,fp);
-  fread(&part,sizeof(struct PART),1,fp);
+  outf=fread(&part_ad,sizeof(struct PART*),1,fp);
+  outf=fread(&part,sizeof(struct PART),1,fp);
 
   while(!feof(fp)){
 
@@ -523,8 +529,8 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
     // read next particle
 
-    fread(&part_ad,sizeof(struct PART*),1,fp);
-    fread(&part,sizeof(struct PART),1,fp);
+    outf=fread(&part_ad,sizeof(struct PART*),1,fp);
+    outf=fread(&part,sizeof(struct PART),1,fp);
 
   }
 
@@ -536,7 +542,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   freepart=NULL;
 
   for(curp=rootpart_mem;curp<rootpart_mem+param->npartmax;curp++){
-    if(curp->mass==0.){
+    if(curp->mass==-1.){ // flag empty particles
       if(freepart==NULL){
 	freepart=curp;
 	curp->prev=NULL;
@@ -550,9 +556,12 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 	lpart=curp;
       }
     }
+    /* else if(cpu->rank==0){ */
+    /*   printf("%e\n",curp->mass); */
+    /* } */
   }
 
-  //printf("%d part recovered by proc %d\n",ipart,cpu->rank);
+  printf("%d/%d part recovered by proc %d with freepart=%p\n",ipart,param->npartmax,cpu->rank,freepart);
 
   // done
   fclose(fp);
@@ -583,32 +592,33 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     }
   else
     {
-      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);
       rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
       rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
       
-      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
 
-      fscanf(buf,"%s",stream);
+       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->amrthresh=dummyf;
+      rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
-      fscanf(buf,"%s",stream);
+       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
 
-      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
 
-      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->gstride);
       rstat=fscanf(buf,"%s %d",stream,&param->hstride);
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
@@ -616,7 +626,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
 
 #ifdef WRAD
-      fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->denthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
@@ -634,7 +644,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   //printf("maxhash=%d\n",param->maxhash);
 
   // ====================== some checks
-
 
   // stencil/streams conformity
 #ifdef GPUAXL
@@ -666,48 +675,49 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     fz=fopen("utils/grafic_src/ic_velcz","rb");
 
     // reading the headers
+    size_t outf;
 
-    fread(&dummy,1,sizeof(dummy),fx);
-    fread(&np1,1,4,fx);
-    fread(&np2,1,4,fx);
-    fread(&np3,1,4,fx);
-    fread(&dx,1,4,fx);
-    fread(&x1o,1,4,fx);
-    fread(&x2o,1,4,fx);
-    fread(&x3o,1,4,fx);
-    fread(&astart,1,4,fx);
-    fread(&om,1,4,fx);
-    fread(&ov,1,4,fx);
-    fread(&h0,1,4,fx);
-    fread(&dummy,1,sizeof(dummy),fx);
+    outf=fread(&dummy,1,sizeof(dummy),fx);
+    outf=fread(&np1,1,4,fx);
+    outf=fread(&np2,1,4,fx);
+    outf=fread(&np3,1,4,fx);
+    outf=fread(&dx,1,4,fx);
+    outf=fread(&x1o,1,4,fx);
+    outf=fread(&x2o,1,4,fx);
+    outf=fread(&x3o,1,4,fx);
+    outf=fread(&astart,1,4,fx);
+    outf=fread(&om,1,4,fx);
+    outf=fread(&ov,1,4,fx);
+    outf=fread(&h0,1,4,fx);
+    outf=fread(&dummy,1,sizeof(dummy),fx);
 
-    fread(&dummy,1,sizeof(dummy),fy);
-    fread(&np1,1,4,fy);
-    fread(&np2,1,4,fy);
-    fread(&np3,1,4,fy);
-    fread(&dx,1,4,fy);
-    fread(&x1o,1,4,fy);
-    fread(&x2o,1,4,fy);
-    fread(&x3o,1,4,fy);
-    fread(&astart,1,4,fy);
-    fread(&om,1,4,fy);
-    fread(&ov,1,4,fy);
-    fread(&h0,1,4,fy);
-    fread(&dummy,1,sizeof(dummy),fy);
+    outf=fread(&dummy,1,sizeof(dummy),fy);
+    outf=fread(&np1,1,4,fy);
+    outf=fread(&np2,1,4,fy);
+    outf=fread(&np3,1,4,fy);
+    outf=fread(&dx,1,4,fy);
+    outf=fread(&x1o,1,4,fy);
+    outf=fread(&x2o,1,4,fy);
+    outf=fread(&x3o,1,4,fy);
+    outf=fread(&astart,1,4,fy);
+    outf=fread(&om,1,4,fy);
+    outf=fread(&ov,1,4,fy);
+    outf=fread(&h0,1,4,fy);
+    outf=fread(&dummy,1,sizeof(dummy),fy);
 
-    fread(&dummy,1,sizeof(dummy),fz);
-    fread(&np1,1,4,fz);
-    fread(&np2,1,4,fz);
-    fread(&np3,1,4,fz);
-    fread(&dx,1,4,fz);
-    fread(&x1o,1,4,fz);
-    fread(&x2o,1,4,fz);
-    fread(&x3o,1,4,fz);
-    fread(&astart,1,4,fz);
-    fread(&om,1,4,fz);
-    fread(&ov,1,4,fz);
-    fread(&h0,1,4,fz);
-    fread(&dummy,1,sizeof(dummy),fz);
+    outf=fread(&dummy,1,sizeof(dummy),fz);
+    outf=fread(&np1,1,4,fz);
+    outf=fread(&np2,1,4,fz);
+    outf=fread(&np3,1,4,fz);
+    outf=fread(&dx,1,4,fz);
+    outf=fread(&x1o,1,4,fz);
+    outf=fread(&x2o,1,4,fz);
+    outf=fread(&x3o,1,4,fz);
+    outf=fread(&astart,1,4,fz);
+    outf=fread(&om,1,4,fz);
+    outf=fread(&ov,1,4,fz);
+    outf=fread(&h0,1,4,fz);
+    outf=fread(&dummy,1,sizeof(dummy),fz);
   }
 
 #ifdef WMPI
@@ -781,21 +791,22 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
   ip=0;
+  size_t outf;
   for(i3=1;i3<=np3;i3++){
 
     if(cpu->rank==0){
       printf("\r %f percent done",(i3*1.0)/np3*100.);
-      fread(&dummy,1,sizeof(dummy),fx);
-      fread(velx,np1*np2,sizeof(float),fx);
-      fread(&dummy,1,sizeof(dummy),fx);
+      outf=fread(&dummy,1,sizeof(dummy),fx);
+      outf=fread(velx,np1*np2,sizeof(float),fx);
+      outf=fread(&dummy,1,sizeof(dummy),fx);
       
-      fread(&dummy,1,sizeof(dummy),fy);
-      fread(vely,np1*np2,sizeof(float),fy);
-      fread(&dummy,1,sizeof(dummy),fy);
+      outf=fread(&dummy,1,sizeof(dummy),fy);
+      outf=fread(vely,np1*np2,sizeof(float),fy);
+      outf=fread(&dummy,1,sizeof(dummy),fy);
       
-      fread(&dummy,1,sizeof(dummy),fz);
-      fread(velz,np1*np2,sizeof(float),fz);
-      fread(&dummy,1,sizeof(dummy),fz);
+      outf=fread(&dummy,1,sizeof(dummy),fz);
+      outf=fread(velz,np1*np2,sizeof(float),fz);
+      outf=fread(&dummy,1,sizeof(dummy),fz);
       
 
     }
@@ -900,15 +911,15 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 
   fd=fopen("utils/grafic_src/ZEL.PM.0","rb");
 
-  fread(&dummy,sizeof(dummy),1,fd);
-  fread(&nploc,sizeof(int),1,fd);	 
-  fread(&munit_z,sizeof(float),1,fd); 
-  fread(&ainit_z,sizeof(float),1,fd); 
-  fread(&lbox,sizeof(float),1,fd);	 
-  fread(&om,sizeof(float),1,fd);
-  fread(&ov,sizeof(float),1,fd);
-  fread(&h0,sizeof(float),1,fd);
-  fread(&dummy,sizeof(dummy),1,fd);  
+  outf=fread(&dummy,sizeof(dummy),1,fd);
+  outf=fread(&nploc,sizeof(int),1,fd);	 
+  outf=fread(&munit_z,sizeof(float),1,fd); 
+  outf=fread(&ainit_z,sizeof(float),1,fd); 
+  outf=fread(&lbox,sizeof(float),1,fd);	 
+  outf=fread(&om,sizeof(float),1,fd);
+  outf=fread(&ov,sizeof(float),1,fd);
+  outf=fread(&h0,sizeof(float),1,fd);
+  outf=fread(&dummy,sizeof(dummy),1,fd);  
 
   astart=ainit_z;
 
@@ -961,36 +972,36 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 
   ip=0.;
   for(ipatch=0;ipatch<npatch;ipatch++) {
-    //    rstat=fread(&dummy,sizeof(dummy),1,fd); 
+    //    rstat=outf=fread(&dummy,sizeof(dummy),1,fd); 
     //    fseek(fd,pstart,SEEK_SET);
     fseek(fd,pstart+(0*nploc+ipatch*nread)*sizeof(float)+1*sizeof(dummy),SEEK_SET);
-    fread(pos,sizeof(float),nread,fd);
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(pos,sizeof(float),nread,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
 
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
     fseek(fd,pstart+(1*nploc+ipatch*nread)*sizeof(float)+3*sizeof(dummy),SEEK_SET);
-    fread(pos+nread,sizeof(float),nread,fd);
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(pos+nread,sizeof(float),nread,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
 
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
     fseek(fd,pstart+(2*nploc+ipatch*nread)*sizeof(float)+5*sizeof(dummy),SEEK_SET);
-    fread(pos+2*nread,sizeof(float),nread,fd);
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(pos+2*nread,sizeof(float),nread,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
   
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
     fseek(fd,pstart+(3*nploc+ipatch*nread)*sizeof(float)+7*sizeof(dummy),SEEK_SET);
-    fread(vel,sizeof(float),nread,fd);
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(vel,sizeof(float),nread,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
 
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
     fseek(fd,pstart+(4*nploc+ipatch*nread)*sizeof(float)+9*sizeof(dummy),SEEK_SET);
-    fread(vel+nread,sizeof(float),nread,fd);
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(vel+nread,sizeof(float),nread,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
 
-    //    fread(&dummy,sizeof(dummy),1,fd);
+    //    outf=fread(&dummy,sizeof(dummy),1,fd);
     fseek(fd,pstart+(5*nploc+ipatch*nread)*sizeof(float)+11*sizeof(dummy),SEEK_SET);
-    fread(vel+2*nread,sizeof(float),nread,fd);
-    //fread(&dummy,sizeof(dummy),1,fd);
+    outf=fread(vel+2*nread,sizeof(float),nread,fd);
+    //outf=fread(&dummy,sizeof(dummy),1,fd);
     
 
     for(i=0;i<nread;i++)
@@ -1040,12 +1051,263 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 }
 #endif
 
+// =====================================================================================
+// =====================================================================================
+
+#ifdef EDBERT
+struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param, struct OCT **firstoct)
+{
+  float astart,om,ov,h0,ob;
+  int dummy;
+
+  struct PART *lastpart;
+  int ip,iploc;
+  int i,j,k;
+
+  float lbox;
+  float ainit_z;
+  REAL mass;
+  REAL x,y,z,r;
+  REAL delta;
+  printf("Start EDBERT\n");
+
+  
+  om=0.99999;
+  ov=0.00001;
+  ob=OMEGAB;
+
+  h0=70.;
+  lbox=1.;
+  astart=0.01;
+  delta=1.2;
+
+  int n1d=pow(2,param->lcoarse);
+  REAL lsphere=0.1;
+  REAL dx=1./n1d;
+  iploc=0;
+  int nin=0;
+  int nout=0;
+  REAL m;
+
+#if 1
+
+  REAL vsphere=4./3.*M_PI*pow(lsphere,3.);
+  int nsphere=pow(n1d,3)*delta*vsphere/(1.+vsphere);
+  REAL mout=(om-ob)/pow(n1d,3);
+
+  REAL compfac=1.79;
+  for(k=0;k<n1d;k++)
+    {
+      for(j=0;j<n1d;j++)
+	{
+	  for(i=0;i<n1d;i++)
+	    {
+	      x=(i+0.5)*dx*compfac+0.5*(1.-compfac);
+	      y=(j+0.5)*dx*compfac+0.5*(1.-compfac);
+	      z=(k+0.5)*dx*compfac+0.5*(1.-compfac);
+	      
+	      r=sqrt(pow(x-0.5,2)+pow(y-0.5,2)+pow(z-0.5,2));
+	      if(r<lsphere){
+		nin++;
+	      }
+	      else{
+		continue;
+	      }
+	      
+	      if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
+		part[iploc].x=x;
+		part[iploc].y=y;
+		part[iploc].z=z;
+		
+		part[iploc].vx=0;
+		part[iploc].vy=0;
+		part[iploc].vz=0;
+	
+		part[iploc].mass=mout;
+		part[iploc].idx=-nin;
+		lastpart=part+iploc;
+		iploc++;
+	      }
+	    }
+	}
+    }
+
+  nsphere=nin;
+
+  for(k=0;k<n1d;k++)
+    {
+      for(j=0;j<n1d;j++)
+	{
+	  for(i=0;i<n1d;i++)
+	    {
+	      x=(i+0.5)*dx;
+	      y=(j+0.5)*dx;
+	      z=(k+0.5)*dx;
+	      r=sqrt(pow(x-0.5,2)+pow(y-0.5,2)+pow(z-0.5,2));
+	      if(r<lsphere){
+		nin++;
+	      }
+
+	      ip=i+j*n1d+k*n1d*n1d;
+	      
+	      if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
+		part[iploc].x=x;
+		part[iploc].y=y;
+		part[iploc].z=z;
+		
+		part[iploc].vx=0;
+		part[iploc].vy=0;
+		part[iploc].vz=0;
+	
+		part[iploc].mass=mout;
+		part[iploc].idx=ip+nsphere;
+		lastpart=part+iploc;
+		iploc++;
+	      }
+	    }
+	}
+    }
+
+  delta=(nin/(4./3.*M_PI*pow(lsphere,3)))/(pow(n1d,3))-1.;
+  printf("delta=%e\n",delta);
+
+#endif
+  
+  *munit=mass;
+  *ainit=astart;
+  param->cosmo->om=om;
+  param->cosmo->ov=ov;
+  param->cosmo->ob=ob;
+  //param->cosmo->Hubble=h0;
+  *npart=iploc;
+
+  if(cpu->rank==0){
+    printf("Edbert Particle Read ok\n");
+  }
+
+#ifdef WHYDRO2
+
+  int level;
+  REAL dxcur;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  REAL xc,yc,zc;
+  struct Wtype W;
+  REAL rad;
+
+  for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+		rad=sqrt((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5));
+		if(rad<lsphere){
+		  W.d=(1.+delta)*ob;
+		}
+		else{
+		  W.d=ob;
+		}
+		W.p=1e-5;
+		W.u=0.; // vstar is expressed in m/s and grafic vel are in km/s
+		W.v=0.;
+		W.w=0.;
+		W.a=sqrt(GAMMA*W.p/W.d);
+		getE(&W);
+
+		memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
+
+	      }
+	  }while(nextoct!=NULL);
+      }
+
+#endif
+
+  return lastpart;
+}
+#endif
+
+
 #endif
 //==================================================================================
 //==================================================================================
 
 #ifdef WHYDRO2
+
+#ifdef EVRARD
+int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAMS *param){
+  
+  int level;
+  REAL dxcur;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  int icell;
+  struct Wtype W;
+  REAL rad;
+  REAL xc,yc,zc;
+  
+  //==== parameters of evrard sphere
+  REAL R=0.35;
+  REAL M=1.;
+  REAL rhostar=M/(4./3.*M_PI*R*R*R);
+  REAL estar=M/R; //assuming G=1
+  REAL pstar=rhostar*estar;
+  REAL tstar=sqrt(M_PI*M_PI/8.)*pow(R,1.5)/pow(M,0.5);
+  if(cpu->rank==0) printf("Generating Evrard Test Case ts=%e, rhostar=%e\n",tstar,rhostar);
+
+  for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+		rad=sqrt((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5))/R;
+		if(rad<1.){
+		  W.d=rhostar/rad;
+		  W.p=pstar/rad*0.05;
+		}
+		else{
+		  W.d=1e-3;
+		  W.p=1e-5;
+		}
+
+		W.u=0.; // vstar is expressed in m/s and grafic vel are in km/s
+		W.v=0.;
+		W.w=0.;
+		W.a=sqrt(GAMMA*W.p/W.d);
+		getE(&W);
+
+		memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
+
+	      }
+	  }while(nextoct!=NULL);
+      }
+
+  }
+#endif
+
+
 #ifdef TESTCOSMO
+#ifdef GRAFIC
 int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param){
   
   FILE *fx;
@@ -1068,61 +1330,61 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   
     // reading the headers
 
-    fread(&dummy,1,sizeof(dummy),fdx);
-    fread(&np1,1,4,fdx);
-    fread(&np2,1,4,fdx);
-    fread(&np3,1,4,fdx);
-    fread(&dx,1,4,fdx);
-    fread(&x1o,1,4,fdx);
-    fread(&x2o,1,4,fdx);
-    fread(&x3o,1,4,fdx);
-    fread(&astart,1,4,fdx);
-    fread(&om,1,4,fdx);
-    fread(&ov,1,4,fdx);
-    fread(&h0,1,4,fdx);
-    fread(&dummy,1,sizeof(dummy),fdx);
+    outf=fread(&dummy,1,sizeof(dummy),fdx);
+    outf=fread(&np1,1,4,fdx);
+    outf=fread(&np2,1,4,fdx);
+    outf=fread(&np3,1,4,fdx);
+    outf=fread(&dx,1,4,fdx);
+    outf=fread(&x1o,1,4,fdx);
+    outf=fread(&x2o,1,4,fdx);
+    outf=fread(&x3o,1,4,fdx);
+    outf=fread(&astart,1,4,fdx);
+    outf=fread(&om,1,4,fdx);
+    outf=fread(&ov,1,4,fdx);
+    outf=fread(&h0,1,4,fdx);
+    outf=fread(&dummy,1,sizeof(dummy),fdx);
 
-    fread(&dummy,1,sizeof(dummy),fx);
-    fread(&np1,1,4,fx);
-    fread(&np2,1,4,fx);
-    fread(&np3,1,4,fx);
-    fread(&dx,1,4,fx);
-    fread(&x1o,1,4,fx);
-    fread(&x2o,1,4,fx);
-    fread(&x3o,1,4,fx);
-    fread(&astart,1,4,fx);
-    fread(&om,1,4,fx);
-    fread(&ov,1,4,fx);
-    fread(&h0,1,4,fx);
-    fread(&dummy,1,sizeof(dummy),fx);
+    outf=fread(&dummy,1,sizeof(dummy),fx);
+    outf=fread(&np1,1,4,fx);
+    outf=fread(&np2,1,4,fx);
+    outf=fread(&np3,1,4,fx);
+    outf=fread(&dx,1,4,fx);
+    outf=fread(&x1o,1,4,fx);
+    outf=fread(&x2o,1,4,fx);
+    outf=fread(&x3o,1,4,fx);
+    outf=fread(&astart,1,4,fx);
+    outf=fread(&om,1,4,fx);
+    outf=fread(&ov,1,4,fx);
+    outf=fread(&h0,1,4,fx);
+    outf=fread(&dummy,1,sizeof(dummy),fx);
 
-    fread(&dummy,1,sizeof(dummy),fy);
-    fread(&np1,1,4,fy);
-    fread(&np2,1,4,fy);
-    fread(&np3,1,4,fy);
-    fread(&dx,1,4,fy);
-    fread(&x1o,1,4,fy);
-    fread(&x2o,1,4,fy);
-    fread(&x3o,1,4,fy);
-    fread(&astart,1,4,fy);
-    fread(&om,1,4,fy);
-    fread(&ov,1,4,fy);
-    fread(&h0,1,4,fy);
-    fread(&dummy,1,sizeof(dummy),fy);
+    outf=fread(&dummy,1,sizeof(dummy),fy);
+    outf=fread(&np1,1,4,fy);
+    outf=fread(&np2,1,4,fy);
+    outf=fread(&np3,1,4,fy);
+    outf=fread(&dx,1,4,fy);
+    outf=fread(&x1o,1,4,fy);
+    outf=fread(&x2o,1,4,fy);
+    outf=fread(&x3o,1,4,fy);
+    outf=fread(&astart,1,4,fy);
+    outf=fread(&om,1,4,fy);
+    outf=fread(&ov,1,4,fy);
+    outf=fread(&h0,1,4,fy);
+    outf=fread(&dummy,1,sizeof(dummy),fy);
 
-    fread(&dummy,1,sizeof(dummy),fz);
-    fread(&np1,1,4,fz);
-    fread(&np2,1,4,fz);
-    fread(&np3,1,4,fz);
-    fread(&dx,1,4,fz);
-    fread(&x1o,1,4,fz);
-    fread(&x2o,1,4,fz);
-    fread(&x3o,1,4,fz);
-    fread(&astart,1,4,fz);
-    fread(&om,1,4,fz);
-    fread(&ov,1,4,fz);
-    fread(&h0,1,4,fz);
-    fread(&dummy,1,sizeof(dummy),fz);
+    outf=fread(&dummy,1,sizeof(dummy),fz);
+    outf=fread(&np1,1,4,fz);
+    outf=fread(&np2,1,4,fz);
+    outf=fread(&np3,1,4,fz);
+    outf=fread(&dx,1,4,fz);
+    outf=fread(&x1o,1,4,fz);
+    outf=fread(&x2o,1,4,fz);
+    outf=fread(&x3o,1,4,fz);
+    outf=fread(&astart,1,4,fz);
+    outf=fread(&om,1,4,fz);
+    outf=fread(&ov,1,4,fz);
+    outf=fread(&h0,1,4,fz);
+    outf=fread(&dummy,1,sizeof(dummy),fz);
   }
 
   // setting baryon density parameter
@@ -1230,21 +1492,21 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     if(cpu->rank==0){
       printf("\r %f percent done",(i3*1.0)/np3*100.);
 
-      fread(&dummy,1,sizeof(dummy),fdx);
-      fread(deltab,np1*np2,sizeof(float),fdx);
-      fread(&dummy,1,sizeof(dummy),fdx);
+      outf=fread(&dummy,1,sizeof(dummy),fdx);
+      outf=fread(deltab,np1*np2,sizeof(float),fdx);
+      outf=fread(&dummy,1,sizeof(dummy),fdx);
 
-      fread(&dummy,1,sizeof(dummy),fx);
-      fread(velx,np1*np2,sizeof(float),fx);
-      fread(&dummy,1,sizeof(dummy),fx);
+      outf=fread(&dummy,1,sizeof(dummy),fx);
+      outf=fread(velx,np1*np2,sizeof(float),fx);
+      outf=fread(&dummy,1,sizeof(dummy),fx);
 
-      fread(&dummy,1,sizeof(dummy),fy);
-      fread(vely,np1*np2,sizeof(float),fy);
-      fread(&dummy,1,sizeof(dummy),fy);
+      outf=fread(&dummy,1,sizeof(dummy),fy);
+      outf=fread(vely,np1*np2,sizeof(float),fy);
+      outf=fread(&dummy,1,sizeof(dummy),fy);
 
-      fread(&dummy,1,sizeof(dummy),fz);
-      fread(velz,np1*np2,sizeof(float),fz);
-      fread(&dummy,1,sizeof(dummy),fz);
+      outf=fread(&dummy,1,sizeof(dummy),fz);
+      outf=fread(velz,np1*np2,sizeof(float),fz);
+      outf=fread(&dummy,1,sizeof(dummy),fz);
     }
 
 #ifdef WMPI
@@ -1356,7 +1618,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   if(cpu->rank==0) printf("Grafic hydro read ok\n");
   return ifound;
 }
-
+#endif
 #endif
 #endif
 

@@ -221,12 +221,12 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     printf("]\n\n");
   }
 
-#ifdef TESTCOSMO
-  if(ptot!=pow(2,param->lcoarse*3)){
-    printf("Error on total number of particles %d found (%d expected)\n",ptot,(int)pow(2,3*param->lcoarse));
-    abort();
-  }
-#endif
+/* #ifdef TESTCOSMO */
+/*   if(ptot!=pow(2,param->lcoarse*3)){ */
+/*     printf("Error on total number of particles %d found (%d expected)\n",ptot,(int)pow(2,3*param->lcoarse)); */
+/*     abort(); */
+/*   } */
+/* #endif */
 
 
 }

@@ -195,6 +195,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int ptot=0;
   int ip;
   
+  REAL ekp,epp;
+  REAL RHS;
+  REAL delta_e;
+  REAL drift_e;
+  REAL htilde;
+
 
 #ifdef TESTCOSMO
   aexp=cosmo->aexp;
@@ -335,6 +341,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp); 
 
+
+
+
     /* //====================================  Force Field ========================== */
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
@@ -354,21 +363,26 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // ================= II We compute the timestep of the current level
 
+    REAL adtold=adt[level-1]; // for energy conservation
     dtnew=param->dt;//*(cpu->nsteps>2);
     
+#ifdef WGRAV
+    REAL dtff;
+#ifdef TESTCOSMO
+    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
+#else
+    dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
+#endif
+    dtnew=(dtff<dtnew?dtff:dtnew);
+    //printf("dtff= %e ",dtff);
+#endif
+
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.1,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     //printf("dtcosmo= %e ",dtcosmo);
 
-#ifdef WGRAV
-    REAL dtff;
-    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
-
-    dtnew=(dtff<dtnew?dtff:dtnew);
-    //printf("dtff= %e ",dtff);
-#endif
 
 #endif
   
@@ -475,10 +489,56 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
     //printf("1 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-#ifdef PART_EGY
-    //computing energy
-    L_egypart(level,firstoct); // computing the particle acceleration and velocity
+
+    // =============== Computing Energy diagnostics
+
+#ifdef PIC
+    if(level==param->lcoarse){
+      egypart(cpu,&ekp,&epp,param,aexp);
+#ifdef WMPI
+      REAL sum_ekp,sum_epp;
+      MPI_Allreduce(&ekp,&sum_ekp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&epp,&sum_epp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      ekp=sum_ekp;
+      epp=sum_epp;
 #endif
+      if(nsteps==1){
+	htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+	param->egy_0=ekp+epp;
+	param->egy_rhs=0.;
+	param->egy_last=epp*htilde;
+	param->egy_timelast=tloc;
+	param->egy_totlast=ekp+epp;
+	
+      }
+    }
+
+    
+#ifdef TESTCOSMO
+    if((level==param->lcoarse)&&(nsteps>1)) {
+      htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+      RHS=param->egy_rhs;
+      
+      RHS=RHS+0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast); // trapezoidal rule
+
+      delta_e=(((ekp+epp)-param->egy_totlast)/(0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast))-1.);
+      drift_e=(((ekp+epp)-param->egy_0)/RHS-1.);
+
+      param->egy_rhs=RHS;
+      param->egy_last=epp*htilde;
+      param->egy_timelast=tloc;
+      param->egy_totlast=ekp+epp;
+
+
+      if(cpu->rank==0){
+	fprintf(param->fpegy,"%e %e %e %e %e %e\n",aexp,delta_e,drift_e,ekp,epp,RHS);
+	printf("Egystat rel. err= %e drift=%e\n",delta_e,drift_e); 
+      }
+    }
+#endif
+
+
+    // moving particles around
 
     // predictor step
     L_accelpart(level,firstoct,adt,is,cpu); // computing the particle acceleration and velocity
@@ -603,6 +663,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //}
 
 
+#endif
+
 
   // ================= V Computing the new refinement map
     
@@ -620,7 +682,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       // cleaning the marks
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
-      L_mark_cells(level,param,firstoct,2,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
+      L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
       }
     }
 
@@ -635,7 +697,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Some Eye candy for timesteps display
 
-    dispndt(param,cpu,ndt);
+    //dispndt(param,cpu,ndt);
     
     // === Loop
 

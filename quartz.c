@@ -330,34 +330,6 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
-
-
-
-  /* //========= creating a FLUX MPI type ======= */
-  /* MPI_Datatype MPI_FLUX; */
-
-  /* /\* Setup description of the 8 MPI_WTYPE fields one per oct*\/ */
-  /* offsets[0] = 0; */
-  /* oldtypes[0] = MPI_DOUBLE; */
-  /* blockcounts[0] = NFLUX*8; */
-
-  /* /\* Setup description of the 2 MPI_INT fields key, level *\/ */
-  /* /\* Need to first figure offset by getting size of MPI_REAL *\/ */
-  /* MPI_Type_extent(MPI_DOUBLE, &extent); */
-  /* offsets[1] = NFLUX * 8 * extent; */
-  /* oldtypes[1] = MPI_LONG; */
-  /* blockcounts[1] = 1; */
-
-  /* MPI_Type_extent(MPI_LONG, &extent); */
-  /* offsets[2] = offsets[1]+extent; */
-  /* oldtypes[2] = MPI_INT; */
-  /* blockcounts[2] = 1; */
-
-  /* /\* Now define structured type and commit it *\/ */
-  /* MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_FLUX); */
-  /* MPI_Type_commit(&MPI_FLUX); */
-
-
   
 #endif
 
@@ -472,6 +444,7 @@ int main(int argc, char *argv[])
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 #ifdef PIC
   part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+  cpu.firstpart=part;
   // we set all the particles mass to -1
   for(ii=0;ii<npartmax;ii++) part[ii].mass=-1.0;
 #endif
@@ -1116,6 +1089,12 @@ int main(int argc, char *argv[])
     amax=1.;
 #endif
 
+#ifdef EDBERT // ==================== read ZELDOVICH file
+
+    lastpart=read_edbert_part(part, &cpu, &munit, &ainit, &npart, &param,firstoct);
+    amax=1.;
+#endif
+
 
 #endif
   
@@ -1226,6 +1205,11 @@ int main(int argc, char *argv[])
     if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
     amax=1.0;
 #else
+
+#ifdef EVRARD
+    read_evrard_hydro(&cpu,firstoct,&param);
+#else
+
     //===================================================================================================================================
     //===================================================================================================================================
     //===================================================================================================================================
@@ -1501,16 +1485,14 @@ int main(int argc, char *argv[])
     printf("avgdens=%e\n",avgdens);
     printf("dmax=%e\n",dmax);
 #endif
-
-    /* sprintf(filename,"data/denhydstart.%05d.p%05d",0,cpu.rank);  */
-    /* dumpcube(lmap,firstoct,101,filename,0.);  */
-    /* sprintf(filename,"data/prehydstart.%05d.p%05d",0,cpu.rank);  */
-    /* dumpcube(lmap,firstoct,105,filename,0.);  */
+#endif
 
 
 
 
 #endif
+
+    //    abort();
 
     //===================================================================================================================================
 #ifdef WRAD
@@ -1666,9 +1648,11 @@ int main(int argc, char *argv[])
   else{
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
+#ifdef PIC
     sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank); 
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
     cpu.freepart=freepart;
+#endif
 
     sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank); 
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt);
@@ -1686,7 +1670,11 @@ int main(int argc, char *argv[])
 #ifdef TESTCOSMO
     // temporal boundaries of the full run
     ainit=tinit;
+#ifdef EDBERT
+    amax=2.;
+#else
     amax=1.0;
+#endif
 #endif
 
     MPI_Barrier(cpu.comm);
@@ -1709,16 +1697,24 @@ int main(int argc, char *argv[])
 
 #ifdef TESTCOSMO
   // ================== COMPUTATION OF FRIEDMANN TABLES
+  REAL treal,treal0,trealBB;
   // we compute the friedmann tables
   aexp=tsim;
 
   // at this stage we have to compute the conformal time
   tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
 
+  // real times
+  treal=-integ_da_dt(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
+  trealBB=-integ_da_dt(1e-5,1.0,cosmo.om,cosmo.ov,1e-8);
+  treal0=treal;
+
+
+  // interpolation table
   compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
 
   tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
-  if(cpu.rank==0) printf("tmax=%e\n",tmax);
+  if(cpu.rank==0) printf("tmax=%e treal=%e\n",tmax,treal);
   cosmo.tab_aexp=tab_aexp;
   cosmo.tab_ttilde=tab_ttilde;
 #endif
@@ -1790,6 +1786,18 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
+    // preparing energy stats
+
+    if(cpu.rank==0) param.fpegy=fopen("energystat.txt","w");
+    // dumping ICs
+    int ptot;
+    mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
+    sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
+    dumpgrid(levelmax,firstoct,filename,0.,&param);
+#ifdef PIC
+    sprintf(filename,"data/pstart.%05d.p%05d",0,cpu.rank);
+    dumppart(firstoct,filename,levelcoarse,levelmax,0.,&cpu);
+#endif
 
 
     // Loop over time
@@ -1800,7 +1808,7 @@ int main(int argc, char *argv[])
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
       cosmo.tsim=tsim;
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%lf t=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
+      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%lf tconf=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
 #ifndef WRAD
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
@@ -1811,7 +1819,6 @@ int main(int argc, char *argv[])
       // Resetting the timesteps
 
       for(level=1;level<=levelmax;level++){
-	//adt[level-1]=param.dt;
 	ndt[level-1]=0;
       }
 
@@ -1829,9 +1836,17 @@ int main(int argc, char *argv[])
       if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
 
 #ifndef TESTCOSMO
+#ifdef WRAD
 	REAL tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
 #else
+	REAL tdump=(tsim+adt[levelcoarse-1]);
+#endif
+#else
 	REAL tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
+#ifdef EDBERT
+	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8);
+	tdump=(treal-trealBB)/(treal0-trealBB);
+#endif
 #endif
 	// === Hydro dump
     
@@ -1855,9 +1870,10 @@ int main(int argc, char *argv[])
 	// backups for restart
 	sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
 	save_amr(filename,firstoct,tdump,tinit,nsteps,ndumps,&param, &cpu,part,adt);
+#ifdef PIC
 	sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
 	save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
-
+#endif
 	ndumps++;
       }
 
@@ -1896,6 +1912,7 @@ int main(int argc, char *argv[])
 
 
     if(cpu.rank==0){
+      fclose(param.fpegy);
       printf("Done .....\n");
     }
 #ifdef WMPI
