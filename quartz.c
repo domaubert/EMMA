@@ -224,7 +224,12 @@ int main(int argc, char *argv[])
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
-    
+#ifndef TESTCOSMO
+  tmax=param.tmax;
+#else
+  //in  cosmo case tmax is understood as a maximal expansion factor
+  amax=param.tmax;
+#endif
 
 #ifdef WMPI
   MPI_Status stat;
@@ -1079,20 +1084,17 @@ int main(int argc, char *argv[])
 #ifdef GRAFIC // ==================== read grafic file
 
     lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param);
-    amax=1.;
 #endif
 
 
 #ifdef ZELDOVICH // ==================== read ZELDOVICH file
 
     lastpart=read_zeldovich_part(part, &cpu, &munit, &ainit, &npart, &param);
-    amax=1.;
 #endif
 
 #ifdef EDBERT // ==================== read ZELDOVICH file
 
     lastpart=read_edbert_part(part, &cpu, &munit, &ainit, &npart, &param,firstoct);
-    amax=1.;
 #endif
 
 
@@ -1203,7 +1205,6 @@ int main(int argc, char *argv[])
     ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
 
     if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
-    amax=1.0;
 #else
 
 #ifdef EVRARD
@@ -1546,7 +1547,6 @@ int main(int argc, char *argv[])
     param.unit.unit_v=vstar;
     param.unit.unit_t=tstar;
     param.unit.unit_n=1.;
-    amax=1.;
 
 #endif
 
@@ -1670,11 +1670,6 @@ int main(int argc, char *argv[])
 #ifdef TESTCOSMO
     // temporal boundaries of the full run
     ainit=tinit;
-#ifdef EDBERT
-    amax=2.;
-#else
-    amax=1.0;
-#endif
 #endif
 
     MPI_Barrier(cpu.comm);
@@ -1704,15 +1699,19 @@ int main(int argc, char *argv[])
   // at this stage we have to compute the conformal time
   tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
 
-  // real times
+  // real times in units of 1./H0
   treal=-integ_da_dt(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
   trealBB=-integ_da_dt(1e-5,1.0,cosmo.om,cosmo.ov,1e-8);
   treal0=treal;
 
 
   // interpolation table
-  compute_friedmann(ainit*0.95,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
-
+#ifdef WMPI
+      MPI_Barrier(cpu.comm);
+#endif
+      if(cpu.rank==0) printf("computing friedmann tables with ainit=%e amax=%e\n",ainit,amax);
+  compute_friedmann(ainit*0.95,amax,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
+  
   tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
   if(cpu.rank==0) printf("tmax=%e treal=%e\n",tmax,treal);
   cosmo.tab_aexp=tab_aexp;
@@ -1737,33 +1736,7 @@ int main(int argc, char *argv[])
   int smark;
   int ismooth,nsmooth=2;
   int marker;
-
-
-
-#ifndef TESTCOSMO
-
-#ifdef WHYDRO2
-  tmax=1e15;
-#else
-  tmax=1e15;
-#endif
-#endif
-
-
   FILE *fegy;
-
-  //breakmpi();
-
-#ifndef TESTCOSMO
-    faexp=1.0;
-    faexp2=1.0;
-#endif
-
-    
-
-
-
-    
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
@@ -1844,7 +1817,9 @@ int main(int argc, char *argv[])
 #else
 	REAL tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
 #ifdef EDBERT
-	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8);
+	REAL adump=tdump;
+
+	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
 	tdump=(treal-trealBB)/(treal0-trealBB);
 #endif
 #endif
@@ -1856,7 +1831,7 @@ int main(int argc, char *argv[])
 	  printf("Dumping .......");
 	  printf("%s\n",filename);
 	}
-	dumpgrid(levelmax,firstoct,filename,tdump,&param); 
+	dumpgrid(levelmax,firstoct,filename,adump,&param); 
 
 #ifdef PIC
 	sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);

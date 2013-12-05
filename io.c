@@ -601,6 +601,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmax=dummyf;
 
        rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
@@ -1069,49 +1070,48 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   REAL mass;
   REAL x,y,z,r;
   REAL delta;
+  REAL lsphere;
   printf("Start EDBERT\n");
 
-  
+  lsphere=0.05;
   om=0.99999;
   ov=0.00001;
   ob=OMEGAB;
-
+  delta=0.2;
   h0=70.;
   lbox=1.;
-  astart=0.01;
-  delta=1.2;
+  astart=1e-3;
 
   int n1d=pow(2,param->lcoarse);
-  REAL lsphere=0.1;
   REAL dx=1./n1d;
   iploc=0;
   int nin=0;
   int nout=0;
   REAL m;
 
-#if 1
+#ifdef PIC
 
-  REAL vsphere=4./3.*M_PI*pow(lsphere,3.);
-  int nsphere=pow(n1d,3)*delta*vsphere/(1.+vsphere);
-  REAL mout=(om-ob)/pow(n1d,3);
-
-  REAL compfac=1.79;
+  REAL mout,mint;
+  REAL vsphere=0.;
   for(k=0;k<n1d;k++)
     {
       for(j=0;j<n1d;j++)
 	{
 	  for(i=0;i<n1d;i++)
 	    {
-	      x=(i+0.5)*dx*compfac+0.5*(1.-compfac);
-	      y=(j+0.5)*dx*compfac+0.5*(1.-compfac);
-	      z=(k+0.5)*dx*compfac+0.5*(1.-compfac);
+	      x=(i+0.5)*dx;
+	      y=(j+0.5)*dx;
+	      z=(k+0.5)*dx;
 	      
 	      r=sqrt(pow(x-0.5,2)+pow(y-0.5,2)+pow(z-0.5,2));
 	      if(r<lsphere){
 		nin++;
+		mout=-1;
+		vsphere+=pow(dx,3);
 	      }
 	      else{
-		continue;
+		nout++;
+		mout=1;
 	      }
 	      
 	      if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
@@ -1132,44 +1132,13 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	}
     }
 
-  nsphere=nin;
-
-  for(k=0;k<n1d;k++)
-    {
-      for(j=0;j<n1d;j++)
-	{
-	  for(i=0;i<n1d;i++)
-	    {
-	      x=(i+0.5)*dx;
-	      y=(j+0.5)*dx;
-	      z=(k+0.5)*dx;
-	      r=sqrt(pow(x-0.5,2)+pow(y-0.5,2)+pow(z-0.5,2));
-	      if(r<lsphere){
-		nin++;
-	      }
-
-	      ip=i+j*n1d+k*n1d*n1d;
-	      
-	      if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
-		part[iploc].x=x;
-		part[iploc].y=y;
-		part[iploc].z=z;
-		
-		part[iploc].vx=0;
-		part[iploc].vy=0;
-		part[iploc].vz=0;
-	
-		part[iploc].mass=mout;
-		part[iploc].idx=ip+nsphere;
-		lastpart=part+iploc;
-		iploc++;
-	      }
-	    }
-	}
-    }
-
-  delta=(nin/(4./3.*M_PI*pow(lsphere,3)))/(pow(n1d,3))-1.;
-  printf("delta=%e\n",delta);
+  mint=(om-ob)*(1.+delta)*vsphere/nin;
+  mout=((om-ob)-mint*nin)/nout;
+  printf("mint=%e mout=%e\n",mint,mout);
+  
+  for(i=0;i<iploc;i++){
+    part[i].mass=(part[i].mass<0?mint:mout);
+  }
 
 #endif
   
@@ -1216,9 +1185,9 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 		  W.d=(1.+delta)*ob;
 		}
 		else{
-		  W.d=ob;
+		  W.d=ob*(1.-(1.+delta)*vsphere)/(1.-vsphere);
 		}
-		W.p=1e-5;
+		W.p=PMIN;
 		W.u=0.; // vstar is expressed in m/s and grafic vel are in km/s
 		W.v=0.;
 		W.w=0.;

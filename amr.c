@@ -1098,6 +1098,9 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+
+
+
 #else
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
 			    if(mcell>mmax) mmax=mcell;

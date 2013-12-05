@@ -56,9 +56,6 @@ void minmod2grav_mix(struct Gtype *U1, struct Gtype *U2){
     U1->d=fmin(fmin(0.,fmax(beta*Dm,Dp)),fmax(Dm,beta*Dp));
     U2->d=U1->d;
   }
-
-
-
 }
 
 // ================== performs the difference between two Us
@@ -284,12 +281,9 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
     
     diffUgrav(&U0,&Um,D+2*dir); 
     diffUgrav(&Up,&U0,D+2*dir+1); 
-
-    /* memcpy(D+(2*dir+0),&Dm,sizeof(struct Gtype)); */
-    /* memcpy(D+(2*dir+1),&Dp,sizeof(struct Gtype)); */
     
     minmod2grav_mix(D+2*dir,D+2*dir+1);
-}
+  }
   
   // Interpolation
   int ix,iy,iz;
@@ -413,7 +407,6 @@ for(iz=0;iz<2;iz++){
 	icell=ix+iy*2+iz*4;
 	
 	interpforce(U0,Up,D+ix*3,D+6+iy*3,D+12+iz*3,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Up contains the interpolation
-	//Up[2]=0.;Up[1]=0.;Up[0]=0.;
 	memcpy(Wi+icell*3,Up,sizeof(REAL)*3);
       }
     }
@@ -423,7 +416,7 @@ for(iz=0;iz<2;iz++){
 
 // ============================================================================================================
 // ============================================================================================================
-#ifndef FASTGRAV
+
 void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct GGRID *stencil,char *visit){
 
   static int ix[6]={-1,1,0,0,0,0};
@@ -657,147 +650,6 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct GGRID *stencil, int s
   (*nread)=iread;
   return nextoct;
 } 
-#else
-
-struct OCT *gatherstencilgrav_nei(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
-{
-  struct OCT* nextoct;
-  struct OCT* curoct;
-  struct OCT* coarseoct;
-  int iread=0;
-  int inei,icell;
-  int ipos=0,stenfull=0;;
-  int icur;
-  int j;
-
-  nextoct=octstart;
-
-  // first we clean the pointers
-  memset(gstencil->nei,0,sizeof(int)*7*stride);
-  memset(gstencil->valid,0,sizeof(char)*stride);
-  
-
-  if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;
-
-      if(curoct->vecpos<0){
-	if(ipos==stride){
-	  nextoct=curoct; // we rewind the oct sequence by 1
-	  break; //we stop filling the array
-	}
-	// the current oct has not been vectorized yet
-	curoct->vecpos=ipos;
-	ipos++;
-      }
-      
-      if(curoct->cpu==cpu->rank){ // we look for neighbors of current cpu octs only
-	// getting the vector element
-	icur=curoct->vecpos;
-
-	// we scan the neighbors
-	for(inei=0;inei<6;inei++){
-	  if(curoct->nei[inei]->child!=NULL){ // the neighbor oct exists (always true for levelcoarse)
-	    if(curoct->nei[inei]->child->vecpos<0){ // the neighbor does not have a vector position
-	      if(ipos==stride){
-		// the stencil is full
-		stenfull=1; // we stop filling the array
-		break;
-	      }
-
-	      curoct->nei[inei]->child->vecpos=ipos;
-	      ipos++;
-	    }
-
-	    gstencil->nei[icur+inei*stride]=curoct->nei[inei]->child->vecpos; // we assign a neighbor
-
-	    /* if(gstencil->nei[icur+inei*stride]>=stride){ */
-	    /*   printf("error vecnei %d %d\n",stride,curoct->nei[inei]->child->vecpos); */
-	    /* } */
-	  }
-	  else{ // we need to interpolate from coarser level
-	  
-	    if(ipos==stride){
-	      // the stencil is full
-	      stenfull=1; // we stop filling the array
-	      break;
-	    }
-
-	    // perform the interpolation in the coarse neighbour
-	    static int face[8]={0,1,2,3,4,5,6,7};
-	    struct Gtype Wi[8];
-	    coarse2fine_gravlin(curoct->nei[inei],Wi);
-	    for(icell=0;icell<8;icell++){
-	      memcpy(&(gstencil->p[ipos+icell*stride]),&(Wi[face[icell]].p),sizeof(REAL)); 
-	      memcpy(&(gstencil->d[ipos+icell*stride]),&(Wi[face[icell]].d),sizeof(REAL)); 
-	    }
-	    gstencil->level[ipos]=curoct->level-1; // assigning a level
-	    gstencil->nei[icur+inei*stride]=ipos; // we assign a neighbor
-	    ipos++;
-	  }
-	}
-
-	if(stenfull){
-	  nextoct=curoct; // we rewind the oct sequence by 1
-	  break; //we stop filling the array
-	  
-	}
-	// we add a seventh neighbour that corresponds to the current oct
-	gstencil->nei[icur+6*stride]=icur;
-      }
-  
-      gstencil->cpu[icur]=curoct->cpu; // assigning a cpu
-      gstencil->level[icur]=curoct->level; // assigning a level
-      gstencil->valid[icur]=1; // if we managed to achieve this point the oct is fully valid
-      iread++;
-    }while(((nextoct!=NULL)&&(iread<stride)));
-  }
-  
-  (*nread)=iread;
-  //printf("iread=%d ipos=%d\n",iread,ipos);
-  //if(iread!=cpu->noct[octstart->level-1]) abort();
-  return nextoct;
-}
-
-//======================================================
-
-struct OCT *gatherstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil, int stride, struct CPUINFO *cpu, int *nread)
-{
-  struct OCT* nextoct;
-  struct OCT* curoct;
-  int ipos;
-  int iread=0,ival=0.;
-  int icell;
-  
-  nextoct=octstart;
-  if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;
-      
-      //getting the vector element
-      ipos=curoct->vecpos;
-      if(ipos<0){
-	continue; // for octs not involved in fine level calculations
-      }
-
-      // filling the values
-      for(icell=0;icell<8;icell++){
-	gstencil->p[ipos+icell*stride]=curoct->cell[icell].gdata.p;
-	gstencil->d[ipos+icell*stride]=curoct->cell[icell].gdata.d;
-      }
-      ival+=(gstencil->valid[ipos]==1);
-      iread++;
-    }while((nextoct!=NULL));
-  }
-
-  //printf("ival=%d nread=%d iread=%d stride=%d\n",ival,*nread,iread,stride);
-  if(ival!=(*nread)) abort();
-
-  return nextoct;
-}
-#endif
 
 //==============================================================================
 

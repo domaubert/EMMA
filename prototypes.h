@@ -15,7 +15,7 @@ typedef double REAL;
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)
 #else
-#define OMEGAB (0.045)
+#define OMEGAB (0.01);
 #define PMIN 1e-12
 #endif
 
@@ -98,6 +98,7 @@ struct RUNPARAMS{
   int hstride; // the size of the stencil for vector based computations (hydro)
 
   REAL dt; // the timsestep
+  REAL tmax; // the simulation stops at tmax : corresponds to amax in cosmo
 
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   

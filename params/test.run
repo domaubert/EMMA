@@ -6,6 +6,7 @@ mpi_buffer_size 400000
 output_frequency 30
 max_nuber_of_steps 1800
 time_step_max  1.
+tmax_or_amax 1.0
 ##==AMRGrid==================
 level_coarse 8
 level_max 15
