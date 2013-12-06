@@ -379,7 +379,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*2.,aexp,cosmo->om,cosmo->ov,1e-8);
+    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.05,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
 #endif
