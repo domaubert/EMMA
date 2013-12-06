@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
   REAL avgdens; 
   REAL tmax;
-
+  REAL tdump,adump;
 #ifdef PIC
   avgdens=1.;//we assume a unit mass in a unit length box
 #else
@@ -1762,14 +1762,19 @@ int main(int argc, char *argv[])
     // preparing energy stats
 
     if(cpu.rank==0) param.fpegy=fopen("energystat.txt","w");
+#ifdef TESTCOSMO
+    tdump=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
+#else
+    tdump=tsim;
+#endif
     // dumping ICs
     int ptot;
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
     sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
-    dumpgrid(levelmax,firstoct,filename,0.,&param);
+    dumpgrid(levelmax,firstoct,filename,tdump,&param);
 #ifdef PIC
     sprintf(filename,"data/pstart.%05d.p%05d",0,cpu.rank);
-    dumppart(firstoct,filename,levelcoarse,levelmax,0.,&cpu);
+    dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
 #endif
 
 
@@ -1810,14 +1815,14 @@ int main(int argc, char *argv[])
 
 #ifndef TESTCOSMO
 #ifdef WRAD
-	REAL tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
+	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
 #else
-	REAL tdump=(tsim+adt[levelcoarse-1]);
+	tdump=(tsim+adt[levelcoarse-1]);
 #endif
 #else
-	REAL tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
+	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
+	adump=tdump;
 #ifdef EDBERT
-	REAL adump=tdump;
 
 	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
 	tdump=(treal-trealBB)/(treal0-trealBB);

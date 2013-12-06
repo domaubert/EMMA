@@ -90,14 +90,14 @@ program Grafic2Gadget
 !!$  !*******************
 
 
-  np1=64
+  np1=32
   np2=np1
   np3=np1
-  omegam=0.03
-  omegav=0.97
+  omegam=0.999
+  omegav=0.001
   h0=70.
-  astart=0.1
-  across=0.9
+  astart=0.001
+  across=0.5
   dx=100./(h0/100.)/np1
   nmult=1
 

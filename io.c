@@ -909,6 +909,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
   float lbox;
   float ainit_z;
   REAL mass;
+  size_t outf;
 
   fd=fopen("utils/grafic_src/ZEL.PM.0","rb");
 

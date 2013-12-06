@@ -374,16 +374,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
-    //printf("dtff= %e ",dtff);
+    printf("aexp=%e dtff= %e ",aexp,dtff);
 #endif
 
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.1,aexp,cosmo->om,cosmo->ov,1e-8);
+    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*2.,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-    //printf("dtcosmo= %e ",dtcosmo);
-
-
+    printf("dtcosmo= %e ",dtcosmo);
 #endif
   
 #ifdef WHYDRO2
@@ -396,7 +394,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-    ////printf("dtpic= %e ",dtpic);
+    printf("dtpic= %e \n",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 

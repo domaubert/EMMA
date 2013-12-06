@@ -9,7 +9,7 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-DEFINES  +=  -DWHYDRO2
+#DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
 #DEFINES  +=  -DWRAD
 #DEFINES  +=  -DWRADHYD
@@ -27,9 +27,9 @@ DEFINES  +=  -DWMPI
 #------------ ICs OPTIONS ---------------------
 
 #DEFINES  +=  -DGRAFIC
-#DEFINES  +=  -DZELDOVICH
+DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
-DEFINES  +=  -DEDBERT
+#DEFINES  +=  -DEDBERT
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
 #DEFINES  +=  -DWRADTEST 
