@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 	dxcur=1./pow(2.,oct.level);
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
-	      if((oct.cell[icell].child==NULL)||(oct.level==lmap))
+	      if(((oct.cell[icell].child==NULL)||(oct.level==lmap)))
 		{
 		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
 		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
 		    //printf("zc=%e SKIP\n",zc);
 		    continue;
 		  }
+
 		  imap=xc/dxmap;
 		  jmap=yc/dxmap;
 		  kmap=zc/dxmap;
@@ -201,6 +202,7 @@ int main(int argc, char *argv[])
 			  if(flag) {
 			    switch(field){
 			    case 0:
+			      if(oct.level==10) printf("hello\n");
 			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.level;
 			      break;
 #ifdef WGRAV

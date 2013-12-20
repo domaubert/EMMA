@@ -90,14 +90,14 @@ program Grafic2Gadget
 !!$  !*******************
 
 
-  np1=32
+  np1=128
   np2=np1
   np3=np1
-  omegam=0.999
-  omegav=0.001
+  omegam=1.0
+  omegav=0.
   h0=70.
-  astart=0.001
-  across=0.5
+  astart=1./(101.);
+  across=1./11.;
   dx=100./(h0/100.)/np1
   nmult=1
 
@@ -236,11 +236,8 @@ program Grafic2Gadget
   ii=0.
   count=1
   do i3=1,np3/nmult
-     z0=(i3-1)*dx
      do i2=1,np2
-        y0=(i2-1)*dx
         do i1=1,np1
-           x0=(i1-1)*dx
            !velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/(np1*dx) ! KRAVSTSOV STYLE
            velx(i1,i2,i3)=astart**2*amp*sin(2.*3.14159*(i1-0.5)/np1)*vfact/(np1*dx)/(sqrt(omega0_out)*0.5) ! MARTEL STYLE
            vely(i1,i2,i3)=0.

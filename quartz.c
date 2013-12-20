@@ -1074,6 +1074,7 @@ int main(int argc, char *argv[])
 #else
     int dummy;
 #endif
+
     REAL dummyf;
     int npartf;
 
@@ -1089,7 +1090,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZELDOVICH // ==================== read ZELDOVICH file
 
-    lastpart=read_zeldovich_part(part, &cpu, &munit, &ainit, &npart, &param);
+    lastpart=read_zeldovich_part(part, &cpu, &munit, &ainit, &npart, &param,firstoct);
 #endif
 
 #ifdef EDBERT // ==================== read ZELDOVICH file
@@ -1099,6 +1100,7 @@ int main(int argc, char *argv[])
 
 
 #endif
+
   
     // we set all the "remaining" particles mass to -1
     for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
@@ -1225,10 +1227,16 @@ int main(int argc, char *argv[])
     // initialisation of hydro quantities
     // Shock Tube
 
-    struct Wtype WL, WR;
-    struct Utype UL, UR;
-    //  REAL X0;
-    if(cpu.rank==0) printf("Init Hydro\n");
+#ifdef TUBE
+    printf("Read Shock Tube\n");
+    read_shocktube(&cpu, &tinit,&param,firstoct);
+#endif
+
+
+    /* struct Wtype WL, WR; */
+    /* struct Utype UL, UR; */
+    /* //  REAL X0; */
+    /* if(cpu.rank==0) printf("Init Hydro\n"); */
 
     /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
@@ -1328,163 +1336,163 @@ int main(int argc, char *argv[])
     /* WR.p=1.; */
     /* X0=0.7; */
 
-    WL.a=sqrt(GAMMA*WL.p/WL.d);
-    WR.a=sqrt(GAMMA*WR.p/WR.d);
+    /* WL.a=sqrt(GAMMA*WL.p/WL.d); */
+    /* WR.a=sqrt(GAMMA*WR.p/WR.d); */
 
-    // ======================================================
+    /* // ====================================================== */
 
-    REAL dtot=0.;
-    int nc=0;
-    REAL dmax=0.;
-    for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment)
-      {
-	dxcur=pow(0.5,level);
-	nextoct=firstoct[level-1];
-	if(nextoct==NULL) continue;
-	do // sweeping level
-	  {
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    for(icell=0;icell<8;icell++) // looping over cells in oct
-	      {
-		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
-		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+    /* REAL dtot=0.; */
+    /* int nc=0; */
+    /* REAL dmax=0.; */
+    /* for(level=levelcoarse;level<=levelmax;level++) // (levelcoarse only for the moment) */
+    /*   { */
+    /* 	dxcur=pow(0.5,level); */
+    /* 	nextoct=firstoct[level-1]; */
+    /* 	if(nextoct==NULL) continue; */
+    /* 	do // sweeping level */
+    /* 	  { */
+    /* 	    curoct=nextoct; */
+    /* 	    nextoct=curoct->next; */
+    /* 	    for(icell=0;icell<8;icell++) // looping over cells in oct */
+    /* 	      { */
+    /* 		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5; */
+    /* 		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5; */
+    /* 		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5; */
 
-		/* curoct->cell[icell].pot=GRAV*zc; */
+    /* 		/\* curoct->cell[icell].pot=GRAV*zc; *\/ */
 
-		/* RT INSTAB */
+    /* 		/\* RT INSTAB *\/ */
 
-		/* REAL amp=0.05; */
-		/* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-		/* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-		/* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+    /* 		/\* REAL amp=0.05; *\/ */
+    /* 		/\* /\\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
+    /* 		/\* /\\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
+    /* 		/\* /\\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
 
-		/* REAL vrx=0.; */
-		/* REAL vry=0.; */
-		/* REAL vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//\*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.; */
+    /* 		/\* REAL vrx=0.; *\/ */
+    /* 		/\* REAL vry=0.; *\/ */
+    /* 		/\* REAL vrz=-amp*(1.+cos(8.*M_PI*(xc-0.5)));//\\*(1.+cos(8.*M_PI*(yc-0.5)))*(1.+cos(2.*M_PI*(zc-0.5)))/8.; *\/ */
 
-		/* curoct->cell[icell].field.u=vrx; */
-		/* curoct->cell[icell].field.v=vry; */
-		/* curoct->cell[icell].field.w=vrz; */
+    /* 		/\* curoct->cell[icell].field.u=vrx; *\/ */
+    /* 		/\* curoct->cell[icell].field.v=vry; *\/ */
+    /* 		/\* curoct->cell[icell].field.w=vrz; *\/ */
 
 	     
 	      
-		/* if(zc>0.75){ */
-		/* sZEL	curoct->cell[icell].field.d=2.; */
-		/* } */
-		/* else{ */
-		/* 	curoct->cell[icell].field.d=1.; */
+    /* 		/\* if(zc>0.75){ *\/ */
+    /* 		/\* sZEL	curoct->cell[icell].field.d=2.; *\/ */
+    /* 		/\* } *\/ */
+    /* 		/\* else{ *\/ */
+    /* 		/\* 	curoct->cell[icell].field.d=1.; *\/ */
 		
-		/* 	} */
+    /* 		/\* 	} *\/ */
 	      	
-		/* curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9); */
-		/* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
+    /* 		/\* curoct->cell[icell].field.p=2.5-curoct->cell[icell].field.d*GRAV*(zc-0.9); *\/ */
+    /* 		/\* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); *\/ */
 
 
-		/* /\* EVRARD ADIABATIC COLLAPSE *\/ */
+    /* 		/\* /\\* EVRARD ADIABATIC COLLAPSE *\\/ *\/ */
 	      
-		/* UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5)); */
-		/* UR.du=0.; */
-		/* UR.dv=0.; */
-		/* UR.dw=0.; */
-		/* UR.E=0.05; */
+    /* 		/\* UR.d=1./sqrt((yc-0.5)*(yc-0.5)+(xc-0.5)*(xc-0.5)+(zc-0.5)*(zc-0.5)); *\/ */
+    /* 		/\* UR.du=0.; *\/ */
+    /* 		/\* UR.dv=0.; *\/ */
+    /* 		/\* UR.dw=0.; *\/ */
+    /* 		/\* UR.E=0.05; *\/ */
 	      
-		/* U2W(&UR,&WR); */
+    /* 		/\* U2W(&UR,&WR); *\/ */
 
 
-		/* /\* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); *\/ */
-		/* /\* WR.u=0.; *\/ */
-		/* /\* WR.v=0.; *\/ */
-		/* /\* WR.w=0.; *\/ */
-		/* /\* WR.p=1e-1; *\/ */
-		/* /\* WR.a=sqrt(GAMMA*WR.p/WR.d); *\/ */
+    /* 		/\* /\\* WR.d=1./sqrt((yc-0.5)*(yc-0.5)); *\\/ *\/ */
+    /* 		/\* /\\* WR.u=0.; *\\/ *\/ */
+    /* 		/\* /\\* WR.v=0.; *\\/ *\/ */
+    /* 		/\* /\\* WR.w=0.; *\\/ *\/ */
+    /* 		/\* /\\* WR.p=1e-1; *\\/ *\/ */
+    /* 		/\* /\\* WR.a=sqrt(GAMMA*WR.p/WR.d); *\\/ *\/ */
 
 
-		/* memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));  */
+    /* 		/\* memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));  *\/ */
 	      
-		/* /\* KH INSTAB *\/ */
+    /* 		/\* /\\* KH INSTAB *\\/ *\/ */
 
-		/* REAL amp=0.05; */
-		/* /\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-		/* /\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
-		/* /\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\/ */
+    /* 		/\* REAL amp=0.05; *\/ */
+    /* 		/\* /\\* REAL vrx=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
+    /* 		/\* /\\* REAL vry=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
+    /* 		/\* /\\* REAL vrz=(((REAL)rand())/RAND_MAX)*2.*amp-amp; *\\/ *\/ */
 
-		/* REAL vrx=amp*sin(2.*M_PI*xc); */
-		/* REAL vry=amp*sin(2.*M_PI*xc); */
-		/* REAL vrz=amp*sin(2.*M_PI*xc); */
+    /* 		/\* REAL vrx=amp*sin(2.*M_PI*xc); *\/ */
+    /* 		/\* REAL vry=amp*sin(2.*M_PI*xc); *\/ */
+    /* 		/\* REAL vrz=amp*sin(2.*M_PI*xc); *\/ */
 
-		/* if((zc>0.75)||(zc<0.25)){ */
-		/* 	curoct->cell[icell].field.d=1.0; */
-		/* 	curoct->cell[icell].field.u=0.5+vrx; */
-		/* 	curoct->cell[icell].field.v=vry; */
-		/* 	curoct->cell[icell].field.w=vrz; */
-		/* 	curoct->cell[icell].field.p=2.5; */
-		/* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); */
-		/* } */
-		/* else{ */
-		/* 	curoct->cell[icell].field.d=2.0; */
-		/* 	curoct->cell[icell].field.u=-0.5+vrx; */
-		/* 	curoct->cell[icell].field.v=vry; */
-		/* 	curoct->cell[icell].field.w=vrz; */
-		/* 	curoct->cell[icell].field.p=2.5; */
-		/* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); */
-		/* } */
+    /* 		/\* if((zc>0.75)||(zc<0.25)){ *\/ */
+    /* 		/\* 	curoct->cell[icell].field.d=1.0; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.u=0.5+vrx; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.v=vry; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.w=vrz; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.p=2.5; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/1.); *\/ */
+    /* 		/\* } *\/ */
+    /* 		/\* else{ *\/ */
+    /* 		/\* 	curoct->cell[icell].field.d=2.0; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.u=-0.5+vrx; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.v=vry; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.w=vrz; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.p=2.5; *\/ */
+    /* 		/\* 	curoct->cell[icell].field.a=sqrt(GAMMA*2.5/2.); *\/ */
+    /* 		/\* } *\/ */
 
-		/* SPHERICAL EXPLOSION */
+    /* 		/\* SPHERICAL EXPLOSION *\/ */
 	      
-		/* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ */
-		/* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
-		/* } */
-		/* else{ */
-		/*  	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
-		/* } */
+    /* 		/\* if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){ *\/ */
+    /* 		/\* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); *\/ */
+    /* 		/\* } *\/ */
+    /* 		/\* else{ *\/ */
+    /* 		/\*  	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); *\/ */
+    /* 		/\* } *\/ */
 	      
 
 
-		/* /\* /\\* ZELDOVICH PANCAKE *\\/ *\/ */
+    /* 		/\* /\\* /\\\* ZELDOVICH PANCAKE *\\\/ *\\/ *\/ */
 
-		/* REAL ZI=100; */
-		/* REAL ZC=9; */
-		/* cosmo.om=1.0; */
-		/* cosmo.ov=0.; */
-		/* cosmo.ob=OMEGAB; */
+    /* 		/\* REAL ZI=100; *\/ */
+    /* 		/\* REAL ZC=9; *\/ */
+    /* 		/\* cosmo.om=1.0; *\/ */
+    /* 		/\* cosmo.ov=0.; *\/ */
+    /* 		/\* cosmo.ob=OMEGAB; *\/ */
 
-		/* ainit=1./(1.+ZI); */
-		/* amax=1.;//(1.+ZC); */
-		/* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); */
-		/* curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); */
-		/* curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI); */
-		/* curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI); */
-		/* curoct->cell[icell].field.p=1e-14; */
-		/* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); */
-		/* getE(&curoct->cell[icell].field); */
+    /* 		/\* ainit=1./(1.+ZI); *\/ */
+    /* 		/\* amax=1.;//(1.+ZC); *\/ */
+    /* 		/\* curoct->cell[icell].field.d=1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)); *\/ */
+    /* 		/\* curoct->cell[icell].field.u=0.-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(2.*M_PI); *\/ */
+    /* 		/\* curoct->cell[icell].field.v=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(yc-0.5))/(2.*M_PI); *\/ */
+    /* 		/\* curoct->cell[icell].field.w=0.;//-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(zc-0.5))/(2.*M_PI); *\/ */
+    /* 		/\* curoct->cell[icell].field.p=1e-14; *\/ */
+    /* 		/\* curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); *\/ */
+    /* 		/\* getE(&curoct->cell[icell].field); *\/ */
 
 
 
-		/* /\* SHOCK TUBE *\/ */
-		/* if(zc<=X0){ */
+    /* 		/\* /\\* SHOCK TUBE *\\/ *\/ */
+    /* 		/\* if(zc<=X0){ *\/ */
 
-		/* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); */
-		/* } */
-		/* else{ */
-		/* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); */
-		/* } */
+    /* 		/\* 	memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); *\/ */
+    /* 		/\* } *\/ */
+    /* 		/\* else{ *\/ */
+    /* 		/\* 	memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); *\/ */
+    /* 		/\* } *\/ */
 	      
-		if(level==levelcoarse) {
-		  dtot+=curoct->cell[icell].field.d;
-		  nc++;
-		}
+    /* 		if(level==levelcoarse) { */
+    /* 		  dtot+=curoct->cell[icell].field.d; */
+    /* 		  nc++; */
+    /* 		} */
 
-	      }
-	  }while(nextoct!=NULL);
+    /* 	      } */
+    /* 	  }while(nextoct!=NULL); */
       
-	//printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd);
-      }
+    /* 	//printf("level=%d avg=%e mind=%e maxd=%e\n",level,avg/ncell,mind,maxd); */
+    /*   } */
   
-    avgdens+=dtot/nc;
-    printf("avgdens=%e\n",avgdens);
-    printf("dmax=%e\n",dmax);
+    /* avgdens+=dtot/nc; */
+    /* printf("avgdens=%e\n",avgdens); */
+    /* printf("dmax=%e\n",dmax); */
 #endif
 #endif
 
@@ -1718,6 +1726,7 @@ int main(int argc, char *argv[])
   cosmo.tab_ttilde=tab_ttilde;
 #endif
 
+  param.time_max=tmax;
 
   
 
@@ -1740,7 +1749,8 @@ int main(int argc, char *argv[])
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
-    
+  
+ 
 
     // preparing freeocts
     cpu.freeoct=freeoct;
@@ -1768,7 +1778,9 @@ int main(int argc, char *argv[])
     tdump=tsim;
 #endif
     // dumping ICs
-    int ptot;
+    cpu.ndumps=&ndumps; // preparing the embedded IO
+    cpu.tinit=tinit;
+   int ptot;
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
     sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
     dumpgrid(levelmax,firstoct,filename,tdump,&param);
@@ -1779,7 +1791,7 @@ int main(int argc, char *argv[])
 
 
     // Loop over time
-    for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<=tmax);nsteps++){
+    for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
 
       cpu.nsteps=nsteps;
       
@@ -1794,6 +1806,7 @@ int main(int argc, char *argv[])
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
+
       // Resetting the timesteps
 
       for(level=1;level<=levelmax;level++){
@@ -1811,8 +1824,12 @@ int main(int argc, char *argv[])
 
 
       // ==================================== dump
-      if((nsteps%(param.ndumps)==0)||((tsim+dt)>=tmax)){
-
+      if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
+#ifndef EDBERT
+	// dumping fields only
+	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+#else
+	
 #ifndef TESTCOSMO
 #ifdef WRAD
 	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
@@ -1822,14 +1839,16 @@ int main(int argc, char *argv[])
 #else
 	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
 	adump=tdump;
+	printf("tdump=%e tsim=%e adt=%e\n",tdump,tsim,adt[levelcoarse-1]);
 #ifdef EDBERT
 
 	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
 	tdump=(treal-trealBB)/(treal0-trealBB);
 #endif
 #endif
+
 	// === Hydro dump
-    
+	
 	//printf("tdum=%f\n",tdump);
 	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
 	if(cpu.rank==0){
@@ -1855,8 +1874,9 @@ int main(int argc, char *argv[])
 	save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
 #endif
 	ndumps++;
+#endif
       }
-
+      
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;

@@ -895,7 +895,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 // ====================================
 
 #ifdef ZELDOVICH
-struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param)
+struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param, struct OCT **firstoct)
 {
   FILE *fd;
   int np1,np2,np3;
@@ -1049,9 +1049,55 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
   if(cpu->rank==0){
     printf("Zeldovich Particle Read ok\n");
   }
+
+#ifdef WHYDRO2
+  
+  int level;
+  REAL dxcur;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  REAL xc,yc,zc;
+  struct Wtype W;
+  REAL rad;
+  REAL ZC=10; // hard coded collapse of redshift
+  REAL ZI=1./astart-1.;
+
+  for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+		W.d=(1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)))*ob/om;
+		W.p=PMIN;
+		W.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(M_PI); // for omegam=1. only
+		W.v=0.;
+		W.w=0.;
+		W.a=sqrt(GAMMA*W.p/W.d);
+		getE(&W);
+		memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
+
+	      }
+	  }while(nextoct!=NULL);
+      }
+
+#endif
+
   return lastpart;
 }
 #endif
+
+
 
 // =====================================================================================
 // =====================================================================================
@@ -1213,6 +1259,74 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 //==================================================================================
 
 #ifdef WHYDRO2
+
+#ifdef TUBE
+// =====================================================================================================
+// =====================================================================================================
+
+void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, struct OCT **firstoct)
+{
+  FILE *fd;
+  
+  int level;
+  REAL dxcur;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  REAL xc,yc,zc;
+  struct Wtype W;
+  REAL rad;
+
+
+  struct Wtype WL, WR;
+  if(cpu->rank==0) printf("Init Hydro\n");
+  
+  /* /\*  /\\* // TEST 1 *\\/ *\/ */
+  
+  WL.d=1.;
+  WL.u=0.;
+  WL.v=0.;
+  WL.w=0.;
+  WL.p=1.0;
+  WL.a=sqrt(GAMMA*WL.p/WL.d);
+  getE(&WL);
+  
+  WR.d=0.125;
+  WR.u=0.;
+  WR.v=0.;
+  WR.w=0.;
+  WR.p=0.1;
+  WR.a=sqrt(GAMMA*WR.p/WR.d);
+  getE(&WR);
+
+  REAL X0=0.3125; 
+
+  for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
+      {
+	dxcur=pow(0.5,level);
+	nextoct=firstoct[level-1];
+	if(nextoct==NULL) continue;
+	do // sweeping level
+	  {
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    for(icell=0;icell<8;icell++) // looping over cells in oct
+	      {
+		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+		if(xc<X0){
+		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype)); 
+		}
+		else{
+		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype)); 
+		}
+	      }
+	  }while(nextoct!=NULL);
+      }
+}
+#endif
 
 #ifdef EVRARD
 int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAMS *param){
@@ -1592,3 +1706,57 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 #endif
 #endif
 
+// ======================================================================
+// ======================================================================
+
+void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
+
+  REAL tdump,adump;
+  char filename[128]; 
+  
+#ifndef TESTCOSMO
+#ifdef WRAD
+	tdump=(tsim)*param.unit.unit_t/MYR;
+#else
+	tdump=(tsim);
+#endif
+	adump=tdump;
+#else
+	tdump=interp_aexp(tsim,param->cosmo->tab_aexp,param->cosmo->tab_ttilde);
+	adump=tdump;
+#endif
+
+
+
+	if(pdump){
+	  // === particle dump
+#ifdef PIC
+	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+	  if(cpu->rank==0){
+	    printf("Dumping .......");
+	    printf("%s\n",filename);
+	  }
+	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
+	  
+	  // backups for restart
+	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->part);
+#endif
+	}
+	else{
+	  // === Hydro dump
+    
+	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+	  if(cpu->rank==0){
+	    printf("Dumping .......");
+	    printf("%s\n",filename);
+	  }
+	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
+
+	  // backups for restart
+	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->part,adt);
+
+	  *(cpu->ndumps)=*(cpu->ndumps)+1;
+	}
+}

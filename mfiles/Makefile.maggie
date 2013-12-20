@@ -8,17 +8,18 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DWGRAV 
+#DEFINES  +=  -DPIC
+DEFINES  +=  -DWHYDRO2
+#DEFINES  +=  -DWGRAV 
 #DEFINES  +=  -DWRAD
 #DEFINES  +=  -DWRADHYD
-DEFINES  +=  -DTESTCOSMO
+#DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
 
 #------------ MPI OPTIONS ---------------------
 
 DEFINES  +=  -DWMPI
+#DEFINES  +=  -DFLOORDT
 
 #------------ CUDA OPTIONS ---------------------
 #DEFINES  +=  -DWCUDA_ERR
@@ -27,9 +28,10 @@ DEFINES  +=  -DWMPI
 #------------ ICs OPTIONS ---------------------
 
 #DEFINES  +=  -DGRAFIC
-DEFINES  +=  -DZELDOVICH
+#DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
 #DEFINES  +=  -DEDBERT
+DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
 #DEFINES  +=  -DWRADTEST 
@@ -45,6 +47,7 @@ DEFINES  += -DONFLYRED
 
 # ----------- HYDRODYNAMICS OPTIONS ------------
 DEFINES  +=  -DRIEMANN_HLLC
+#DEFINES  +=  -DRIEMANN_EXACT
 DEFINES  +=  -DPRIMITIVE
 DEFINES  +=  -DDUAL_E
 
@@ -60,8 +63,8 @@ DEFINES  += -DCOOLING
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-#DEFINES  +=  -DTRANSXM
-#DEFINES  +=  -DTRANSXP
+DEFINES  +=  -DTRANSXM
+DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================

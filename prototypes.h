@@ -15,7 +15,7 @@ typedef double REAL;
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)
 #else
-#define OMEGAB (0.01);
+#define OMEGAB (0.1);
 #define PMIN 1e-12
 #endif
 
@@ -30,6 +30,7 @@ typedef double REAL;
 #define NVAR (7)
 #endif
 #else
+
 #define NVAR (5)
 #endif
 
@@ -99,6 +100,7 @@ struct RUNPARAMS{
 
   REAL dt; // the timsestep
   REAL tmax; // the simulation stops at tmax : corresponds to amax in cosmo
+  REAL time_max; // for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
 
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   
@@ -170,6 +172,7 @@ struct CPUINFO{
 
   REAL load;
 
+  struct PART *part; // the particle array
   struct OCT **bndoct; // the list of external boundary octs
 
   int nebnd; // the number of external boundary octs
@@ -236,6 +239,8 @@ struct CPUINFO{
   struct OCT *freeoct; // the location of the first free oct
   struct OCT **firstoct; // the location of the first free oct
   int nsteps; // the current coarse step index
+  REAL tinit; // the initial time
+  int *ndumps; // the current dump number
 
 #ifdef GPUAXL
 

@@ -1,0 +1,678 @@
+%!PS-Adobe-3.0
+%%Title: Yorick default
+%%For: daubert
+%%CreationDate: Wed Dec 18 16:40:20 2013
+%%Creator: Gist
+%%DocumentData: Clean7Bit
+%%DocumentSuppliedResources: procset Gist-Primitives 1.0 0
+%%Pages: (atend)
+%%BoundingBox: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+%%BeginProlog
+%
+% Gist PostScript Prolog
+% $Id: ps.ps,v 1.2 2007-06-29 15:09:20 dhmunro Exp $
+% Copyright (c) 1994.  The Regents of the University of California.
+%               All rights reserved.
+%
+%%BeginResource: procset Gist-Primitives 1.0 0
+/GistPrimitives 128 dict def
+GistPrimitives begin
+/PG 0 def
+/LAND { 90 rotate 0 -12240 translate } bind def
+/CLON {
+  gsave /TxYxs TxYx def /TxYns TxYn def
+    newpath
+    moveto dup 0 exch rlineto exch 0 rlineto neg 0 exch rlineto
+    closepath clip newpath
+} bind def
+/CLOF {
+  /TxYx TxYxs def /TxYn TxYns def grestore
+} bind def
+/BG { 1 setgray } bind def
+/FG { 0 setgray } bind def
+/BLK { 0 setgray } bind def
+/WHT { 1 setgray } bind def
+/RED { 1 0 0 setrgbcolor } bind def
+/GRN { 0 1 0 setrgbcolor } bind def
+/BLU { 0 0 1 setrgbcolor } bind def
+/CYA { 0 1 1 setrgbcolor } bind def
+/MAG { 1 0 1 setrgbcolor } bind def
+/YEL { 1 1 0 setrgbcolor } bind def
+/GYD { 0.392 setgray } bind def
+/GYC { 0.588 setgray } bind def
+/GYB { 0.745 setgray } bind def
+/GYA { 0.839 setgray } bind def
+/DSH {  % index DSH
+  [ [ ] [ 82.5 ] [ 4.5 61.5 ] [ 82.5 39.0 4.5 39.0 ]
+  [ 82.5 39.0 4.5 39.0 4.5 39.0 ] ] exch get
+  dup length 0 ne {
+    currentlinewidth dup 16.5 lt {
+      pop
+    } {
+      16.5 div 1 index { 2 copy mul 4 1 roll pop } forall pop astore
+    } ifelse
+  } if
+  0 setdash
+} bind def
+/LW /setlinewidth load def
+/GPL { 1 setlinecap 1 setlinejoin } bind def
+/GDJ { 2 setlinecap } bind def
+/GPT {
+  currentfile 4 string readhexstring pop { } forall
+  exch 8 bitshift or 3 1 roll exch 8 bitshift or exch
+} bind def
+/L {
+  GPL
+  newpath 1 sub GPT
+  { 3 2 roll dup 255 gt { 255 sub 255 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT 4 2 roll pop pop 2 copy lineto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+/LS {
+  GPL
+  newpath 1 sub 3 idiv GPT
+  { 3 2 roll dup 85 gt { 85 sub 85 } { 0 exch } ifelse
+    4 2 roll moveto 0 exch 0 exch
+    { GPT GPT GPT 8 6 roll pop pop 2 copy 8 2 roll curveto } repeat stroke
+    2 index 0 le { pop pop pop exit } if
+  } loop
+} bind def
+/D {
+  GDJ
+  newpath { GPT moveto GPT lineto stroke } repeat
+} bind def
+/Cour {
+  [ /L-Courier /L-Courier-Bold /L-Courier-Oblique /L-Courier-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Tims {
+  [ /L-Times-Roman /L-Times-Bold /L-Times-Italic /L-Times-BoldItalic ]
+  exch get FindLatin
+} bind def
+/Helv {
+  [ /L-Helvetica /L-Helvetica-Bold
+    /L-Helvetica-Oblique /L-Helvetica-BoldOblique ]
+  exch get FindLatin
+} bind def
+/Symb {
+  pop /Symbol findfont
+} bind def
+/NCen {
+  [ /L-NewCenturySchlbk-Roman /L-NewCenturySchlbk-Bold
+    /L-NewCenturySchlbk-Italic /L-NewCenturySchlbk-BoldItalic ]
+  exch get FindLatin
+} bind def
+/StdNames 16 dict begin % dictionary of fonts not yet re-encoded
+  /L-Courier /Courier def /L-Courier-Bold /Courier-Bold def
+  /L-Courier-Oblique /Courier-Oblique def
+  /L-Courier-BoldOblique /Courier-BoldOblique def
+  /L-Times-Roman /Times-Roman def /L-Times-Bold /Times-Bold def
+  /L-Times-Italic /Times-Italic def /L-Times-BoldItalic /Times-BoldItalic def
+  /L-Helvetica /Helvetica def /L-Helvetica-Bold /Helvetica-Bold def
+  /L-Helvetica-Oblique /Helvetica-Oblique def
+  /L-Helvetica-BoldOblique /Helvetica-BoldOblique def
+  /L-NewCenturySchlbk-Roman /NewCenturySchlbk-Roman def
+  /L-NewCenturySchlbk-Bold /NewCenturySchlbk-Bold def
+  /L-NewCenturySchlbk-Italic /NewCenturySchlbk-Italic def
+  /L-NewCenturySchlbk-BoldItalic /NewCenturySchlbk-BoldItalic def
+currentdict end def
+/FindLatin {
+  dup StdNames exch known
+  { dup StdNames exch get findfont dup length dict begin
+      { 1 index /FID ne { def } { pop pop } ifelse } forall
+      /Encoding ISOLatin1Encoding def
+    currentdict end
+    exch dup StdNames exch undef exch definefont }
+  { findfont } ifelse
+} bind def
+/FNT {
+  /LnSp exch FontRescale mul def
+  /PtSz exch FontRescale mul def
+  PtSz scalefont setfont
+  currentfont /FontBBox get aload pop
+  currentfont /FontMatrix get transform /TxYx exch def pop
+  currentfont /FontMatrix get transform /TxYn exch def pop
+} bind def
+/SS1cpy { dup length string copy } bind def
+/SS3cpy { 3 { 3 1 roll SS1cpy } repeat } bind def
+/SScleave {
+  dup 0 get exch dup length 1 sub 1 exch getinterval exch
+} bind def
+/SSstring {
+  1 string dup 3 2 roll 0 exch put
+} bind def
+/SFwidth {
+  (\024) search {
+    /wfn 0 def
+    { stringwidth pop wfn add /wfn exch def pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont
+      stringwidth pop wfn add /wfn exch def setfont
+      SS1cpy (\024) search not { exit } if } loop
+    stringwidth pop wfn add /wfn exch def wfn 0
+  } { stringwidth } ifelse
+} bind def
+/SFshow {
+  (\024) search {
+    { show pop SS1cpy SScleave SSstring
+      currentfont exch /Symbol findfont PtSz scalefont setfont show setfont
+      SS1cpy (\024) search not { exit } if } loop
+  } if
+  show
+} bind def
+/SSscale 0.75000 def
+/SSdown -0.11111 def
+/SSup 0.36111 def
+/SSwidth { % string SSwidth --> dx dy
+  (\021) search {
+    /wn 0 def
+    /ws 0 def
+    { SS3cpy SFwidth pop wn add /wn exch def
+      search pop SS3cpy SScleave pop SFwidth pop ws add /ws exch def
+      search not { exit } if } loop
+    SFwidth pop wn add /wn exch def
+    ws SSscale mul wn add 0
+  } { SFwidth } ifelse
+} bind def
+/SSshow {
+  (\021) search {
+    { SS3cpy SFshow
+      search pop SS3cpy SScleave 8#022 eq { SSup } { SSdown } ifelse
+      TxYx mul dup 0 exch rmoveto exch
+      matrix currentmatrix exch SSscale SSscale scale SFshow setmatrix
+      neg 0 exch rmoveto
+      search not { exit } if } loop
+  } if
+  SFshow
+} bind def
+/OShw /pop load def
+/OPQ {
+  0 eq {
+    /OShw /SSshow load def
+  } {
+    /OShw {
+      gsave
+        dup SSwidth
+        0 TxYn
+        rmoveto 2 copy rlineto 0 LnSp rlineto
+        neg exch neg exch rlineto closepath
+        1 setgray fill
+      grestore
+      SSshow
+    } def
+  } ifelse
+} bind def
+/LF { } def
+/CN { dup SSwidth -0.5 mul exch -0.5 mul exch rmoveto } bind def
+/RT { dup SSwidth neg exch neg exch rmoveto } bind def
+/TP { 0 LnSp neg rmoveto } bind def
+/CP { 0 TxYx TxYn add neg rmoveto } bind def
+/HF { 0 TxYx TxYn add -0.5 mul rmoveto} bind def
+/BA { } def
+/BT { 0 TxYn neg rmoveto } bind def
+/JUS {
+  load /YAdj exch def
+  load /XAdj exch def
+} bind def
+/XAD { /XAdj load exec } bind def
+/YAD { /YAdj load exec } bind def
+/OSH { /OShw load exec } bind def
+/T {
+  newpath moveto YAD XAD OSH
+} bind def
+/TX { XAD OSH currentpoint exch pop 0 exch LnSp sub moveto } bind def
+/TA {
+  gsave
+    newpath translate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+/TR {
+  gsave
+    newpath translate rotate 0 0 moveto YAD
+    { TX } forall
+  grestore
+} bind def
+/M {
+  newpath { GPT moveto HF CN dup show } repeat pop
+} bind def
+/MX { } def
+/M1 { 1 0 rlineto stroke } bind def
+/M2 { PtSz 0.5 mul
+      dup -0.5 mul dup 0 rmoveto 1 index 0 rlineto
+      dup rmoveto 0 exch rlineto stroke
+} bind def
+/M3 { PtSz 0.5 mul
+      dup -0.5 mul dup 0 exch rmoveto 0 2 index rlineto
+      exch 0.866025 mul 2 copy -0.5 mul exch 0.5 mul rmoveto
+      exch 2 copy rlineto
+      dup 0 exch neg rmoveto
+      exch neg exch rlineto stroke
+} bind def
+/M4 { currentpoint PtSz 0.25 mul dup 0 rmoveto
+      0 360 arc stroke
+} bind def
+/M5 { PtSz 0.5 mul
+      dup -0.5 mul dup rmoveto dup dup rlineto
+      dup neg 0 rmoveto dup neg rlineto stroke
+} bind def
+/MS {
+  gsave
+    exch dup 0 eq {
+      PtSz 0.1 mul setlinewidth 1 setlinecap
+    } {
+      PtSz 0.05 mul setlinewidth 0 setlinecap
+    } ifelse
+    /MX [ /M1 /M2 /M3 /M4 /M5 ] 3 -1 roll get load def
+    [ ] 0 setdash
+    newpath { GPT moveto /MX load exec } repeat
+  grestore
+} bind def
+
+/CTrgb 0 array def
+/CTn 0 def
+/CThi 0 def
+/CTsn 0 def
+/CT {
+  dup dup /CTn exch def 1 sub /CThi exch def
+  /CTrgb exch 3 mul string def
+  currentfile CTrgb readhexstring pop pop
+  /CTX load exec
+} bind def
+/CT1 {
+  CTrgb
+    /CTrgb CTn array def
+    gsave
+      0 1 CThi {
+        2 copy 3 mul 3 getinterval { 255.0 div } forall
+        setrgbcolor currentgray
+        CTrgb 3 1 roll put
+      } for
+    grestore
+  pop
+  /I /I1 load def
+  /C /C1 load def
+  /CI { } def
+} bind def
+/CT2 {
+  CTrgb
+    /CTrgb CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgb 3 1 roll put
+    } for
+  pop
+  /I /I2 load def
+  /C /C2 load def
+  /CI { } def
+} bind def
+/CT3 {
+  CTrgb
+    /CTrgx CTn array def
+    0 1 CThi {
+      2 copy 3 mul 3 getinterval { 255.0 div } forall
+      3 array astore CTrgx 3 1 roll put
+    } for
+  pop
+  /I /I3 load def
+  /C /C3 load def
+  /CI { } def
+} bind def
+/F {
+  newpath GPT moveto
+  1 sub { GPT lineto } repeat closepath eofill
+} bind def
+/E {
+  dup 0 eq {
+    pop stroke
+  } {
+    newpath GPT moveto
+    1 sub { GPT lineto } repeat closepath gsave eofill grestore
+  } ifelse
+} bind def
+/GRGB {
+  exch dup 255 le { exch exec } { dup 255 and 255.0 div exch dup
+    -8 bitshift 255 and 255.0 div exch -16 bitshift 255 and 255.0 div
+    setrgbcolor pop } ifelse
+} bind def
+/CI { } def
+/C { } def
+/C0 {
+  { 255.0 div setgray } GRGB
+} bind def
+/C1 {
+  { CTrgb exch get setgray } GRGB
+} bind def
+/C2 {
+  { CTrgb exch get aload pop setrgbcolor } GRGB
+} bind def
+/C3 {
+  { CTrgx exch get aload pop setrgbcolor } GRGB
+} bind def
+/I { } def
+/I0 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    { currentfile ROW readhexstring pop } image
+  grestore
+} bind def
+/I1 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get } /exec load
+      currenttransfer /exec load ] cvx settransfer
+    { currentfile ROW readhexstring pop } image
+  grestore                          % restore saved CTM and transfer
+} bind def
+/I2 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    dup 1 exch bitshift 1 sub /CTsn exch def
+    [ 3 index 0 0 5 index 0 0 ]
+    currentcolortransfer
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 1 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 2 get } /exec load
+      7 -1 roll /exec load ] cvx
+    [ { CTsn mul round cvi
+      dup CThi gt { pop CThi } if CTrgb exch get 0 get } /exec load
+      7 -1 roll /exec load ] cvx
+    setcolortransfer
+    { currentfile ROW readhexstring pop } { ROW } { ROW }
+    true 3 colorimage
+  grestore
+} bind def
+/I3 {
+  /ROW 7 index 6 index mul 7 add 8 idiv string def
+  gsave
+    translate scale
+    [ /Indexed /DeviceRGB CThi CTrgb ] setcolorspace
+    7 dict begin
+      /ImageType 1 def
+      /BitsPerComponent exch def
+      /Height exch def
+      /Width exch def
+      /ImageMatrix [ Width 0 0 Height 0 0 ] def
+      /Decode [ 0 1 BitsPerComponent bitshift 1 sub ] def
+      /DataSource { currentfile ROW readhexstring pop } def
+    currentdict end image
+  grestore
+} bind def
+/J { } def
+/J1 {
+  /ROW 6 index 3 mul string def
+  4 2 roll 2 index add exch 3 index add exch
+  gsave
+    0 setgray 20 setlinewidth 0 setlinejoin 2 setlinecap
+    3 index 3 index moveto 3 index 1 index lineto 1 index 1 index lineto
+    1 index 3 index lineto closepath stroke 0 setlinecap
+    3 index 3 index moveto 1 index 1 index lineto stroke
+    1 index 3 index moveto 3 index 1 index lineto stroke pop pop pop pop
+    exch pop { currentfile ROW readhexstring pop pop } repeat
+  grestore
+} bind def
+/J2 {
+  /ROW 6 index 3 mul string def
+  gsave
+    translate scale
+    8 [ 3 index 0 0 5 index 0 0 ]
+    { currentfile ROW readhexstring pop }
+    false 3 colorimage
+  grestore
+} bind def
+/GI {
+  0.05 0.05 scale
+  10 setlinewidth
+  0 Cour 240 240 FNT
+  0 OPQ
+  /LF /BA JUS
+  /I /I0 load def
+  /C /C0 load def
+  /CI { } def
+} bind def
+end
+%%EndResource
+%%EndProlog
+%%BeginSetup
+GistPrimitives begin
+/FontRescale where { pop } { /FontRescale 1 def } ifelse
+/languagelevel where { pop languagelevel } { 1 } ifelse
+2 lt { % this is level 1 PostScript
+  /colorimage where { % color extension is present
+    % assume that if colorimage is available,
+    % setcolortransfer and currentcolortransfer are too
+    % (These are all listed as CMYK extensions to PostScript level 1)
+    pop
+    /CTX /CT2 load def
+    /J /J2 load def
+  } {                 % color extension not present
+    /CTX /CT1 load def
+    /J /J1 load def
+  } ifelse
+} {    % this is level 2 PostScript
+  /CTX /CT3 load def
+  /J /J2 load def
+} ifelse
+end
+%%EndSetup
+
+%%Page: 1 1
+%%PageBoundingBox: (atend)
+GistPrimitives begin /PG save def GI
+200 CT
+fffefe fffcf9 fffaf4 fff7ef fff4ea fff1e4 ffefe0 ffeddb ffebd5 ffe9d0 ffe5cc
+ffe3c7 ffe1c2 ffdebd ffddb7 ffdab2 ffd7ae ffd5a8 ffd2a3 ffd09e ffcd99 ffcb95
+ffc990 ffc68b ffc485 ffc180 ffbf7b ffbd76 ffba71 ffb86c ffb567 ffb363 ffb15e
+ffae58 ffac53 ffa94e ffa749 ffa544 ffa23f ffa039 ff9d34 ff9a31 ff992b ff9626
+ff9421 ff911c ff8f17 ff8c12 ff890c ff8807 ff8502 ff8300 ff8100 ff7e00 ff7b00
+ff7800 ff7700 ff7500 ff7200 ff6f00 ff6c00 ff6a00 fe6800 fc6600 fa6400 f86100
+f65e00 f45c00 f25900 f05700 ee5400 ed5300 eb5000 e94d00 e74b00 e54800 e34600
+e24400 e04100 de3f00 dc3c00 da3a00 d83800 d63500 d43300 d23000 d12e00 cf2c00
+cd2900 cc2700 c92400 c72200 c62000 c41d00 c21b00 c01800 be1600 bc1300 ba1100
+b90f00 b70c00 b50a00 b30700 b10400 b00200 ad0000 ab0000 a90000 a80000 a60000
+a40000 a20000 a00000 9f0000 9d0000 9b0000 990000 970000 950000 940000 910000
+900000 8d0000 8c0000 8b0000 880000 870000 850000 830000 810000 7f0000 7d0000
+7b0000 7a0000 780000 750000 740000 720000 710000 6f0000 6d0000 6b0000 690000
+670000 650000 630000 610000 5f0000 5e0000 5c0000 5a0000 580000 560000 550000
+530000 510000 4f0000 4d0000 4b0000 490000 470000 450000 440000 420000 410000
+3e0000 3c0000 3a0000 380000 370000 350000 330000 310000 2f0000 2e0000 2b0000
+2a0000 280000 260000 250000 220000 200000 1e0000 1d0000 1b0000 190000 170000
+150000 140000 120000 0f0000 0e0000 0c0000 0a0000 090000 060000 050000 020000
+010000 000000
+%%EndPageSetup
+6533 1562 2810 6549 CLON RED
+%%BeginData: 13 ASCII Lines
+104 L
+0afa19ae0b2619ae0b6619ae0ba619ae0be619a30c2619a30c6519a30ca519a30ce5199f
+0d25199f0d65199f0da4199f0de4199e0e24199e0e64199e0ea4199e0ee3199f0f23199f
+0f63199f0fa3199f0fe319a5102219a5106219a510a219a510e219ce112219ce116119ce
+11a119ce11e11b5412211b5412611b7212a01b7212e01b9413201b9413601bb513a01bb5
+13df1be3141f1be3145f1c1b149f1c1b14df1c55151e1c55155e1c97159e1c9715de1ccb
+161e1cfb165e1d37169d1d8116dd1dde171d1e3f175d1eaa179d1faf17dc1faf181c1eaa
+185c1e3f189c1dde18dc1d81191b1d37195b1cfb199b1ccb19db1c971a1b1c971a5a1c55
+1a9a1c551ada1c1b1b1a1c1b1b5a1be31b991be31bd91bb51c191bb51c591b941c991b94
+1cd81b721d181b721d581b541d981b541dd819ce1e1719ce1e5719ce1e9719ce1ed719a5
+1f1719a51f5619a51f9619a51fd6199f2016199f2056199f2095199f20d5199e2115199e
+2155199e2195199e21d4199f2214199f2254199f2294199f22d419a3231319a3235319a3
+239319a323d319ae241319ae245219ae247f19ae
+%%EndData
+CLOF 21 D
+0afa198a0afa1a14115b198a115b1a1417bc198a17bc1a141e1e198a1e1e1a14247f198a
+247f1a140c40198a0c4019e612a2198a12a219e61903198a190319e61f64198a1f6419e6
+0d87198a0d8719e613e8198a13e819e61a4a198a1a4a19e620ab198a20ab19e60ece198a
+0ece19e6152f198a152f19e61b90198a1b9019e621f2198a21f219e61014198a101419e6
+1676198a167619e61cd7198a1cd719e62338198a233819e6
+21 D
+0afa1f2f0afa1fba115b1f2f115b1fba17bc1f2f17bc1fba1e1e1f2f1e1e1fba247f1f2f
+247f1fba0c401f5e0c401fba12a21f5e12a21fba19031f5e19031fba1f641f5e1f641fba
+0d871f5e0d871fba13e81f5e13e81fba1a4a1f5e1a4a1fba20ab1f5e20ab1fba0ece1f5e
+0ece1fba152f1f5e152f1fba1b901f5e1b901fba21f21f5e21f21fba10141f5e10141fba
+16761f5e16761fba1cd71f5e1cd71fba23381f5e23381fba
+/CN /CP JUS 0 Helv 200 200 FNT (-0.2) 2810 6395 T (-0.1) 4443 6395 T (0.0)
+6076 6395 T (0.1) 7710 6395 T (0.2) 9343 6395 T 11 D
+0aef19e70b7919e70aef1c0c0b791c0c0aef1e310b791e310aef1a8c0b4b1a8c0aef1cb1
+0b4b1cb10aef1ed60b4b1ed60aef1b670b4b1b670aef1d8b0b4b1d8b0aef1a480b2c1a48
+0aef1c6c0b2c1c6c0aef1e910b2c1e91
+11 D
+23ff19e7248a19e723ff1c0c248a1c0c23ff1e31248a1e31242e1a8c248a1a8c242e1cb1
+248a1cb1242e1ed6248a1ed6242e1b67248a1b67242e1d8b248a1d8b244c1a48248a1a48
+244c1c6c248a1c6c244c1e91248a1e91
+/RT /HF JUS (0.001) 2717 6631 T (0.01) 2717 7180 T (0.1) 2717 7729 T 4 D
+0aef198a248a198a248a198a248a1fba248a1fba0aef1fba0aef1fba0aef198a
+6533 1563 2810 8277 CLON RED
+%%BeginData: 13 ASCII Lines
+104 L
+0afa25bb0b2625bb0b6625bb0ba625bb0be625dc0c2625dc0c6525dc0ca525dc0ce525fd
+0d2525fd0d6525fd0da425fd0de426210e2426210e6426210ea426210ee326430f232643
+0f6326430fa326430fe32670102226701062267010a2267010e226531122265311612653
+11a1265311e12403122124031261240a12a0240a12e023fc132023fc136023eb13a023eb
+13df23d0141f23d0145f23b4149f23b414df239c151e239c155e2389159e238915de237b
+161e2375165e2370169d236f16dd236f171d236e175d236b179d236917dc235c181c2359
+185c2357189c235618dc2356191b2354195b2350199b234a19db233c1a1b233c1a5a2329
+1a9a23291ada23111b1a23111b5a22f51b9922f51bd922da1c1922da1c5922c91c9922c9
+1cd822bb1d1822bb1d5822c11d9822c11dd820721e1720721e5720721e9720721ed72055
+1f1720551f5620551f9620551fd6208220162082205620822095208220d520a4211520a4
+215520a4219520a421d420c7221420c7225420c7229420c722d420e9231320e9235320e9
+239320e923d3210a2413210a2452210a247f210a
+%%EndData
+CLOF 21 D
+0afa204a0afa20d5115b204a115b20d517bc204a17bc20d51e1e204a1e1e20d5247f204a
+247f20d50c40204a0c4020a712a2204a12a220a71903204a190320a71f64204a1f6420a7
+0d87204a0d8720a713e8204a13e820a71a4a204a1a4a20a720ab204a20ab20a70ece204a
+0ece20a7152f204a152f20a71b90204a1b9020a721f2204a21f220a71014204a101420a7
+1676204a167620a71cd7204a1cd720a72338204a233820a7
+21 D
+0afa25f00afa267a115b25f0115b267a17bc25f017bc267a1e1e25f01e1e267a247f25f0
+247f267a0c40261e0c40267a12a2261e12a2267a1903261e1903267a1f64261e1f64267a
+0d87261e0d87267a13e8261e13e8267a1a4a261e1a4a267a20ab261e20ab267a0ece261e
+0ece267a152f261e152f267a1b90261e1b90267a21f2261e21f2267a1014261e1014267a
+1676261e1676267a1cd7261e1cd7267a2338261e2338267a
+15 D
+0aef21370b7921370aef23620b7923620aef258e0b79258e0aef21a60b4b21a60aef23d1
+0b4b23d10aef25fd0b4b25fd0aef22150b4b22150aef24410b4b24410aef266c0b4b266c
+0aef20590b4b20590aef22840b4b22840aef24b00b4b24b00aef20c80b4b20c80aef22f3
+0b4b22f30aef251f0b4b251f
+15 D
+23ff2137248a213723ff2362248a236223ff258e248a258e242e21a6248a21a6242e23d1
+248a23d1242e25fd248a25fd242e2215248a2215242e2441248a2441242e266c248a266c
+242e2059248a2059242e2284248a2284242e24b0248a24b0242e20c8248a20c8242e22f3
+248a22f3242e251f248a251f
+ (-0.5) 2717 8503 T (0.0) 2717 9058 T (0.5) 2717 9614 T 4 D
+0aef204a248a204a248a204a248a267a248a267a0aef267a0aef267a0aef204a
+6533 1562 2810 10006 CLON RED
+%%BeginData: 13 ASCII Lines
+104 L
+0afa27160b2627160b6627160ba627160be627160c2627160c6527160ca527160ce52716
+0d2527160d6527160da427160de427160e2427160e6427160ea427160ee327160f232716
+0f6327160fa327160fe32716102227161062271610a2271610e227161122271611612716
+11a1271611e127d6122127d6126127f412a027f412e02825132028251360285a13a0285a
+13df289c141f289c145f28e4149f28e414df2936151e2936155e299a159e299a15de29ef
+161e2a32165e2a83169d2ae616dd2b62171d2bfc175d2c9f179d2d3017dc2d30181c2c9f
+185c2bfc189c2b6218dc2ae6191b2a83195b2a32199b29ef19db299a1a1b299a1a5a2936
+1a9a29361ada28e41b1a28e41b5a289c1b99289c1bd9285a1c19285a1c5928251c992825
+1cd827f41d1827f41d5827d61d9827d61dd827161e1727161e5727161e9727161ed72716
+1f1727161f5627161f9627161fd6271620162716205627162095271620d5271621152716
+215527162195271621d4271622142716225427162294271622d427162313271623532716
+2393271623d327162413271624522716247f2716
+%%EndData
+CLOF 21 D
+0afa270b0afa2795115b270b115b279517bc270b17bc27951e1e270b1e1e2795247f270b
+247f27950c40270b0c40276712a2270b12a227671903270b190327671f64270b1f642767
+0d87270b0d87276713e8270b13e827671a4a270b1a4a276720ab270b20ab27670ece270b
+0ece2767152f270b152f27671b90270b1b90276721f2270b21f227671014270b10142767
+1676270b167627671cd7270b1cd727672338270b23382767
+21 D
+0afa2cb00afa2d3b115b2cb0115b2d3b17bc2cb017bc2d3b1e1e2cb01e1e2d3b247f2cb0
+247f2d3b0c402cde0c402d3b12a22cde12a22d3b19032cde19032d3b1f642cde1f642d3b
+0d872cde0d872d3b13e82cde13e82d3b1a4a2cde1a4a2d3b20ab2cde20ab2d3b0ece2cde
+0ece2d3b152f2cde152f2d3b1b902cde1b902d3b21f22cde21f22d3b10142cde10142d3b
+16762cde16762d3b1cd72cde1cd72d3b23382cde23382d3b
+16 D
+0aef27160b7927160aef29030b7929030aef2af00b792af00aef2cdd0b792cdd0aef2778
+0b4b27780aef29650b4b29650aef2b520b4b2b520aef27db0b4b27db0aef29c80b4b29c8
+0aef2bb50b4b2bb50aef283d0b4b283d0aef2a2a0b4b2a2a0aef2c170b4b2c170aef28a0
+0b4b28a00aef2a8d0b4b2a8d0aef2c7a0b4b2c7a
+16 D
+23ff2716248a271623ff2903248a290323ff2af0248a2af023ff2cdd248a2cdd242e2778
+248a2778242e2965248a2965242e2b52248a2b52242e27db248a27db242e29c8248a29c8
+242e2bb5248a2bb5242e283d248a283d242e2a2a248a2a2a242e2c17248a2c17242e28a0
+248a28a0242e2a8d248a2a8d242e2c7a248a2c7a
+ (0.000) 2717 10006 T (0.001) 2717 10499 T (0.002) 2717 10992 T (0.003)
+2717 11485 T 4 D
+0aef270b248a270b248a270b248a2d3b248a2d3b0aef2d3b0aef2d3b0aef270b
+6533 1562 2810 11734 CLON 61 L
+0afa32d514ab33cc1d0932b41fcc31751ff630941eed2fee1d372f721b302f1319172edb
+17212ef0159f2f5f14b42fd414443045143c30a7149131031522314a15e6318416bc31aa
+178e31b51847318318b3313c18d630ef18b130ac1856307a17dc305f17813083177530ba
+179a30d617c330d817cb30ca17c230c217b730bd17ae30b417b530a617df30a8180430c5
+17f830fb179d31201723310416c730d216a3309016c5304317322ffc17eb2fc918bd2fd4
+19932ffa1a5730351ae8307b1b3d30d71b35313a1ac531ab19da32201858328e166232a3
+1449326c1242320d108c31900f8330ea0fad300a12702ecb19bb2dd6
+2 L
+1c362dd6247f2eaa
+RED 61 L
+0afa32d514ab33cc1d0932b41fcc31751ff630941eed2fee1d372f721b302f1319172edb
+17212ef0159f2f5f14b42fd414443045143c30a7149131031522314a15e6318416bc31aa
+178e31b51847318318b3313c18d630ef18b130ac1856307a17dc305f17813083177530ba
+179a30d617c330d817cb30ca17c230c217b730bd17ae30b417b530a617df30a8180430c5
+17f830fb179d31201723310416c730d216a3309016c5304317322ffc17eb2fc918bd2fd4
+19932ffa1a5730351ae8307b1b3d30d71b35313a1ac531ab19da32201858328e166232a3
+1449326c1242320d108c31900f8330ea0fad300a12702ecb19bb2dd6
+2 L
+1c362dd6247f2eaa
+CLOF 21 D
+0afa2dcb0afa2e56115b2dcb115b2e5617bc2dcb17bc2e561e1e2dcb1e1e2e56247f2dcb
+247f2e560c402dcb0c402e2812a22dcb12a22e2819032dcb19032e281f642dcb1f642e28
+0d872dcb0d872e2813e82dcb13e82e281a4a2dcb1a4a2e2820ab2dcb20ab2e280ece2dcb
+0ece2e28152f2dcb152f2e281b902dcb1b902e2821f22dcb21f22e2810142dcb10142e28
+16762dcb16762e281cd72dcb1cd72e2823382dcb23382e28
+21 D
+0afa33710afa33fb115b3371115b33fb17bc337117bc33fb1e1e33711e1e33fb247f3371
+247f33fb0c40339f0c4033fb12a2339f12a233fb1903339f190333fb1f64339f1f6433fb
+0d87339f0d8733fb13e8339f13e833fb1a4a339f1a4a33fb20ab339f20ab33fb0ece339f
+0ece33fb152f339f152f33fb1b90339f1b9033fb21f2339f21f233fb1014339f101433fb
+1676339f167633fb1cd7339f1cd733fb2338339f233833fb
+/CN /BA JUS (-0.2) 2810 13450 T (-0.1) 4443 13450 T (0.0) 6076 13450 T (0\
+.1) 7710 13450 T (0.2) 9343 13450 T 16 D
+0aef2eca0b792eca0aef30bf0b7930bf0aef32b40b7932b40aef2f2e0b4b2f2e0aef3123
+0b4b31230aef33190b4b33190aef2f930b4b2f930aef31880b4b31880aef337d0b4b337d
+0aef2e020b4b2e020aef2ff70b4b2ff70aef31ec0b4b31ec0aef33e10b4b33e10aef2e66
+0b4b2e660aef305b0b4b305b0aef32500b4b3250
+16 D
+23ff2eca248a2eca23ff30bf248a30bf23ff32b4248a32b4242e2f2e248a2f2e242e3123
+248a3123242e3319248a3319242e2f93248a2f93242e3188248a3188242e337d248a337d
+242e2e02248a2e02242e2ff7248a2ff7242e31ec248a31ec242e33e1248a33e1242e2e66
+248a2e66242e305b248a305b242e3250248a3250
+/RT /HF JUS (-0.5) 2717 11978 T (0.0) 2717 12479 T (0.5) 2717 12980 T 4 D
+0aef2dcb248a2dcb248a2dcb248a33fb248a33fb0aef33fb0aef33fb0aef2dcb
+/CN /BT JUS 0 Helv 360 360 FNT [ (v\021\023x,DM\021) ] 90 2040 12515 TR [
+ (P) ] 90 2040 10787 TR [ (v\021\023x\021) ] 90 2040 9058 TR /CN /TP JUS
+ (x) 6076 5780 T /CN /BT JUS [ (\024r) ] 90 2040 7330 TR
+PG restore
+showpage
+end
+%%PageTrailer
+%%PageBoundingBox: 83 256 477 681
+
+%%Trailer
+%%Pages: 1
+%%BoundingBox: 83 256 477 681
+%%DocumentFonts: Courier
+%%+ Helvetica
+%%+ Symbol

@@ -1858,6 +1858,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.w=curcell->w;
       Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      getE(&Wold);
 
 #ifdef WRADHYD
       Wold.X=curcell->X;
@@ -1890,7 +1891,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       }
 
-
+    
 
 
       // X DIRECTION =========================================================================
@@ -1971,7 +1972,6 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 
 #endif
-	
 
 	// ===========================================
 
@@ -2003,8 +2003,16 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 	}
 	else if((SL<0.)&&(ustar>=0.)){
+	  if(level==6)
+	    if(Wold.p=1.)
+	      if(ffact[1]==0.)
+		UC[1].eint=1000.;
+		//printf("%e\n",FR[1]);
+	  
 	  getflux_X(&UC[1],FR);
 	  fact=WC[1].d*(SL-WC[1].u)/(SL-ustar);
+
+
 	  FR[0]+=(fact*1.                                                                      -UC[1].d )*SL;
 	  FR[1]+=(fact*ustar                                                                   -UC[1].du)*SL;
 	  FR[2]+=(fact*WC[1].v                                                                 -UC[1].dv)*SL;
@@ -2055,11 +2063,13 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #endif
 
+	  /* if(level==6) */
+	  /*   if(Wold.p=1.) */
+	  /*     if(ffact[1]==0.) */
+	  /* 	abort(); */
 
+     
 
-
-
-      
       //========================= copy the fluxes
       // Cancelling the fluxes from splitted neighbours
 
@@ -2569,7 +2579,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   }
   else{
     coarse2fine_hydro2(neicell,Wi);
-    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype))
+    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype));
     
 #ifdef WRADHYD
     for(icell=0;icell<8;icell++) Wi[icell].X=neicell->field.X;
@@ -2795,6 +2805,8 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	//memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].New.cell[icell].field),sizeof(struct Wtype));
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
+	
+	
 
 	//if(U.eint+deltaU.eint<0) abort();
 
@@ -2885,11 +2897,15 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	  if(vnei[inei]!=6){
 	    if(curoct->nei[vnei[inei]]->child==NULL){
+	      struct Wtype Wbkp;
+
 	      // the COARSE neighbor cell is unsplit we update its value with fluxes
 	   
 	      // initial data from the new value
 	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
+	      memcpy(&Wbkp,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
 	      W2U(&W,&U);
+
 
 	      // getting the flux
 	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
@@ -2912,8 +2928,13 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      //if(U.eint<0) abort();
 	      //scatter back
 	      U2W(&U,&W);
-	      getE(&W);
+	      //getE(&W);// <<<<< COULD BE CRITICAL
 	      memcpy(&(curoct->nei[vnei[inei]]->fieldnew),&W,sizeof(struct Wtype));
+	      //if(W.E>1.5) abort();
+	      /* if(W.E>1.5) if(Wbkp.E<=1.5){ */
+	      /* 	  printf("%e %e %e %e\n",Wbkp.E,W.E,U.E,F[4]); */
+	      /* 	  abort(); */
+	      /* 	} */
 	      
 	    }
 	  }
@@ -2960,9 +2981,9 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       // ------------ solving the hydro
 	    
       hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);   
-      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
-      hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
-      
+      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+      hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+
       // ------------ updating values within the stencil
 
       t[4]=MPI_Wtime();

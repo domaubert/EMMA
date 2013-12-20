@@ -234,7 +234,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
   
-
+ 
   // ========================== subcycling starts here ==================
 
   do{
@@ -361,11 +361,32 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+    /* //====================================  I/O======= ========================== */
+    // at this stage particles are synchronized at aexp
+    // ready to dump particles
+    // (note fields are dumped in quartz.c
+
+#ifndef EDBERT
+    if(level==param->lcoarse){
+      if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
+	if(cpu->rank==0) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
+	dumpIO(tloc,param,cpu,firstoct,adt,1);
+      }
+    }
+#endif
+
     // ================= II We compute the timestep of the current level
 
     REAL adtold=adt[level-1]; // for energy conservation
     dtnew=param->dt;//*(cpu->nsteps>2);
-    
+
+
+    // Overshoot tmax
+    dtnew=((param->time_max-tloc)<dtnew?(param->time_max-tloc):dtnew);
+    //printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
+    //printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
+
+    // Free Fall
 #ifdef WGRAV
     REAL dtff;
 #ifdef TESTCOSMO
@@ -374,23 +395,28 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
-    printf("aexp=%e dtff= %e ",aexp,dtff);
+    printf("dtff= %e ",dtff);
 #endif
 
+
+    // Cosmo Expansion
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.05,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     printf("dtcosmo= %e ",dtcosmo);
 #endif
-  
+
+
+    // Courant Condition Hydro
 #ifdef WHYDRO2
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
+    //printf("dtnew=%e dthydro= %e ",dtnew,dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
-    //printf("dthydro= %e ",dthydro);
 #endif
 
+    // Courant Condition Particle
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
@@ -398,6 +424,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
+    // Courant Condition Radiation
 #ifdef WRAD
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
@@ -405,20 +432,28 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dtrad<dtnew?dtrad:dtnew);
 #endif
 
+#ifdef FLOORDT
     // REALLY WEIRD ===
     // Apparently there are some truncation errors in REDUCTION operation on double
     // that makes multi-processor dt different than the mono processor ones !
     // the few lines below removes this...
 
-    REAL dtf=floor(dtnew*1e8)/1e8;
+    REAL dtf=floor(dtnew*1e10)/1e10;
     dtnew=dtf;
+#endif
+
+    // SOME hack to force refinement before integration
+    /* if(nsteps==0){ */
+    /*   printf("skip udpate\n"); */
+    /*   dtnew=0.; */
+    /* } */
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
     if(dtnew==0.){
-      printf("ERROR rank %d n %d t %e\n",cpu->rank,cpu->noct[level-1],dtnew);
-      abort();
+      printf("WARNING NULL dt rank %d n %d dt %e\n",cpu->rank,cpu->noct[level-1],dtnew);
+      //abort();
     }
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
 
@@ -550,7 +585,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     //reset the setup in case of refinement
     //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
     MPI_Barrier(cpu->comm);
 #endif
@@ -572,6 +606,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+#endif
 #endif
 
 
@@ -657,11 +692,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
-
-    //}
-
-
-#endif
 
 
   // ================= V Computing the new refinement map

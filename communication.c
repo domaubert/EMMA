@@ -1579,7 +1579,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      U.dX+=Ue.dX;
 #endif
 	      U2W(&U,&W);
-	      getE(&W);
+	      //getE(&W);
 
 	      memcpy(&(curoct->cell[icell].fieldnew),&W,sizeof(struct Wtype));
 	    }
@@ -2178,7 +2178,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   MPI_Datatype MPI_PACKET=*(cpu->MPI_PACKET);
 
   MPI_Barrier(cpu->comm);
-  if(cpu->rank==0) printf("correcting CIC on rank %d with %d\n",cpu->rank,cpu->nnei);
+  //if(cpu->rank==0) printf("correcting CIC on rank %d with %d\n",cpu->rank,cpu->nnei);
 
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));

@@ -36,19 +36,23 @@ int main(int argc, char *argv[])
   float *vy;
   float *vz;
   int npart;
-  
+  int npartout;
+  int samp;
 
   float xp,yp,zp;
   int id;
   int ip;
 
-  if(argc!=3){
-    printf("USAGE: /a.out input nproc\n");
+  if(argc!=4){
+    printf("USAGE: /a.out input nproc sampling\n");
     return 0;
   }
 
   // getting the number of CPUs
   sscanf(argv[2],"%d",&ncpu);
+
+  // getting the sampling
+  sscanf(argv[3],"%d",&samp);
 
 
   // scanning the cpus
@@ -71,12 +75,13 @@ int main(int argc, char *argv[])
     fread(&tsimf,sizeof(float),1,fp);
     
     if(icpu==0){
-      x=(float *)malloc(npart*sizeof(float));
-      y=(float *)malloc(npart*sizeof(float));
-      z=(float *)malloc(npart*sizeof(float));
-      vx=(float *)malloc(npart*sizeof(float));
-      vy=(float *)malloc(npart*sizeof(float));
-      vz=(float *)malloc(npart*sizeof(float));
+      npartout=npart/samp;
+      x=(float *)malloc(npartout*sizeof(float));
+      y=(float *)malloc(npartout*sizeof(float));
+      z=(float *)malloc(npartout*sizeof(float));
+      vx=(float *)malloc(npartout*sizeof(float));
+      vy=(float *)malloc(npartout*sizeof(float));
+      vz=(float *)malloc(npartout*sizeof(float));
     }
     
 
@@ -88,6 +93,7 @@ int main(int argc, char *argv[])
       printf("Reading %d particles from %s\n",npart,fname);
     }
     
+    int ipout=0;
     for(ip=0;ip<npart;ip++){
 
       fread(x+ip,sizeof(float),1,fp);
@@ -97,7 +103,7 @@ int main(int argc, char *argv[])
       fread(vy+ip,sizeof(float),1,fp);
       fread(vz+ip,sizeof(float),1,fp);
       fread(&id,sizeof(int),1,fp);
-
+      
       x[ip]=tsimf*(x[ip]-0.5);
       y[ip]=tsimf*(y[ip]-0.5);
       z[ip]=tsimf*(z[ip]-0.5);

@@ -510,9 +510,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
-		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
-#ifdef WRADHYD
 		  int il;
+		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
+		  //for(il=0;il<8;il++) memcpy(&Wi[il],&curoct->cell[icell].field,sizeof(struct Wtype));
+
+#ifdef WRADHYD
 		  for(il=0;il<8;il++) Wi[il].X=curoct->cell[icell].field.X;
 #endif
 		}
@@ -1081,6 +1083,12 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=curoct->cell[icell].gdata.d+1.;
 #endif
 
+#ifdef ZELDOVICH
+#ifdef WHYDRO2
+			    den=curoct->cell[icell].field.d;
+#endif
+#endif
+
 #else
 
 #ifdef WGRAV
@@ -1102,12 +1110,21 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 
 #else
+#ifdef ZELDOVICH
+			    mcell=den*(curoct->level>=param->lcoarse);
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+ 			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#else
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+#endif
 #endif
 #else
 			    // ===================== AMR NO COSMO ================
@@ -1161,14 +1178,14 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #endif
 
-/* #ifdef WHYDRO2 */
-/* 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse); */
-
-/* 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) { */
-/* 			      curoct->cell[icell].marked=marker; */
-/* 			      nmark++;stati[2]++; */
-/* 			    } */
-/* #endif */
+#ifdef TUBE
+			    
+			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif
 #endif			      
 
 			  }

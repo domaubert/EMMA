@@ -5,7 +5,7 @@
 
 #define NITERMAX 30
 #define ERRTOL 1e-10
-#define GAMMA (1.4)
+#define GAMMA (5./3.)
 #define NX 1024
 #define CFL 0.8
 #define STEPMAX 250
