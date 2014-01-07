@@ -106,6 +106,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       vnpart[level-1]=nlev;
     }
   
+#ifdef PIC
   //ultimate check
   if(npart!=0){ // for initial call to multicheck that always provide a zero
   if(ntot!=npart) {
@@ -113,6 +114,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
     abort();
   }
   }
+#endif
 #ifdef WMPI
   // printf("Check done on %d \n",rank);
  MPI_Barrier(cpu->comm);
