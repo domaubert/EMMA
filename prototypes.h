@@ -41,7 +41,7 @@ typedef double REAL;
 
 #ifdef WRAD
 #define NVAR_R (5)
-#define NGRP (1)
+#define NGRP (3)
 #define EMIN (0.)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
@@ -131,7 +131,6 @@ struct RUNPARAMS{
   REAL denthresh; // density threshold to turn the sources on
   REAL tmpthresh; // temperature threshold to turn the sources on
   REAL srcint; // intensity of the sources
-
 #endif
 
   REAL egy_rhs; // the right hand side of the energy conservation equation (0 in non cosmological case);

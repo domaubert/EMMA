@@ -1716,7 +1716,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   
 #ifndef TESTCOSMO
 #ifdef WRAD
-	tdump=(tsim)*param.unit.unit_t/MYR;
+	tdump=(tsim)*param->unit.unit_t/MYR;
 #else
 	tdump=(tsim);
 #endif

@@ -9,9 +9,9 @@ DEFINES  =
 #------------ MAIN OPTIONS --------------------
 
 #DEFINES  +=  -DPIC
-DEFINES  +=  -DWHYDRO2
+#DEFINES  +=  -DWHYDRO2
 #DEFINES  +=  -DWGRAV 
-#DEFINES  +=  -DWRAD
+DEFINES  +=  -DWRAD
 #DEFINES  +=  -DWRADHYD
 #DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
@@ -31,10 +31,10 @@ DEFINES  +=  -DWMPI
 #DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
 #DEFINES  +=  -DEDBERT
-DEFINES  +=  -DTUBE
+#DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-#DEFINES  +=  -DWRADTEST 
+DEFINES  +=  -DWRADTEST 
 #DEFINES  +=  -DTESTCLUMP
 #------------ PIC OPTIONS ----------------------
 
@@ -55,7 +55,7 @@ DEFINES  +=  -DDUAL_E
 # ----------- RADIATION OPTIONS ------------
 DEFINES  += -DWCHEM 
 DEFINES  += -DS_50000
-DEFINES  += -DCOOLING
+#DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
@@ -63,8 +63,8 @@ DEFINES  += -DCOOLING
 #DEFINES  +=  -DTRANSZP
 #DEFINES  +=  -DTRANSYM
 #DEFINES  +=  -DTRANSYP
-DEFINES  +=  -DTRANSXM
-DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
 
 
 #=================================================================================

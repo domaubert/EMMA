@@ -27,8 +27,8 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   REAL zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 	      
   
-  //  if((xc-0.5)*(xc-0.5)+(yc-0.5)*(yc-0.5)+(zc-0.5)*(zc-0.5)<(X0*X0)){
 #ifndef TESTCLUMP
+  // ============= STROMGREN SPHERE CASE =======================
   if((fabs(xc-0.5)<=X0)*(fabs(yc-0.5)<=X0)*(fabs(zc-0.5)<=X0)){
     if((xc>0.5)*(yc>0.5)*(zc>0.5)){
       cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
@@ -69,12 +69,11 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 
 #ifdef WHYDRO2
   if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
-    cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2)*(rand()%10<3); // switch to code units //RAND TO TEST STOCHASTICITY
+    cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
     cell->rfieldnew.src=cell->rfield.src;
     flag=1;
   }
   else{
-    //printf("d=%e\n",cell->field.d);
     cell->rfield.src=0.;
     cell->rfieldnew.src=0.;
     flag=0;

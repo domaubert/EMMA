@@ -1521,7 +1521,7 @@ int main(int argc, char *argv[])
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-    param.unit.unit_l=30.e3*PARSEC;
+    param.unit.unit_l=13.2e3*PARSEC;
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units

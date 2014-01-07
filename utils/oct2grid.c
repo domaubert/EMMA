@@ -282,6 +282,32 @@ int main(int argc, char *argv[])
 			    case 704:
 			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fz[0];
 			      break;
+			    case 711:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.e[1];
+			      break;
+			    case 712:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fx[1];
+			      break;
+			    case 713:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fy[1];
+			      break;
+			    case 714:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fz[1];
+			      break;
+
+			    case 721:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.e[2];
+			      break;
+			    case 722:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fx[2];
+			      break;
+			    case 723:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fy[2];
+			      break;
+			    case 724:
+			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.fz[2];
+			      break;
+
 			    case 705:
 			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.cell[icell].rfield.src;
 			      break;
