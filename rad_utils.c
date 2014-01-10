@@ -154,6 +154,7 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
 	      
+	    }
 #ifdef TRANSXM
 	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->rfield);
@@ -172,7 +173,6 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	      }
 #endif
 
-	    }
 	    
 
 	    inei2=2*dir+1;
@@ -181,6 +181,7 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+	    }
 #ifdef TRANSXP
 	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 		Wp=&(cell->rfield);
@@ -198,7 +199,6 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 		Wp=&(cell->rfield);
 	      }
 #endif
-	    }
 
 
 	    diffR(Wp,W0,&Dp); 
@@ -266,6 +266,7 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
+	    }
 #ifdef TRANSXM
 	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->rfield);
@@ -283,7 +284,6 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 		Wm=&(cell->rfield);
 	      }
 #endif
-	    }
 	    
 
 	    inei2=2*dir+1;
@@ -293,6 +293,7 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 	    else{
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
 
+	    }
 #ifdef TRANSXP
 	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 		Wp=&(cell->rfield);
@@ -310,7 +311,6 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 		Wp=&(cell->rfield);
 	      }
 #endif
-	    }
 
 	    diffR(W0,Wm,D+2*dir+0); 
 	    diffR(Wp,W0,D+2*dir+1); 
@@ -926,7 +926,9 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
+  int tflag[6]={0,0,0,0,0,0};
   REAL dxcur;
+  int igrp;
 
   struct Rtype Ri[8];
   char child[8];
@@ -956,6 +958,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=5;
 	face[6]=7;
 	face[7]=7;
+	tflag[1]=1;
       }
     }
 #endif
@@ -973,6 +976,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=6;
 	face[6]=6;
 	face[7]=7;
+	tflag[3]=1;
       }
     }
 #endif
@@ -989,6 +993,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=5;
 	face[6]=6;
 	face[7]=7;
+	tflag[5]=1;
+	
       }
     }
 #endif
@@ -1007,6 +1013,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=4;
 	face[6]=6;
 	face[7]=6;
+	tflag[0]=1;
+
       }
     }
 #endif
@@ -1023,6 +1031,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=5;
 	face[6]=4;
 	face[7]=5;
+	tflag[2]=1;
+
       }
     }
 #endif
@@ -1039,6 +1049,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	face[5]=1;
 	face[6]=2;
 	face[7]=3;
+	tflag[4]=1;
+
       }
     }
 #endif
@@ -1071,6 +1083,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=4;
 	  face[6]=6;
 	  face[7]=6;
+	  tflag[0]=1;
 	}
       }
 #endif
@@ -1086,6 +1099,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=5;
 	  face[6]=7;
 	  face[7]=7;
+	  tflag[1]=1;
 	}
       }
 #endif
@@ -1103,6 +1117,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=6;
 	  face[6]=6;
 	  face[7]=7;
+	  tflag[3]=1;
+
 	}
       }
 #endif
@@ -1119,6 +1135,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=5;
 	  face[6]=6;
 	  face[7]=7;
+	  tflag[5]=1;
+
 	}
       }
 #endif
@@ -1138,6 +1156,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=5;
 	  face[6]=4;
 	  face[7]=5;
+	  tflag[2]=1;
 	}
       }
 #endif
@@ -1154,6 +1173,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	  face[5]=1;
 	  face[6]=2;
 	  face[7]=3;
+	  tflag[4]=1;
+
 	}
       }
 #endif
@@ -1185,6 +1206,30 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].rfield),Ri+face[icell],sizeof(struct Rtype)); //
+#ifdef TRANSXM
+#ifdef REFXM
+    if(tflag[0]){
+      for(igrp=0;igrp<NGRP;igrp++) stencil->oct[ioct].cell[icell].rfield.fx[igrp]*=-1.;
+    }
+#endif
+#endif
+    
+
+#ifdef TRANSYM
+#ifdef REFYM
+    if(tflag[2]){
+      for(igrp=0;igrp<NGRP;igrp++) stencil->oct[ioct].cell[icell].rfield.fy[igrp]*=-1.;
+    }
+#endif
+#endif
+    
+#ifdef TRANSZM
+#ifdef REFZM
+    if(tflag[4]){
+      for(igrp=0;igrp<NGRP;igrp++) stencil->oct[ioct].cell[icell].rfield.fz[igrp]*=-1.;
+    }
+#endif
+#endif
     stencil->oct[ioct].cell[icell].split=child[face[icell]];
   }
   
@@ -1518,6 +1563,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   int igrp;
 
   t[0]=MPI_Wtime();
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&nocthydro,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
   if(cpu->rank==0) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
 
   // ===== COMPUTING THE FLUXES

@@ -152,6 +152,8 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 REAL comp_grad_rad(struct OCT *curoct, int icell){
   REAL gradd[3]={0.,0.,0.};
   REAL avgd[3]={0.,0.,0.};
+  REAL gradn[3]={0.,0.,0.};
+  REAL avgn[3]={0.,0.,0.};
   REAL grade[3]={0.,0.,0.};
   REAL avge[3]={0.,0.,0.};
   REAL val[6];
@@ -161,7 +163,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   struct Rtype Wi[8];
   int ii;
 
-  REAL ratiox,ratio,ratioe;
+  REAL ratiox,ratio,ratioe,ration;
   REAL dxcur=pow(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
@@ -255,6 +257,8 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.xion*fact);   
     avgd[ax]+=W.xion*0.5;
+    gradn[ax]+=(W.nh*fact);   
+    avgn[ax]+=W.nh*0.5;
     grade[ax]+=(W.e[0]*fact);   
     avge[ax]+=W.e[0]*0.5;
     val[ii]=W.xion;
@@ -263,6 +267,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   //  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
 
   ratiox=fmax(fabs(gradd[0]/(avgd[0]+1e-10)),fmax(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
+  ration=fmax(fabs(gradn[0]/(avgn[0]+1e-10)),fmax(fabs(gradn[1]/(avgn[1]+1e-10)),fabs(gradn[2]/(avgn[2]+1e-10))))*0.;
   ratioe=fmax(fabs(grade[0]/(avge[0]+1e-10)),fmax(fabs(grade[1]/(avge[1]+1e-10)),fabs(grade[2]/(avge[2]+1e-10))))*0;
   //ratiox=fabs(gradd[0]/(avgd[0]+1e-10));
   /* if((curoct->x==0.)&&(ratiox>1.9)) if(icell%2==0) if(curoct->level==6) { */
@@ -272,6 +277,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
   ratio=fmax(ratiox,ratioe);
+  ratio=fmax(ration,ratio);
   return ratio; 
   
 }
@@ -437,7 +443,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 	      // creation of a new oct ==================
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
 		if(curoct->cell[icell].marked<10){
-		//if((curoct->x==0.))printf("mark=%f %f l=%d\n",curoct->cell[icell].marked,curoct->x,curoct->level);
 #ifdef WMPI
 		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(param->lcoarse))){
 		  int segok;
@@ -465,6 +470,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->x=curoct->x+( icell   %2)*dxcur;
 		newoct->y=curoct->y+((icell/2)%2)*dxcur;
 		newoct->z=curoct->z+( icell   /4)*dxcur;
+
 
 		// the new oct is connected to parent
 		curoct->cell[icell].child=newoct;
@@ -756,6 +762,28 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 		  int ii2;
 		  for(ii2=0;ii2<6;ii2++){
 		    if(ii2/2==ii/2) continue;
+
+#ifdef TRANSXM
+	      if((oct->x==0.)&&(ii2==0)) continue;
+#endif
+#ifdef TRANSYM
+	      if((oct->y==0.)&&(ii2==2)) continue;
+#endif
+#ifdef TRANSZM
+	      if((oct->z==0.)&&(ii2==4)) continue;
+#endif
+	      
+#ifdef TRANSXP
+	      if((oct->x+2*dxcur==1.)&&(ii2==1)) continue;
+#endif
+#ifdef TRANSYP
+	      if((oct->y+2*dxcur==1.)&&(ii2==2)) continue;
+#endif
+#ifdef TRANSZP
+	      if((oct->z+2*dxcur==1.)&&(ii2==5)) continue;
+#endif
+	      
+
 		    if(oct->nei[ii2]->child==NULL){
 		      vrule=1;
 		    }
@@ -764,6 +792,28 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 		      oct2=oct->nei[ii2]->child;
 		      int ii3;
 		      for(ii3=0;ii3<6;ii3++){
+
+#ifdef TRANSXM
+	      if((oct2->x==0.)&&(ii3==0)) continue;
+#endif
+#ifdef TRANSYM
+	      if((oct2->y==0.)&&(ii3==2)) continue;
+#endif
+#ifdef TRANSZM
+	      if((oct2->z==0.)&&(ii3==4)) continue;
+#endif
+	      
+#ifdef TRANSXP
+	      if((oct2->x+2*dxcur==1.)&&(ii3==1)) continue;
+#endif
+#ifdef TRANSYP
+	      if((oct2->y+2*dxcur==1.)&&(ii3==2)) continue;
+#endif
+#ifdef TRANSZP
+	      if((oct2->z+2*dxcur==1.)&&(ii3==5)) continue;
+#endif
+	      
+
 			if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
 			if(oct2->nei[ii3]->child==NULL) vrule=1;
 		      }
@@ -1147,16 +1197,11 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef TESTCLUMP
 			    den=curoct->cell[icell].field.d;
 #else
-			    den=0.1;
+			    mcell=0.;
+			    den=curoct->cell[icell].rfield.xion;
 #endif
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
-			    if(((mcell>threshold)||(den>0.6))&&(curoct->cell[icell].marked==0)) {
-			      if((curoct->x==0.)&&(curoct->level==6)) {
-				/* if(icell/2==0){ */
-				/* printf("l=%d icell=%d mcell=%e den=%e y=%e\n",curoct->level,icell,mcell,den,curoct->y); */
-				/* } */
-				if(icell==0) abort();
-			      }
+			    if(((den<8e-1)&&(den>1e-1))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }

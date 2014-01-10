@@ -255,36 +255,35 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	  for(dir=0;dir<3;dir++){
 	    
 	    inei2=2*dir;
+
+	    
 	    if(vnei[inei2]==6){
 	      Wm=&(oct->cell[vcell[inei2]].field);
 	    }
 	    else{
 	      if(oct->nei[vnei[inei2]]->child!=NULL){
 		Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
-
-#ifdef TRANSXM
-		if((oct->x==0.)&&(inei2==0)){
-		  Wm=&(cell->field);
-		}
-#endif
-		
-#ifdef TRANSYM
-		if((oct->y==0.)&&(inei2==2)){
-		  Wm=&(cell->field);
-		}
-#endif
-
-#ifdef TRANSZM
-		//if((oct->nei[vnei[inei2]]->child->z-oct->z)>0.5){
-		if((oct->z==0.)&&(inei2==4)){
-		  Wm=&(cell->field);
-		}
-#endif
 	      }
-
 	    }
 	    
-
+#ifdef TRANSXM
+	    if((oct->x==0.)&&(inei2==0)){
+	      Wm=&(cell->field);
+	    }
+#endif
+	    
+#ifdef TRANSYM
+	    if((oct->y==0.)&&(inei2==2)){
+	      Wm=&(cell->field);
+	    }
+#endif
+	    
+#ifdef TRANSZM
+	    if((oct->z==0.)&&(inei2==4)){
+	      Wm=&(cell->field);
+	    }
+#endif
+	    
 	    inei2=2*dir+1;
 	    if(vnei[inei2]==6){
 	      Wp=&(oct->cell[vcell[inei2]].field);
@@ -292,26 +291,27 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	    else{
 	      if(oct->nei[vnei[inei2]]->child!=NULL){
 		Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
-
-#ifdef TRANSXP
-		if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
-		  Wp=&(cell->field);
-		}
-#endif
-
-#ifdef TRANSYP
-		if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
-		  Wp=&(cell->field);
-		}
-#endif
-
-#ifdef TRANSZP
-		if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
-		  Wp=&(cell->field);
-		}
-#endif
 	      }
 	    }
+
+
+#ifdef TRANSXP
+	    if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
+	      Wp=&(cell->field);
+	    }
+#endif
+	    
+#ifdef TRANSYP
+	    if(((oct->y+2.*dxcur)==1.)&&(inei2==3)){
+	      Wp=&(cell->field);
+	    }
+#endif
+	    
+#ifdef TRANSZP
+	    if(((oct->z+2.*dxcur)==1.)&&(inei2==5)){
+	      Wp=&(cell->field);
+	    }
+#endif
 
 
 	    diffW(Wp,W0,&Dp); 
@@ -394,6 +394,7 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
+	    }
 #ifdef TRANSXM
 	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->field);
@@ -413,7 +414,6 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 #endif
 
 
-	    }
 	    
 
 	    inei2=2*dir+1;
@@ -423,6 +423,7 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	    else{
 	      Wp=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].field);
 
+	    }
 #ifdef TRANSXP
 	      if(((oct->x+2.*dxcur)==1.)&&(inei2==1)){
 		Wp=&(cell->field);
@@ -441,7 +442,6 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 	      }
 #endif
 
-	    }
 
 #ifdef LINU
 	    W2U(W0,&U0);
@@ -2004,7 +2004,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	}
 	else if((SL<0.)&&(ustar>=0.)){
 	  if(level==6)
-	    if(Wold.p=1.)
+	    if(Wold.p==1.)
 	      if(ffact[1]==0.)
 		UC[1].eint=1000.;
 		//printf("%e\n",FR[1]);
@@ -2309,6 +2309,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
+  int tflag[6]={0,0,0,0,0,0};
   REAL dxcur;
 
   struct Wtype Wi[8];
@@ -2348,6 +2349,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	    face[5]=5;
 	    face[6]=7;
 	    face[7]=7;
+	    tflag[1]=1;
 	  }
 	}
 #endif
@@ -2365,6 +2367,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	    face[5]=6;
 	    face[6]=6;
 	    face[7]=7;
+	    tflag[3]=1;
 	  }
 	}
 #endif
@@ -2381,6 +2384,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	face[5]=5;
 	face[6]=6;
 	face[7]=7;
+	tflag[5]=1;
+	    
       }
     }
 #endif
@@ -2399,6 +2404,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	face[5]=4;
 	face[6]=6;
 	face[7]=6;
+	tflag[0]=1;
+	    
       }
     }
 #endif
@@ -2415,6 +2422,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	face[5]=5;
 	face[6]=4;
 	face[7]=5;
+	tflag[2]=1;
       }
     }
 #endif
@@ -2431,6 +2439,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	face[5]=1;
 	face[6]=2;
 	face[7]=3;
+	tflag[4]=1;
+	    
       }
     }
 #endif
@@ -2444,13 +2454,15 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
       neicell=&(oct->cell[vcell[ineiloc]]);
     }
     else{
+
       if(oct->nei[ineiloc]->child!=NULL){
 	neicell=&(oct->nei[ineiloc]->child->cell[vcell[ineiloc]]);
       }
-      else{
-	printf("big problem\n");
-	abort();
-      }
+      /* else{ */
+      /* 	printf("big problem\n"); */
+      /* 	abort(); */
+      /* } */
+
 #ifdef TRANSXP
       if(ineiloc==1){
 	if((oct->x+2.*dxcur)==1.){
@@ -2463,6 +2475,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=5;
 	  face[6]=7;
 	  face[7]=7;
+	  tflag[1]=1;
 	}
       }
 #endif
@@ -2480,6 +2493,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=6;
 	  face[6]=6;
 	  face[7]=7;
+	    tflag[3]=1;
+	    
 	}
       }
 #endif
@@ -2496,6 +2511,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=5;
 	  face[6]=6;
 	  face[7]=7;
+	  tflag[5]=1;
+	    
 	}
       }
 #endif
@@ -2514,6 +2531,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=4;
 	  face[6]=6;
 	  face[7]=6;
+	    tflag[0]=1;
+
 	}
       }
 #endif
@@ -2530,6 +2549,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=5;
 	  face[6]=4;
 	  face[7]=5;
+	  tflag[2]=1;
+
 	}
       }
 #endif
@@ -2546,6 +2567,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 	  face[5]=1;
 	  face[6]=2;
 	  face[7]=3;
+	  tflag[4]=1;
 	}
       }
 #endif
@@ -2600,6 +2622,35 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
+    // ---------------------------
+
+#ifdef TRANSXM
+#ifdef REFXM
+    if(tflag[0]){
+      stencil->oct[ioct].cell[icell].field.u*=-1.;
+    }
+#endif
+#endif
+
+
+#ifdef TRANSYM
+#ifdef REFYM
+    if(tflag[2]){
+      stencil->oct[ioct].cell[icell].field.v*=-1.;
+    }
+#endif
+#endif
+
+#ifdef TRANSZM
+#ifdef REFZM
+    if(tflag[4]){
+      stencil->oct[ioct].cell[icell].field.w*=-1.;
+    }
+#endif
+#endif
+
+
+    // ---------------------------
 
     stencil->oct[ioct].cell[icell].split=child[face[icell]];
 
@@ -3032,6 +3083,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   double t[10];
 
   t[0]=MPI_Wtime();
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&nocthydro,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
   if(cpu->rank==0) printf("Start Hydro on %d octs with dt=%e on level %d with stride=%d\n",nocthydro,dtnew,level,stride);
 
   // ===== COMPUTING THE FLUXES
@@ -3049,6 +3103,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
     do {
       curoct=nextoct;
       nextoct=curoct->next; 
+
 #ifdef WMPI
       if(curoct->cpu!=cpu->rank) continue; // bnd octs are updated by transmission hence not required
 #endif

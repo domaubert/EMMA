@@ -29,8 +29,8 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   
 #ifndef TESTCLUMP
   // ============= STROMGREN SPHERE CASE =======================
-  if((fabs(xc-0.5)<=X0)*(fabs(yc-0.5)<=X0)*(fabs(zc-0.5)<=X0)){
-    if((xc>0.5)*(yc>0.5)*(zc>0.5)){
+  if((fabs(xc-0.)<=X0)*(fabs(yc-0.)<=X0)*(fabs(zc-0.)<=X0)){
+    if((xc>0.)*(yc>0.)*(zc>0.)){
       cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
       cell->rfieldnew.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
       flag=1;

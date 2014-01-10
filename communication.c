@@ -46,7 +46,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
 
   MPI_Barrier(cpu->comm);
-  if(cpu->rank==0) printf("Clenaing MPI Buffers\n");
+  //if(cpu->rank==0) printf("Clenaing MPI Buffers\n");
 
 #if 1
   // we clean the comm buffers
@@ -116,7 +116,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   // looking for neighbors
   MPI_Barrier(cpu->comm);
-  if(cpu->rank==0) printf("Getting MPI Neigbourhs\n");
+  //if(cpu->rank==0) printf("Getting MPI Neigbourhs\n");
 
   for(level=1;level<=levelmax;level++)
     {
@@ -192,7 +192,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   // =========================================== SETTING UP THE COMMUNICATIONS BETWEEN NEIGHBORS
 
   MPI_Barrier(cpu->comm);
-  if(cpu->rank==0) printf("Set up MPI Comms\n");
+  //if(cpu->rank==0) printf("Set up MPI Comms\n");
 
 
   // computing the mpi neighbor list
@@ -252,16 +252,16 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int nvois_max;
   int nvois_maxpart;
   MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
-  if(cpu->rank==0) printf("Max total number of neighbors octs=%d\n",nvois_max);
+  //if(cpu->rank==0) printf("Max total number of neighbors octs=%d\n",nvois_max);
   MPI_Allreduce(&maxn,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
-  if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
-  if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
+  //if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
+  //if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
   cpu->nbuff=nvois_max;
 
 #ifdef PIC
   MPI_Allreduce(&maxnpart,&nvois_maxpart,1,MPI_INT,MPI_MAX,cpu->comm);
-  if(cpu->rank==0) printf("Max number of neighbors particles from 1 nei=%d\n",nvois_maxpart);
-  if(cpu->rank==0) printf("Overriding param nbuffpart=%d with maxnpart =%d\n",cpu->nbuffpart,nvois_maxpart);
+  //if(cpu->rank==0) printf("Max number of neighbors particles from 1 nei=%d\n",nvois_maxpart);
+  //if(cpu->rank==0) printf("Overriding param nbuffpart=%d with maxnpart =%d\n",cpu->nbuffpart,nvois_maxpart);
   cpu->nbuffpart=nvois_maxpart;
 #endif
 
@@ -325,7 +325,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   }
 
 MPI_Barrier(cpu->comm);
-if(cpu->rank==0) printf("setup mpi Done\n");
+ if(cpu->rank==0) printf("setup mpi Done\n");
 
 }
 
