@@ -31,8 +31,8 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   // ============= STROMGREN SPHERE CASE =======================
   if((fabs(xc-0.)<=X0)*(fabs(yc-0.)<=X0)*(fabs(zc-0.)<=X0)){
     if((xc>0.)*(yc>0.)*(zc>0.)){
-      cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
-      cell->rfieldnew.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2);///pow(1./16.,3);
+      cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2)/8.;///pow(1./16.,3);
+      cell->rfieldnew.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2)/8.;///pow(1./16.,3);
       flag=1;
     }
     else{
@@ -151,8 +151,8 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
-	  //eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*pow(aexp,2)/pow(param->unit.unit_v,2)/param->unit.unit_mass;
-	  eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.)*temperature)*pow(aexp,2)/pow(param->unit.unit_v,2)/param->unit.unit_mass;
+	  eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*pow(aexp,2)/pow(param->unit.unit_v,2)/param->unit.unit_mass;
+	  //eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.)*temperature)*pow(aexp,2)/pow(param->unit.unit_v,2)/param->unit.unit_mass;
 	  curoct->cell[icell].rfield.eint=eint; // 10000 K for a start
 	  curoct->cell[icell].rfieldnew.eint=eint; // 10000 K for a start
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);

@@ -1631,6 +1631,14 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  E2T(&R,aexp,param);
 #endif
 	  memcpy(&curoct->cell[icell].rfield,&R,sizeof(struct Rtype));
+
+#ifdef WRADHYD
+	  // inject back thermal energy into the hydro
+	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+	  curoct->cell[icell].field.X=curoct->cell[icell].rfield.xion;
+	  getE(&curoct->cell[icell].field);
+#endif
+
 	}
       }
     }while(nextoct!=NULL);

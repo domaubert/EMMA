@@ -1201,7 +1201,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=curoct->cell[icell].rfield.xion;
 #endif
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
-			    if(((den<8e-1)&&(den>1e-1))&&(curoct->cell[icell].marked==0)) {
+			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }

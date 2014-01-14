@@ -1521,7 +1521,7 @@ int main(int argc, char *argv[])
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-    param.unit.unit_l=15.e3*PARSEC;
+    param.unit.unit_l=15e3*PARSEC;
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
@@ -1584,7 +1584,7 @@ int main(int argc, char *argv[])
 #else
 #ifndef TESTCLUMP
 		  temperature=1e2;
-		  xion=1e-5;
+		  xion=1e-6;
 #else
 		  temperature=8000.;
 		  xion=1e-5;
@@ -1618,7 +1618,7 @@ int main(int argc, char *argv[])
 #endif
 
 		  curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
-		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.)*KBOLTZ*temperature)/pstar;
+		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
 		  curoct->cell[icell].rfield.eint=eint; 
 		  curoct->cell[icell].rfield.xion=xion; 
 		  E2T(&curoct->cell[icell].rfield,1.0,&param);
