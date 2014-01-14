@@ -21,12 +21,13 @@ __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   REAL tloc;
   REAL eint=R->eint;
   REAL nH=R->nh;
-   REAL pstar=param->unit.unit_n*param->unit.unit_mass/pow(param->unit.unit_l,3)*pow(param->unit.unit_v,2);
+  REAL x=R->xion;
+  REAL pstar=param->unit.unit_n*param->unit.unit_mass/pow(param->unit.unit_l,3)*pow(param->unit.unit_v,2);
 
   nH=nH/pow(aexp,3)/pow(param->unit.unit_l,3)*param->unit.unit_n;
   eint=eint/pow(aexp,5)*pstar;
  
-  tloc=eint/(1.5*nH*KBOLTZ*(1.+0.));
+  tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
   R->temp=tloc;
 }
 
@@ -142,7 +143,7 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
   unsurtc=fmax(unsurtc,fabs(c5));
   unsurtc=fmax(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
-  *tcool=1.5e0*nh2*(1.)*KBOLTZ*temp/unsurtc; //Myr
+  *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
 }
 
 // ===========================================================================================================================
@@ -267,7 +268,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	{
 	  nitcool++;
 
-	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.));
+	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 	  
 	  //== Getting a timestep
 	  dcuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);

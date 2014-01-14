@@ -27,7 +27,7 @@ max_subcycles 2
 nthread 16
 nstream 16
 ##==RadTransfert======
-clight 1e-2
+clight 1e-1
 dens_threshold 0.5
 temp_threshold 1e5
 src_int 5e48

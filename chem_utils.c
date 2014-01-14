@@ -25,7 +25,7 @@ void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
   nH=nH/pow(aexp,3)/pow(param->unit.unit_l,3)*param->unit.unit_n;
   eint=eint/pow(aexp,5)*pstar;
-  tloc=eint/(1.5*nH*KBOLTZ*(1.+0.));
+  tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
   R->temp=tloc;
 }
 
@@ -141,7 +141,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   unsurtc=fmaxf(unsurtc,fabs(c5));
   unsurtc=fmaxf(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
-  *tcool=1.5e0*nh2*(1.)*KBOLTZ*temp/unsurtc; //Myr
+  *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
 }
 
 // ===========================================================================================================================
@@ -187,6 +187,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
 
+  //REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
@@ -262,7 +263,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	{
 	  nitcool++;
 
-	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.));
+	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 	  
 	  //== Getting a timestep
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
@@ -282,10 +283,17 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  
 	  // ABSORPTION
 	  int test = 0;
+	  REAL factotsa[NGRP];
 	  for(igrp=0;igrp<NGRP;igrp++)
 	    {
+#ifdef OTSA
+	      factotsa[igrp]=0;
+#else
+	      factotsa[igrp]=(igrp==0);
+#endif
+
 	      ai_tmp1 = alphai[igrp];
-	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factgrp[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
+	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
 	      
 	      if(et[igrp]<0) 	{test=1;}
 	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
@@ -301,6 +309,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  // IONISATION
 #ifndef S_X
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp];}
+	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL];}
 #else
 	  N2[0]=1.0;
 	  REAL pp=(1.-pow(x0[idloc],0.4092)); 
@@ -321,11 +330,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	    } 
 
 	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  //cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 
 #ifdef COOLING
 	  // HEATING
 #ifndef S_X
-	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
 #else
 	  REAL pp2;
 	  F2[0]=1.0;
@@ -341,6 +352,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #endif
 	  
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
+	  //eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
 	  ai_tmp1=0;
 
 
@@ -362,7 +374,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #endif
 	  
 	  for(igrp =0;igrp<NGRP;igrp++)
-	    {egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
+	    {
+	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
 	      floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
 	      floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
 	      floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp];	
