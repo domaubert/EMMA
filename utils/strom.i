@@ -1,6 +1,6 @@
 
 rep="data/";
-imax=40;
+imax=8;
 lvl=7;
 dxcur=1./pow(2,lvl+1);
 r=span(-0.5,0.5,pow(2,lvl)+1)(zcen)-dxcur;

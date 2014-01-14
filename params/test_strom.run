@@ -1,5 +1,5 @@
 ##==MemoryManagement=========
-max_number_of_octs 50000
+max_number_of_octs 100000
 max_number_of_part 100000
 mpi_buffer_size 800000
 ##==TimestepManagement=======
@@ -10,7 +10,7 @@ tmax_or_amax 10000.
 ##==AMRGrid==================
 level_coarse 5
 level_max 8
-amr_thresh 1.0
+amr_thresh 0.5
 n_smooth 2
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 1000
