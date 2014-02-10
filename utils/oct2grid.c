@@ -202,7 +202,6 @@ int main(int argc, char *argv[])
 			  if(flag) {
 			    switch(field){
 			    case 0:
-			      if(oct.level==10) printf("hello\n");
 			      map[(imap+ii)+(jmap+jj)*nmap+(kmap+kk-k0)*nmap*nmap]=oct.level;
 			      break;
 #ifdef WGRAV

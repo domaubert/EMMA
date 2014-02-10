@@ -91,8 +91,11 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	      c[0]=ix+(int)(i*pow(0.5,curoct->level-levelcoarse+1))-(i==1);
 	      c[1]=iy+(int)(j*pow(0.5,curoct->level-levelcoarse+1))-(j==1);
 	      c[2]=iz+(int)(k*pow(0.5,curoct->level-levelcoarse+1))-(k==1);
+#ifndef TUBE
 	      keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
-	      
+#else
+	      keyloc=(unsigned long)(c[0]+c[1]*pow(2,levelcoarse-1)+c[2]*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+#endif	      
 	      //if((curoct->level==1)) printf("i=%d j=%d k=%d|| %d %d %d || %d || %d %d\n",i,j,k,(int)(c[0]),(int)(c[1]),(int)(c[2]),keyloc,cpu->kmin,cpu->kmax);
 	      if(first){
 		min=keyloc;
@@ -151,8 +154,12 @@ unsigned long oct2key(struct OCT *curoct,int level){
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
+#ifndef TUBE
   keyloc=(unsigned long)(hilbert_c2i(3,level,c));
-  
+#else
+  keyloc=(unsigned long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
+#endif
+
 
   return keyloc;
 
@@ -176,7 +183,11 @@ unsigned long pos2key(REAL xc, REAL yc, REAL zc,int level){
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
+#ifndef TUBE
   keyloc=(unsigned long)(hilbert_c2i(3,level,c));
+#else
+  keyloc=(unsigned long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
+#endif
 
   return keyloc;
 
@@ -213,7 +224,11 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
     c[0]=ix;
     c[1]=iy;
     c[2]=iz;
+#ifndef TUBE
     keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
+#else
+    keyloc=(unsigned long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+#endif
     cpuloc=keyloc/cpu->nkeys;
     curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
   }
@@ -240,8 +255,11 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
+#ifndef TUBE
   keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
-
+#else
+  keyloc=(unsigned long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+#endif
   if((keyloc>=cpu->kmin)&&(keyloc<=cpu->kmax)){
     return 1;
   }

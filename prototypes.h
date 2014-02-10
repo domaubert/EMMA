@@ -15,7 +15,7 @@ typedef double REAL;
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)
 #else
-#define OMEGAB (0.1);
+#define OMEGAB (0.049);
 #define PMIN 1e-12
 #endif
 
@@ -55,7 +55,11 @@ typedef double REAL;
 #define PROTON_MASS (1.67262158e-27) //kg
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
+#ifdef WRADTEST
+#define MOLECULAR_MU (1.0)
+#else
 #define MOLECULAR_MU (0.59)
+#endif
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{

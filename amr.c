@@ -569,6 +569,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
+		    newoct->cell[ii].field.d=1e-13;
 		  }
 #endif
 
@@ -968,6 +969,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 
+
 				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 				  if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
 				    curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
@@ -1035,7 +1037,9 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 					continue;
 				      }
 #endif
-				  
+				      
+
+
 				      newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
 				      if(newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked==0){
 					newoct->nei[vnei2[il]]->child->cell[vcell2[il]].marked=marker;
@@ -1195,16 +1199,30 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    //mcell=(curoct->cell[icell].rfield.e[0]>1e74) +(curoct->cell[icell].rfield.src>0.);
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 #ifdef TESTCLUMP
-			    den=curoct->cell[icell].field.d;
+			    REAL den2;
+			    den2=curoct->cell[icell].rfield.nh/pow(param->unit.unit_l,3);
+			    den=-1;
+			    
+			    //mcell=(curoct->cell[icell].rfield.src>0.);
+			    if((((den<8e-1)&&(den>1e-1))||(den2>250.))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    } 
+			    
 #else
 			    mcell=0.;
 			    den=curoct->cell[icell].rfield.xion;
-#endif
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
-			    }
+			    } 
+#endif
+ 			    //mcell=(curoct->cell[icell].rfield.src>0.);
+			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    } 
 			    
 #else
 #ifdef WCHEM
@@ -1225,7 +1243,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef TUBE
 			    
-			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
+			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
+			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;

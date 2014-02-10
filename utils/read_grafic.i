@@ -1,5 +1,5 @@
 
-func read_grafic(filename,nslice=,bigendian=,decendian=)
+func read_grafic(filename,&L,&h,nslice=,bigendian=,decendian=)
 {
 
   
@@ -37,6 +37,7 @@ func read_grafic(filename,nslice=,bigendian=,decendian=)
   write,"omegav=",omegav;
   write,"h0=",h0;
   write,"astart=",astart;
+  write,"zstart=",1./astart-1.;
   write,"dx=",dx;
   field=array(float,np1,np2,np3);
   
@@ -51,6 +52,8 @@ func read_grafic(filename,nslice=,bigendian=,decendian=)
 
   close,ff;
 
+  L=dx*np1*h0/100.;
+  h=h0/100.;
   return field;
   
 }
@@ -62,13 +65,13 @@ func grafic2stef(filename,dd)
 
   n=array(int(dimsof(dd)(2)),3);
   adress=0;
-  dummy=sizeof(n);_write,ff,adress,dummy;adress+=sizeof(dummy);
+  dummy=int(sizeof(n));_write,ff,adress,dummy;adress+=sizeof(dummy);
   dummy=n;_write,ff,adress,dummy;adress+=sizeof(dummy);
-  dummy=sizeof(n);_write,ff,adress,dummy;adress+=sizeof(dummy);
+  dummy=int(sizeof(n));_write,ff,adress,dummy;adress+=sizeof(dummy);
 
-  dummy=sizeof(dd(*));_write,ff,adress,dummy;adress+=sizeof(dummy);
+  dummy=int(sizeof(dd(*)));_write,ff,adress,dummy;adress+=sizeof(dummy);
   dummy=dd(*);_write,ff,adress,dummy;adress+=sizeof(dummy);
-  dummy=sizeof(dd(*));_write,ff,adress,dummy;adress+=sizeof(dummy);
+  dummy=int(sizeof(dd(*)));_write,ff,adress,dummy;adress+=sizeof(dummy);
   close,ff;
 
 }

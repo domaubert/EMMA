@@ -168,7 +168,11 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 	      
 	      //if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
 	      nnei++;
-	      if(nfromcpu[curoct->cpu]==cpu->nbufforg) {
+ 	      if(nfromcpu[curoct->cpu]==cpu->nbufforg) {
+		printf("ERROR on nbufforg being too small for octs on level =%d!\n",level);
+		abort();
+	      }
+ 	      if(nnei==cpu->nbufforg) {
 		printf("ERROR on nbufforg being too small for octs on level =%d!\n",level);
 		abort();
 	      }

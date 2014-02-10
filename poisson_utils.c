@@ -1288,8 +1288,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       }
 
       // we take the smallest
-      dres=(dres<dresconv?dres:dresconv);
       crit=(dres<dresconv?0:1);
+      dres=(dres<dresconv?dres:dresconv);
 
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;

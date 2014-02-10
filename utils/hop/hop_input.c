@@ -788,6 +788,9 @@ int ReadQuartz(KD kd,char *inputfile, int nfile)
       fread(&dum,sizeof(float),1,fp);
       fread(&dum,sizeof(float),1,fp);
       fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
 
       ip++;
     }
