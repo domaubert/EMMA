@@ -16,7 +16,7 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049);
-#define PMIN 1e-12
+#define PMIN 1e-10
 #endif
 
 #define NCOSMOTAB (262144)

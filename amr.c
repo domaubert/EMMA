@@ -1131,8 +1131,11 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 
 #else			    
-#ifdef TESTCOSMO 
 			    // ===================== AMR COSMO ================
+			    
+			    // First we define the density
+#ifdef TESTCOSMO 
+			    
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
 #endif
@@ -1150,7 +1153,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #endif 
-
+			    
+			    // Second we apply a criterion
 			    
 #ifdef PIC
 #ifdef EDBERT

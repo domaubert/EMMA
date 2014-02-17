@@ -19,3 +19,8 @@
 #define SECTION_EFFICACE hnu[0]=16.2512268529*1.6022e-19;alphae[0]=4.09062219423e-22*c;alphai[0]=4.29210995811e-22*c;hnu[1]=30.0320432833*1.6022e-19;alphae[1]=7.50539812805e-23*c;alphai[1]=8.01811688657e-23*c;hnu[2]=67.9994141931*1.6022e-19;alphae[2]=7.03143256286e-24*c;alphai[2]=7.69469570748e-24*c;
 #define FACTGRP factgrp[0]=0.945510217438;factgrp[1]=0.0505152888397;factgrp[2]=0.000973631963198;
 #endif
+
+#ifdef S_1p0
+#define SECTION_EFFICACE hnu[0]=18.022*1.6022e-19;alphae[0]=3.147e-22*c;alphai[0]=3.39e-22*c;hnu[1]=35.64*1.6022e-19;alphae[1]=4.87e-23*c;alphai[1]=5.57e-23*c;hnu[2]=135.438*1.6022e-19;alphae[2]=1.824e-24*c;alphai[2]=3.43e-24*c;
+#define FACTGRP factgrp[0]=0.46;factgrp[1]=0.31;factgrp[2]=0.23;
+#endif

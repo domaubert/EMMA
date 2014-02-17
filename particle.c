@@ -1749,7 +1749,7 @@ void egypart(struct CPUINFO *cpu, REAL *ekintot, REAL *epottot,struct RUNPARAMS 
     }
   }
 
-  printf("ipart =%d\n",ipart);
+  //printf("ipart =%d\n",ipart);
   *ekintot=ekinloc;
   *epottot=epotloc;
 }
