@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   char format[256];
   char fname2[256];
   int ncpu;
-  int nc;
+  long int nc;
   int icpu;
   struct OCT *zerooct;
 #ifdef WRAD
@@ -165,8 +165,11 @@ int main(int argc, char *argv[])
 	      else{
 		flag=(oct.cpu==icpu);
 	      }
+
 	      if(flag) {
+		//printf("helo\n,");
 		nc++;
+		//printf("nc=%d\n",nc);
 	      }
 	    }
 	}
@@ -174,7 +177,7 @@ int main(int argc, char *argv[])
     }    
     fclose(fp);
   }
-  printf("Found %d leaf cells\n",nc);
+  printf("Found %ld leaf cells\n",nc);
   
   map=(REAL *)calloc(nc*NREAL,sizeof(REAL)); // NREAL=5 3 for pos, 1 for level, 1 for data
 

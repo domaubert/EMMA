@@ -671,9 +671,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
   if(cpu->rank==0){
-    fx=fopen("utils/grafic_src/ic_velcx","rb");
-    fy=fopen("utils/grafic_src/ic_velcy","rb");
-    fz=fopen("utils/grafic_src/ic_velcz","rb");
+    fx=fopen("./ic_velcx","rb");
+    fy=fopen("./ic_velcy","rb");
+    fz=fopen("./ic_velcz","rb");
 
     // reading the headers
     size_t outf;
@@ -1403,14 +1403,15 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   int dummy;
   int ip;
   struct Wtype W;
+  size_t outf;
 
   // Note only the rank 0 reads the file.
  
   if(cpu->rank==0){
-    fdx=fopen("utils/grafic_src/ic_deltab","rb");
-    fx=fopen("utils/grafic_src/ic_velcx","rb");
-    fy=fopen("utils/grafic_src/ic_velcy","rb");
-    fz=fopen("utils/grafic_src/ic_velcz","rb");
+    fdx=fopen("./ic_deltab","rb");
+    fx=fopen("./ic_velcx","rb");
+    fy=fopen("./ic_velcy","rb");
+    fz=fopen("./ic_velcz","rb");
   
     // reading the headers
 
@@ -1548,8 +1549,9 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     if(cpu->rank==0) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
-    printf("No temperature law for cosmologies other than SCDM\n");
-    abort();
+    printf("No temperature law for cosmologies other than SCDM -> F** it\n");
+    temp=33.64/pow(41.,2)*pow(1.+zstart,2);
+    //    abort();
   }
 
 

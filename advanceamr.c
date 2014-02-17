@@ -82,6 +82,8 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+	if(curoct->cpu!=cpu->rank) continue;
+
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    vx=curoct->cell[icell].field.u; 
@@ -95,7 +97,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
       }while(nextoct!=NULL);
   }
 
-  dt=fmin(dxcur*CFL/(Smax*3.),dt);
+  if(Smax>0.) dt=fmin(dxcur*CFL/(Smax*3.),dt);
 
   /* #ifdef WMPI */
   /*   // reducing by taking the smallest time step */
@@ -128,9 +130,14 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+	if(curoct->cpu!=cpu->rank) continue;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
-	    dtloc=0.1*sqrt(2.*M_PI/(3.*curoct->cell[icell].gdata.d*aexp));
+	    dtloc=0.1*sqrt(2.*M_PI/(3.*(curoct->cell[icell].gdata.d+1.)*aexp));
+ 	    /* if(curoct->cell[icell].gdata.d<0.){ */
+	    /*   printf("ouhla %e\n",dtloc); */
+	    /*   abort(); */
+	    /* } */
 	    dt=fmin(dt,dtloc);
 	  }
       }while(nextoct!=NULL);
@@ -195,7 +202,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int ptot=0;
   int ip;
   
-  REAL ekp,epp;
+  REAL ekp,epp,ein;
   REAL RHS;
   REAL delta_e;
   REAL drift_e;
@@ -251,20 +258,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     
-    // =============================== cleaning 
-#ifdef WHYDRO2
-    clean_new_hydro(level,param,firstoct,cpu);
-#endif
-
-
-#ifdef PIC
-    L_clean_dens(level,param,firstoct,cpu);
-#endif
-
-#ifdef WRAD
-    clean_new_rad(level,param,firstoct,cpu,aexp);
-#endif
-
     // == Ready to advance
 
 
@@ -311,6 +304,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
   }
   
+    // =============================== cleaning 
+#ifdef WHYDRO2
+    clean_new_hydro(level,param,firstoct,cpu);
+#endif
+
+
+#ifdef PIC
+    L_clean_dens(level,param,firstoct,cpu);
+#endif
+
+#ifdef WRAD
+    clean_new_rad(level,param,firstoct,cpu,aexp);
+#endif
+
  
 
 
@@ -375,6 +382,114 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 #endif
 
+    // =============== Computing Energy diagnostics
+
+    ekp=0.;
+    ein=0.;
+#ifdef PIC
+    //    if(level==param->lcoarse){
+      egypart(cpu,&ekp,&epp,param,aexp);
+#endif
+
+      /* /\* /\\* // lets try to compute the potential from the grid *\\/ *\/ */
+      epp=0.;
+      REAL potloc=0., einloc=0., ekploc=0.;
+      struct OCT *nextoct;
+      int icell;
+      REAL dx;
+      int levelin;
+      REAL u,v,w;
+      if(cpu->rank==0) printf("get pop\n");
+
+      for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
+      	nextoct=firstoct[levelin-1];
+      	dx=1./pow(2,levelin);
+      	if(nextoct!=NULL){
+      	  do // sweeping level
+      	    {
+      	      curoct=nextoct;
+      	      nextoct=curoct->next;
+      	      if(curoct->cpu!=cpu->rank) continue;
+      	      for(icell=0;icell<8;icell++) // looping over cells in oct
+      		{
+      		  if(curoct->cell[icell].child==NULL){
+      		    potloc+=aexp*dx*dx*dx*(curoct->cell[icell].gdata.d)*(curoct->cell[icell].gdata.p)*0.5;
+#ifdef WHYDRO2
+		    einloc+=dx*dx*dx*(curoct->cell[icell].field.p)/(GAMMA-1.);
+
+		    u=curoct->cell[icell].field.u;
+		    v=curoct->cell[icell].field.v;
+		    w=curoct->cell[icell].field.w;
+
+		    ekploc+=dx*dx*dx*(curoct->cell[icell].field.d)*(u*u+v*v+w*w)*0.5;
+#endif
+      		  }
+      		}
+      	    }while(nextoct!=NULL);
+      	}
+      }
+
+      epp=potloc;
+      ekp=ekp+ekploc;
+      ein=ein+einloc;
+#ifdef WMPI
+      REAL sum_ekp,sum_epp,sum_ein;
+      MPI_Allreduce(&ekp,&sum_ekp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&epp,&sum_epp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&ein,&sum_ein,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      ekp=sum_ekp;
+      epp=sum_epp;
+      ein=sum_ein;
+#endif
+
+
+      if(nsteps==1){
+#ifdef TESTCOSMO
+	htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+	param->egy_last=epp*htilde;
+#else
+	param->egy_last=0.;
+	htilde=0.;
+#endif
+	param->egy_rhs=0.;
+  	param->egy_0=ekp+epp+ein;
+	param->egy_timelast=aexp;
+	param->egy_totlast=ekp+epp+ein;
+      }
+
+    
+    if((level>=param->lcoarse)&&(nsteps>1)) {
+#ifdef TESTCOSMO
+      htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+      RHS=param->egy_rhs;
+      
+      //RHS=RHS+0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast); // trapezoidal rule
+      RHS=RHS+0.5*(epp/aexp+param->egy_last)*(aexp-param->egy_timelast); // trapezoidal rule
+
+      //delta_e=(((ekp+epp)-param->egy_totlast)/(0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast))-1.);
+      delta_e=(ekp+epp+ein-param->egy_totlast-0.5*(epp/aexp+param->egy_last)*(aexp-param->egy_timelast));
+      drift_e=(((ekp+epp+ein)-param->egy_0)/RHS-1.);
+      //      param->egy_last=epp*htilde;
+      param->egy_last=epp/aexp;
+#else
+      RHS=0.;
+      delta_e=((ekp+epp+ein)-param->egy_totlast)/param->egy_totlast;
+      drift_e=((ekp+epp+ein)-param->egy_0)/param->egy_0;
+#endif
+      param->egy_rhs=RHS;
+      param->egy_timelast=aexp;
+      param->egy_totlast=ekp+epp+ein;
+
+      if(cpu->rank==0){
+	FILE *fpe;
+	fpe=fopen("energystat.txt","a");
+	fprintf(fpe,"%e %e %e %e %e %e %e %e %e %e %d\n",aexp,delta_e,drift_e,ekp,epp,RHS,ein,adt[level-1],param->egy_0,htilde,level);
+	fclose(fpe);
+	printf("Egystat rel. err= %e drift=%e\n",delta_e,drift_e); 
+      }
+    }
+
+
     // ================= II We compute the timestep of the current level
 
     REAL adtold=adt[level-1]; // for energy conservation
@@ -395,16 +510,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
-    printf("dtff= %e ",dtff);
+    //printf("dtff= %e ",dtff);
 #endif
 
 
     // Cosmo Expansion
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.05,aexp,cosmo->om,cosmo->ov,1e-8);
+    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-    printf("dtcosmo= %e ",dtcosmo);
+    //printf("dtcosmo= %e ",dtcosmo);
 #endif
 
 
@@ -420,7 +535,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-    printf("dtpic= %e \n",dtpic);
+    //printf("dtpic= %e \n",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
@@ -523,52 +638,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     //printf("1 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
 
-    // =============== Computing Energy diagnostics
-
-#ifdef PIC
-    if(level==param->lcoarse){
-      egypart(cpu,&ekp,&epp,param,aexp);
-#ifdef WMPI
-      REAL sum_ekp,sum_epp;
-      MPI_Allreduce(&ekp,&sum_ekp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-      MPI_Allreduce(&epp,&sum_epp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-      ekp=sum_ekp;
-      epp=sum_epp;
-#endif
-      if(nsteps==1){
-	htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
-	param->egy_0=ekp+epp;
-	param->egy_rhs=0.;
-	param->egy_last=epp*htilde;
-	param->egy_timelast=tloc;
-	param->egy_totlast=ekp+epp;
-	
-      }
-    }
-
-    
-#ifdef TESTCOSMO
-    if((level==param->lcoarse)&&(nsteps>1)) {
-      htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
-      RHS=param->egy_rhs;
-      
-      RHS=RHS+0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast); // trapezoidal rule
-
-      delta_e=(((ekp+epp)-param->egy_totlast)/(0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast))-1.);
-      drift_e=(((ekp+epp)-param->egy_0)/RHS-1.);
-
-      param->egy_rhs=RHS;
-      param->egy_last=epp*htilde;
-      param->egy_timelast=tloc;
-      param->egy_totlast=ekp+epp;
-
-
-      if(cpu->rank==0){
-	fprintf(param->fpegy,"%e %e %e %e %e %e\n",aexp,delta_e,drift_e,ekp,epp,RHS);
-	printf("Egystat rel. err= %e drift=%e\n",delta_e,drift_e); 
-      }
-    }
-#endif
 
 
     // moving particles around
@@ -598,7 +667,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer);
 
     //printf("4 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-    printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
+    //printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
     //update the particle number within this process
     //npart=npart+deltan;
     ptot=deltan; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
@@ -606,7 +675,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-#endif
 #endif
 
 
@@ -721,7 +789,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     is++;
     ndt[level-1]++;
 
-    if(cpu->rank==0) printf("is=%d ndt=%d dt=%le tloc=%le\n",is,ndt[level-1],tloc,dt);
+    if(cpu->rank==0) printf("is=%d ndt=%d dt=%le tloc=%le %le\n",is,ndt[level-1],dt,tloc,adt[level-2]);
 
     // Some Eye candy for timesteps display
 

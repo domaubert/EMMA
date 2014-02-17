@@ -8,12 +8,12 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 
-#DEFINES  +=  -DPIC
+DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
-#DEFINES  +=  -DWGRAV 
+DEFINES  +=  -DWGRAV 
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
-#DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
 
 #------------ MPI OPTIONS ---------------------
@@ -27,15 +27,16 @@ DEFINES  +=  -DWMPI
 
 #------------ ICs OPTIONS ---------------------
 
-#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
 #DEFINES  +=  -DEDBERT
 #DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST 
-#DEFINES  +=  -DTESTCLUMP
+#DEFINES  +=  -DWRADTEST  
+#DEFINES  +=  -DTESTCLUMP # RADTEST MUST BE SET
+
 #------------ PIC OPTIONS ----------------------
 
 #DEFINES += -DPART_EGY
@@ -56,18 +57,18 @@ DEFINES  +=  -DDUAL_E
 DEFINES  += -DWCHEM 
 DEFINES  += -DS_100000
 DEFINES  += -DCOOLING
-#DEFINES  += -DUVBKG
+DEFINES  += -DUVBKG
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
-DEFINES  +=  -DTRANSZM
-DEFINES  +=  -DTRANSZP
-DEFINES  +=  -DTRANSYM
-DEFINES  +=  -DTRANSYP
-DEFINES  +=  -DTRANSXM
-DEFINES  +=  -DTRANSXP
-DEFINES  +=  -DREFXM # TRANS must be turned on too
-DEFINES  +=  -DREFYM # TRANS must be turned on too
-DEFINES  +=  -DREFZM # TRANS must be turned on too
+#DEFINES  +=  -DTRANSZM
+#DEFINES  +=  -DTRANSZP
+#DEFINES  +=  -DTRANSYM
+#DEFINES  +=  -DTRANSYP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DREFXM # TRANS must be turned on too
+#DEFINES  +=  -DREFYM # TRANS must be turned on too
+#DEFINES  +=  -DREFZM # TRANS must be turned on too
 
 
 

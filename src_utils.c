@@ -45,12 +45,15 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
     flag=0;
   }
 #else
+  REAL factgrp[NGRP];
+  FACTGRP; //defined in Atomic.h
+
   cell->rfield.src=0.;
   cell->rfieldnew.src=0.;
   if(xc<=X0){
     for(igrp=0;igrp<NGRP;igrp++){
-      curoct->cell[icell].rfield.e[igrp]=1e10*param->unit.unit_t*pow(param->unit.unit_l,2)/param->clight; 
-      curoct->cell[icell].rfield.fx[igrp]=1e10*param->unit.unit_t*pow(param->unit.unit_l,2);
+      curoct->cell[icell].rfield.e[igrp]=factgrp[igrp]*1e10*param->unit.unit_t*pow(param->unit.unit_l,2)/param->clight; 
+      curoct->cell[icell].rfield.fx[igrp]=factgrp[igrp]*1e10*param->unit.unit_t*pow(param->unit.unit_l,2);
       curoct->cell[icell].rfield.fy[igrp]=0.; 
       curoct->cell[icell].rfield.fz[igrp]=0.; 
       

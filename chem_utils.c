@@ -182,7 +182,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   REAL ebkg[NGRP];
   REAL z=1./aexp-1.;
 #ifdef UVBKG
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))*0.  ;  // Katz simple model
+  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 #else
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -215,7 +215,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     for(icell=0;icell<8;icell++){ // we scan the cells
 
       fudgecool=param->fudgecool;
-      if(stencil[i].oct[6].cell[icell].split) continue;
+      if(stencil[i].oct[6].cell[icell].split) continue; // we dont treat split cells
       memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
       
       // switch to physical units, chemistry remains unchanged with and without cosmo
@@ -335,8 +335,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #ifdef COOLING
 	  // HEATING
 #ifndef S_X
-	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
-	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
 #else
 	  REAL pp2;
 	  F2[0]=1.0;

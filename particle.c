@@ -12,7 +12,7 @@
 #include "communication.h"
 #endif
 
-#define FRACDX 0.3
+#define FRACDX 0.25
 
 #ifdef PIC
 //------------------------------------------------------------------------
@@ -226,22 +226,10 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 	      
 		// particle velocity
 		va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
-	      
-		// loc dt
-		if((va>0.)&&(aa>0.)){
-		  REAL EPS=2.0*(FRACDX*dxcur)*aa/(va*va);
-		  if(EPS<1e-1){
-		    dtlev=(FRACDX*dxcur)/va;
-		  }
-		  else if(EPS>10.){
-		    dtlev=sqrt(2.0*(FRACDX*dxcur)/aa);
-		  }
-		  else{
-		    dtlev=va/aa*(sqrt(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
-		  }
+		if(va!=0){
 		  dtlev=(FRACDX*dxcur)/va;
 		}		 
-		else if((aa==0.)||(va==0.)){
+		else{
 		  dtlev=1e9;
 		} 
 #ifdef PART2
@@ -1761,7 +1749,7 @@ void egypart(struct CPUINFO *cpu, REAL *ekintot, REAL *epottot,struct RUNPARAMS 
     }
   }
 
-  printf("ipart =%d\n",ipart);
+  //printf("ipart =%d\n",ipart);
   *ekintot=ekinloc;
   *epottot=epotloc;
 }
