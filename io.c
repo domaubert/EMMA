@@ -6,12 +6,8 @@
 #include "segment.h"
 #include <string.h>
 
-
-
-
-
 //====================================================================================================
-void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int nsteps, int ndumps, struct RUNPARAMS *param, struct CPUINFO *cpu,struct PART *proot, REAL *adt){
+void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int nsteps, int ndumps, struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt){
   
   FILE *fp;
   int level;
@@ -515,9 +511,13 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   while(!feof(fp)){
 
+    /* if(cpu->rank==0){ */
+    /*   printf("ipart=%d\n",ipart); */
+    /* } */
     // do stuff
     ipart++;
     // 1 copy the content of the particle at the right location
+
     curp=(part_ad-rootpart_sna)+rootpart_mem;
     memcpy(curp,&part,sizeof(struct PART));
 
@@ -561,7 +561,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
     /* } */
   }
 
-  printf("%d/%d part recovered by proc %d with freepart=%p\n",ipart,param->npartmax,cpu->rank,freepart);
+  //printf("%d/%d part recovered by proc %d with freepart=%p\n",ipart,param->npartmax,cpu->rank,freepart);
 
   // done
   fclose(fp);
@@ -1728,21 +1728,16 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	adump=tdump;
 #endif
 
-
-
 	if(pdump){
 	  // === particle dump
 #ifdef PIC
 	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 	  if(cpu->rank==0){
 	    printf("Dumping .......");
-	    printf("%s\n",filename);
+	    printf("%s %p\n",filename,cpu->part);
 	  }
 	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
 	  
-	  // backups for restart
-	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->part);
 #endif
 	}
 	else{
@@ -1757,7 +1752,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  // backups for restart
 	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->part,adt);
+	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
+
+	  // backups for restart
+	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 
 	  *(cpu->ndumps)=*(cpu->ndumps)+1;
 	}

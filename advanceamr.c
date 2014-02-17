@@ -292,11 +292,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     ptot=0; for(ip=1;ip<=param->lmax;ip++){
       ptot+=cpu->npart[ip-1]; // total of local particles
-      /* if((level==11)&&(cpu->rank==217)){ */
-      /* 	printf("AP l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
-      /* } */
     }
-    
+
 #ifdef WMPI
     //reset the setup in case of refinement
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
@@ -378,6 +375,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
 	if(cpu->rank==0) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
+
       }
     }
 #endif
@@ -563,6 +561,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /*   dtnew=0.; */
     /* } */
 
+
+
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
     adt[level-1]=dtnew;
@@ -588,6 +588,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
+
 
 
    // ================= III Recursive call to finer level
@@ -632,7 +633,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //================ Part. Update ===========================
 #ifdef WMPI
     int maxnpart;
-    MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+    MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 

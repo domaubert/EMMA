@@ -435,7 +435,6 @@ int main(int argc, char *argv[])
   dt=param.dt;
   cpu.maxhash=param.maxhash;
   cpu.levelcoarse=levelcoarse;
-
 #ifdef GPUAXL
   cpu.nthread=param.nthread;
   cpu.nstream=param.nstream;
@@ -449,6 +448,8 @@ int main(int argc, char *argv[])
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 #ifdef PIC
   part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
+
+  //printf("PART=== %p \n",part);
   cpu.firstpart=part;
   // we set all the particles mass to -1
   for(ii=0;ii<npartmax;ii++) part[ii].mass=-1.0;
@@ -1567,6 +1568,7 @@ int main(int argc, char *argv[])
       // ==================================== dump
       if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
 #ifndef EDBERT
+
 	// dumping fields only
 	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 #else

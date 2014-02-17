@@ -3,13 +3,13 @@ max_number_of_octs 400000
 max_number_of_part 3000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 10
-max_nuber_of_steps 5000
+output_frequency 1
+max_number_of_steps 2
 time_step_max  1e-0
 tmax_or_amax 0.15
 ##==AMRGrid==================
-level_coarse 8
-level_max 12
+level_coarse 6
+level_max 6
 amr_thresh 5e-7
 n_smooth 2
 ##==PoissonSolver============
@@ -19,7 +19,7 @@ mgrid_lmin 4
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 0
+restart_snap 1
 ##==ThreadManagement======
 grav_stencil_size 32
 cons_stencil_size 32
