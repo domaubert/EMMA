@@ -135,11 +135,11 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
   // cooling times
 
-  unsurtc=fmaxf(c1,c2);
-  unsurtc=fmaxf(unsurtc,c3);
-  unsurtc=fmaxf(unsurtc,c4);
-  unsurtc=fmaxf(unsurtc,fabs(c5));
-  unsurtc=fmaxf(unsurtc,c6)*1e-7;// ==> J/cm3/s
+  unsurtc=fmax(c1,c2);
+  unsurtc=fmax(unsurtc,c3);
+  unsurtc=fmax(unsurtc,c4);
+  unsurtc=fmax(unsurtc,fabs(c5));
+  unsurtc=fmax(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
   *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
 }
@@ -206,7 +206,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   
   
   REAL dt=dtnew*param->unit.unit_t*pow(aexp,2);
-
+  REAL emin;
   struct Rtype R;
   REAL fudgecool=param->fudgecool;
   int ncvgcool=param->ncvgcool;
@@ -231,6 +231,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       x0[idloc]=R.xion;
       nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
       eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
+      emin=PMIN/(GAMMA-1.)/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
       srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
       
       // at this stage we are ready to do the calculations
@@ -323,9 +324,9 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
 	  ai_tmp1=0.;
 
-	  if((xt>1.)||(xt<0.f)) 
+	  if((xt>1.)||(xt<0.)) 
  	    {
-	      fudgecool/=10.f; 
+	      fudgecool/=10.; 
 	      continue;	
 	    } 
 
@@ -355,12 +356,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  //eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
 	  ai_tmp1=0;
 
+	  //
 
-	  if(eintt<0.) 
+	  if(eintt<0.)
  	    {
-	      fudgecool=fudgecool/10.; 
+	      fudgecool=fudgecool/10.;
 	      continue;
-	    } 
+	    }
 
 	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
@@ -369,6 +371,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 		continue;
 	      }
 	    }
+  	  else{
+ 	    fudgecool=fudgecool*1.5;
+	  }
+
+	  eintt=fmax(emin,eintt);
+
+	  
 #else
 	  eintt=eint[idloc];
 #endif

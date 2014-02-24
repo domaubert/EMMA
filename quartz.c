@@ -189,9 +189,6 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
-#ifdef WDBG
-  gdb_debug();
-#endif
 
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
@@ -237,6 +234,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD,&(cpu.nproc));
   MPI_Comm_rank(MPI_COMM_WORLD,&(cpu.rank));
+
+#ifdef WDBG
+  //if(cpu.rank==4) gdb_debug();
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
   //========= creating a PACKET MPI type =======
   MPI_Datatype MPI_PACKET,oldtypes[3]; 
@@ -1405,7 +1407,7 @@ int main(int argc, char *argv[])
 #endif
 
     sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank); 
-    freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt);
+    freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 
     nstepstart+=1.; // next timestep is n+1

@@ -91,7 +91,7 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
 
 
 //====================================================================================================
-struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **lastoct, REAL *tsim, REAL *tinit, int *nsteps, int *ndumps,struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt){
+struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **lastoct, REAL *tsim, REAL *tinit, int *nsteps, int *ndumps,struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt, struct CELL *root){
   
   FILE *fp;
   int level,lcoarse,lmax;
@@ -198,13 +198,37 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     for(ic=0;ic<6;ic++){
 
       if(curoct->nei[ic]!=NULL){
-	curoct->nei[ic]=(struct CELL *)(((unsigned long int)(curoct->nei[ic])-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
-      }
-      
+	if(curoct->level>1) {
+	  curoct->nei[ic]=(struct CELL *)(((unsigned long int)(curoct->nei[ic])-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
+	}
+	else{
+	  curoct->nei[ic]=root;
+	}
+       }
     }
     
+    // Ugly fix
+    /* if(curoct->cpu!=cpu->rank){ */
+    /*   for(ic=0;ic<6;ic++){ */
+    /* 	if(curoct->nei[ic]!=NULL){ */
+    /* 	  if(curoct->nei[ic]->gdata.p==0 &&curoct->nei[ic]->gdata.d==0){ */
+    /* 	      curoct->nei[ic]=NULL; */
+    /* 	      //printf("fix\n"); */
+    /* 	  } */
+    /* 	} */
+    /*   } */
+    /* } */
+ 
+
     if(curoct->parent!=NULL){
-      curoct->parent=(struct CELL *)(((unsigned long int)(curoct->parent)-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
+	struct CELL *co;
+	if(curoct->level>1){
+	  co=(struct CELL *)((unsigned long int)curoct->parent-(unsigned long int) rootcell_sna+(unsigned long int) rootcell_mem);
+	  curoct->parent=co;
+	}
+	else{
+	  curoct->parent=root;
+	}
     }
     
 

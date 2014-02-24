@@ -1148,8 +1148,8 @@ void speedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)){
@@ -1189,8 +1189,8 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)) abort();
@@ -1227,8 +1227,8 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)) abort();
@@ -2915,7 +2915,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	  U.eint=U.E-ekin; 
 	} 
 
-	U.eint=fmaxf(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
+	U.eint=fmax(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 
 	if(U.eint<0) abort();
 
@@ -2929,9 +2929,15 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	/*   } */
 	/* } */
 
+	
+
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	getE(&(curoct->cell[icell].fieldnew));
 
+	//Ceiling for the ionisation fraction
+	if(curoct->cell[icell].fieldnew.X<0) curoct->cell[icell].fieldnew.X=0.;
+	if(curoct->cell[icell].fieldnew.X>1) curoct->cell[icell].fieldnew.X=1.;
+	
 	// ==================== let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
@@ -3101,6 +3107,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   REAL dxcur=pow(0.5,level);
   REAL one;
   struct Wtype W;
+  struct Utype U;
+  struct Wtype *Wloc;
+  struct Utype *Uloc;
   int icell;
   int nocthydro=cpu->noct[level-1];
   double t[10];
@@ -3145,8 +3154,30 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 	  int i;
 	  child=curoct->cell[icell].child;
 	  memset(&W,0,sizeof(struct Wtype));
+	  memset(&U,0,sizeof(struct Utype));
 	  W.d=1e-13;
+	  U.d=1e-13;
 	  for(i=0;i<8;i++){
+	    // FIX THIS WITH CONSERVATIVE QUANT
+#ifdef CONSAVG
+	    /// conservative average
+	    Wloc=&child->cell[i].field;
+	    W2U(Wloc,Uloc);
+	    U.d+=Uloc->d*0.125;
+	    U.du+=Uloc->du*0.125;
+	    U.dv+=Uloc->dv*0.125;
+	    U.dw+=Uloc->dw*0.125;
+#ifdef DUAL_E
+	    U.eint+=Uloc->eint*0.125;
+	    U.E+=Uloc->E*0.125;
+#endif
+
+#ifdef WRADHYD
+	    U.dX+=Uloc->dX*0.125;
+#endif
+
+#else
+	    /// primitive average
 	    W.d+=child->cell[i].field.d*0.125;
 	    W.u+=child->cell[i].field.u*0.125;
 	    W.v+=child->cell[i].field.v*0.125;
@@ -3155,13 +3186,12 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 #ifdef WRADHYD
 	    W.X+=child->cell[i].field.X*0.125;
 #endif
+#endif
 	  }
+#ifdef CONSAVG
+	  U2W(&U,&W);
+#endif
 	  getE(&W);
-	  /* if(isnan(W.u)){ */
-	  /*   printf("coarse\n"); */
-	  /*   abort(); */
-	  /* } */
-	  //U2W(&U,&W);
 	  memcpy(&curoct->cell[icell].field,&W,sizeof(struct Wtype));
 	}
 

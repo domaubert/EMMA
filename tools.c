@@ -109,11 +109,12 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 #ifdef PIC
   //ultimate check
   if(npart!=0){ // for initial call to multicheck that always provide a zero
-  if(ntot!=npart) {
-    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart,ntot,cpu->rank,label);
-    abort();
+    if(ntot!=npart) {
+      printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart,ntot,cpu->rank,label);
+      abort();
+    }
   }
-  }
+  //printf("npart=%d ntot=%d on rank %d\n",npart,ntot,cpu->rank);
 #endif
 #ifdef WMPI
   

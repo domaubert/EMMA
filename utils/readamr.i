@@ -183,12 +183,20 @@ func oct2cell(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
 
 
 
-func gensilo(fname,lvl,field,&time,ncpu=,execut=,fnameout=){
+func gensilo(fname,lvl,field,&time,ncpu=,execut=,fnameout=,zmin=,zmax=,xmin=,xmax=,ymin=,ymax=,mono=){
   if(is_void(execut)) execut="~/Project/Quartz/utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(fnameout)) fnameout=fname;
+  if(is_void(zmin)) zmin=0.;
+  if(is_void(zmax)) zmax=1.;
+  if(is_void(xmin)) xmin=0.;
+  if(is_void(xmax)) xmax=1.;
+  if(is_void(ymin)) ymin=0.;
+  if(is_void(ymax)) ymax=1.;
+  if(is_void(mono)) mono=-1;
   time=array(double);
-  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fnameout+" "+pr1(ncpu)+" 1";
+  //  commande=execut+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fnameout+" "+pr1(ncpu)+" 1";
+  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 1 "+pr1(mono)+" "+pr1(xmin)+" "+pr1(xmax)+" "+pr1(ymin)+" "+pr1(ymax)+" "+pr1(zmin)+" "+pr1(zmax);
   commande;
   system(commande);
 }

@@ -484,6 +484,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		//the neighbours
 		for(ii=0;ii<6;ii++){
+		  newoct->nei[ii]=NULL;//
 		  if(vnei[ii]!=6){
 		    if(curoct->nei[vnei[ii]]!=NULL){	
 		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
@@ -648,6 +649,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  }while(nexp!=NULL);
 		}
 
+ 
 		if(curoct->cell[icell].phead!=NULL){
 		  printf("cell not emptied after split !\n");
 		  abort();

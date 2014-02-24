@@ -397,7 +397,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       REAL dx;
       int levelin;
       REAL u,v,w;
-      if(cpu->rank==0) printf("get pop\n");
+      //      if(cpu->rank==0) printf("get pop\n");
 
       for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
       	nextoct=firstoct[levelin-1];
@@ -739,6 +739,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
 
 #ifdef WMPI
+    //printf("proc %d waiting\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){

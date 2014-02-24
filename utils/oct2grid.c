@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
   nmapz=(zmax-zmin)/dxmap;
   k0=zmin/dxmap;
 
-  if((dumpsilo==1)&&(nmapz!=nmap)) {
-    printf("Silo can only handle cubic data !\n");
-    abort();
-  }
+  /* if((dumpsilo==1)&&(nmapz!=nmap)) { */
+  /*   printf("Silo can only handle cubic data !\n"); */
+  /*   abort(); */
+  /* } */
  
   map=(REAL *)calloc(nmapx*nmapy*nmapz,sizeof(REAL));
 

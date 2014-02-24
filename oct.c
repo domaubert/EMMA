@@ -107,9 +107,9 @@ void flipcell(struct OCT *oct, int dir){
 
 struct OCT* cell2oct(struct CELL* cell)
 {
-  long int adress;
+  unsigned long int adress;
   struct OCT *poct;
-  adress=(long int) cell;
+  adress=(unsigned long int) cell;
   adress=adress-cell->idx*sizeof(struct CELL);
   poct=(struct OCT*) adress;
 

@@ -1095,12 +1095,11 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	  
       // we skip octs which do not belong to the current CPU (they will be considered through mpi)
       //if(curoct->cpu!=cpu->rank) continue;
-	  
+      //printf("%d\n",curoct-firstoct[level-1]);
       //==== FIRST WE CONSIDER THE PARTICLES INSIDE THE BOUNDARIES AT LEVEL L
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
 	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
-
 	  if(nexp!=NULL){ 
 	    do{  
 	      curp=nexp; 
@@ -1140,7 +1139,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		newcell=curoct->nei[inei];
 		newoct=cell2oct(newcell); // we get the parent oct;
 		getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
-
+		if(curoct->cpu!=cpu->rank&&newoct->cpu!=cpu->rank) continue;
 #if 1
 		for(il=0;il<6;il++){
 		  if((il>>1)==(inei>>1)) continue;
@@ -1163,8 +1162,8 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		    }
 #endif
 		  }
-#if 1
 		  else{
+#if 1
 		    if(newoct->nei[vnei[il]] !=NULL){
 		      if(newoct->nei[vnei[il]]->child!=NULL){ // FOR MPI BOUNDARIES
 			nexp=newoct->nei[vnei[il]]->child->cell[vcell[il]].phead;
@@ -1185,8 +1184,8 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		    else{
 		      newcell2=NULL;
 		    }
-		  }
 #endif
+		  }
 #endif
 #if 0
 		  // ecah of the 4 side neighbors will mark 2 corners
