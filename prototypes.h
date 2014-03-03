@@ -46,6 +46,8 @@ typedef double REAL;
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 
+
+#define PI 3.14159265
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.)
 #define KBOLTZ (1.3806e-23) // J/K
@@ -71,6 +73,16 @@ struct COSMOPARAM{
   REAL *tab_aexp;
   REAL *tab_ttilde;
   REAL tsim;
+  REAL unit_l;
+};
+#endif
+
+#ifdef STARS 
+struct STARSPARAM{
+  REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
+  REAL density_cond;	// Hydrogen density (cm-3)
+  REAL t_car;		// caracteristic time (yr)
+  REAL eff;		// efficiency
 };
 #endif
 
@@ -121,6 +133,10 @@ struct RUNPARAMS{
 
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
+#endif
+
+#ifdef STARS
+  struct STARSPARAM *stars;
 #endif
 
   int nthread;
@@ -416,6 +432,11 @@ struct PART
   REAL epot;
   REAL ekin;
 
+#ifdef STARS
+  int isStar;
+  REAL age;
+#endif
+
 };
 
 struct PART_MPI // For mpi communications
@@ -435,6 +456,12 @@ struct PART_MPI // For mpi communications
   int is; //current step of particle
 
   unsigned long key; // the destination hilbert key
+
+#ifdef STARS
+  int isStar;
+  REAL age;
+#endif
+
 };
 
 //=======================================
@@ -466,8 +493,8 @@ struct FLUX_MPI{
 //=========================================================
 
 struct Gtype{
-  REAL d;
-  REAL p;
+  REAL d; //density
+  REAL p; //pottential
 };
 
 //-------------------------------------
