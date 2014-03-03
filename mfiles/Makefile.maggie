@@ -1,20 +1,21 @@
 ########################################## 
-ARCH = GPU
-C_LIBS =   -O2 # -lstdc++ -g
+ARCH =  CPU
+C_LIBS =  -g  # -O2 -lstdc++ 
 C_FLAGS =
-C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o
+C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
 
 #------------ MAIN OPTIONS --------------------
 
 DEFINES  +=  -DPIC
-#DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
 #DEFINES  +=  -DWRAD
 #DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
+DEFINES  +=  -DSTARS
 
 #------------ MPI OPTIONS ---------------------
 

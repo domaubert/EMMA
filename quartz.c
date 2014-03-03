@@ -189,6 +189,11 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
+#ifdef STARS
+  struct STARSPARAM stars;
+  param.stars=&stars;
+#endif
+
 #ifdef WDBG
   gdb_debug();
 #endif
@@ -1106,6 +1111,8 @@ int main(int argc, char *argv[])
     // we set all the "remaining" particles mass to -1
     for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
+
+	/// assigning PARTICLES TO COARSE GRID
     if(cpu.rank==0) printf("start populating coarse grid with particles\n");
     double tp1,tp2;
     double *tp;

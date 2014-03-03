@@ -12,6 +12,10 @@
 #include "cic.h"
 #include "particle.h"
 
+#ifdef STARS
+#include "stars.h"
+#endif
+
 // ===============================================================
 // ===============================================================
 
@@ -380,6 +384,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
       }
     }
+#endif
+
+
+    //===================================creating new stars=================================//
+
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1]);
 #endif
 
     // =============== Computing Energy diagnostics

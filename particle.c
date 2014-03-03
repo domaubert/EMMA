@@ -7,6 +7,7 @@
 #include "cic.h"
 #include "vector.h"
 
+
 #ifdef WMPI
 #include <mpi.h>
 #include "communication.h"

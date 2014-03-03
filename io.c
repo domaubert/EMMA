@@ -7,7 +7,90 @@
 #include <string.h>
 
 
+void dumpHeader(FILE *fp, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+  fwrite(&(param->npartmax),		sizeof(int  ),1,fp); 	// the max particles number (per process)
+  fwrite(&(param->ngridmax),		sizeof(int  ),1,fp); 	// the max oct numbers (per process)
+  fwrite(&(param->nbuff),		sizeof(int  ),1,fp); 	// the mpi buffer size
+  fwrite(&(param->ndumps),		sizeof(int  ),1,fp); 	// the frequency of outputs
+  fwrite(&(param->nsteps),		sizeof(int  ),1,fp); 	// the maximal number of timesteps
+  
+  fwrite(&(param->lcoarse),		sizeof(int  ),1,fp); 	// the coarse level
+  fwrite(&(param->lmax),			sizeof(int  ),1,fp); 	// the max level of refinement
+  
+  fwrite(&(param->niter),		sizeof(int  ),1,fp); 	// the maximal number of iterations for the Poisson solver
+  
+  fwrite(&(param->gstride),		sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (gravity)
+  fwrite(&(param->hstride),		sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (hydro)
+
+  fwrite(&(param->dt),			sizeof(float),1,fp); 	// the timsestep
+  fwrite(&(param->tmax),			sizeof(float),1,fp); 	// the simulation stops at tmax : corresponds to amax in cosmo
+  fwrite(&(param->time_max),		sizeof(float),1,fp); 	// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
+
+  fwrite(&(param->maxhash),		sizeof(int  ),1,fp); 	// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
+  
+  fwrite(&(param->amrthresh),		sizeof(float),1,fp); 	// the refinement criterion (refine if mcell>amrthresh)
+  fwrite(&(param->nsmooth),		sizeof(int  ),1,fp); 	// the number of neighbour refinement steps
+
+  fwrite(&(param->poissonacc),		sizeof(float),1,fp); 	// relaxation accuracy for Poisson equation
+  fwrite(&(param->mgridlmin),		sizeof(int  ),1,fp); 	// coarsest level for multigrid relaxation
+  fwrite(&(param->nvcycles),		sizeof(int  ),1,fp); 	// number of vcycles for multigrid relaxation
+  fwrite(&(param->nrelax),		sizeof(int  ),1,fp); 	// number of smoothing cycles
+
+  fwrite(&(param->nrestart),		sizeof(int  ),1,fp); 	// the restart snapshot
+  fwrite(&(param->nsubcycles),		sizeof(int  ),1,fp); 	// number of subcyles in AMR advance procedure
+
+  fwrite(&(param->nthread),		sizeof(int  ),1,fp);
+  fwrite(&(param->nstream),		sizeof(int  ),1,fp);
+
+  fwrite(&(param->egy_rhs),		sizeof(float),1,fp); 	// the right hand side of the energy conservation equation (0 in non cosmological case);
+  fwrite(&(param->egy_0),		sizeof(float),1,fp); 	// the initial energy
+  fwrite(&(param->egy_last),		sizeof(float),1,fp); 	// the last integrand for the energy equation (used for trapezoidal rule)
+  fwrite(&(param->egy_timelast),		sizeof(float),1,fp); 	// the last time for the integrand (used for trapezoidal rule)
+  fwrite(&(param->egy_totlast),		sizeof(float),1,fp); 
+
+
+
+#ifdef WRAD
+  fwrite(&(param->unit.unit_l),		sizeof(float),1,fp);	// comoving length size of the box [meters]
+  fwrite(&(param->unit.unit_v),		sizeof(float),1,fp);	// unit velocity
+  fwrite(&(param->unit.unit_t),		sizeof(float),1,fp);	// unit time [seconds]
+  fwrite(&(param->unit.unit_n),		sizeof(float),1,fp);	// unit number [moles typically]
+  fwrite(&(param->unit.unit_mass),	sizeof(float),1,fp);	// unit mass [in kg, total mass is equal to one in unit codes]
+
+  fwrite(&(param->clight),		sizeof(float),1,fp); 	// speed of light in units of the real one
+  fwrite(&(param->fudgecool),		sizeof(float),1,fp); 	// cooling fraction
+  fwrite(&(param->ncvgcool),		sizeof(int  ),1,fp); 	// cooling max iterations
+  
+  fwrite(&(param->denthresh),		sizeof(float),1,fp);	 // density threshold to turn the sources on
+  fwrite(&(param->tmpthresh),		sizeof(float),1,fp);	 // temperature threshold to turn the sources on
+  fwrite(&(param->srcint),		sizeof(float),1,fp);	 // intensity of the sources
+#else 
+  fwrite(-1,				sizeof(float),10,fp);
+  fwrite(-1,				sizeof(int  ),1,fp);
+#endif
+
+#ifdef TESTCOSMO
+  fwrite(&(param->cosmo->om),		sizeof(float),1,fp);
+  fwrite(&(param->cosmo->ov),		sizeof(float),1,fp);
+  fwrite(&(param->cosmo->ob),		sizeof(float),1,fp);
+  fwrite(&(param->cosmo->H0),		sizeof(float),1,fp);
+  fwrite(&(param->lcoarse),		sizeof(int  ),1,fp);
+  fwrite(&(param->lmax),		sizeof(int  ),1,fp);
+#else
+  fwrite(-1,				sizeof(float),4,fp);
+  fwrite(-1,				sizeof(int  ),2,fp);
+#endif
+
+#ifdef STARS 
+  fwrite(&(param->stars->overdensity_cond),		sizeof(float),1,fp);
+  fwrite(&(param->stars->density_cond),			sizeof(float),1,fp);
+  fwrite(&(param->stars->t_car),			sizeof(float),1,fp);
+  fwrite(&(param->stars->eff),				sizeof(float),1,fp);
+#else 		
+  fwrite(-1,						sizeof(float),4,fp);
+#endif
+}
 
 
 //====================================================================================================
@@ -406,6 +489,11 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=(REAL)(curp->mass);fwrite(&val,1,sizeof(float),fp);
 		  val=(REAL)(curp->epot);fwrite(&val,1,sizeof(float),fp);
 		  val=(REAL)(curp->ekin);fwrite(&val,1,sizeof(float),fp);
+#ifdef STARS
+		  val = curp->isStar;fwrite(&val,1,sizeof(int),fp);
+		  val = curp->age;fwrite(&val,1,sizeof(float),fp);
+#endif
+
 		  ipart++;
 		}while(nexp!=NULL);
 	      }
@@ -603,13 +691,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmax=dummyf;
 
-       rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->amrthresh=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
-       rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
@@ -634,7 +722,18 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
       param->fudgecool=1.0;
       param->ncvgcool=0;
+#else
+	int i;
+				rstat=fscanf(buf,"%s",stream);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,"%s %lf",stream,&dummyf);
+#endif
 
+#ifdef STARS
+      rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->t_car		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->eff		=dummyf;
 #endif
       fclose(buf);
     }
@@ -1655,7 +1754,6 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
 	  W.X=0.2e-3;
 #endif
-
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
 	  ifound++;
@@ -1688,6 +1786,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   param->cosmo->ov=ov;
   param->cosmo->ob=ob;
   param->cosmo->H0=h0;
+  param->cosmo->unit_l=rstar;
 
 #ifdef WRAD
   param->unit.unit_l=rstar;
