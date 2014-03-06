@@ -146,7 +146,7 @@ def FolderToVisit(foldername):
 			PartToVisit(parts, file+".3D")
 #			PartToVisit(getStars(parts), foldername + file +".stars.3D")
 
-def getMtot(file):
+def getMtotPart(file):
 
 	N,t,stars = ReadStars(file)
 	M=0

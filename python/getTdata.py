@@ -4,15 +4,17 @@ import matplotlib.pylab as plt
 
 if __name__ == "__main__":
 
+	
 	if len(sys.argv)>1 :
 		foldername = sys.argv[1]
 	else :
 		foldername="../data/"
+	
 
-
+	
 
 	files = listOriginePart(foldername)
-#	files = files[10:16]
+	files = files[10:40]
 
 	
 	N = np.zeros(len(files), dtype=np.int32)
@@ -22,7 +24,7 @@ if __name__ == "__main__":
 	for i in range(len(files)) :
 		N[i] = getN(files[i])
 		A[i] = getA(files[i]) 
-		Mtot[i] = getMtot(files[i])
+		Mtot[i] = getMtotPart(files[i])
 
 
 

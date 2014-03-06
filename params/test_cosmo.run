@@ -33,6 +33,6 @@ temp_threshold 1e5
 src_int 5e56
 ##==StarFormation=========
 overdensity_cond 10
-density_cond 1.0
+density_cond 1
 t_car 4e9
-eff 0.7
+eff 0.5

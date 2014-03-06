@@ -19,9 +19,12 @@ class array :
 
 		for i in range(self.N) : 
 			self.data[i]  = np.fromfile(file, dtype=REAL, count=1)
+	#	print self.data.mean()
+	#	print self.data.min()
 				
-	def getData(self):
-		return self.data
+	def getArray(self):
+		return self.N, self.a,  self.data
+
 	def getN(self):
 		return self.N
 	def geta(self):
@@ -48,5 +51,34 @@ class cube :
 
 	def getData(self):
 		return self.data
+
+def denoct2grid(n):
+
+	o2g  = "./../utils/oct2grid "
+	data = "../data/grid." + str(n).zfill(5)
+	out  = "cube"
+
+	os.system(o2g + data + " 6 101 " + out + " 1 0 -1 0 1 0 1 0 1 ")
+#	os.system(o2g + data + " 6 1 " + out + " 1 0 -1 0 1 0 1 0 1 ")
+
+
+def getMtotGaz(SnapNumber):
+
+
+	denoct2grid(SnapNumber)
+
+
+	den=array("cube")
+	N, a, data = den.getArray()
+
+
+	lmax=6
+	vcell = pow(2,-3* lmax)
+	
+	for i in range(N):
+		data[i]	 *= vcell 
+
+	return data.sum()
+
 
 

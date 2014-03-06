@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
 
 #	plotpart()
-#	plothisto2Dstars()
-	spectre()	
+	plothisto2Dstars()
+#	spectre()	
 
 	
 

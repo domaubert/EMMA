@@ -372,6 +372,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+    //===================================creating new stars=================================//
+
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1]);
+#endif
+
+
     /* //====================================  I/O======= ========================== */
     // at this stage particles are synchronized at aexp
     // ready to dump particles
@@ -387,11 +394,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-    //===================================creating new stars=================================//
 
-#ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1]);
-#endif
 
     // =============== Computing Energy diagnostics
 

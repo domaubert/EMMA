@@ -30,7 +30,7 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->idx   = idx;
 
 	star->level = level;
-	star->is    = 0; 
+	star->is    = 0;
 
 	star->x = xc;
 	star->y = yc;
@@ -44,7 +44,7 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->mass = m;
 
 	star->epot = 0.0;
-	star->ekin = 0.0;
+	star->ekin = 0.0 ;
 
 	star->isStar = 1;
 	star->age = 0.0;
@@ -74,20 +74,20 @@ int countStars(struct CELL * cell){
 int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *param){
 
 	REAL a  = param->cosmo->aexp;	
-	REAL H0 = param->cosmo->H0;
+	REAL H0 = param->cosmo->H0 *1000/1e6/PARSEC;
 	REAL om = param->cosmo->om;
 	REAL L  = param->cosmo->unit_l;
 
 //------OVERDENSITY--------------------------------------------------------------------------------------------//
 
 	REAL cond = param->stars->overdensity_cond;	// stars formation begin at minimum cond times the mean density 
-	REAL rhotilde 	= cell->field.d + 1.0;		// delta +1
+	REAL rhotilde 	= cell->field.d / (param->cosmo->ob/ param->cosmo->om) ;	// 
 
 	int cond_overdensity = (rhotilde > cond);
 
 //------JEANS--------------------------------------------------------------------------------------------------//
 
-	REAL jeans = 1.0/(2*PI*sqrt(6.0*a*rhotilde));
+	REAL jeans = 1.0/(2*PI*sqrt(6.0*a*(cell->gdata.d+1) ));
 
 	int cond_jeans = (dxtilde/cell->field.a > jeans);
 
@@ -95,25 +95,24 @@ int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *para
 
 	REAL N = param->stars->density_cond;	// minimum hydrogene atome per cm^3	
 
-	REAL mH = (1.6710e-27 +  0.9110e-30) * 1000 ; // (g)
-  
-	REAL dx = a * (L*100) * dxtilde ;
- 
-	REAL rhocrit 	= N * mH / pow(dx,3);
+	REAL mH = 1.6710e-27  ; // (kg)
+	REAL rhocrit 	= N * mH * 1e6 ; //
+
 	REAL rhostar 	= 3.0 * pow(H0,2) * om /(8.0*PI*NEWTON_G);
-	REAL rho 	= rhotilde * pow(a,3) * rhostar;
+	REAL rho 	= rhotilde / pow(a,3) * rhostar;
 
 	int cond_density = (rho > rhocrit); 
 
 //------RANDOM-------------------------------------------------------------------------------------------------//	
 
-	int out =  cond_overdensity && cond_density && cond_jeans ;
+	
+//	int out = cond_overdensity && cond_density && cond_jeans ;
+	int out = cond_overdensity;
 
 	if(out) {
 		REAL p = 1.0 - exp(- param->stars->eff * dttilde/jeans);
-		srand(time(NULL)); 
-		REAL random = ((float)(rand()%10000))/10000;
-		out = (random < p)?0:out;
+		REAL random = ((float)(rand()%100000))/100000;
+		out = (random < p)?1:0;
 	}
 
 	return out;
@@ -123,26 +122,20 @@ int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *para
 
 REAL getdrho(struct CELL *cell, REAL dttilde, struct RUNPARAMS *param){
 
-
-
-	REAL Ho = param->cosmo->H0 * 1000 / 1e6 / PARSEC; // (s)
+	REAL Ho = param->cosmo->H0 *1000/1e6/PARSEC; // (s)
 	REAL tstar = 2.0 /( Ho * sqrt(param->cosmo->om) ); 
 	REAL dt = dttilde * pow(param->cosmo->aexp,2) * tstar ;
 
 	REAL tcar = param->stars->t_car * 31556926.0; // (s) 
 	REAL eff = param->stars->eff;
 	
-//	printf("%lf \n", (cell->field.d+1.0) * 2.0 * PI * pow(6.0*param->cosmo->aexp*(cell->gdata.d+1.0) , -0.5 ) * eff * dt/tcar );
-	return (cell->field.d+1.0) * 2.0 * PI * pow(6.0*param->cosmo->aexp*(cell->gdata.d+1.0) , -0.5 ) * eff * dt/tcar ;
-
+	return (cell->field.d) * 2.0 * PI / sqrt(6.0*param->cosmo->aexp*(cell->gdata.d+1.0)) * eff * dt/tcar ;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void removeMfromgas(struct CELL * cell, REAL drho){
-#ifdef WHYDRO2
-	cell->field.d -= drho;
-#endif
+	cell->fieldnew.d -= drho;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +146,6 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	struct PART * prev;
 	struct PART * star = cpu->freepart;
 
-
 	if (cpu->freepart->next){	
 		cpu->freepart->next->prev = NULL;
 		cpu->freepart = cpu->freepart->next;
@@ -162,7 +154,6 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		abort();
 	}
 
-
 	if (cell->phead!=NULL){
 		lasp = findlastpart(cell->phead);
 		prev = lasp;
@@ -170,12 +161,18 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	}else{
 		prev = NULL;
 		cell->phead = star;
-	}
+	}	
+
+
 	
 
 	REAL drho = getdrho(cell, dt, param );	
 	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++ );
+
+// 	REAL tmp = cell->field.d ;
 	removeMfromgas(cell, drho);
+
+//	if(cell->field.d==tmp) abort();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,8 +196,7 @@ void accretion(struct CELL * cell, struct RUNPARAMS *param, REAL dt, int nstarsi
 			pcur->vy += fact * cell->field.v;
 			pcur->vz += fact * cell->field.w;
 	
-			pcur->mass += drho * pow(dx,3) / nstarsincell;
-			
+			pcur->mass += drho * pow(dx,3) / nstarsincell;	
 		}
 	}while(pnext != NULL);
 
@@ -231,18 +227,21 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	struct OCT  *curoct;
 	struct CELL *curcell;
 
-
 	REAL xc, yc, zc;
 	REAL dx;
 
 	int level, icell;
 	int nstars = 0;
 	int nstarsincell;
+
 	printf("================================\n");
 	printf("   Starting Add Stars routine   \n");
 	printf("================================\n");
 
+	srand(time(NULL));
 
+	REAL tmp = 0 ;
+	REAL tmp2 = 0 ;
 	for(level=param->lcoarse;level<=param->lmax;level++) {
 		nextoct=firstoct[level-1];
 		dx=1./pow(2.0,level);		
@@ -258,6 +257,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 				if(curcell->phead)	updatet(curcell, dt);
 
+//				tmp += curcell->field.d * pow(dx,3);
 				if(curcell->child == NULL && testCond(curcell,dt, dx, param) ) {
 
 					xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
@@ -272,14 +272,17 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 						nstars++;
 					}
 */
+
 					addStar(curcell, level, xc, yc, zc, cpu, dt, param);
 					nstars++;
 
 				}			
+//					tmp2 += curcell->field.d * pow(dx,3);
 			}
 
 		}while(nextoct!=NULL);
-	printf("%d stars added on level %d \n", nstars, level);
+	printf("%d stars added on level %d \t %e \t %e \n", nstars, level, tmp, tmp2);
+	
 	}
 printf("\n");
 }

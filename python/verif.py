@@ -9,26 +9,38 @@ from fonction_amr import *
 
 
 
-def checkMtot(filename):
-	a=array(filename)
-	data = a.getData()
-	N = a.getN()
-	aexp = a.geta()
-	print N
-
-	lmax=6
-	vcell = pow(2,-3* lmax)
-	
-	for i in range(N):
-		data[i]	 *= vcell 
-
-	print data.sum()
 
 
+def getMtotBaryon(SnapNumber) :
+
+	Mtotgaz = getMtotGaz(SnapNumber)
+	print "Gaz " , Mtotgaz
+	MtotPart =  getMtotPart("../data/part."  + str(SnapNumber).zfill(5) + ".p00000")
+	print "Parts " , MtotPart
+
+	return MtotPart + Mtotgaz
 
 
 if __name__ == "__main__":	
 
-	filename = "../utils/den.00060"
 
-	checkMtot(filename)
+	if len(sys.argv)==2 :
+		SnapNumber = sys.argv[1]
+		M = getMtotBaryon(SnapNumber)
+#		M = getMtotGaz(SnapNumber)
+		print "\n ================================ \n Total mass",  M , "\n ================================ \n"
+
+	elif len(sys.argv)==3 :
+	
+		n = np.arange(int(sys.argv[1]), int(sys.argv[2]))
+		Mdata = np.zeros(len(n))
+		Mdata2 = np.zeros(len(n))
+
+
+		for i in range(len(n)) :
+			Mdata[i] = getMtotBaryon(n[i])
+#		for i in range(len(Mdata) - 1) :
+#			Mdata2[i] = Mdata[i+1] - Mdata[i]
+
+		plt.plot(n,Mdata)
+		plt.show()
