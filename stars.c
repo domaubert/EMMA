@@ -1,6 +1,5 @@
 #ifdef STARS 
 
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +21,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx) {
+void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx, REAL aexp) {
 
 	star->next = NULL;
 	star->prev = prev;
@@ -47,7 +46,7 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->ekin = 0.0 ;
 
 	star->isStar = 1;
-	star->age = 0.0;
+	star->age = 1.0/aexp-1.0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,44 +77,64 @@ int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *para
 	REAL om = param->cosmo->om;
 	REAL L  = param->cosmo->unit_l;
 
+	int cond_overdensity = 0;
+	int cond_density = 0;
+	int cond_jeans = 0;
+	REAL jeans;
+
 //------OVERDENSITY--------------------------------------------------------------------------------------------//
 
 	REAL cond = param->stars->overdensity_cond;	// stars formation begin at minimum cond times the mean density 
 	REAL rhotilde 	= cell->field.d / (param->cosmo->ob/ param->cosmo->om) ;	// 
 
-	int cond_overdensity = (rhotilde > cond);
-
-//------JEANS--------------------------------------------------------------------------------------------------//
-
-	REAL jeans = 1.0/(2*PI*sqrt(6.0*a*(cell->gdata.d+1) ));
-
-	int cond_jeans = (dxtilde/cell->field.a > jeans);
+	cond_overdensity = (rhotilde > cond);
 
 //------DENSITY------------------------------------------------------------------------------------------------//
 
-	REAL N = param->stars->density_cond;	// minimum hydrogene atome per cm^3	
 
-	REAL mH = 1.6710e-27  ; // (kg)
-	REAL rhocrit 	= N * mH * 1e6 ; //
+	if (0){
+		if (cond_overdensity){
+			REAL N = param->stars->density_cond;	// minimum hydrogene atome per cm^3	
 
-	REAL rhostar 	= 3.0 * pow(H0,2) * om /(8.0*PI*NEWTON_G);
-	REAL rho 	= rhotilde / pow(a,3) * rhostar;
+			REAL mH = 1.6710e-27  ; // (kg)
+			REAL rhocrit 	= N * mH * 1e6 ; //
 
-	int cond_density = (rho > rhocrit); 
+			REAL rhostar 	= 3.0 * pow(H0,2) * om /(8.0*PI*NEWTON_G);
+			REAL rho 	= rhotilde / pow(a,3) * rhostar;
 
+			cond_density = (rho > rhocrit); 
+
+		}else{return 0;}
+	}	////////////	A CHECKER semble problematique
+
+
+	if (cond_overdensity){
+		return  1; 	
+	}else{return 0;}
+
+
+
+//------JEANS--------------------------------------------------------------------------------------------------//
+
+	if (0){
+		if (cond_density){
+			jeans = 1.0/(2.0*PI*sqrt(6.0*a*(cell->gdata.d+1.0) ));
+			cond_jeans = (dxtilde/cell->field.a > jeans);
+			if (!cond_jeans) abort();  					////////////	A CHECKER
+		}else{return 0;}
+	}
 //------RANDOM-------------------------------------------------------------------------------------------------//	
 
 	
-//	int out = cond_overdensity && cond_density && cond_jeans ;
-	int out = cond_overdensity;
 
-	if(out) {
+	
+	if(cond_jeans) {
 		REAL p = 1.0 - exp(- param->stars->eff * dttilde/jeans);
 		REAL random = ((float)(rand()%100000))/100000;
-		out = (random < p)?1:0;
-	}
+		return (random < p)?1:0;	
+	}else{return 0;}
 
-	return out;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,18 +148,24 @@ REAL getdrho(struct CELL *cell, REAL dttilde, struct RUNPARAMS *param){
 	REAL tcar = param->stars->t_car * 31556926.0; // (s) 
 	REAL eff = param->stars->eff;
 	
-	return (cell->field.d) * 2.0 * PI / sqrt(6.0*param->cosmo->aexp*(cell->gdata.d+1.0)) * eff * dt/tcar ;
+//	return (cell->field.d) * 2.0 * PI / sqrt(6.0*param->cosmo->aexp*(cell->gdata.d+1.0)) * eff * dt/tcar ;
+	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void removeMfromgas(struct CELL * cell, REAL drho){
 	cell->fieldnew.d -= drho;
+	cell->field.d    -= drho;
+	
+	
+
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param){
+void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param,REAL aexp){
 
 	struct PART * lasp;
 	struct PART * prev;
@@ -163,16 +188,9 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		cell->phead = star;
 	}	
 
-
-	
-
 	REAL drho = getdrho(cell, dt, param );	
-	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++ );
-
-// 	REAL tmp = cell->field.d ;
+	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++, aexp );
 	removeMfromgas(cell, drho);
-
-//	if(cell->field.d==tmp) abort();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,25 +221,10 @@ void accretion(struct CELL * cell, struct RUNPARAMS *param, REAL dt, int nstarsi
 	removeMfromgas(cell, drho);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void updatet(struct CELL * cell, REAL dt){
-
-	struct PART * pcur;
-	struct PART * pnext;
-
-	pnext = cell->phead;
-	
-	do {
-		pcur=pnext;
-		pnext = pcur->next;
-		if (pcur->isStar) pcur->age+=dt;
-	}while(pnext != NULL);
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt){
+void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp){
 
 	struct OCT  *nextoct;
 	struct OCT  *curoct;
@@ -234,14 +237,15 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int nstars = 0;
 	int nstarsincell;
 
-	printf("================================\n");
-	printf("   Starting Add Stars routine   \n");
-	printf("================================\n");
+	if(cpu->rank==0){
+		printf("\n");
+		printf("================================\n");
+		printf("   Starting Add Stars routine   \n");
+		printf("================================\n");
+	}
 
-	srand(time(NULL));
+	if(cpu->rank==0) srand(time(NULL));
 
-	REAL tmp = 0 ;
-	REAL tmp2 = 0 ;
 	for(level=param->lcoarse;level<=param->lmax;level++) {
 		nextoct=firstoct[level-1];
 		dx=1./pow(2.0,level);		
@@ -252,12 +256,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 			curoct=nextoct;
 			nextoct=curoct->next;
 
+			if(curoct->cpu!=cpu->rank) continue;
 		      	for(icell=0;icell<8;icell++) {
 				curcell = &curoct->cell[icell];
 
-				if(curcell->phead)	updatet(curcell, dt);
+//				if(curcell->phead)	updatet(curcell, dt);
 
-//				tmp += curcell->field.d * pow(dx,3);
 				if(curcell->child == NULL && testCond(curcell,dt, dx, param) ) {
 
 					xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
@@ -272,20 +276,22 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 						nstars++;
 					}
 */
-
-					addStar(curcell, level, xc, yc, zc, cpu, dt, param);
+					addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp);
 					nstars++;
-
 				}			
-//					tmp2 += curcell->field.d * pow(dx,3);
+
 			}
 
 		}while(nextoct!=NULL);
-	printf("%d stars added on level %d \t %e \t %e \n", nstars, level, tmp, tmp2);
+
+#ifdef WMPI
+	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+	if(cpu->rank==0) printf("%d stars added on level %d \n", nstars, level);
 	
 	}
-printf("\n");
-}
+if(cpu->rank==0) printf("\n");
 
+}
 
 #endif

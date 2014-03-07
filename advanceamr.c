@@ -4,6 +4,7 @@
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
+#include "tools.h"
 #ifdef WRAD
 #include "rad_utils.h"
 #include "src_utils.h"
@@ -372,11 +373,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-    //===================================creating new stars=================================//
 
+  /* //===================================creating new stars=================================// */
 #ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1]);
+	createStars(firstoct,param,cpu, adt[level-1], aexp); // Le changement de position ne regle pas le probleme du mpi
 #endif
+	checkMtot(firstoct,param,cpu);
+
 
 
     /* //====================================  I/O======= ========================== */
@@ -504,6 +507,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 
+
     // ================= II We compute the timestep of the current level
 
     REAL adtold=adt[level-1]; // for energy conservation
@@ -535,6 +539,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     //printf("dtcosmo= %e ",dtcosmo);
 #endif
+
+
 
 
     // Courant Condition Hydro
@@ -604,6 +610,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+
    // ================= III Recursive call to finer level
 
   double tt2,tt1;
@@ -625,6 +632,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 
+
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
@@ -641,6 +649,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // ==================================== Check the number of particles and octs
     ptot=0; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
+
+
+
 
 #ifdef PIC
     //================ Part. Update ===========================
@@ -704,11 +715,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     MPI_Barrier(cpu->comm);
     th[1]=MPI_Wtime();
+
+
+
+
     //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
     MPI_Barrier(cpu->comm);
     th[2]=MPI_Wtime();
+
+
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
@@ -773,6 +790,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 #endif
+
 
 
 

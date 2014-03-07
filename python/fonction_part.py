@@ -6,20 +6,21 @@ import matplotlib.pylab as plt
 
 class Part : 
 	def __init__(self,filePart):
-		self.x  = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.y  = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.z  = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.vx = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.vy = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.vz = np.fromfile(filePart, dtype=np.float32, count=1)	
+		self.x  = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.y  = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.z  = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.vx = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.vy = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.vz = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))	
 
-		self.idx  = np.fromfile(filePart, dtype=np.float32, count=1)	
-		self.mass = np.fromfile(filePart, dtype=np.float32, count=1)
-		self.epot = np.fromfile(filePart, dtype=np.float32, count=1)	
-		self.ekin = np.fromfile(filePart, dtype=np.float32, count=1)
+		self.idx  = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.mass = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.epot = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+		self.ekin = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
 
-		self.isStar = np.fromfile(filePart, dtype=np.float32, count=1)		
-		self.age    = np.fromfile(filePart, dtype=np.float32, count=1)
+		self.isStar = np.fromfile(filePart, dtype=np.int32, count=1)
+		self.age    = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))
+
 
 	def printPos(self):	
 		print self.x, self.y, self.z
@@ -43,39 +44,51 @@ def getA(filename):
 def getZ(filename):
 	return 1.0/getA(filename) -1
 
-
+def getNproc(foldername):
+	files = os.listdir(foldername)
+	tmp =0
+	for file in files:
+		if file[0:10]=="part.00000" and file[-3:]!=".3D" :	
+			tmp +=1
+	return tmp
 
 def ReadPart(filename):
 
-	print "Reading file ", filename
-	filePart = open(filename, "rb")
-	N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
-	t = np.fromfile(filePart, dtype=np.float32, count=1)[0]
-	
+	Ntot=0
+	nProc = getNproc("../data")
+#	nProc = 1
 	parts = []
-	for x in range(0,N) :
-		parts.append(Part(filePart))
+
+	for proc in range(nProc):
+		filename = filename[0:-5] + str(proc).zfill(5)
+		print "Reading file ", filename
+		filePart = open(filename, "rb")
+		N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
+		t = np.fromfile(filePart, dtype=np.float32, count=1)[0]
+		Ntot += N
+	
+		for x in range(0,N) :
+			parts.append(Part(filePart))
 
 	return N,t,parts
 
 def ReadStars(filename):
 
-	print "Reading file ", filename
-	filePart = open(filename, "rb")
-	N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
-	t = np.fromfile(filePart, dtype=np.float32, count=1)[0]
-	
-	nstars = 0
-	parts = []
-	for x in range(0,N) :
-		tmp = Part(filePart)
-		if (tmp.isStar) :
-			parts.append(tmp)
+	N,t,parts=ReadPart(filename)
+	stars=[]
+	nstars=0
+
+	for p in parts :
+		if (p.isStar) :
+			stars.append(p)
 			nstars+=1
-	print nstars , "stars"
-	return N,t,parts
+
+
+	print nstars
+	return nstars,t,stars
 
 #################################################################################################################################
+
 
 def getStars(parts) : 
 	stars=[]		
@@ -132,7 +145,7 @@ def PartToVisit(parts, NameFileOut) :
 	f = open(NameFileOut, "wt")
 	f.write("x y z value\n");
 	for p in parts:
-	    f.write("%g %g %g %d\n" % (p.x,p.y,p.z,p.age))
+	    f.write("%g %g %g %g\n" % (p.x,p.y,p.z,p.age))
 	f.close()	
 
 def FolderToVisit(foldername):
@@ -152,7 +165,7 @@ def getMtotPart(file):
 	M=0
 
 	for s in stars :
-		M += s.mass[0]		
+		M += s.mass
 	
 	return M
 

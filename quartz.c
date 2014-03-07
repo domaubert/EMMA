@@ -277,20 +277,27 @@ int main(int argc, char *argv[])
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
-  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz */
+  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz,mass,(age stars) */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 7;
+#ifdef STARS
+  blockcounts[0] = 8;
+#endif
   
   /* Setup description of the 4 MPI_INT fields idx level icell is*/
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[1] = 7 * extent;
+
+  offsets[1] = blockcounts[0] * extent;
   oldtypes[1] = MPI_INT;
   blockcounts[1] = 4;
+#ifdef STARS
+  blockcounts[1] = 5;
+#endif
 
   MPI_Type_extent(MPI_INT, &extent);
-  offsets[2] = 4 * extent+offsets[1];
+  offsets[2] = blockcounts[1] * extent+offsets[1];
   oldtypes[2] = MPI_UNSIGNED_LONG;
   blockcounts[2] = 1;
 

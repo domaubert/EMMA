@@ -14,7 +14,7 @@ if __name__ == "__main__":
 	
 
 	files = listOriginePart(foldername)
-	files = files[10:40]
+#	files = files[10:40]
 
 	
 	N = np.zeros(len(files), dtype=np.int32)

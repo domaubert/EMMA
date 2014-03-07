@@ -3,8 +3,8 @@ max_number_of_octs 300000
 max_number_of_part 500000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 10
-max_nuber_of_steps 50000
+output_frequency 1
+max_nuber_of_steps 1
 time_step_max  1e-0
 tmax_or_amax 1.0
 ##==AMRGrid==================
@@ -32,7 +32,7 @@ dens_threshold 0.5
 temp_threshold 1e5
 src_int 5e56
 ##==StarFormation=========
-overdensity_cond 10
+overdensity_cond 1.2
 density_cond 1
 t_car 4e9
 eff 0.5
