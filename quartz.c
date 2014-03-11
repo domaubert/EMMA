@@ -1483,7 +1483,7 @@ int main(int argc, char *argv[])
 
   param.time_max=tmax;
 
-  
+  dumpHeader(&param,&cpu);
 
   //================================================================================
   //================================================================================
@@ -1543,6 +1543,8 @@ int main(int argc, char *argv[])
     sprintf(filename,"data/pstart.%05d.p%05d",0,cpu.rank);
     dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
 #endif
+
+
 
 
     // Loop over time
@@ -1674,6 +1676,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(cpu.comm);
     MPI_Finalize();
 #endif
+
     return 0;
 }
 

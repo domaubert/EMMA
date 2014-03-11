@@ -1,18 +1,26 @@
-
+from fonction_visit import *
 from fonction_part import *
-
 
 
 if __name__ == "__main__":
 	
 
-	foldername="../data/"
 
-	if len(sys.argv)>2 :
+	args=getargs()
+	foldername=args.folder
 
-		filename = foldername + "part." + sys.argv[2].zfill(5) + ".p00000"
-		N,t,parts= ReadPart(filename)
+	if args.files != []:
 
+		filename = args.files[0]
+
+		N,t,parts= ReadPart(filename, args)
+		Nstars, stars = getStars(parts)
+
+		PartToVisit(stars, filename +".stars.3D")
+
+
+
+		'''
 		if sys.argv[1]=="parts" :
 			PartToVisit(parts, filename + ".3D")
 
@@ -24,7 +32,7 @@ if __name__ == "__main__":
 			PartToVisit(getStars(parts), filename +".stars.3D")
 		else :
 			print "error"
-
+		'''
 	else:
 		FolderToVisit(foldername)
 		makevideofile(foldername)

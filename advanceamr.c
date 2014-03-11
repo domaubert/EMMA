@@ -374,11 +374,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-  /* //===================================creating new stars=================================// */
-#ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp); // Le changement de position ne regle pas le probleme du mpi
-#endif
-	checkMtot(firstoct,param,cpu);
+
 
 
 
@@ -651,6 +647,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
 
 
+  /* //===================================creating new stars=================================// */
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1], aexp); 
+//	checkMtot(firstoct,param,cpu);
 
 
 #ifdef PIC
@@ -718,7 +718,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-
+#endif
     //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 

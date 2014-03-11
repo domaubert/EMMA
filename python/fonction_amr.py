@@ -46,8 +46,7 @@ class cube :
 		for k in range(0, self.z[0]) : 
 			for j in range(0, self.y[0]) : 
 				for i in range(0, self.x[0]) : 				
-					self.data[i,j,k]  = np.fromfile(file, dtype=REAL, count=1)
-					
+					self.data[i,j,k]  = np.fromfile(file, dtype=REAL, count=1)				
 
 	def getData(self):
 		return self.data
@@ -56,35 +55,32 @@ def getNproc(foldername):
 	files = os.listdir(foldername)
 	tmp =0
 	for file in files:
-		if file[0:10]=="part.00000" and file[-3:]!=".3D" :	
+		if file[0:10]=="grid.00000" and file[-3:]!=".3D" :	
 			tmp +=1
 	return tmp
 
-def denoct2grid(n):
+def denoct2grid(folder, n):
 
-	print "Lecture de la grille"
 	
-	o2g  = "./../utils/oct2grid "
-	data = "../data/grid." + str(n).zfill(5)
+	o2g  = "../utils/oct2grid "
+	
+	data = "grid." + str(n).zfill(5)
 	out  = "cube"
 
 	print "Lecture de la grille", data 
 
-	nproc=str( getNproc("../data/") )
+	nproc=str( getNproc(folder) )
 
-	os.system(o2g + data + " 6 101 " + out + " " + nproc + " 0 -1 0 1 0 1 0 1 > dump")
-#	os.system(o2g + data + " 6 1 " + out + " 1 0 -1 0 1 0 1 0 1 ")
-
-
-def getMtotGaz(SnapNumber):
+	os.system(o2g + folder + data + " 6 101 " + out + " " + nproc + " 0 -1 0 1 0 1 0 1 > dump")
+#	os.system(o2g + folder + data + " 6 1 "   + out + " 1 0 -1 0 1 0 1 0 1 ")
 
 
-	denoct2grid(SnapNumber)
+def getMtotGaz(folder,SnapNumber):
 
 
+	denoct2grid(folder, SnapNumber)
 	den=array("cube")
 	N, a, data = den.getArray()
-
 
 	lmax=6
 	vcell = pow(2,-3* lmax)

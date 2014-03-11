@@ -255,9 +255,11 @@ void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 	for(level=param->lcoarse;level<=param->lmax;level++) {
 		nextoct=firstoct[level-1];	
+		if(nextoct==NULL) continue; 
+
 		dx=1./pow(2.0,level);		
 		do {
-			if(nextoct==NULL) continue; 
+
 			curoct=nextoct;
 			nextoct=curoct->next;
 
@@ -294,10 +296,10 @@ void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 	if(cpu->rank==0){
 	printf("\n=================================================\n");
-	printf("\tTotal Mass \t\t %lf\n",Mtot);
-	printf("\tTotal Mass wanted \t %lf \n", tmw);
-	printf("\tDelta \t\t\t %lf \n",dm); 
-	printf("\n=================================================\n");
+	printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
+	printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
+	printf("\tDelta \t\t\t\t %lf \n",dm); 
+	printf("=================================================\n");
 	if ( dm > 1e-6 ) abort();
 	}
 
