@@ -18,7 +18,7 @@ if __name__ == "__main__":
 	for i in range(len(files)) :
 		N[i] = getN(files[i])
 		A[i] = getA(files[i]) 
-		Mtot[i] = getMtotPart(files[i])
+		Mtot[i] = getMtotPart(files[i], args)
 
 	print Mtot
 

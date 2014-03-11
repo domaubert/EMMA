@@ -35,10 +35,10 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->y = yc;
 	star->z = zc;
 
-	REAL eff = 1.0;
-	star->vx = cell->field.u* eff;		// INTRODUIRE UNE PROBA SUR LA VITESSE ???
-	star->vy = cell->field.v* eff;		
-	star->vz = cell->field.w* eff;
+	REAL n = 100000;
+	star->vx = cell->field.u + ( ((float)(rand()%n)*2.0-1.0 )/n *cell->field.a;
+	star->vy = cell->field.v + ( ((float)(rand()%n)*2.0-1.0 )/n *cell->field.a;
+	star->vz = cell->field.w + ( ((float)(rand()%n)*2.0-1.0 )/n *cell->field.a;
 
 	star->mass = m;
 
@@ -148,7 +148,7 @@ void removeMfromgas(struct CELL * cell, REAL drho){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param, REAL aexp){
+void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param, REAL aexp, REAL drho){
 
 	struct PART * lasp;
 	struct PART * prev;
@@ -171,7 +171,6 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		cell->phead = star;
 	}	
 
-	REAL drho = getdrho(cell, dt, param, aexp );	
 	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++, aexp );
 	removeMfromgas(cell, drho);
 }
@@ -215,6 +214,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	REAL xc, yc, zc;
 	REAL dx;
+	REAL drho;
+	REAL drhomin = (param->cosmo->ob/ param->cosmo->om) / pow(2,3*param->lmax);
 
 	int level, icell;
 	int nstars = 0;
@@ -248,20 +249,31 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 				if(curcell->child == NULL && testCond(curcell,dt, dx, param, aexp) ) {
 
-					xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
-					yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-					zc=curoct->z+( icell>>2    )*dx+dx*0.5; 
+					drho = getdrho(curcell, dt, param, aexp);
+
+					if (drho > drhomin){
+
+						xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
+						yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+						zc=curoct->z+( icell>>2    )*dx+dx*0.5; 
 					
-/*					nstarsincell = countStars(curcell);
-					if(nstarsincell){
-						accretion(curcell, param, dt, nstarsincell, dx);					
-					}else{
-						addStar(curcell, level, xc, yc, zc, cpu, dt, param);
+	/*					nstarsincell = countStars(curcell);
+						if(nstarsincell){
+							accretion(curcell, param, dt, nstarsincell, dx);					
+						}else{
+							addStar(curcell, level, xc, yc, zc, cpu, dt, param);
+							nstars++;
+						}
+	*/
+
+					
+						
+						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, drho);
 						nstars++;
+					}else{
+						printf("blocked stars\n");
+						abort();
 					}
-*/
-					addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp);
-					nstars++;
 				}			
 
 			}

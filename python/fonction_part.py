@@ -46,7 +46,8 @@ def getA(filename):
 	try : 
 		filePart = open(filename, "rb")
 	except IOError:
-			print 'cannot open', filename 
+		print 'cannot open', filename 
+		return 1			
 
 	N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
 	a = np.float64(np.fromfile(filePart, dtype=np.float32, count=1))

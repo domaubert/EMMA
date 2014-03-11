@@ -34,11 +34,11 @@ def spectre(N,t,parts) :
 	plt.hist(np.log10(M), 100,  log=True, label = r'$Z = $' + str(a2z(t)).zfill(4) )
 
 	plt.legend()
-	plt.xlim(2,7)
-	plt.ylim(1e-1,1e5)
+#	plt.xlim(2,7)
+#	plt.ylim(1e-1,1e5)
 	plt.xlabel(r'$LOG 10 Mass [M_0]$')
 	plt.ylabel(r'$PDF$' )
-	plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+#	plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
 
 

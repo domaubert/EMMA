@@ -73,7 +73,6 @@ def ReadPart(filename, args):
 		except IOError:
 			print 'cannot open', filename 
 	
-
 		N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
 		t = np.fromfile(filePart, dtype=np.float32, count=1)[0]
 		Ntot += N
