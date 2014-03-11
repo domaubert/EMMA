@@ -1,6 +1,5 @@
 #ifdef STARS 
 
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +21,7 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx) {
+void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx, REAL aexp) {
 
 	star->next = NULL;
 	star->prev = prev;
@@ -30,7 +29,7 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->idx   = idx;
 
 	star->level = level;
-	star->is    = 0; 
+	star->is    = 0;
 
 	star->x = xc;
 	star->y = yc;
@@ -44,10 +43,10 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->mass = m;
 
 	star->epot = 0.0;
-	star->ekin = 0.0;
+	star->ekin = 0.0 ;
 
 	star->isStar = 1;
-	star->age = 0.0;
+	star->age = 1.0/aexp-1.0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,88 +70,89 @@ int countStars(struct CELL * cell){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *param){
+int testCond(struct CELL *cell,REAL dttilde, REAL dxtilde,struct RUNPARAMS *param,  REAL aexp){
 
-	REAL a  = param->cosmo->aexp;	
-	REAL H0 = param->cosmo->H0;
+	REAL H0 = param->cosmo->H0 *1000/1e6/PARSEC;
 	REAL om = param->cosmo->om;
 	REAL L  = param->cosmo->unit_l;
+
+	int cond_overdensity = 0;
+	int cond_density = 0;
+	int cond_jeans = 0;
+	REAL jeans = 1.0/(2.0*PI*sqrt(6.0*aexp*(cell->gdata.d+1.0) ));;
 
 //------OVERDENSITY--------------------------------------------------------------------------------------------//
 
 	REAL cond = param->stars->overdensity_cond;	// stars formation begin at minimum cond times the mean density 
-	REAL rhotilde 	= cell->field.d + 1.0;		// delta +1
+	REAL rhotilde 	= cell->field.d * (param->cosmo->om/ param->cosmo->ob) ;	// 
+//	printf("%lf\n",rhotilde);
+	cond_overdensity = (rhotilde > cond);
 
-	int cond_overdensity = (rhotilde > cond);
+/*
+//------DENSITY------------------------------------------------------------------------------------------------//
+
+	if (cond_overdensity){
+		REAL N = param->stars->density_cond;	// minimum hydrogene atome per cm^3	
+
+		REAL mH = 1.6710e-27  ; // (kg)
+		REAL rhocrit 	= N * mH * 1e6 ; //
+
+		REAL rhostar 	= 3.0 * pow(H0,2) * om /(8.0*PI*NEWTON_G);
+		REAL rho 	= rhotilde / pow(a,3) * rhostar;
+
+		cond_density = (rho > rhocrit); 
+
+	}else{return 0;}
+	////////////	A CHECKER semble problematique
+
 
 //------JEANS--------------------------------------------------------------------------------------------------//
 
-	REAL jeans = 1.0/(2*PI*sqrt(6.0*a*rhotilde));
 
-	int cond_jeans = (dxtilde/cell->field.a > jeans);
-
-//------DENSITY------------------------------------------------------------------------------------------------//
-
-	REAL N = param->stars->density_cond;	// minimum hydrogene atome per cm^3	
-
-	REAL mH = (1.6710e-27 +  0.9110e-30) * 1000 ; // (g)
-  
-	REAL dx = a * (L*100) * dxtilde ;
- 
-	REAL rhocrit 	= N * mH / pow(dx,3);
-	REAL rhostar 	= 3.0 * pow(H0,2) * om /(8.0*PI*NEWTON_G);
-	REAL rho 	= rhotilde * pow(a,3) * rhostar;
-
-	int cond_density = (rho > rhocrit); 
+	if (cond_density){
+		cond_jeans = (dxtilde/cell->field.a > jeans);
+//			if (!cond_jeans) abort();  					////////////	A CHECKER
+	}else{return 0;}
 
 //------RANDOM-------------------------------------------------------------------------------------------------//	
-
-	int out =  cond_overdensity && cond_density && cond_jeans ;
-
-	if(out) {
+*/
+	if(cond_overdensity) {
 		REAL p = 1.0 - exp(- param->stars->eff * dttilde/jeans);
-		srand(time(NULL)); 
-		REAL random = ((float)(rand()%10000))/10000;
-		out = (random < p)?0:out;
-	}
-
-	return out;
+		REAL random = ((float)(rand()%100000))/100000;
+		return (random < p)?1:0;	
+		return 1;
+	}else{return 0;}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-REAL getdrho(struct CELL *cell, REAL dttilde, struct RUNPARAMS *param){
+REAL getdrho(struct CELL *cell, REAL dttilde, struct RUNPARAMS *param, REAL aexp){
 
-
-
-	REAL Ho = param->cosmo->H0 * 1000 / 1e6 / PARSEC; // (s)
+	REAL Ho = param->cosmo->H0 *1000/1e6/PARSEC; // (s)
 	REAL tstar = 2.0 /( Ho * sqrt(param->cosmo->om) ); 
-	REAL dt = dttilde * pow(param->cosmo->aexp,2) * tstar ;
+	REAL dt = dttilde * pow(aexp,2) * tstar ; 
 
 	REAL tcar = param->stars->t_car * 31556926.0; // (s) 
 	REAL eff = param->stars->eff;
 	
-//	printf("%lf \n", (cell->field.d+1.0) * 2.0 * PI * pow(6.0*param->cosmo->aexp*(cell->gdata.d+1.0) , -0.5 ) * eff * dt/tcar );
-	return (cell->field.d+1.0) * 2.0 * PI * pow(6.0*param->cosmo->aexp*(cell->gdata.d+1.0) , -0.5 ) * eff * dt/tcar ;
-
+	return (cell->field.d) * 2.0 * PI / sqrt(6.0*aexp*(cell->gdata.d+1.0)) * eff * dt/tcar ; 
+//	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void removeMfromgas(struct CELL * cell, REAL drho){
-#ifdef WHYDRO2
-	cell->field.d -= drho;
-#endif
+	cell->fieldnew.d -= drho;
+	cell->field.d    -= drho;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param){
+void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dt, struct RUNPARAMS *param, REAL aexp){
 
 	struct PART * lasp;
 	struct PART * prev;
 	struct PART * star = cpu->freepart;
-
 
 	if (cpu->freepart->next){	
 		cpu->freepart->next->prev = NULL;
@@ -162,7 +162,6 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		abort();
 	}
 
-
 	if (cell->phead!=NULL){
 		lasp = findlastpart(cell->phead);
 		prev = lasp;
@@ -170,19 +169,18 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	}else{
 		prev = NULL;
 		cell->phead = star;
-	}
-	
+	}	
 
-	REAL drho = getdrho(cell, dt, param );	
-	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++ );
+	REAL drho = getdrho(cell, dt, param, aexp );	
+	initStar(cell, star,  prev, level, drho*pow(2.0,-3*level), xc, yc, zc, cpu->npart[level-1]++, aexp );
 	removeMfromgas(cell, drho);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void accretion(struct CELL * cell, struct RUNPARAMS *param, REAL dt, int nstarsincell, REAL dx){
+void accretion(struct CELL * cell, struct RUNPARAMS *param, REAL dt, int nstarsincell, REAL dx, REAL aexp){
 
-	REAL drho = getdrho(cell, dt, param );		
+	REAL drho = getdrho(cell, dt, param, aexp );		
 	REAL m = drho * pow(dx,3) / nstarsincell;
 	REAL fact ;
 
@@ -199,38 +197,21 @@ void accretion(struct CELL * cell, struct RUNPARAMS *param, REAL dt, int nstarsi
 			pcur->vy += fact * cell->field.v;
 			pcur->vz += fact * cell->field.w;
 	
-			pcur->mass += drho * pow(dx,3) / nstarsincell;
-			
+			pcur->mass += drho * pow(dx,3) / nstarsincell;	
 		}
 	}while(pnext != NULL);
 
 	removeMfromgas(cell, drho);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void updatet(struct CELL * cell, REAL dt){
-
-	struct PART * pcur;
-	struct PART * pnext;
-
-	pnext = cell->phead;
-	
-	do {
-		pcur=pnext;
-		pnext = pcur->next;
-		if (pcur->isStar) pcur->age+=dt;
-	}while(pnext != NULL);
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt){
+void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp){
 
 	struct OCT  *nextoct;
 	struct OCT  *curoct;
 	struct CELL *curcell;
-
 
 	REAL xc, yc, zc;
 	REAL dx;
@@ -238,27 +219,34 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int level, icell;
 	int nstars = 0;
 	int nstarsincell;
-	printf("================================\n");
-	printf("   Starting Add Stars routine   \n");
-	printf("================================\n");
 
+	if(cpu->rank==0){
+		printf("\n");
+		printf("================================\n");
+		printf("   Starting Add Stars routine   \n");
+		printf("================================\n");
+	}
+
+	if(cpu->rank==0) srand(time(NULL));
 
 	for(level=param->lcoarse;level<=param->lmax;level++) {
+
 		nextoct=firstoct[level-1];
+		 
+
 		dx=1./pow(2.0,level);		
+		nstars = 0;
 
 		do {
-			if(nextoct==NULL) continue; 
-
+			if(nextoct==NULL) continue;
 			curoct=nextoct;
 			nextoct=curoct->next;
+			if(curoct->cpu!=cpu->rank) continue;
 
 		      	for(icell=0;icell<8;icell++) {
 				curcell = &curoct->cell[icell];
 
-				if(curcell->phead)	updatet(curcell, dt);
-
-				if(curcell->child == NULL && testCond(curcell,dt, dx, param) ) {
+				if(curcell->child == NULL && testCond(curcell,dt, dx, param, aexp) ) {
 
 					xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
 					yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
@@ -272,17 +260,21 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 						nstars++;
 					}
 */
-					addStar(curcell, level, xc, yc, zc, cpu, dt, param);
+					addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp);
 					nstars++;
-
 				}			
+
 			}
 
 		}while(nextoct!=NULL);
-	printf("%d stars added on level %d \n", nstars, level);
-	}
-printf("\n");
-}
+#ifdef WMPI
+	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+	if(cpu->rank==0) printf("%d stars added on level %d \n", nstars, level);
+	
 
+	}
+if(cpu->rank==0) printf("\n");
+}
 
 #endif

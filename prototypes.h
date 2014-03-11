@@ -450,17 +450,25 @@ struct PART_MPI // For mpi communications
   REAL vz;
 
   REAL mass;
+
+#ifdef STARS
+  REAL age;
+#endif
+
+
   int idx;
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
-  int is; //current step of particle
+  int is;    // current step of particle
 
-  unsigned long key; // the destination hilbert key
 
 #ifdef STARS
   int isStar;
-  REAL age;
 #endif
+
+
+  unsigned long key; // the destination hilbert key
+
 
 };
 

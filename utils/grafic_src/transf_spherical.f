@@ -58,7 +58,7 @@ c  Precompute spherical transfer function tables for interpolation.
 	    aak=ak
 	    if (ak.lt.0.0) aak=-ak
 	    if (aak.lt.akmaxh) then
-	      trf=dksav*ak*sqrt(pk(aak,astart)*volumek)*cos(0.25*twopi*ak/akmaxh)
+	trf=dksav*ak*sqrt(pk(aak,astart)*volumek)*cos(0.25*twopi*ak/akmaxh)
 	    else
 	      trf=0.0
 	    end if

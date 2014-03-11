@@ -107,6 +107,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
     }
   
 #ifdef PIC
+#ifndef STARS
   //ultimate check
   if(npart!=0){ // for initial call to multicheck that always provide a zero
   if(ntot!=npart) {
@@ -114,6 +115,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
     abort();
   }
   }
+#endif
 #endif
 #ifdef WMPI
   
@@ -234,3 +236,71 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 }
 
+
+
+
+void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+// Check if the total baryonic mass is conserved
+
+	struct OCT  *nextoct;
+	struct OCT  *curoct;
+	struct CELL *curcell;
+	struct PART * pcur;
+	struct PART * pnext;
+
+	int level, icell;
+	REAL Mtot=0;
+	REAL dx, dm, tmw;
+
+	for(level=param->lcoarse;level<=param->lmax;level++) {
+		nextoct=firstoct[level-1];	
+		if(nextoct==NULL) continue; 
+
+		dx=1./pow(2.0,level);		
+		do {
+
+			curoct=nextoct;
+			nextoct=curoct->next;
+
+			if(curoct->cpu!=cpu->rank) continue;
+		      	for(icell=0;icell<8;icell++) {		
+
+				curcell = &curoct->cell[icell];
+				if(curcell->child == NULL) {
+#ifdef STARS		
+					if (curcell->phead){	
+						pnext = curcell->phead;
+						do {
+							pcur=pnext;
+							pnext = pcur->next;
+
+							if (pcur->isStar) Mtot+=pcur->mass;
+
+						}while(pnext != NULL);
+					}
+#endif
+				Mtot += curcell->field.d * pow(dx,3);
+
+				}
+			}
+		}while(nextoct!=NULL);
+	}
+
+
+#ifdef WMPI
+	MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+#endif
+	tmw = param->cosmo->ob/ param->cosmo->om;
+	dm = pow(pow(Mtot - tmw, 2), 0.5);
+
+	if(cpu->rank==0){
+	printf("\n=================================================\n");
+	printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
+	printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
+	printf("\tDelta \t\t\t\t %lf \n",dm); 
+	printf("=================================================\n");
+	if ( dm > 1e-6 ) abort();
+	}
+
+}
