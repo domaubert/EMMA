@@ -647,10 +647,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
 
 
+
   /* //===================================creating new stars=================================// */
 #ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp); 
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level); 
 //	checkMtot(firstoct,param,cpu);
+
 
 
 #ifdef PIC

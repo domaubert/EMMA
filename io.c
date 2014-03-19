@@ -11,7 +11,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
   printf("Dumping parameters file\n");
 
   FILE *fp; 
-  fp=fopen("data/param","wb");
+  fp=fopen("data/param.00000.p00000","wb");
 
   int t = 1;
   int f = 0;
@@ -338,7 +338,6 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef STARS 
   fwrite(&(param->stars->overdensity_cond),	sizeof(float),1,fp);	// need overdensity_cond times the mean density to begin star formation
   fwrite(&(param->stars->density_cond),		sizeof(float),1,fp);	// minimum Hydrogen density [cm-3]
-  fwrite(&(param->stars->t_car),		sizeof(float),1,fp);	// caracteristic time [yr]
   fwrite(&(param->stars->eff),			sizeof(float),1,fp);	// efficiency
 #endif
 
@@ -987,7 +986,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->t_car		=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->eff		=dummyf;
 #endif
       fclose(buf);

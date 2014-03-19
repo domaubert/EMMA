@@ -115,7 +115,6 @@ class Param :
 		if self.STARS :
 			self.overdensity_cond      = np.fromfile(file, dtype=np.float32, count=1)
 			self.density_cond          = np.fromfile(file, dtype=np.float32, count=1)
-			self.t_car                 = np.fromfile(file, dtype=np.float32, count=1)
 			self.eff                   = np.fromfile(file, dtype=np.float32, count=1)
 	
 
@@ -126,7 +125,7 @@ def listPart(foldername):
 
 	tmp=[]
 	for file in files:
-		if file[0:3]== "par" :	
+		if file[0:4]== "part" :	
 			tmp.append(foldername + file)
 
 	return  sorted(tmp)
@@ -137,7 +136,7 @@ def listOriginePart(foldername) :
 
 	tmp=[]
 	for file in files :
-		if file[-3:]!= ".3D" and file[-6]== "p"  and file[-1]== "0" :
+		if file[-3:]!= ".3D" and file[-7:]== ".p00000" :
 			tmp.append( file)
 			
 
@@ -147,7 +146,7 @@ def getNsnap(foldername):
 	return len(listOriginePart(foldername))-1
 
 def getNproc(args):
-	files = os.listdir(args.folder)
+	files = os.listdir(args.folder[0])
 	tmp =0
 	for file in files:
 		if file[0:10]=="part.00000" and file[-3:]!=".3D" :	
@@ -166,12 +165,12 @@ def snaprange(args):
 		if args.to != -1 : 
 			to = args.to
 		else :
-			to = getNsnap(args.folder)
+			to = getNsnap(args.folder[0])
 
 		args.snap = np.arange(fro, to+1)
 
 def num2snap(args):
-	args.files = listOriginePart(args.folder)
+	args.files = listOriginePart(args.folder[0])
 	if args.snap != []:
 		f=[]
 		for i in args.snap:
@@ -182,7 +181,7 @@ def num2snap(args):
 def getargs() :
 	parser = argparse.ArgumentParser(description='EMMA analyse program')
 
-	parser.add_argument('-fo',   action="store",      default="../data/",    help = "witch folder to use", dest = "folder")
+	parser.add_argument('-fo',   action="append",     default=[],    help = "witch folder to use", dest = "folder")
 	parser.add_argument('-fi',   action="append",     default=[],            help = "snapshot file(s)", dest = "files")
 	parser.add_argument('-n',    action="append",     default=[], type=int,  help = "snapshot number n", dest = "snap")
 	parser.add_argument('-from', action="store",      default=-1, type=int,  help = "snapshot number to begin with, 0 by default", dest = "fro")
@@ -190,11 +189,22 @@ def getargs() :
 	parser.add_argument('-plot', action="store_true", default= False,        help = "plot the current set of values")
 	parser.add_argument('-part', action="store_true", default= True,         help = "is it a particle snap?")
 	parser.add_argument('-grid', action="store_true", default= False,        help = "is it a grid snap?")
-	parser.add_argument('-np',   action="store",      default=[], type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
+	parser.add_argument('-np',   action="store",      default=-1, type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
+
 
 	args = parser.parse_args()
-
 	
+	if args.nproc == -1:
+		args.nproc = getNproc(args)
+
+
+	if args.folder == []:
+		args.folder.append("../data/")
+
+	for i in range(len(args.folder)):
+		if (args.folder[i][-1]!="/"):
+				args.folder += "/"
+
 	snaprange(args)
 	num2snap(args)
 

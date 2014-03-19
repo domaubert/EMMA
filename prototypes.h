@@ -81,7 +81,6 @@ struct COSMOPARAM{
 struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
   REAL density_cond;	// Hydrogen density (cm-3)
-  REAL t_car;		// caracteristic time (yr)
   REAL eff;		// efficiency
 };
 #endif
@@ -137,6 +136,7 @@ struct RUNPARAMS{
 
 #ifdef STARS
   struct STARSPARAM *stars;
+  int nstars;
 #endif
 
   int nthread;

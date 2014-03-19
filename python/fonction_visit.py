@@ -26,8 +26,7 @@ def PartToVisit(parts, NameFileOut) :
 	f = open(NameFileOut , "wt")
 	f.write("x y z value\n");
 	for p in parts:
-		if  p.mass < pow(10,-10.25):
-			f.write("%g %g %g %g\n" % (p.x,p.y,p.z,p.mass))
+		f.write("%g %g %g %g\n" % (p.x,p.y,p.z,p.age))
 	f.close()	
 
 

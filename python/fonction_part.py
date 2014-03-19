@@ -41,6 +41,25 @@ def getN(filename):
 	return np.fromfile(filePart, dtype=np.int32, count=1)[0]
 	filePart.close()
 
+def getNtot(filename, args):
+
+	Ntot=0
+	nProc = getNproc(args)
+
+	for proc in range(nProc):
+		filename = filename[0:-5] + str(proc).zfill(5)		
+		try:
+			filePart = open(filename, "rb")
+		except IOError:
+			print 'cannot open', filename 
+			return 1			
+	
+		Ntot += np.fromfile(filePart, dtype=np.int32, count=1)[0]	
+		filePart.close()
+
+	return Ntot
+
+
 
 def getA(filename):
 	try : 
@@ -60,22 +79,22 @@ def getZ(filename):
 def ReadPart(filename, args):
 
 	Ntot=0
-	nProc = getNproc(args)
 	parts = []
-	t=0
 
- 
-	print "Reading file ", filename[0:-7]
-	for proc in range(nProc):
+	print "Reading file ", filename[:-7]
+	for proc in range(args.nproc):
+
 		filename = filename[0:-5] + str(proc).zfill(5)		
-
 		try:
 			filePart = open(filename, "rb")
 		except IOError:
 			print 'cannot open', filename 
+			return 1			
 	
+
 		N = np.fromfile(filePart, dtype=np.int32, count=1)[0]
 		t = np.fromfile(filePart, dtype=np.float32, count=1)[0]
+
 		Ntot += N
 
 		for x in range(0,N) :
@@ -83,9 +102,6 @@ def ReadPart(filename, args):
 
 		filePart.close()
 	return Ntot,t,parts
-
-
-	
 
 def getStars(parts) : 
 	stars=[]

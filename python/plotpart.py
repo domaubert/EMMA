@@ -30,8 +30,9 @@ def spectre(N,t,parts) :
 		M.append(m2mo(parts[i].mass, t, 10))
 		#M.append(parts[i].mass)
 
-#	plt.hist(M, 100,  log=True, label = r'$Z = $' + str(a2z(t)).zfill(4) )	
-	plt.hist(np.log10(M), 100,  log=True, label = r'$Z = $' + str(a2z(t)).zfill(4) )
+	lab =  r'$Z = $' + str(a2z(t)).zfill(4) 
+#	plt.hist(M, 100,  log=True, label = lab )	
+	plt.hist(np.log10(M), 100,  log=True, label = lab )
 
 	plt.legend()
 #	plt.xlim(2,7)
