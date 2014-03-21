@@ -15,7 +15,7 @@ DEFINES  +=  -DWGRAV
 #DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
-DEFINES  +=  -DSTARS
+#DEFINES  +=  -DSTARS
 
 #------------ MPI OPTIONS ---------------------
 

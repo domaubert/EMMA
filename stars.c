@@ -172,7 +172,9 @@ int addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUI
 		if(cpu->rank==0) printf("No more memory for particles\n");
 		return 0;
 	}else{
-
+		cpu->freepart = cpu->freepart->next;
+		cpu->freepart->next->prev = NULL;
+	}
 
 	if (cell->phead!=NULL){
 		struct PART *lasp = findlastpart(cell->phead);
@@ -205,13 +207,10 @@ int addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUI
 //		removeMfromgas(cell, star,  mstars/pow(2.0,-3.0*level) );
 	}
 
-
-
-
-		cpu->freepart = cpu->freepart->next;
-		cpu->freepart->next->prev = NULL;
 	return N;
-	}
+
+
+
 }
 
 
@@ -259,7 +258,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 					yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 					zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
 					
-					nstars += addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, 0);
+				//	nstars += addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, 0);
 				}
 			}
 
