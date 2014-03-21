@@ -81,7 +81,11 @@ struct COSMOPARAM{
 struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
   REAL density_cond;	// Hydrogen density (cm-3)
-  REAL eff;		// efficiency
+  REAL tcar;		// efficiency
+
+  REAL mstars;
+  int n;
+
 };
 #endif
 
@@ -136,7 +140,6 @@ struct RUNPARAMS{
 
 #ifdef STARS
   struct STARSPARAM *stars;
-  int nstars;
 #endif
 
   int nthread;
@@ -433,7 +436,8 @@ struct PART
   REAL ekin;
 
 #ifdef STARS
-  int isStar;
+  int  isStar;
+  REAL rhocell;
   REAL age;
 #endif
 
@@ -452,6 +456,7 @@ struct PART_MPI // For mpi communications
   REAL mass;
 
 #ifdef STARS
+  REAL rhocell;
   REAL age;
 #endif
 

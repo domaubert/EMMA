@@ -50,11 +50,10 @@ int gpoiss(REAL m){
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx, REAL aexp) {
+void initStar(struct CELL * cell, struct PART *star, int level, REAL m ,REAL xc, REAL yc, REAL zc,int idx, REAL aexp) {
 
 	star->next = NULL;
-	star->prev = prev;
-	
+
 	star->idx   = idx;
 
 	star->level = level;
@@ -69,7 +68,8 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->vy = cell->field.v + ( rdm()*2.0-1.0 ) *cell->field.a;
 	star->vz = cell->field.w + ( rdm()*2.0-1.0 ) *cell->field.a;
 
-	star->mass = m;
+	star->mass  = m;
+//	star->rhocell = cell->field.d;
 
 	star->epot = 0.0;
 	star->ekin = 0.0;
@@ -77,8 +77,6 @@ void initStar(struct CELL * cell, struct PART *star, struct PART *prev , int lev
 	star->isStar = 1;
 	star->age = 1.0/aexp-1.0;
 }
-
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -164,53 +162,51 @@ void removeMfromgas(struct CELL *cell, struct PART *star, REAL drho){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, REAL drho){
+int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL mstars, REAL aexp, int level){
 
-	struct PART * star = cpu->freepart;
-
-	if (star==NULL){		
-		if(cpu->rank==0) printf("No more memory for particles\n");
-		return 0;
-	}else{
-
-
-	if (cell->phead!=NULL){
-		struct PART *lasp = findlastpart(cell->phead);
-		lasp->next  = star;		
-		star->prev = lasp;	
-	} else{
-		cell->phead = star;
-		star->prev = NULL;
-		star->next = NULL;
-	}
-
-
-	REAL tparam = 2.1e9;
-	REAL tstars = tparam * 31556926 / sqrt(cell->field.d / param->cosmo->ob/param->cosmo->om);
+	REAL tstars = param->stars->tcar * 31556926 / sqrt(cell->field.d / param->cosmo->ob/param->cosmo->om);
 
 	REAL H0 = param->cosmo->H0 *1000.0/1e6/PARSEC;
 	REAL ts = 2.0/(H0 *sqrt(param->cosmo->om));
-
 	REAL tstartilde = tstars /( pow(aexp,2.0) * ts);
 
-	REAL mstars = (param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse);
-
 	REAL lambda = cell->field.d * pow(2.0,-3.0*level) / mstars * dttilde/ tstartilde;
-	int N = gpoiss(lambda);
-//	printf("N : %d\tl : %e\t m : %e\tt : %e\tms : %e\n",N,lambda, cell->field.d * pow(2.0,-3.0*level) / mstars, dttilde/ tstartilde, mstars);
 
-	int i;
-	for (i=0;i<N;i++){
-//		initStar(cell, star,  prev, level, mstars, xc, yc, zc, cpu->npart[level-1]++, aexp );
-//		removeMfromgas(cell, star,  mstars/pow(2.0,-3.0*level) );
-	}
+	return gpoiss(lambda);
+}
 
 
 
+int addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, REAL mstars){
+
+	struct PART *star = cpu->freepart;
+
+	if (star==NULL && cpu->rank==0){		
+		printf("\n");
+		printf("----------------------------\n");
+		printf("No more memory for particles\n");
+		printf("----------------------------\n");
+		return 1;
+	}else{
 
 		cpu->freepart = cpu->freepart->next;
-		cpu->freepart->next->prev = NULL;
-	return N;
+		cpu->freepart->prev = NULL;
+
+		if (cell->phead==NULL){
+			cell->phead = star;
+			star->prev = NULL;				
+		} else{
+			struct PART *lasp = findlastpart(cell->phead);
+			lasp->next = star;
+			star->prev = lasp;
+		}
+
+
+	//	printf("N : %d\tl : %e\t m : %e\tt : %e\tms : %e\n",N,lambda, cell->field.d * pow(2.0,-3.0*level) / mstars, dttilde/ tstartilde, mstars);
+
+		initStar(cell, star, level, mstars, xc, yc, zc, cpu->npart[level-1]++, aexp );
+		removeMfromgas(cell, star,  mstars/pow(2.0,-3.0*level) );
+		return 0;
 	}
 }
 
@@ -225,24 +221,28 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	REAL xc, yc, zc;
 	REAL dx;
-	int level, icell;
-	int nstars = 0;
+	REAL mstars = param->stars->mstars;
+
+	int level, icell, i;
+	int nstars;
 
 	if(cpu->rank==0){
+	
+		srand(time(NULL));
+
 		printf("\n");
 		printf("================================\n");
 		printf("   Starting Add Stars routine   \n");
 		printf("================================\n");
 	}
 
-	if(cpu->rank==0) srand(time(NULL));
+
 
 	for(level=curlevel;level<=param->lmax;level++) {
 
 		nextoct=firstoct[level-1];
  		dx=pow(2.0,-level);
 		nstars = 0;
-
 
 		do {
 			if(nextoct==NULL) continue;
@@ -259,10 +259,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 					yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 					zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
 					
-					nstars += addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, 0);
+					for (i=0;i< getNstars2create(curcell, param, dt, mstars, aexp, level) ;i++){
+						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, mstars);
+						nstars++;
+					}
 				}
 			}
-
 		}while(nextoct!=NULL);
 
 #ifdef WMPI
@@ -270,6 +272,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #endif
 	if(cpu->rank==0) printf("%d stars added on level %d \n", nstars, level);
 	}
-if(cpu->rank==0) printf("\n");
+param->stars->n += nstars ;
+if(cpu->rank==0) printf("%d stars in total\n",param->stars->n);
 }
 #endif

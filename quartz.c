@@ -229,6 +229,12 @@ int main(int argc, char *argv[])
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
+
+#ifdef STARS
+  param.stars->n=0;
+  param.stars->mstars= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+#endif
+
 #ifndef TESTCOSMO
   tmax=param.tmax;
 #else
@@ -277,12 +283,12 @@ int main(int argc, char *argv[])
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
-  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz,mass,(age stars) */
+  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz,mass,(age stars, rhocell) */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 7;
 #ifdef STARS
-  blockcounts[0] = 8;
+  blockcounts[0] = 9;
 #endif
   
   /* Setup description of the 4 MPI_INT fields idx level icell is*/

@@ -486,6 +486,7 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 
 #ifdef STARS
 	    part->isStar=curp->isStar;
+	    part->rhocell=curp->rhocell;
 	    part->age=curp->age;
 #endif
 
@@ -935,6 +936,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 
 
 #ifdef STARS
+	    (lastp)->rhocell=part->rhocell;
 	    (lastp)->age=part->age;
 	    (lastp)->isStar=part->isStar;
 #endif
