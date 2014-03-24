@@ -1584,7 +1584,10 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 #endif
 	      U2W(&U,&W);
 	      //getE(&W);
-
+	      /* if(W.p==0.){ */
+	      /* 	printf("nil pressure !\n"); */
+	      /* 	abort(); */
+	      /* } */
 	      memcpy(&(curoct->cell[icell].fieldnew),&W,sizeof(struct Wtype));
 	    }
 	  }
@@ -1832,7 +1835,12 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
 		R->fy[igrp]+= Re->fy[igrp];
 		R->fz[igrp]+= Re->fz[igrp];
 	      }
- 	      
+
+	      /* R->xion=curoct->cell[icell].rfield.xion; */
+	      /* R->nh=curoct->cell[icell].rfield.nh; */
+	      /* R->eint=curoct->cell[icell].rfield.eint; */
+	      /* R->src=curoct->cell[icell].rfield.src; */
+
 	      memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype));
 	    }
 	  }

@@ -9,14 +9,14 @@ typedef double REAL;
 
 
 #define GAMMA (5./3.)
-#define CFL (0.4)
+#define CFL (0.85)
 #define GRAV (0.25)
 
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049);
-#define PMIN 1e-10
+#define PMIN 1e-13
 #endif
 
 #define NCOSMOTAB (262144)
@@ -75,7 +75,6 @@ struct COSMOPARAM{
 #endif
 
 
-#ifdef WRAD
 struct UNITS{
   REAL unit_l; // comoving length size of the box [meters]
   REAL unit_v; // unit velocity
@@ -83,7 +82,6 @@ struct UNITS{
   REAL unit_n; // unit number [moles typically]
   REAL unit_mass; // unit mass [in kg, total mass is equal to one in unit codes]
 };
-#endif
 
 //=======================================
 

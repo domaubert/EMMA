@@ -2935,9 +2935,10 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	getE(&(curoct->cell[icell].fieldnew));
 
 	//Ceiling for the ionisation fraction
+#ifdef WRADHYD
 	if(curoct->cell[icell].fieldnew.X<0) curoct->cell[icell].fieldnew.X=0.;
 	if(curoct->cell[icell].fieldnew.X>1) curoct->cell[icell].fieldnew.X=1.;
-	
+#endif	
 	// ==================== let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	

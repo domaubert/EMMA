@@ -187,7 +187,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
 
-  //REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
@@ -234,6 +233,11 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       emin=PMIN/(GAMMA-1.)/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
       srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
       
+      /* if(((isnan(eint[idloc]))||(isnan(x0[idloc])))||(eint[idloc]==0.)){ */
+      /* 	printf("start with nans or ZErO egy %e\n",eint[idloc]); */
+      /* 	abort(); */
+      /* } */
+
       // at this stage we are ready to do the calculations
 
       // DEALING WITH CLUMPING ----------------------
@@ -296,16 +300,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	      ai_tmp1 = alphai[igrp];
 	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
 	      
-	      if(et[igrp]<0) 	{test=1;}
+	      if(et[igrp]<0){
+		test=1;
+	      }
 	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
 	    }
 	  ai_tmp1=0.;
+
 	  
-	  if (test) 
+	  if(test) 
 	    {
 	      fudgecool=fudgecool/10.; 
 	      continue;	
 	    } 
+
+	  /* if((et[0]<0.)||(isnan(et[0]))){ */
+	  /*   printf("bnd err ? x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e %d\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool,nitcool); */
+	  /* } */
 	  
 	  // IONISATION
 #ifndef S_X
@@ -324,9 +335,12 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
 	  ai_tmp1=0.;
 
-	  if((xt>1.)||(xt<0.)) 
+	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
+ 	      /* if(nitcool>10000){ */
+	      /* 	printf("loopin xion g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
+	      /* } */
 	      continue;	
 	    } 
 
@@ -353,14 +367,16 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #endif
 	  
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
-	  //eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
 	  ai_tmp1=0;
 
-	  //
 
 	  if(eintt<0.)
  	    {
 	      fudgecool=fudgecool/10.;
+	      /* if(nitcool>10000){ */
+	      /* 	printf("loopin g e<0  x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
+	      /* } */
+
 	      continue;
 	    }
 
@@ -368,11 +384,18 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	    {
 	      if(srcloc[idloc]==0.){
 		fudgecool=fudgecool/10.;
+	      /* if(nitcool>10000){ */
+	      /* 	printf("loopin fracvar g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e f=%e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
+	      /* } */
+
 		continue;
 	      }
 	    }
   	  else{
- 	    fudgecool=fudgecool*1.5;
+ 	    fudgecool=fmin(fudgecool*1.5,param->fudgecool);
+	      /* if(nitcool>10000){ */
+	      /* 	printf(" going up loopin g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
+	      /* } */
 	  }
 
 	  eintt=fmax(emin,eintt);
@@ -411,6 +434,11 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
 	}
        
+      /* if(R.e[0]==0.){ */
+      /* 	printf("nil energy x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e f=%e\n",R.xion,R.eint,nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
+      /* 	printf("nil energy, abort()\n"); */
+      /* 	abort(); */
+      /* } */
       //R.temp=tloc;
       R.xion=x0[idloc];
 

@@ -1269,7 +1269,7 @@ int main(int argc, char *argv[])
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
-    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS;
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
 #endif
@@ -1356,7 +1356,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef TESTCLUMP		
-		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS;
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
@@ -1370,7 +1370,7 @@ int main(int argc, char *argv[])
 		
 		
 #ifdef WRADHYD
-		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
 		  curoct->cell[icell].field.v=0.0;
 		  curoct->cell[icell].field.w=0.0;
@@ -1526,13 +1526,17 @@ int main(int argc, char *argv[])
     cpu.tinit=tinit;
     int ptot=0;
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
+    
+#if 0
+    if(nstepstart==0){
     sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
     dumpgrid(levelmax,firstoct,filename,tdump,&param);
 #ifdef PIC
     sprintf(filename,"data/pstart.%05d.p%05d",0,cpu.rank);
     dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
 #endif
-
+    }
+#endif
 
     // Loop over time
     for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
