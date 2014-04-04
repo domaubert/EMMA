@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 #ifdef WHYDRO2
 			    case 101:
 			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.d;
-			      //printf("%f\n",oct.cell[icell].field.d);
+			     // printf("%f\n",oct.cell[icell].field.d);
 			      break;
 			    case 102:
 			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.u;

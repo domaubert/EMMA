@@ -650,9 +650,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   /* //===================================creating new stars=================================// */
 #ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level); 
+	if (level == param->lmax) 	createStars(firstoct,param,cpu, adt[level-1], aexp, level); 
 //	checkMtot(firstoct,param,cpu);
-
+#endif
 
 
 #ifdef PIC
@@ -749,7 +749,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
-#endif
+
 
 
 #ifdef WRAD

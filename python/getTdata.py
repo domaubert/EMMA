@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-from fonction_part import *
-from fonction_IO import *
+import time
 import sys
 import numpy as np
-import matplotlib.pylab as plt
+
+from fonction_part import *
+from fonction_IO import *
+
 
 if __name__ == "__main__":
 
@@ -11,8 +13,11 @@ if __name__ == "__main__":
 	foldername=args.folder
 	files= args.files	
 
+
+	
 	n = 1
-	size = len(files)/n 
+#	files=files[0:1]
+	size = len(files)/n
 	
 	N = np.zeros(size, dtype=np.int32)
 	A = np.zeros(size, dtype=np.float64)
@@ -21,9 +26,10 @@ if __name__ == "__main__":
 
 	i=0
 	for j in range(size) :
-		N[j] = getNtot(files[i],args)
-		A[j] = getA(files[i]) 
-		Mtot[j] = getMtotPart(files[i], args)
+		file = files[i][:-17] +  "star" +  files[i][-13:]
+		N[j] = getNtot(file,args)
+		A[j] = getA(file) 
+		Mtot[j] = getMtotPart(file, args)
 		i+=n
 
 	print Mtot

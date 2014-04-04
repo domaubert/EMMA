@@ -1,7 +1,4 @@
-
-
 typedef double REAL;
-
 
 #ifdef WMPI
 #include <mpi.h>
@@ -16,7 +13,7 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049);
-#define PMIN 1e-10
+#define PMIN 1e-13
 #endif
 
 #define NCOSMOTAB (262144)
@@ -80,8 +77,11 @@ struct COSMOPARAM{
 #ifdef STARS 
 struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
-  REAL density_cond;	// Hydrogen density (cm-3)
-  REAL eff;		// efficiency
+  REAL density_cond;	// Hydrogen density (m-3)
+  REAL tcar;		// efficiency
+
+  REAL mstars;
+  int  n;
 };
 #endif
 
@@ -136,7 +136,6 @@ struct RUNPARAMS{
 
 #ifdef STARS
   struct STARSPARAM *stars;
-  int nstars;
 #endif
 
   int nthread;
@@ -253,6 +252,10 @@ struct CPUINFO{
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
   int *npart; // the number of particles per levels
+#ifdef STARS
+  int *nstar;// the number of stars per levels
+#endif
+
   int levelcoarse; // the levelcoarse
 
   struct OCT *freeoct; // the location of the first free oct
@@ -433,7 +436,8 @@ struct PART
   REAL ekin;
 
 #ifdef STARS
-  int isStar;
+  int  isStar;
+  REAL rhocell;
   REAL age;
 #endif
 
@@ -452,6 +456,7 @@ struct PART_MPI // For mpi communications
   REAL mass;
 
 #ifdef STARS
+  REAL rhocell;
   REAL age;
 #endif
 

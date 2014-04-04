@@ -5,7 +5,7 @@
 #include "friedmann.h"
 #include "segment.h"
 #include <string.h>
-
+#include "stars.h"
 
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
   printf("Dumping parameters file\n");
@@ -338,7 +338,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef STARS 
   fwrite(&(param->stars->overdensity_cond),	sizeof(float),1,fp);	// need overdensity_cond times the mean density to begin star formation
   fwrite(&(param->stars->density_cond),		sizeof(float),1,fp);	// minimum Hydrogen density [cm-3]
-  fwrite(&(param->stars->eff),			sizeof(float),1,fp);	// efficiency
+  fwrite(&(param->stars->tcar),			sizeof(float),1,fp);	// carateristic time [yr]
 #endif
 
   fclose(fp);
@@ -680,6 +680,9 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
+
+
+
 #ifdef PIC
 void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
@@ -697,11 +700,30 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
   float tsimf=tsim;
 
   int npart=0; 
-  for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
+//  for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
+#ifdef STARS
+  int nstar=0; 
+ // for(level=levelcoarse;level<=levelmax;level++) nstar+=cpu->nstar[level-1];
+ // npart -= nstar;
+
+  char filenamestar[128];							char filenamepart[128];	
+  FILE *fstar;									FILE *fpart;
+  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+  fstar=fopen(filenamestar,"wb");						fpart=fopen(filenamepart,"wb");
+  fwrite(&nstar,1,sizeof(int)  ,fstar);						fwrite(&npart,1,sizeof(int)  ,fpart);
+  fwrite(&tsimf,1,sizeof(float),fstar);						fwrite(&tsimf,1,sizeof(float),fpart);
+
+//  printf("nstar\t%d\n",*cpu->ndumps);
+//  if (cpu->rank == 0) printf("Dumping .......%s\n", filenamestar);				
+//  if (cpu->rank == 0) printf("Dumping .......%s\n", filenamepart);
+
+#else
   fp=fopen(filename,"wb");
-  fwrite(&npart,1,sizeof(int),fp);
+  fwrite(&npart,1,sizeof(int)  ,fp);
   fwrite(&tsimf,1,sizeof(float),fp);
+#endif
+
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       //printf("level=%d\n",level);
@@ -712,49 +734,61 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 	{
 	  if(nextoct==NULL) continue; // in case the level is empty
 	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
+//	  dxcur=1./pow(2,oct.level);
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
-		do{ 
-		  curp=nexp; 
-		  nexp=curp->next; 
-		  val=curp->x;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->y;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->z;fwrite(&val,1,sizeof(float),fp);
+		do{
+		  curp=nexp;
+		  nexp=curp->next;
+
+#ifdef STARS
+		  if(curp->isStar) 	{	fp=fstar;	nstar++;	}
+		  else 			{	fp=fpart;	npart++;	}
+#endif	
+		  val=curp->x;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->y;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->z;			fwrite(&val,1,sizeof(float),fp);
 #ifndef PARTN
 #ifdef PART_EGY
-		  val=curp->ekin+curp->epot;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->ekin+curp->epot;	fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
 #else
-		  val=curp->vx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->vy;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->vz;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vy;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vz;			fwrite(&val,1,sizeof(float),fp);
 #endif
 #else
-		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fz;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fz;			fwrite(&val,1,sizeof(float),fp);
 #endif
-		  val=(REAL)(curp->idx);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->mass);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->epot);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->ekin);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->idx);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->mass);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
 #ifdef STARS
-		  val = curp->isStar;fwrite(&val,1,sizeof(int),fp);
-		  val = curp->age;fwrite(&val,1,sizeof(float),fp);
+		  val = curp->isStar;		fwrite(&val,1,sizeof(int  ),fp);
+		  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
 #endif
-
 		  ipart++;
+
 		}while(nexp!=NULL);
 	      }
 	    }
 	}while(nextoct!=NULL);
     }
-  fclose(fp);
+
+#ifdef STARS
+  rewind(fpart);	fwrite(&npart,1,sizeof(int)  ,fpart);	fclose(fpart);
+  rewind(fstar);	fwrite(&nstar,1,sizeof(int)  ,fstar);	fclose(fstar);
+#else
+  rewind(fp);		fwrite(&npart,1,sizeof(int)  ,fp);	fclose(fp);
+#endif
+
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 
@@ -778,9 +812,11 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
   fp=fopen(filename,"wb");
-  fwrite(&npart,1,sizeof(int),fp);
-  fwrite(&tsim,1,sizeof(REAL),fp);
-  fwrite(&proot,1,sizeof(struct PART *),fp);
+  fwrite(&npart,1,sizeof(int),fp);		
+  fwrite(&tsim,1,sizeof(REAL),fp);		
+  fwrite(&proot,1,sizeof(struct PART *),fp);	
+
+//	printf("cpu %d \t%d\t%e\t%p \n", cpu->rank, npart, tsim,proot );
 
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
@@ -811,6 +847,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 	    }
 	}while(nextoct!=NULL);
     }
+  	
   fclose(fp);
   //printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
 
@@ -842,7 +879,6 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   // opening the file
   fp=fopen(filename,"rb");
-  
 
   // reading snapshot time
   size_t outf;
@@ -850,33 +886,41 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   outf=fread(tsim,1,sizeof(REAL),fp);
   outf=fread(&rootpart_sna,1,sizeof(struct PART *),fp);
 
+//	printf("cpu %d \t%d\t%e\t%p \n", cpu->rank, npart, *tsim,rootpart_sna);
+
   // reading the particle sequence
    
   outf=fread(&part_ad,sizeof(struct PART*),1,fp);
   outf=fread(&part,sizeof(struct PART),1,fp);
 
+
+ // printf("debut de lecture %ld\t%p\t%p\t%p\n ", (unsigned long int)(part_ad-rootpart_sna), part_ad,rootpart_sna,rootpart_mem );
+
   while(!feof(fp)){
 
     // do stuff
     ipart++;
+
     // 1 copy the content of the particle at the right location
-    curp=(part_ad-rootpart_sna)+rootpart_mem;
+    curp= part_ad - rootpart_sna + rootpart_mem ;
+//	printf("cpu %d \t%p", cpu->rank, curp);
     memcpy(curp,&part,sizeof(struct PART));
+ //   printf("memcpy OK \n");
 
     // 2.a modify the particle pointers 
     curp->next=(curp->next==NULL?NULL:(curp->next-rootpart_sna)+rootpart_mem);
     curp->prev=(curp->prev==NULL?NULL:(curp->prev-rootpart_sna)+rootpart_mem);
     
-
+  //  printf("*part ok \n");
 
     // read next particle
-
     outf=fread(&part_ad,sizeof(struct PART*),1,fp);
     outf=fread(&part,sizeof(struct PART),1,fp);
 
+//    printf("%d\t ", ipart);
   }
 
-
+//  printf("READ OK \n ");
   // Building back the freepart chained list
 
   struct PART * lpart;
@@ -986,10 +1030,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->eff		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar		=dummyf;
 #endif
       fclose(buf);
     }
+
+
+
 
   // computing the maxhash
   int val=(pow(2,param->lmax-1)<256?pow(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
@@ -1005,7 +1052,12 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     abort();
   }
 #endif
-    
+
+#ifdef STARS
+    param->stars->mstars	= (param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse);
+    param->stars->n		= 0;
+#endif
+
 }
 
 //==================================================================================
@@ -1043,7 +1095,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&ov,1,4,fx);
     outf=fread(&h0,1,4,fx);
     outf=fread(&dummy,1,sizeof(dummy),fx);
-
     outf=fread(&dummy,1,sizeof(dummy),fy);
     outf=fread(&np1,1,4,fy);
     outf=fread(&np2,1,4,fy);
@@ -1160,8 +1211,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       outf=fread(&dummy,1,sizeof(dummy),fz);
       outf=fread(velz,np1*np2,sizeof(float),fz);
       outf=fread(&dummy,1,sizeof(dummy),fz);
-      
-
     }
 
 
@@ -1901,7 +1950,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     if(cpu->rank==0) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
-    printf("No temperature law for cosmologies other than SCDM -> F** it\n");
+    if(cpu->rank==0) printf("No temperature law for cosmologies other than SCDM -> F** it\n");
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
     //    abort();
   }
@@ -2080,8 +2129,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	adump=tdump;
 #endif
 
-
-
 	if(pdump){
 	  // === particle dump
 #ifdef PIC
@@ -2091,10 +2138,10 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("%s\n",filename);
 	  }
 	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
-	  
+	
 	  // backups for restart
-	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->part);
+	  sprintf(filename,"bkp/part.%05d.p%05d",0,cpu->rank); 
+	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 #endif
 	}
 	else{
@@ -2108,9 +2155,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
 	  // backups for restart
-	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->part,adt);
+	  sprintf(filename,"bkp/grid.%05d.p%05d",0,cpu->rank); 
+	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 
-	  *(cpu->ndumps)=*(cpu->ndumps)+1;
-	}
+	}	
 }

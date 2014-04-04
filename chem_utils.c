@@ -182,7 +182,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   REAL ebkg[NGRP];
   REAL z=1./aexp-1.;
 #ifdef UVBKG
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
+  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z)) /10 ;  // Katz simple model
 #else
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif

@@ -15,11 +15,11 @@ def plotpart(N,parts):
 		x[i]=parts[i].x
 		y[i]=parts[i].y
 
-	Lmax=6
+	Lmax=7
 	N=pow(2,Lmax)
 	H, xedges, yedges = np.histogram2d(x, y, bins=(N,N))
 
-	plt.imshow(H, interpolation='nearest')
+	plt.imshow(np.log10(H), interpolation='nearest')
 	plt.colorbar()
 
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
 	N,t, parts=ReadStars(args.files[0], args)		
 
-#	plotpart(N,parts)
-	spectre(N,t,parts)	
+	plotpart(N,parts)
+#	spectre(N,t,parts)	
 
 	plt.show()
 

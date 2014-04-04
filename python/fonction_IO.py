@@ -2,7 +2,6 @@ import sys
 import os 
 import argparse
 import numpy as np
-import matplotlib.pylab as plt
 
 class Param : 
 	def __init__(self,file):
@@ -130,6 +129,17 @@ def listPart(foldername):
 
 	return  sorted(tmp)
 
+def listStar(foldername):
+
+	files = os.listdir(foldername)
+
+	tmp=[]
+	for file in files:
+		if file[0:4]== "star" :	
+			tmp.append(foldername + file)
+
+	return  sorted(tmp)
+
 def listOriginePart(foldername) :
 
 	files = listPart(foldername)
@@ -142,6 +152,16 @@ def listOriginePart(foldername) :
 
 	return tmp
 
+def listOrigineStar(foldername) :
+
+	files = listStar(foldername)
+
+	tmp=[]
+	for file in files :
+		if file[-3:]!= ".3D" and file[-7:]== ".p00000" :
+			tmp.append( file)
+	return tmp
+
 def getNsnap(foldername):
 	return len(listOriginePart(foldername))-1
 
@@ -149,7 +169,7 @@ def getNproc(args):
 	files = os.listdir(args.folder[0])
 	tmp =0
 	for file in files:
-		if file[0:10]=="part.00000" and file[-3:]!=".3D" :	
+		if file[0:10]=="grid.00000" and file[-3:]!=".3D" :	
 			tmp +=1
 	return tmp
 
@@ -181,7 +201,7 @@ def num2snap(args):
 def getargs() :
 	parser = argparse.ArgumentParser(description='EMMA analyse program')
 
-	parser.add_argument('-fo',   action="append",     default=[],    help = "witch folder to use", dest = "folder")
+	parser.add_argument('-fo',   action="append",     default=[],            help = "witch folder to use", dest = "folder")
 	parser.add_argument('-fi',   action="append",     default=[],            help = "snapshot file(s)", dest = "files")
 	parser.add_argument('-n',    action="append",     default=[], type=int,  help = "snapshot number n", dest = "snap")
 	parser.add_argument('-from', action="store",      default=-1, type=int,  help = "snapshot number to begin with, 0 by default", dest = "fro")
@@ -190,16 +210,19 @@ def getargs() :
 	parser.add_argument('-part', action="store_true", default= True,         help = "is it a particle snap?")
 	parser.add_argument('-grid', action="store_true", default= False,        help = "is it a grid snap?")
 	parser.add_argument('-np',   action="store",      default=-1, type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
-
+	parser.add_argument('-l'    ,action="store",      default=-1, type=int,  help = "level param of oct2grid", dest = "level")
+	parser.add_argument('-field',action="append",     default=[] ,            help = "field param of oct2grid", dest = "field")
 
 	args = parser.parse_args()
+	if args.folder == []:
+		args.folder.append("data/")
 	
 	if args.nproc == -1:
 		args.nproc = getNproc(args)
 
+	print "nproc = ", args.nproc
 
-	if args.folder == []:
-		args.folder.append("../data/")
+
 
 	for i in range(len(args.folder)):
 		if (args.folder[i][-1]!="/"):

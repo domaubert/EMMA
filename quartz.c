@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
+
 #ifndef TESTCOSMO
   tmax=param.tmax;
 #else
@@ -277,15 +278,15 @@ int main(int argc, char *argv[])
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
-  /* Setup description of the 7 MPI_REAL fields x,y,z,vx,vy,vz,mass,(age stars) */
+  /* Setup description of the 7 (+2 if STARS) MPI_REAL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
   blockcounts[0] = 7;
 #ifdef STARS
-  blockcounts[0] = 8;
+  blockcounts[0] = 9;
 #endif
   
-  /* Setup description of the 4 MPI_INT fields idx level icell is*/
+  /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
 
@@ -439,6 +440,13 @@ int main(int argc, char *argv[])
 #endif
 
   threshold=param.amrthresh;
+
+#ifdef TESTCOSMO
+  threshold*=pow(2.0,-3.0*param.lcoarse);
+  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement %e goes to a density thresold of %e \n ", param.amrthresh, threshold);
+  param.amrthresh= threshold;
+#endif
+
   gstride=fmax(8,param.gstride);//pow(2,levelcoarse);
   hstride=fmax(8,param.hstride);//pow(2,levelcoarse);
   rstride=hstride;
@@ -459,13 +467,56 @@ int main(int argc, char *argv[])
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
+
+  int ncellscoarse = pow(2,3*param.lcoarse); // number of cells before refinement 
+  int ncellsmax    = 3 * ncellscoarse; 		 // max number of cells after refinement
+  int lbfg = 2; 				 // load balancing factor for the grid
+  int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
+  if (ngridmax < noon ) {
+	printf("\n");
+	printf("=====================================================\n");
+	printf("-----------------------------------------------------\n");
+	printf("=====================================================\n");
+	printf("\n");
+	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE GRID\n");
+	printf("%d oct allocated per processor \n",ngridmax);
+        printf("%d oct approximately needed\n", noon);
+	printf("\n");
+	printf("=====================================================\n");
+	printf("-----------------------------------------------------\n");
+	printf("=====================================================\n");
+	printf("\n");
+  }
+
 #ifdef PIC
   part=(struct PART*)calloc(npartmax,sizeof(struct PART)); memsize+=npartmax*sizeof(struct PART);// the particle array
   cpu.firstpart=part;
   // we set all the particles mass to -1
   for(ii=0;ii<npartmax;ii++) part[ii].mass=-1.0;
+
+  int lbfp = 10;				// load balancing factor for the part
+  int nopn = (ncellscoarse * lbfp)/cpu.nproc ;	// number of part needed
+
+#ifdef STARS
+  nopn *= 2;					// you can create as many stars as initial DM particles
+#endif
+
+  if (npartmax < nopn ){
+	printf("=====================================================\n");
+	printf("-----------------------------------------------------\n");
+	printf("=====================================================\n");
+	printf("\n");
+	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE PARTICLE\n");
+	printf("%d part allocated per processor \n",npartmax);
+        printf("%d part approximately needed\n", nopn);
+	printf("\n");
+	printf("=====================================================\n");
+	printf("-----------------------------------------------------\n");
+	printf("=====================================================\n");  }
 #endif
  
+
+
   if(cpu.rank==0){
     printf(" === alloc Memory ===\n");
     printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);
@@ -473,14 +524,18 @@ int main(int argc, char *argv[])
     printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct PART));
   }
 
-  firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the firstoct of each level
-  lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); memsize+=levelmax*sizeof(struct OCT *);// the last oct of each level
-  cpu.htable=(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *)); memsize+=cpu.maxhash*sizeof(struct OCT*);// the htable keys->oct address
-  cpu.noct =(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of octs per level
-  cpu.npart=(int *)calloc(levelmax,sizeof(int)); memsize+=levelmax*sizeof(int);// the number of particles per level
+  firstoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the firstoct of each level
+  lastoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
+  cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));	memsize+=cpu.maxhash*sizeof(struct OCT *);	// the htable keys->oct address
+  cpu.noct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of octs per level
+  cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles per level
+#ifdef STARS
+  cpu.nstar=	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of stars per level
+#endif
+
+
 
   lastpart=part-1; // the last particle points before the first at the very beginning
-
 
 
   //===================================================================================================
@@ -1422,7 +1477,7 @@ int main(int argc, char *argv[])
     cpu.freeoct=freeoct;
 
     nstepstart+=1.; // next timestep is n+1
-    ndumps+=1.; // next timestep is n+1
+    ndumps+=1.;    // next timestep is n+1
 
 
     if(cpu.rank==0){
@@ -1587,25 +1642,24 @@ int main(int argc, char *argv[])
 	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 #else
 	
-#ifndef TESTCOSMO
-#ifdef WRAD
-	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
-#else
-	tdump=(tsim+adt[levelcoarse-1]);
-#endif
-#else
-	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
-	adump=tdump;
-	printf("tdump=%e tsim=%e adt=%e\n",tdump,tsim,adt[levelcoarse-1]);
-#ifdef EDBERT
-
-	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
-	tdump=(treal-trealBB)/(treal0-trealBB);
-#endif
-#endif
+	#ifndef TESTCOSMO
+		#ifdef WRAD
+			tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
+		#else
+			tdump=(tsim+adt[levelcoarse-1]);
+		#endif
+	#else
+		tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
+		adump=tdump;
+		printf("tdump=%e tsim=%e adt=%e\n",tdump,tsim,adt[levelcoarse-1]);
+		#ifdef EDBERT
+			treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
+			tdump=(treal-trealBB)/(treal0-trealBB);
+		#endif
+	#endif
 
 	// === Hydro dump
-	
+
 	//printf("tdum=%f\n",tdump);
 	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
 	if(cpu.rank==0){
@@ -1614,31 +1668,35 @@ int main(int argc, char *argv[])
 	}
 	dumpgrid(levelmax,firstoct,filename,adump,&param); 
 
-#ifdef PIC
-	sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
-	if(cpu.rank==0){
-	  printf("Dumping .......");
-	  printf("%s\n",filename);
-	}
-	dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
-#endif
+	#ifdef PIC
+		sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
+		if(cpu.rank==0){
+		  printf("Dumping .......");
+		  printf("%s\n",filename);
+		}
+		dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
+	#endif
 
-	// backups for restart
-	sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
-	save_amr(filename,firstoct,tdump,tinit,nsteps,ndumps,&param, &cpu,part,adt);
-#ifdef PIC
-	sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
-	save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
+		// backups for restart
+		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
+		save_amr(filename,firstoct,tdump,tinit,nsteps,ndumps,&param, &cpu,part,adt);
+	#ifdef PIC
+		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
+		save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
+	#endif
 #endif
 	ndumps++;
-#endif
       }
       
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
     }
-    
+
+	// writting the last particle file
+  	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1);
+
+
 
     // we are done let's free the ressources
 
@@ -1664,10 +1722,6 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
-
-
-
-
     if(cpu.rank==0){
       //fclose(param.fpegy);
       printf("Done .....\n");

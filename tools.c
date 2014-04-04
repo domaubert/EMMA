@@ -31,7 +31,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   struct OCT *nextoct;
   struct OCT *curoct;
   REAL dx;
-  int nlev,noct;
+  int nlev,noct,nstar;
   int icell;
   struct PART *nexp;
   struct PART *curp;
@@ -40,11 +40,13 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
   int *vnpart=cpu->npart;
+  int *vnstar=cpu->nstar;
 
   if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;
+  nstar=0;
 
   for(level=1;level<=levelmax;level++)
     {
@@ -70,9 +72,9 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 	      
-		  xc=curoct->x+(icell&1)*dx+dx*0.5;
-		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
-		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
+//		  xc=curoct->x+(icell&1)*dx+dx*0.5;
+//		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
+//		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
 #ifdef PIC
 	     
 		  ntotd+=curoct->cell[icell].density*dx*dx*dx;
@@ -91,6 +93,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 		  do{ 
 		    nlev++;
 		    ntot++;
+		    if (curp->isStar) 	nstar++;
 		    curp=nexp;
 		    nexp=curp->next;
 		  }while(nexp!=NULL);
@@ -104,8 +107,11 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;
       vnpart[level-1]=nlev;
+      vnstar[level-1]=nstar;
     }
-  
+
+//printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
+
 #ifdef PIC
 #ifndef STARS
   //ultimate check
@@ -242,6 +248,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 // Check if the total baryonic mass is conserved
+// Usefull in star formation
 
 	struct OCT  *nextoct;
 	struct OCT  *curoct;

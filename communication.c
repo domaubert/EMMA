@@ -483,15 +483,15 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 	  part->vz=curp->vz;
 
 	  part->mass=curp->mass;
-
-#ifdef STARS
-	    part->isStar=curp->isStar;
-	    part->age=curp->age;
-#endif
-
-
 	  part->idx=curp->idx;
 	  part->is=curp->is;
+
+#ifdef STARS
+	  part->rhocell=curp->rhocell;
+	  part->age=curp->age;
+	  part->isStar=curp->isStar;
+#endif
+
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
 	  if(countpacket[icpu]>cpu->nbuffpart){
@@ -933,14 +933,15 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 
 	    (lastp)->mass=part->mass;
 
-
-#ifdef STARS
-	    (lastp)->age=part->age;
-	    (lastp)->isStar=part->isStar;
-#endif
 	    (lastp)->idx=part->idx;
 	    (lastp)->level=part->level;
 	    (lastp)->is=part->is;
+
+#ifdef STARS
+	    (lastp)->rhocell=part->rhocell;
+	    (lastp)->age=part->age;
+	    (lastp)->isStar=part->isStar;
+#endif
 
 	    nadd++;
 	    //if(cpu->firstoct[0]->next!=NULL) abort();
