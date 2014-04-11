@@ -635,8 +635,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   struct OCT oct;
   FILE *fp;
 
-
-   fp=fopen(filename,"wb");
+  fp=fopen(filename,"wb");
 
   //printf("tsim=%f\n",tsim);
   fwrite(&tsim,sizeof(REAL),1,fp); 
@@ -668,7 +667,6 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 	  fwrite(&oct,sizeof(struct OCT),1,fp);
 	}while(nextoct!=NULL);
     }
-
   
   fclose(fp);
 }
@@ -700,12 +698,9 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
   float tsimf=tsim;
 
   int npart=0; 
-//  for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
 #ifdef STARS
   int nstar=0; 
- // for(level=levelcoarse;level<=levelmax;level++) nstar+=cpu->nstar[level-1];
- // npart -= nstar;
 
   char filenamestar[128];							char filenamepart[128];	
   FILE *fstar;									FILE *fpart;
@@ -714,9 +709,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
   fwrite(&nstar,1,sizeof(int)  ,fstar);						fwrite(&npart,1,sizeof(int)  ,fpart);
   fwrite(&tsimf,1,sizeof(float),fstar);						fwrite(&tsimf,1,sizeof(float),fpart);
 
-//  printf("nstar\t%d\n",*cpu->ndumps);
-//  if (cpu->rank == 0) printf("Dumping .......%s\n", filenamestar);				
-//  if (cpu->rank == 0) printf("Dumping .......%s\n", filenamepart);
+
 
 #else
   fp=fopen(filename,"wb");
@@ -747,6 +740,8 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 #ifdef STARS
 		  if(curp->isStar) 	{	fp=fstar;	nstar++;	}
 		  else 			{	fp=fpart;	npart++;	}
+#else
+		  npart++;
 #endif	
 		  val=curp->x;			fwrite(&val,1,sizeof(float),fp);
 		  val=curp->y;			fwrite(&val,1,sizeof(float),fp);
@@ -771,8 +766,9 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=(REAL)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
 		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
 #ifdef STARS
-		  val = curp->isStar;		fwrite(&val,1,sizeof(int  ),fp);
-		  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
+		  if(curp->isStar) {
+			  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
+		  }
 #endif
 		  ipart++;
 
@@ -1054,7 +1050,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #endif
 
 #ifdef STARS
-    param->stars->mstars	= (param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse);
     param->stars->n		= 0;
 #endif
 
@@ -2116,7 +2111,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   REAL tdump,adump;
   char filename[128]; 
-  
+  int Nbkp = 2;  
+
 #ifndef TESTCOSMO
 #ifdef WRAD
 	tdump=(tsim)*param->unit.unit_t/MYR;
@@ -2139,9 +2135,17 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
 	
+
+
 	  // backups for restart
-	  sprintf(filename,"bkp/part.%05d.p%05d",0,cpu->rank); 
-	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
+	if(*(cpu->ndumps)>=Nbkp){
+		sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+		save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
+		
+		sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)-Nbkp,cpu->rank); 
+		remove(filename);
+	}
+
 #endif
 	}
 	else{
@@ -2155,8 +2159,13 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
 	  // backups for restart
-	  sprintf(filename,"bkp/grid.%05d.p%05d",0,cpu->rank); 
-	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
+	if(*(cpu->ndumps)>=Nbkp){
+		sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
+		save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
+
+		sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)-Nbkp,cpu->rank); 
+		remove(filename);
+	}
 
 	}	
 }

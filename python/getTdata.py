@@ -13,24 +13,18 @@ if __name__ == "__main__":
 	foldername=args.folder
 	files= args.files	
 
-
-	
-	n = 1
-#	files=files[0:1]
-	size = len(files)/n
-	
+	size = len(files)
 	N = np.zeros(size, dtype=np.int32)
 	A = np.zeros(size, dtype=np.float64)
 	Mtot = np.zeros(size, dtype=np.float64)
 	
-
 	i=0
 	for j in range(size) :
 		file = files[i][:-17] +  "star" +  files[i][-13:]
 		N[j] = getNtot(file,args)
 		A[j] = getA(file) 
 		Mtot[j] = getMtotPart(file, args)
-		i+=n
+		i+=1
 
 	print Mtot
 
@@ -38,6 +32,7 @@ if __name__ == "__main__":
 	fileout = open(Fname, "w")
 	print "writing file ", Fname
 
+	
 	fileout.write(	str(size).zfill(8))
 
 	N.tofile(fileout)

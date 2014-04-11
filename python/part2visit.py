@@ -1,34 +1,25 @@
 #!/usr/bin/env python
 from fonction_visit import *
-from fonction_part import *
-
+from fonction_part import*
 
 if __name__ == "__main__":
 	
 
 
 	args=getargs()
-	foldername=args.folder[0]
+
 
 	if args.files != []:
-		filename = args.files[0]
 
-		'''
-		N,t,parts= ReadPart(filename, args)
+		case = 1	# 0->Part	1->Stars	2->both
 
-		if N :	
-			PartToVisit(parts, filename + ".3D")
-		else :
-			print "pas de particules"
-		'''
-
-		Nstars,t,stars = ReadStars(filename, args)
-
-		if Nstars :	
-			filename = filename[:-17] +  "star" +  filename[-13:]
-			PartToVisit(Nstars,stars, filename + ".3D")
-		else :
-			print "pas de particules"
+		if   case == 0 : 
+			p2v(args, 0)	
+		elif case == 1:
+			p2v(args, 1)	
+		elif case == 2:
+			p2v(args, 0)
+			p2v(args, 1)
 
 
 	else:

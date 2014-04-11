@@ -16,7 +16,7 @@ class Constantes :
 		self.h  = self.H0/100.
 
 		self.WM = 0.3175                 	# Omega(matter)
-		self.WV = 0.6825                 	# Omega(vacuum) or lambda
+		self.WV = 0.6825               		# Omega(vacuum) or lambda
 		self.WR = 4.165E-5/(self.h*self.h)    	# Omega(radiation)
 		self.WK = 1-self.WM-self.WR-self.WV	# Omega curvaturve = 1-Omega(total)
 	

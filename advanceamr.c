@@ -650,7 +650,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   /* //===================================creating new stars=================================// */
 #ifdef STARS
-	if (level == param->lmax) 	createStars(firstoct,param,cpu, adt[level-1], aexp, level); 
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level); 
 //	checkMtot(firstoct,param,cpu);
 #endif
 

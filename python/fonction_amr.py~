@@ -3,65 +3,51 @@ from struct import *
 import numpy as np
 import matplotlib.pylab as plt
 
-
 class array :
 	def __init__(self,fileName):
-
+		fileName = fileName[:-14] +  "grid" +  fileName[-10:] 
 		file = open(fileName, "rb")
 
-		self.x    = np.fromfile(file, dtype=np.int32, count=1)
-		self.y    = np.fromfile(file, dtype=np.int32, count=1)
-		self.z    = np.fromfile(file, dtype=np.int32, count=1)
-		self.a    = np.fromfile(file, dtype=np.float32, count=1)
-		self.N    = self.x[0]*self.y[0]*self.z[0]
+		self.x    = unpack('i',file.read(4))[0]
+		self.y    = unpack('i',file.read(4))[0]
+		self.z    = unpack('i',file.read(4))[0]
+		self.a    = unpack('f',file.read(4))[0]
+		self.Z    = 1.0/self.a-1.0
+		self.N    = int(self.x*self.y*self.z)
 
 		self.data = np.zeros( self.N, dtype=np.float64)
-		for i in range(self.N) : 
-			self.data[i]  = np.fromfile(file, dtype=np.float64, count=1)
 
-	#	print self.N
-	#	print self.data.mean()
-	#	print self.data.min()
-				
+		for i in range(self.N) : 
+			self.data[i]  = unpack('d',file.read(8))[0]
+		
+		
 	def getData(self):
 		return self.data
 	def getN(self):
 		return self.N
+	def getSize(self):
+		return self.x,self.y,self.z
 	def geta(self):
 		return self.a
+	def getz(self):
+		return self.z
 
 class cube :
 	def __init__(self,fileName):
 
-		file = open(fileName, "rb")
-
-
-		self.x  = np.fromfile(file, dtype=np.int32, count=1)
-		self.y  = np.fromfile(file, dtype=np.int32, count=1)
-		self.z  = np.fromfile(file, dtype=np.int32, count=1)
-		self.a  = np.fromfile(file, dtype=np.float32, count=1)
-
-		self.N  = self.x[0]*self.y[0]*self.z[0]
-
-		self.data = np.zeros( (self.x,self.y,self.z), dtype=np.float32)
-
-		for k in range(0, self.z[0]) : 
-			for j in range(0, self.y[0]) : 
-				for i in range(0, self.x[0]) : 				
-					self.data[i,j,k]  =  np.fromfile(file, dtype=np.float64, count=1)
-					
-#np.fromfile(file, dtype=np.float32, count=1)			
-
+		self.a = array(fileName)	
+		self.data = np.reshape(self.a.getData(),  (self.a.getSize()) , order='F') 
+		
 	def getData(self):
 		return self.data
-
+	def getZ(self):
+		return self.a.getZ()
 
 def denoct2grid(data,args,silo):
 
 	o2g  = "utils/oct2grid "
 
-	out  = " cube "
-	print args.field
+	out  = data + ".cube "
 	f= "0 "
 	if args.field[0]=="density" : 
 		f=" 1 "
@@ -93,9 +79,25 @@ def denoct2grid(data,args,silo):
 	os.system(commande)
 
 
+def getField(args, filename, field):
+	filename = filename[:-7]
+	filename = filename[:-10] +  "grid" +  filename[-6:] 
+
+	args.field = [field]
+
+	denoct2grid(filename, args,0)
+	return array(filename + ".cube").getData()
+
+def genCube(args, field):
+	for file in args.files:
+		filename = file[:-7]
+		filename = filename[:-10] +  "grid" +  filename[-6:] 
+
+		args.field = [field]
+		denoct2grid(filename, args,0)
+
 
 def getMtotGaz(folder,SnapNumber):
-
 
 	denoct2grid(folder, SnapNumber, "field.d")
 	den=array("cube")

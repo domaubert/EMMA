@@ -528,7 +528,7 @@ int main(int argc, char *argv[])
   lastoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
   cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));	memsize+=cpu.maxhash*sizeof(struct OCT *);	// the htable keys->oct address
   cpu.noct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of octs per level
-  cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles per level
+  cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles* per level	*(DM+stars ifdef STARS)
 #ifdef STARS
   cpu.nstar=	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of stars per level
 #endif
@@ -1540,6 +1540,10 @@ int main(int argc, char *argv[])
 
   if(cpu.rank==0) dumpHeader(&param,&cpu);
 
+#ifdef STARS
+	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+#endif
+
   //================================================================================
   //================================================================================
   //================================================================================
@@ -1694,7 +1698,8 @@ int main(int argc, char *argv[])
     }
 
 	// writting the last particle file
-  	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1);
+	ndumps-=1;
+  	dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 
 
 

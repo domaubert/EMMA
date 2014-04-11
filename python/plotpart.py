@@ -11,17 +11,22 @@ def plotpart(N,parts):
 	x=np.zeros(N)
 	y=np.zeros(N)
 
+	Lmax=8
+	S=pow(2.0,Lmax)
+
 	for i in range(N) :
-		x[i]=parts[i].x
-		y[i]=parts[i].y
+		x[i]=parts[i].x * S
+		y[i]=parts[i].y * S
 
-	Lmax=7
-	N=pow(2,Lmax)
+	
+
+	'''
 	H, xedges, yedges = np.histogram2d(x, y, bins=(N,N))
-
 	plt.imshow(np.log10(H), interpolation='nearest')
 	plt.colorbar()
+	'''
 
+	plt.plot(x,y,'.')
 
 def spectre(N,t,parts) :
 

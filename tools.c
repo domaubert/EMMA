@@ -31,7 +31,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   struct OCT *nextoct;
   struct OCT *curoct;
   REAL dx;
-  int nlev,noct,nstar;
+  int nlev,noct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
@@ -40,13 +40,16 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
   int *vnpart=cpu->npart;
-  int *vnstar=cpu->nstar;
+
 
   if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;
-  nstar=0;
+#ifdef STARS
+  int nstar=0;
+  int *vnstar=cpu->nstar;
+#endif
 
   for(level=1;level<=levelmax;level++)
     {
@@ -93,7 +96,9 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 		  do{ 
 		    nlev++;
 		    ntot++;
+#ifdef STARS
 		    if (curp->isStar) 	nstar++;
+#endif
 		    curp=nexp;
 		    nexp=curp->next;
 		  }while(nexp!=NULL);
@@ -107,7 +112,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;
       vnpart[level-1]=nlev;
-      vnstar[level-1]=nstar;
+ //     vnstar[level-1]=nstar;
     }
 
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  

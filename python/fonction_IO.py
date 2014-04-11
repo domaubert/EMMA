@@ -1,122 +1,143 @@
-import sys
-import os 
+import sys, os
 import argparse
 import numpy as np
+from struct import *
 
 class Param : 
-	def __init__(self,file):
+	def __init__(self,filename):
 
+		file = open(filename, "rb")
 
-		self.PIC          = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WHYDRO2      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WGRAV        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WRAD         = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WRADHYD      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TESTCOSMO    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WDBG         = np.fromfile(file, dtype=np.int32,   count=1)
-		self.STARS        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WMPI         = np.fromfile(file, dtype=np.int32,   count=1)
-		self.FLOORDT      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WCUDA_ERR    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.NOCOMP       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.GRAFIC       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.ZELDOVICH    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.EVRARD       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.EDBERT       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TUBE         = np.fromfile(file, dtype=np.int32,   count=1)
-		self.PARTN        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.PART2        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WRADTEST     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TESTCLUMP    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.PART_EGY     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.PERFECT      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.FASTGRAV     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.ONFLYRED     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.RIEMANN_HLLC = np.fromfile(file, dtype=np.int32,   count=1)
-		self.RIEMANN_EXACT= np.fromfile(file, dtype=np.int32,   count=1)
-		self.PRIMITIVE    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.DUAL_E       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.WCHEM        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.S_100000     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.COOLING      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.UVBKG        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSZM      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSZP      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSYM      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSYP      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSXM      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.TRANSXP      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.REFXM        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.REFYM        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.REFZM	  = np.fromfile(file, dtype=np.int32,   count=1)
+		self.PIC          = unpack('i',file.read(4))[0]
+		self.WHYDRO2      = unpack('i',file.read(4))[0]
+		self.WGRAV        = unpack('i',file.read(4))[0]
+		self.WRAD         = unpack('i',file.read(4))[0]
+		self.WRADHYD      = unpack('i',file.read(4))[0]
+		self.TESTCOSMO    = unpack('i',file.read(4))[0]
+		self.WDBG         = unpack('i',file.read(4))[0]
+		self.STARS        = unpack('i',file.read(4))[0]
+		self.WMPI         = unpack('i',file.read(4))[0]
+		self.FLOORDT      = unpack('i',file.read(4))[0]
+		self.WCUDA_ERR    = unpack('i',file.read(4))[0]
+		self.NOCOMP       = unpack('i',file.read(4))[0]
+		self.GRAFIC       = unpack('i',file.read(4))[0]
+		self.ZELDOVICH    = unpack('i',file.read(4))[0]
+		self.EVRARD       = unpack('i',file.read(4))[0]
+		self.EDBERT       = unpack('i',file.read(4))[0]
+		self.TUBE         = unpack('i',file.read(4))[0]
+		self.PARTN        = unpack('i',file.read(4))[0]
+		self.PART2        = unpack('i',file.read(4))[0]
+		self.WRADTEST     = unpack('i',file.read(4))[0]
+		self.TESTCLUMP    = unpack('i',file.read(4))[0]
+		self.PART_EGY     = unpack('i',file.read(4))[0]
+		self.PERFECT      = unpack('i',file.read(4))[0]
+		self.FASTGRAV     = unpack('i',file.read(4))[0]
+		self.ONFLYRED     = unpack('i',file.read(4))[0]
+		self.RIEMANN_HLLC = unpack('i',file.read(4))[0]
+		self.RIEMANN_EXACT= unpack('i',file.read(4))[0]
+		self.PRIMITIVE    = unpack('i',file.read(4))[0]
+		self.DUAL_E       = unpack('i',file.read(4))[0]
+		self.WCHEM        = unpack('i',file.read(4))[0]
+		self.S_100000     = unpack('i',file.read(4))[0]
+		self.COOLING      = unpack('i',file.read(4))[0]
+		self.UVBKG        = unpack('i',file.read(4))[0]
+		self.TRANSZM      = unpack('i',file.read(4))[0]
+		self.TRANSZP      = unpack('i',file.read(4))[0]
+		self.TRANSYM      = unpack('i',file.read(4))[0]
+		self.TRANSYP      = unpack('i',file.read(4))[0]
+		self.TRANSXM      = unpack('i',file.read(4))[0]
+		self.TRANSXP      = unpack('i',file.read(4))[0]
+		self.REFXM        = unpack('i',file.read(4))[0]
+		self.REFYM        = unpack('i',file.read(4))[0]
+		self.REFZM	  = unpack('i',file.read(4))[0]
 
-		self.npartmax     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.ngridmax     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nbuff        = np.fromfile(file, dtype=np.int32,   count=1)
-		self.ndumps       = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nsteps       = np.fromfile(file, dtype=np.int32,   count=1)
+		self.npartmax     = unpack('i',file.read(4))[0]
+		self.ngridmax     = unpack('i',file.read(4))[0]
+		self.nbuff        = unpack('i',file.read(4))[0]
+		self.ndumps       = unpack('i',file.read(4))[0]
+		self.nsteps       = unpack('i',file.read(4))[0]
 
-		self.lcoarse      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.lmax         = np.fromfile(file, dtype=np.int32,   count=1)
+		self.lcoarse      = unpack('i',file.read(4))[0]
+		self.lmax         = unpack('i',file.read(4))[0]
 
-		self.niter        = np.fromfile(file, dtype=np.int32,   count=1)
+		self.niter        = unpack('i',file.read(4))[0]
 
-		self.gstride      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.hstride      = np.fromfile(file, dtype=np.int32,   count=1)
+		self.gstride      = unpack('i',file.read(4))[0]
+		self.hstride      = unpack('i',file.read(4))[0]
 
-		self.dt           = np.fromfile(file, dtype=np.float32, count=1)
-		self.tmax         = np.fromfile(file, dtype=np.float32, count=1)
-		self.time_max     = np.fromfile(file, dtype=np.float32, count=1)
+		self.dt           = unpack('f',file.read(4))[0]
+		self.tmax         = unpack('f',file.read(4))[0]
+		self.time_max     = unpack('f',file.read(4))[0]
 
-		self.maxhash      = np.fromfile(file, dtype=np.int32,   count=1)
+		self.maxhash      = unpack('i',file.read(4))[0]
 
-		self.amrthresh    = np.fromfile(file, dtype=np.float32, count=1)
-		self.nsmooth      = np.fromfile(file, dtype=np.int32,   count=1)
+		self.amrthresh    = unpack('f',file.read(4))[0]
+		self.nsmooth      = unpack('i',file.read(4))[0]
 
-		self.poissonacc   = np.fromfile(file, dtype=np.float32, count=1)
-		self.mgridlmin    = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nvcycles     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nrelax       = np.fromfile(file, dtype=np.int32,   count=1)
+		self.poissonacc   = unpack('f',file.read(4))[0]
+		self.mgridlmin    = unpack('i',file.read(4))[0]
+		self.nvcycles     = unpack('i',file.read(4))[0]
+		self.nrelax       = unpack('i',file.read(4))[0]
 
-		self.nrestart     = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nsubcycles   = np.fromfile(file, dtype=np.int32,   count=1)
+		self.nrestart     = unpack('i',file.read(4))[0]
+		self.nsubcycles   = unpack('i',file.read(4))[0]
 
-		self.nthread      = np.fromfile(file, dtype=np.int32,   count=1)
-		self.nstream      = np.fromfile(file, dtype=np.int32,   count=1)
+		self.nthread      = unpack('i',file.read(4))[0]
+		self.nstream      = unpack('i',file.read(4))[0]
 		
-		self.egy_rhs      = np.fromfile(file, dtype=np.float32, count=1)
-		self.egy_0        = np.fromfile(file, dtype=np.float32, count=1)
-		self.egy_last     = np.fromfile(file, dtype=np.float32, count=1)
-		self.egy_timelast = np.fromfile(file, dtype=np.float32, count=1)
-		self.egy_totlast  = np.fromfile(file, dtype=np.float32, count=1)
+		self.egy_rhs      = unpack('f',file.read(4))[0]
+		self.egy_0        = unpack('f',file.read(4))[0]
+		self.egy_last     = unpack('f',file.read(4))[0]
+		self.egy_timelast = unpack('f',file.read(4))[0]
+		self.egy_totlast  = unpack('f',file.read(4))[0]
 		
 		if self.WRAD :
-			self.unit_l                = np.fromfile(file, dtype=np.float32, count=1)
-			self.unit_v                = np.fromfile(file, dtype=np.float32, count=1)
-			self.unit_t                = np.fromfile(file, dtype=np.float32, count=1)
-			self.unit_n                = np.fromfile(file, dtype=np.float32, count=1)
-			self.unit_mass             = np.fromfile(file, dtype=np.float32, count=1)
+			self.unit_l                = unpack('f',file.read(4))[0]
+			self.unit_v                = unpack('f',file.read(4))[0]
+			self.unit_t                = unpack('f',file.read(4))[0]
+			self.unit_n                = unpack('f',file.read(4))[0]
+			self.unit_mass             = unpack('f',file.read(4))[0]
 
-			self.clight                = np.fromfile(file, dtype=np.float32, count=1) 	
-			self.fudgecool             = np.fromfile(file, dtype=np.float32, count=1) 	
-			self.ncvgcool              = np.fromfile(file, dtype=np.int32,   count=1) 	
+			self.clight                = unpack('f',file.read(4))[0] 	
+			self.fudgecool             = unpack('f',file.read(4))[0] 	
+			self.ncvgcool              = unpack('i',file.read(4))[0] 	
 	  
-			self.denthresh             = np.fromfile(file, dtype=np.float32, count=1)	
-			self.tmpthresh             = np.fromfile(file, dtype=np.float32, count=1)	
-			self.srcint                = np.fromfile(file, dtype=np.float32, count=1)	
+			self.denthresh             = unpack('f',file.read(4))[0]	
+			self.tmpthresh             = unpack('f',file.read(4))[0]	
+			self.srcint                = unpack('f',file.read(4))[0]	
 
 		if self.TESTCOSMO :
-			self.om                    = np.fromfile(file, dtype=np.float32, count=1)
-			self.ov                    = np.fromfile(file, dtype=np.float32, count=1)
-			self.ob                    = np.fromfile(file, dtype=np.float32, count=1)
-			self.H0                    = np.fromfile(file, dtype=np.float32, count=1)
+			self.om                    = unpack('f',file.read(4))[0]
+			self.ov                    = unpack('f',file.read(4))[0]
+			self.ob                    = unpack('f',file.read(4))[0]
+			self.H0                    = unpack('f',file.read(4))[0]
 
 		if self.STARS :
-			self.overdensity_cond      = np.fromfile(file, dtype=np.float32, count=1)
-			self.density_cond          = np.fromfile(file, dtype=np.float32, count=1)
-			self.eff                   = np.fromfile(file, dtype=np.float32, count=1)
-	
+			self.overdensity_cond      = unpack('f',file.read(4))[0]
+			self.density_cond          = unpack('f',file.read(4))[0]
+			self.tcar                  = unpack('f',file.read(4))[0]
+		
 
+		file.close()
+
+def readFile(filename):
+
+	try:
+		f = open(filename, "r")	
+	except IOError:
+		print 'cannot open', filename 
+
+	data = f.read()
+	f.close()
+	return data	
+
+
+def isfloat(value):
+	try:
+		float(value)
+		return True
+	except ValueError:
+		return False
 
 def listPart(foldername):
 
@@ -129,16 +150,6 @@ def listPart(foldername):
 
 	return  sorted(tmp)
 
-def listStar(foldername):
-
-	files = os.listdir(foldername)
-
-	tmp=[]
-	for file in files:
-		if file[0:4]== "star" :	
-			tmp.append(foldername + file)
-
-	return  sorted(tmp)
 
 def listOriginePart(foldername) :
 
@@ -152,15 +163,6 @@ def listOriginePart(foldername) :
 
 	return tmp
 
-def listOrigineStar(foldername) :
-
-	files = listStar(foldername)
-
-	tmp=[]
-	for file in files :
-		if file[-3:]!= ".3D" and file[-7:]== ".p00000" :
-			tmp.append( file)
-	return tmp
 
 def getNsnap(foldername):
 	return len(listOriginePart(foldername))-1
@@ -169,7 +171,7 @@ def getNproc(args):
 	files = os.listdir(args.folder[0])
 	tmp =0
 	for file in files:
-		if file[0:10]=="grid.00000" and file[-3:]!=".3D" :	
+		if file[0:10]=="grid.00000" and file[-3:]!=".3D" and file[-5:]!=".cube":	
 			tmp +=1
 	return tmp
 
@@ -210,8 +212,8 @@ def getargs() :
 	parser.add_argument('-part', action="store_true", default= True,         help = "is it a particle snap?")
 	parser.add_argument('-grid', action="store_true", default= False,        help = "is it a grid snap?")
 	parser.add_argument('-np',   action="store",      default=-1, type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
-	parser.add_argument('-l'    ,action="store",      default=-1, type=int,  help = "level param of oct2grid", dest = "level")
-	parser.add_argument('-field',action="append",     default=[] ,            help = "field param of oct2grid", dest = "field")
+	parser.add_argument('-l'    ,action="store",      default=6 , type=int,  help = "level param of oct2grid", dest = "level")
+	parser.add_argument('-field',action="append",     default=["field.d"] ,  help = "field param of oct2grid", dest = "field")
 
 	args = parser.parse_args()
 	if args.folder == []:
@@ -220,29 +222,24 @@ def getargs() :
 	if args.nproc == -1:
 		args.nproc = getNproc(args)
 
-	print "nproc = ", args.nproc
 
-
-
-	for i in range(len(args.folder)):
-		if (args.folder[i][-1]!="/"):
-				args.folder += "/"
+	for fol in args.folder:
+		if (fol[-1]!="/"):
+			fol += "/"
 
 	snaprange(args)
 	num2snap(args)
+	
+	
+	param = Param(args.folder[0] + "param.00000.p00000")
 
-
-
+	print param.unit_l
 
 	return args
-	
 
-if __name__ == "__main__":
-	'''
-	file = open("../data/param", "rb")
-	p = Param(file)
-	print p.nstream
-	'''
-	args = getargs()
-	print(args.snap)
-	print(args.to)
+
+
+
+
+
+

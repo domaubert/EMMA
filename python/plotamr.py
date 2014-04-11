@@ -5,6 +5,8 @@ import matplotlib.pylab as plt
 
 from fonction_IO  import *
 from fonction_amr import *
+from plotpart import *
+
 
 
 def plothisto(args,field):
@@ -25,7 +27,7 @@ def plotslice(args):
 	filename = args.files[0][:-7]
 	filename = filename[:-10] +  "grid" +  filename[-6:] 
 
-	denoct2grid(filename, args,0)
+#	denoct2grid(filename, args,0)
 
 	a=cube("cube")
 
@@ -34,57 +36,86 @@ def plotslice(args):
 
 #	data =  a.getData()[32,:,:]
 
+
 	plt.imshow(np.log10(data), interpolation='nearest')
 	plt.colorbar()
+
+
+	N,t, parts=ReadStars(args.files[0], args)		
+	plotpart(N,parts)
+
+
 	plt.show()
+
+
+
+def plotTR(args):
+
+	rho = getField(args, "field.d")
+	T   = getField(args, "temp")
+
+	plt.loglog(rho/np.mean(rho),T, '.')
+
+
+def plotStarTR(args):
+
+	data = readFile("RT")
+
+	data = [x for x in data.split('\n')]
+
+	for i in range(len(data)):
+		data[i] = [x for x in data[i].split('\t')] 
+
+	n    = np.zeros(len(data))
+	rho  = np.zeros(len(data))
+	temp = np.zeros(len(data))
+	z = np.zeros(len(data))
+	ns=0
+
+	for i in range(len(data)-1):
+		if ( len(data[i])==6 and isfloat(data[i][1]) and isfloat(data[i][2]) and isfloat(data[i][3])  ) :
+			if float(data[i][1]):
+				ns +=1
+				n[i] = float(data[i][1])
+				rho[i] = float(data[i][2])/0.154330706937
+				temp[i] = float(data[i][3])
+				z[i] = float(data[i][5])
+	
+
+	lim1 = 3
+	lim2 = 2
+
+	mask = np.where(z>lim1)
+	plt.loglog(rho[mask], temp[mask], 'r.')
+	mask = np.where(np.logical_and(z<lim1, z>lim2) )
+	plt.loglog(rho[mask], temp[mask], 'y.')
+	mask = np.where(z<lim2)
+	plt.loglog(rho[mask], temp[mask], 'g.')
+
 
 
 def plotdiag(args):
-	filename = args.files[0][:-7]
-	filename = filename[:-10] +  "grid" +  filename[-6:] 
 
-	denoct2grid(filename, args, "field.d",0)
-	rho = array("cube").getData()
+	plotTR(args)
+	plotStarTR(args)
 
-	denoct2grid(filename, args, "temp",0)
-	T =array("cube").getData()
-
-	print "Rho max", rho.max()
-	print "T max", T.max()
+	plt.xlim(1e-2, 1e4)
+	plt.ylim(1e-2, 1e8)
 	
-	r = rho/np.mean(rho)
-	print "Rho moyen", np.mean(rho)
+	#plt.legend(getZ(args.files[0]))
 
-	tmpR = []
-	tmpT = []
-
-	for i in range(len(r))	:
-		if r[i]>2500 : 
-			tmpR.append(r[i])			
-			tmpT.append(T[i])			
-
-	print len(tmpR)
-
-	plt.loglog(r,T, '.')
-	#plt.loglog(tmpR,tmpT, 'r.')
 	plt.show()
 
-def oct2silo(args):
-
-	filename = args.files[0][:-7]
-	filename = filename[:-10] +  "grid" +  filename[-6:] 
-	denoct2grid(filename, args, args.field, 1)
 
 
 if __name__ == "__main__":	
 
 
 	args = getargs()
-	field = "field.d"
 
 #	oct2silo(args)
 #	plothisto(args, field)
-	plotslice(args)
-#	plotdiag(args)
+#	plotslice(args)
+	plotdiag(args)
 
 

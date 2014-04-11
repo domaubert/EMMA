@@ -182,7 +182,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   REAL ebkg[NGRP];
   REAL z=1./aexp-1.;
 #ifdef UVBKG
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z)) /10 ;  // Katz simple model
+  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
+//  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*((z>=2)?pow(1+z,-3):(1+z)/81.) ;
 #else
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -264,23 +265,23 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  nitcool++;
 
 	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
-	  
+
 	  //== Getting a timestep
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
-	  
+
 	  ai_tmp1=0.;
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
-	  
+
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
-	  
+
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
 	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
-	  
+
 	  // ABSORPTION
 	  int test = 0;
 	  REAL factotsa[NGRP];
@@ -294,18 +295,18 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
 	      ai_tmp1 = alphai[igrp];
 	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
-	      
+
 	      if(et[igrp]<0) 	{test=1;}
 	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
 	    }
 	  ai_tmp1=0.;
-	  
+
 	  if (test) 
 	    {
 	      fudgecool=fudgecool/10.; 
 	      continue;	
 	    } 
-	  
+
 	  // IONISATION
 #ifndef S_X
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp];}
@@ -319,7 +320,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(N2[1]<1.0) N2[1]=1.0; 
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp]*N2[igrp];}
 #endif
-	  
+
 	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
 	  ai_tmp1=0.;
 
@@ -344,13 +345,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  pp2=1.0-pow(xt,0.2663); 
 	  if(pp2<0.) pp2=0.; 
 	  F2[1]=0.9971*(1.0-pow(pp2,1.3163)); 
-	  
+
 	  if(F2[1]>1.0) F2[1]=1.0; 
 	  if(F2[1]<0.0) F2[1]=0.0; 
-	  
+
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp];}
 #endif
-	  
+
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
 	  //eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
 	  ai_tmp1=0;
@@ -372,7 +373,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #else
 	  eintt=eint[idloc];
 #endif
-	  
+
 	  for(igrp =0;igrp<NGRP;igrp++)
 	    {
 	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
@@ -380,7 +381,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	      floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
 	      floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp];	
 	    }
-	  
+
 	  x0[idloc]=xt;
 
 #ifdef COOLING
