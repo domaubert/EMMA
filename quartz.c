@@ -1185,8 +1185,8 @@ int main(int argc, char *argv[])
     tp1=MPI_Wtime();
 
     for(i=0;i<npart;i++){
-      unsigned long int key;
-      unsigned long hidx;
+      unsigned long long int key;
+      unsigned long long hidx;
       int found=0;
       key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
       hidx=hfun(key,cpu.maxhash);
@@ -1305,8 +1305,6 @@ int main(int argc, char *argv[])
 
 #endif
 #endif
-
-
 
 
 #endif
@@ -1594,7 +1592,8 @@ int main(int argc, char *argv[])
     // dumping ICs
     cpu.ndumps=&ndumps; // preparing the embedded IO
     cpu.tinit=tinit;
-    int ptot=0;
+    int ptot[1];
+	ptot[0]=0;
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
     sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
     dumpgrid(levelmax,firstoct,filename,tdump,&param);

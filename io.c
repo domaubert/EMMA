@@ -539,13 +539,13 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     for(ic=0;ic<6;ic++){
 
       if(curoct->nei[ic]!=NULL){
-	curoct->nei[ic]=(struct CELL *)(((unsigned long int)(curoct->nei[ic])-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
+	curoct->nei[ic]=(struct CELL *)(((unsigned long long int)(curoct->nei[ic])-(unsigned long long int)rootcell_sna)+(unsigned long long int)rootcell_mem);
       }
       
     }
     
     if(curoct->parent!=NULL){
-      curoct->parent=(struct CELL *)(((unsigned long int)(curoct->parent)-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
+      curoct->parent=(struct CELL *)(((unsigned long long int)(curoct->parent)-(unsigned long long int)rootcell_sna)+(unsigned long long int)rootcell_mem);
     }
     
 
@@ -890,7 +890,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   outf=fread(&part,sizeof(struct PART),1,fp);
 
 
- // printf("debut de lecture %ld\t%p\t%p\t%p\n ", (unsigned long int)(part_ad-rootpart_sna), part_ad,rootpart_sna,rootpart_mem );
+ // printf("debut de lecture %ld\t%p\t%p\t%p\n ", (unsigned long long int)(part_ad-rootpart_sna), part_ad,rootpart_sna,rootpart_mem );
 
   while(!feof(fp)){
 
@@ -1913,10 +1913,10 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 
   int i1,i2,i3;
   int icx,icy,icz,icell;
-  unsigned long key;
+  unsigned long long key;
   struct OCT *curoct;
   struct OCT *nextoct;
-  unsigned long hidx;
+  unsigned long long hidx;
   int found;
   float z0,y0,x0;
   int ifound=0;

@@ -29,12 +29,30 @@ def uvbkg():
 	pz=1.2e-17
 
 	n=10
-	bkg = np.zeros(n)
+	bkg0 = np.zeros(n)
+	bkg1 = np.zeros(n)
+	bkg2 = np.zeros(n)
 	for z in range(n):
-		bkg[z] = amp/(sig*np.sqrt(2*np.pi))* np.exp(-pow((z-zavg),2)/(2.*pow(sig,2)))+mz*z+pz
-		bkg[z] *= 1e15
+		bkg0[z] = amp/(sig*np.sqrt(2*np.pi))* np.exp(-pow((z-zavg),2)/(2.*pow(sig,2)))+mz*z+pz
+		bkg0[z] *= 1e15
 
-	plt.plot(range(n),bkg,label = "UVbkg")
+		if z<3 : 
+			bkg1[z] = 3.6
+		else :
+			bkg1[z] = 3.6*(4./(1+z))
+
+		if z>=2 : 
+			bkg2[z] = 3.6*pow(1.+z,-3.)
+		else :
+			bkg2[z] = 3.6*(1+z)/81.
+
+
+
+
+	plt.plot(range(n),bkg0,label = "Haardt & Madau")
+	plt.plot(range(n),bkg1,label = "Katz")
+	plt.plot(range(n),bkg2,label = "Moi")
+	
 
 
 if __name__ == "__main__":

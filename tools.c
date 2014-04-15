@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, int label){
+REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, int label){
 
   int ntot;
   REAL ntotd;
@@ -41,13 +41,14 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   int *vnoct=cpu->noct;
   int *vnpart=cpu->npart;
 
-
   if(rank==0) printf("Check\n");
   ntot=0.;
   ntotd=0.;
   nlevd=0.;
+
 #ifdef STARS
-  int nstar=0;
+  int slev=0;
+  int stot=0;
   int *vnstar=cpu->nstar;
 #endif
 
@@ -58,9 +59,16 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       nlev=0;
       nlevd=0.;
       noct=0;
+#ifdef STARS
+      slev=0;
+#endif
+
       if(nextoct==NULL){
 	vnoct[level-1]=0;
 	vnpart[level-1]=0;
+#ifdef STARS
+	vnstar[level-1]=0;
+#endif
 	continue;
       }
       do // sweeping level
@@ -71,7 +79,7 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 
 	  if(level>=levelcoarse)
 	    {
-	      //if(rank==0) printf("np=%d nlev\n",nlev);
+	//      if(rank==0) printf("np=%d nlev\n",nlev);
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 	      
@@ -94,13 +102,17 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 		  
 		  if(nexp==NULL)continue;
 		  do{ 
+		    curp=nexp;
+		    nexp=curp->next;
+
 		    nlev++;
 		    ntot++;
 #ifdef STARS
-		    if (curp->isStar) 	nstar++;
+		    if (curp->isStar){
+			slev++;
+		 	stot++;
+		    }
 #endif
-		    curp=nexp;
-		    nexp=curp->next;
 		  }while(nexp!=NULL);
 #endif
 		}
@@ -112,24 +124,33 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1]=noct;
       vnpart[level-1]=nlev;
- //     vnstar[level-1]=nstar;
+#ifdef STARS
+      vnstar[level-1]=slev;
+#endif
     }
 
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
+printf("nPart%d\tnStar%d\n",npart[0], npart[1]);
 
 #ifdef PIC
-#ifndef STARS
   //ultimate check
   if(npart!=0){ // for initial call to multicheck that always provide a zero
-  if(ntot!=npart) {
-    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart,ntot,cpu->rank,label);
+  if(ntot!=npart[0]) {
+    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart[0],ntot,cpu->rank,label);
     abort();
   }
+#ifdef STARS
+  if(stot!=npart[1]) {
+    printf("ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n",npart[1],stot,cpu->rank,label);
+    abort();
   }
 #endif
+
+  }
+
 #endif
+
 #ifdef WMPI
-  
  MPI_Barrier(cpu->comm);
  if(rank==0) printf("Check done \n");
 #endif

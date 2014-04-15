@@ -50,9 +50,8 @@ def plotslice(args):
 
 
 def plotTR(args):
-
-	rho = getField(args, "field.d")
-	T   = getField(args, "temp")
+	rho = getField(args,args.files[0], "field.d")
+	T   = getField(args,args.files[0], "temp")
 
 	plt.loglog(rho/np.mean(rho),T, '.')
 
@@ -105,6 +104,7 @@ def plotdiag(args):
 	#plt.legend(getZ(args.files[0]))
 
 	plt.show()
+
 
 
 

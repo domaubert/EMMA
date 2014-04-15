@@ -171,7 +171,7 @@ struct RUNPARAMS{
 
 struct PACKET{
   REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -186,8 +186,8 @@ struct CPUINFO{
   int rank;
   int nproc;
 
-  unsigned long kmin;
-  unsigned long kmax;
+  unsigned long long kmin;
+  unsigned long long kmax;
   int nkeys;
 
   REAL load;
@@ -248,7 +248,6 @@ struct CPUINFO{
   MPI_Comm comm; // the communicator
   
   
-
 #endif
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
@@ -299,7 +298,7 @@ struct CPUINFO{
 
   REAL * gresA;
   REAL * gresB;
-  unsigned long int cuparam;
+  unsigned long long int cuparam;
 #endif
 };
 
@@ -473,7 +472,7 @@ struct PART_MPI // For mpi communications
 #endif
 
 
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
 
 
 };
@@ -484,14 +483,14 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
 #ifdef WRAD
 struct RAD_MPI{
   struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 #endif
@@ -499,7 +498,7 @@ struct RAD_MPI{
 // this structure is for the communication of Flux data
 struct FLUX_MPI{
   REAL data[8*NFLUX]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
