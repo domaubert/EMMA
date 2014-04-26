@@ -208,9 +208,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int gstride=param->gstride;
   int nsub=param->nsubcycles;
   int ip;
-  int ptot[2];
-  ptot[0] = 0;
-  ptot[1] = 0;
+  int *ptot = (int*)calloc(2,sizeof(int));
   
   REAL ekp,epp,ein;
   REAL RHS;
@@ -229,15 +227,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
   }
 
-
   // ==================================== Check the number of particles and octs
   ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
     ptot[0]+=cpu->npart[ip-1]; // total of local particles
-    /* if((level==12)&&(cpu->rank==217)){ */
-    /*   printf("l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
-    /* } */
+ 
+ //    if((level==12)&&(cpu->rank==217)){ 
+ //     printf("l=%ip n=%ip\n",ip,cpu->npart[ip-1]); 
+ //    } 
   }
-  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,0);
+#ifdef STARS
+  ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+
+
+  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,0);
 
   if(level==param->lcoarse){
     // =========== Grid Census ========================================
@@ -298,7 +301,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
     }
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,1);
+
+#ifdef STARS
+  ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+
+
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
 
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
@@ -381,11 +390,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-  /* //===================================creating new stars=================================// need to be called before the dt computation because of the random speed component  */
-#ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
-//	checkMtot(firstoct,param,cpu);
-#endif
+
 
 
 
@@ -640,6 +645,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 
+  /* //===================================creating new stars=================================// need to be called before the dt computation because of the random speed component  */
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#endif
+
+
+
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
@@ -655,7 +667,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if(cpu->rank==0) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
+#ifdef STARS
+    ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,2);
 
 
 
@@ -698,10 +713,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  //   printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
     //update the particle number within this process
     //npart=npart+deltan;
-    ptot[0]=deltan[0]; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
-    ptot[1]=deltan[1]; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1]; // total of local stars
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,3);
+    ptot[0]=deltan[0]; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
+#ifdef STARS
+    ptot[1]=deltan[1]; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1]; // total of local stars
+#endif
+
+
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 #endif
 
 

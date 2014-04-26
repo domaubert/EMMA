@@ -11,7 +11,7 @@ def plotpart(N,parts):
 	x=np.zeros(N)
 	y=np.zeros(N)
 
-	Lmax=8
+	Lmax=7
 	S=pow(2.0,Lmax)
 
 	for i in range(N) :

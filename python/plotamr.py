@@ -27,21 +27,17 @@ def plotslice(args):
 	filename = args.files[0][:-7]
 	filename = filename[:-10] +  "grid" +  filename[-6:] 
 
-#	denoct2grid(filename, args,0)
+	args.field = ["x"]
+	denoct2grid(filename, args,0)
+	data = cube(filename + ".cube").getData()
 
-	a=cube("cube")
+	data =  np.sum( data,axis=0)
+	data = np.log10(data)
 
-	data = np.sum( a.getData(),axis=2)
-	print np.max(a.getData())
-
-#	data =  a.getData()[32,:,:]
-
-
-	plt.imshow(np.log10(data), interpolation='nearest')
+	plt.imshow(data, interpolation='nearest')
 	plt.colorbar()
 
-
-	N,t, parts=ReadStars(args.files[0], args)		
+	N,t, parts=ReadStars(args.files[0], args)
 	plotpart(N,parts)
 
 
@@ -115,7 +111,7 @@ if __name__ == "__main__":
 
 #	oct2silo(args)
 #	plothisto(args, field)
-#	plotslice(args)
-	plotdiag(args)
+	plotslice(args)
+#	plotdiag(args)
 
 

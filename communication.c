@@ -504,7 +504,7 @@ int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 #ifdef STARS
 	if(part->isStar){
 		nrem[1] ++;
-		printf("cpu %d nremstar %d\n",cpu->rank,nrem[1]);
+	//	printf("cpu %d nremstar %d\n",cpu->rank,nrem[1]);
 	}
 #endif
 	  nrem[0]++;
@@ -953,7 +953,7 @@ int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 
 	if ((lastp)->isStar) {
 		nadd[1] ++;
-		printf("cpu %d naddstar %d\n",cpu->rank, nadd[1]);
+	//	printf("cpu %d naddstar %d\n",cpu->rank, nadd[1]);
 	}
 #endif
 	    nadd[0]++;

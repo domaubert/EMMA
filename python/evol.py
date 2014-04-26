@@ -95,7 +95,7 @@ if __name__ == "__main__":
 #		plt.plot(T[f:-1]/1e9,Mtot[f:-1]/0.154330706937 , label = folder)		# Masse d'etoile en fonction du temps
 
 
-	uvbkg()
+	#uvbkg()
 
 
 	plt.xlim(0,15)

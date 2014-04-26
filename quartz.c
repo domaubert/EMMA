@@ -472,19 +472,11 @@ int main(int argc, char *argv[])
   int ncellsmax    = 3 * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid
   int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
-  if (ngridmax < noon ) {
-	printf("\n");
-	printf("=====================================================\n");
-	printf("-----------------------------------------------------\n");
-	printf("=====================================================\n");
+  if (ngridmax < noon && cpu.rank==0 ) {
 	printf("\n");
 	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE GRID\n");
 	printf("%d oct allocated per processor \n",ngridmax);
         printf("%d oct approximately needed\n", noon);
-	printf("\n");
-	printf("=====================================================\n");
-	printf("-----------------------------------------------------\n");
-	printf("=====================================================\n");
 	printf("\n");
   }
 
@@ -501,18 +493,13 @@ int main(int argc, char *argv[])
   nopn *= 2;					// you can create as many stars as initial DM particles
 #endif
 
-  if (npartmax < nopn ){
-	printf("=====================================================\n");
-	printf("-----------------------------------------------------\n");
-	printf("=====================================================\n");
+  if (npartmax < nopn && cpu.rank==0 ){
 	printf("\n");
 	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE PARTICLE\n");
 	printf("%d part allocated per processor \n",npartmax);
         printf("%d part approximately needed\n", nopn);
 	printf("\n");
-	printf("=====================================================\n");
-	printf("-----------------------------------------------------\n");
-	printf("=====================================================\n");  }
+ }
 #endif
  
 
@@ -1592,9 +1579,8 @@ int main(int argc, char *argv[])
     // dumping ICs
     cpu.ndumps=&ndumps; // preparing the embedded IO
     cpu.tinit=tinit;
-    int ptot[1];
-	ptot[0]=0;
-    mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,0);
+    int *ptot = (int*)calloc(2,sizeof(int));
+    mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
     sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
     dumpgrid(levelmax,firstoct,filename,tdump,&param);
 #ifdef PIC

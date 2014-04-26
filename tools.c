@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, int label){
+REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu,struct RUNPARAMS *param, int label){
 
   int ntot;
   REAL ntotd;
@@ -30,12 +30,13 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
-  REAL dx;
+  REAL dx,dv;
   int nlev,noct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
   REAL mtot;
+  REAL Mtot=0;
   
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -56,6 +57,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
     {
       nextoct=firstoct[level-1];
       dx=1./pow(2,level);
+      dv=pow(dx,3);
       nlev=0;
       nlevd=0.;
       noct=0;
@@ -86,20 +88,25 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 //		  xc=curoct->x+(icell&1)*dx+dx*0.5;
 //		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
 //		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
+
+		  ntotd+=curoct->cell[icell].density*dv;
+		  nlevd+=curoct->cell[icell].density*dv;
+		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+
+		  if(curoct->cell[icell].field.d<0) {
+			printf("Negative value for density -> abort\n");
+			abort;
+		  }	
 #ifdef PIC
 	     
-		  ntotd+=curoct->cell[icell].density*dx*dx*dx;
-		  nlevd+=curoct->cell[icell].density*dx*dx*dx;
-		  
-		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
-		  
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
 		  if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		    printf("check: split cell with particles !\n");
 		    printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
 		    abort();
 		  }
-		  
+
+		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 		  if(nexp==NULL)continue;
 		  do{ 
 		    curp=nexp;
@@ -111,10 +118,12 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		    if (curp->isStar){
 			slev++;
 		 	stot++;
+			Mtot+=curp->mass;
 		    }
 #endif
 		  }while(nexp!=NULL);
 #endif
+
 		}
 	    }
 	  noct++;
@@ -122,19 +131,32 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
       //if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
       
       if(level==levelcoarse) mtot=nlevd;
-      vnoct[level-1]=noct;
+      vnoct[level-1] =noct;
       vnpart[level-1]=nlev;
 #ifdef STARS
       vnstar[level-1]=slev;
 #endif
     }
 
+	MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+	REAL tmw = param->cosmo->ob/param->cosmo->om ;
+	REAL dm = Mtot - tmw;
+
+	if(  fabs(dm) > 1e-6 && cpu->rank==0){
+		printf("\n=================================================\n");
+		printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
+		printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
+		printf("\tDelta \t\t\t\t %lf \n",dm); 
+		printf("=================================================\n");
+	//	abort();
+	}
+
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
-printf("nPart%d\tnStar%d\n",npart[0], npart[1]);
+//printf("nPart %d\tnStar %d\n",npart[0], npart[1]);
 
 #ifdef PIC
   //ultimate check
-  if(npart!=0){ // for initial call to multicheck that always provide a zero
+  if(npart[0]!=0){ // for initial call to multicheck that always provide a zero
   if(ntot!=npart[0]) {
     printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart[0],ntot,cpu->rank,label);
     abort();
@@ -197,13 +219,20 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
   int level;
   int ltot,gtot=0,nomax,nomin;
   int lpart,ptot=0;
+#ifdef STARS
+  int lstar;
+#endif
+
 
   if(cpu->rank==0){
     printf("===============================================================\n");
   }
   for(level=2;level<=param->lmax;level++){
-    ltot=cpu->noct[level-1];
+    ltot =cpu->noct[level-1];
     lpart=cpu->npart[level-1];
+#ifdef STARS
+    lstar=cpu->nstar[level-1];
+#endif
     nomax=ltot;
     nomin=ltot;
     gtot+=ltot;
@@ -213,12 +242,21 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&lpart,1,MPI_INT,MPI_SUM,cpu->comm);
+#ifdef STARS
+    MPI_Allreduce(MPI_IN_PLACE,&lstar,1,MPI_INT,MPI_SUM,cpu->comm);
+    lpart-=lstar;
 #endif
+#endif
+
+
     if(cpu->rank==0){
       if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d npart=%9d",level,ltot,nomin,nomax,lpart);
+#ifdef STARS
+	printf(" nstar=%9d",lstar);
+#endif
 	int I;
 	REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
-	printf("[");
+	printf(" [");
 	for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
 	printf("]\n");
       }
@@ -269,71 +307,3 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 }
 
 
-
-
-void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
-
-// Check if the total baryonic mass is conserved
-// Usefull in star formation
-
-	struct OCT  *nextoct;
-	struct OCT  *curoct;
-	struct CELL *curcell;
-	struct PART * pcur;
-	struct PART * pnext;
-
-	int level, icell;
-	REAL Mtot=0;
-	REAL dx, dm, tmw;
-
-	for(level=param->lcoarse;level<=param->lmax;level++) {
-		nextoct=firstoct[level-1];	
-		if(nextoct==NULL) continue; 
-
-		dx=1./pow(2.0,level);		
-		do {
-
-			curoct=nextoct;
-			nextoct=curoct->next;
-
-			if(curoct->cpu!=cpu->rank) continue;
-		      	for(icell=0;icell<8;icell++) {		
-
-				curcell = &curoct->cell[icell];
-				if(curcell->child == NULL) {
-#ifdef STARS		
-					if (curcell->phead){	
-						pnext = curcell->phead;
-						do {
-							pcur=pnext;
-							pnext = pcur->next;
-
-							if (pcur->isStar) Mtot+=pcur->mass;
-
-						}while(pnext != NULL);
-					}
-#endif
-				Mtot += curcell->field.d * pow(dx,3);
-
-				}
-			}
-		}while(nextoct!=NULL);
-	}
-
-
-#ifdef WMPI
-	MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-#endif
-	tmw = param->cosmo->ob/ param->cosmo->om;
-	dm = pow(pow(Mtot - tmw, 2), 0.5);
-
-	if(cpu->rank==0){
-	printf("\n=================================================\n");
-	printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
-	printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
-	printf("\tDelta \t\t\t\t %lf \n",dm); 
-	printf("=================================================\n");
-	if ( dm > 1e-6 ) abort();
-	}
-
-}

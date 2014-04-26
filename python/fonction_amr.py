@@ -36,7 +36,7 @@ class cube :
 	def __init__(self,fileName):
 
 		self.a = array(fileName)	
-		self.data = np.reshape(self.a.getData(),  (self.a.getSize()) , order='F') 
+		self.data = np.reshape(self.a.getData(),  (self.a.getSize()) ) 
 		
 	def getData(self):
 		return self.data
@@ -69,6 +69,8 @@ def denoct2grid(data,args,silo):
 		f=" 104 "
 	if args.field[0]=="field.p" : 
 		f=" 105 "
+	if args.field[0]=="x" : 
+		f=" 106 "
 	if f=="0 ":
 		print "entrez un champ"
 		sys.exit()

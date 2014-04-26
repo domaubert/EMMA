@@ -1027,6 +1027,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife		=dummyf;
 #endif
       fclose(buf);
     }
@@ -2143,7 +2144,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 		save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 		
 		sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)-Nbkp,cpu->rank); 
-		remove(filename);
+	//	remove(filename);
 	}
 
 #endif
@@ -2164,7 +2165,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 		save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 
 		sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)-Nbkp,cpu->rank); 
-		remove(filename);
+	//	remove(filename);
 	}
 
 	}	
