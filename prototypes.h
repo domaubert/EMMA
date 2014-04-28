@@ -16,7 +16,7 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049);
-#define PMIN 1e-13
+#define PMIN 1e-11
 #endif
 
 #define NCOSMOTAB (262144)
@@ -481,7 +481,7 @@ struct CELL
 
   // the physical quantities
   REAL density; // total density
-  REAL temp;
+  //REAL temp;
 #endif
 
 #ifdef WGRAV
@@ -641,11 +641,9 @@ struct OCT
 
   // ***************** CAN BE DELETED *****************//
   // vector info
-  int vecpos;
-  int border; // equal to zero if not a border
-  // ***************** CAN BE DELETED *****************//
+  /* int vecpos; */
+  /* int border; // equal to zero if not a border */
 
-  int stenpos;
 
 };
 

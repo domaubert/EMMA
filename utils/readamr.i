@@ -154,7 +154,6 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,
   if(is_void(proj)) proj=0;
   if(is_void(fout)) fout=fname+".f"+pr1(field);
   time=array(double);
-  "hello";
   commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fout+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(xmin)+" "+pr1(xmax)+" "+pr1(ymin)+" "+pr1(ymax)+" "+pr1(zmin)+" "+pr1(zmax)+" "+pr1(proj);
   //commande;
   system(commande);

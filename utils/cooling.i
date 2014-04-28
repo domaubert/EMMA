@@ -43,7 +43,7 @@ c4=1.42e-27*1.5e0*sqrt(temp)*x*x*nh2*nh2*CLUMPF;
 // Compton Cooling
 
 c5=1.017e-37*pow(2.727*(1+z),4)*(temp-2.727*(1+z))*nh2*x;
-c5=(c5>0.?c5:0); // to be checked
+//c5=(c5>0.?c5:0); // to be checked
 
 // Overall Cooling
 

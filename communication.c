@@ -561,7 +561,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	    if(found){ // the reception oct has been found
 
 	      // we set the current oct as a border one (for vector based communications)
-	      curoct->border=1;
+	      //curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
 		switch(field){
@@ -574,7 +574,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
 		case 4:
-		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  //pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
 		  break;
 #endif
 		case 2:
@@ -657,7 +657,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 	    if(found){ // the reception oct has been found
 
 	      // we set the current oct as a border one (for vector based communications)
-	      curoct->border=1;
+	      //curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
 		switch(field){
@@ -670,7 +670,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		  pack->data[icell]=curoct->cell[icell].density; // density again we reproduce the case 1 in order to be consistent with scatter_mpi
 		  break;
 		case 4:
-		  pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
+		  //pack->data[icell]=curoct->cell[icell].temp; //temp field for force calculation
 		  break;
 #endif
 		case 2:
@@ -751,7 +751,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
 	      case 4:
-		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		//curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
 		break;
 #endif
 	      case 2:
@@ -830,7 +830,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		curoct->cell[icell].density =pack->data[icell]; // density
 		break;
 	      case 4:
-		curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
+		//curoct->cell[icell].temp=pack->data[icell]; // temp field for force calculation
 		break;
 #endif
 	      case 2:
@@ -1340,7 +1340,7 @@ void gather_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 	    if(found){ // the reception oct has been found
 
 	      // we set the current oct as a border one (for vector based communications)
-	      curoct->border=1;
+	      //curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
 		memcpy(&(pack->data[icell]),&(curoct->cell[icell].field),sizeof(struct Wtype));
@@ -1408,7 +1408,7 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 	    if(found){ // the reception oct has been found
 
 	      // we set the current oct as a border one (for vector based communications)
-	      curoct->border=1;
+	      //curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
 		memcpy(&(pack->data[icell]),&(curoct->cell[icell].field),sizeof(struct Wtype));
@@ -1899,7 +1899,7 @@ void gather_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, int 
 	    if(found){ // the reception oct has been found
 
 	      // we set the current oct as a border one (for vector based communications)
-	      curoct->border=1;
+	      //curoct->border=1;
 
 	      for(icell=0;icell<8;icell++){
 		memcpy(&(pack->data[icell]),&(curoct->cell[icell].rfield),sizeof(struct Rtype));

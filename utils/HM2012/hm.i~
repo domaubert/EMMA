@@ -1,0 +1,31 @@
+z=load("z.out");
+z=z(1,);
+dummy=load("e.out");
+lam=dummy(,1)*1e-10; // wavelength in meters
+em=dummy(,2:); // comoving emmisivity in erg/s/Hz/Mpc3
+c=3e8; // speed of light (m/s);
+nu=c/lam; // frequency (Hz);
+hplanck=6.626e-34;
+eev=hplanck*nu/1.6e-19;
+
+www=where(eev>=13.6);
+eionz=nionz=[];
+for(i=1;i<=numberof(z);i++){
+  eion=integ(em(www,i),nu(www),nu(www)(0));
+  write,"eion=",eion," from hnu=",nu(www)(1)," to hnu=", nu(www)(0);
+  grow,eionz,abs(eion)*1e-7/(3.06e22)^3; // J/s/m3
+  grow,nionz,abs(eion)*1e-7/(3.06e22)^3/(20.24*1.6e-19); // n photons/s/m3
+ }
+
+t=univAge(10000)-univAge(z);
+st=sort(t);
+ts=t(st);
+nionzs=nionz(st);
+zs=z(st);
+ncum=integ(nionzs,ts,ts);
+//plg,ncum/0.2,zs;
+
+
+amp=1.2e-16;sig=1.;zavg=2;mz=1e-18;pz=1.2e-17;
+
+ws;plg,amp/(sig*sqrt(2*pi))*exp(-(z-zavg)^2/(2.*sig^2))+mz*z+pz,z,color="red";plg,nionz,z;

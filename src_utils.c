@@ -72,7 +72,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 
 #ifdef WHYDRO2
   if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
-    cell->rfield.src=param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+    cell->rfield.src=param->srcint*cell->field.d/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
     cell->rfieldnew.src=cell->rfield.src;
     flag=1;
   }

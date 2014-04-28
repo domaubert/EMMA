@@ -679,7 +679,7 @@ struct OCT *scatterstencilgrav(struct OCT *octstart, struct STENGRAV *gstencil,i
       nextoct=curoct->next;
       
       // filling the values in the central oct
-      vecpos=curoct->vecpos;
+      //vecpos=curoct->vecpos;
       
       if(curoct->cpu!=cpu->rank) continue;
 
@@ -750,7 +750,7 @@ struct OCT *scatterstencilforce(struct OCT *octstart, struct STENGRAV *gstencil,
       curoct=nextoct;
       nextoct=curoct->next;
       
-      vecpos=curoct->vecpos;
+      //vecpos=curoct->vecpos;
       if(curoct->cpu!=cpu->rank) continue;
 
 #ifdef FASTGRAV
@@ -1060,7 +1060,7 @@ void clean_vecpos(int level,struct OCT **firstoct)
     {
       curoct=nextoct;
       nextoct=curoct->next;
-      curoct->vecpos=-1;
+      //curoct->vecpos=-1;
     }while(nextoct!=NULL);
   
 }

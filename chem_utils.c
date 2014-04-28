@@ -146,7 +146,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
 // ===========================================================================================================================
 
-void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexp)
+void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexporg)
 {
   int i,icell,igrp;
   int idloc;
@@ -172,22 +172,18 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     et[NGRP],
     p[NGRP];
 
-#ifdef TESTCOSMO
-  REAL hubblet=0.;//;param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
-
-#else
-  REAL hubblet=0.;
-#endif
-
+  REAL aexp;
   REAL ebkg[NGRP];
-  REAL z=1./aexp-1.;
-#ifdef UVBKG
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
-#else
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
-#endif
+  REAL z=1./aexporg-1.;
 
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+
+#ifdef S_X
+  REAL E0overI[NGRP];
+  REAL N2[NGRP];
+  REAL F2[NGRP];
+#endif
+
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
 
@@ -204,7 +200,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
     srcloc[BLOCKCOOL];
   
   
-  REAL dt=dtnew*param->unit.unit_t*pow(aexp,2);
+  REAL dt=dtnew*param->unit.unit_t*pow(aexporg,2);
   REAL emin;
   struct Rtype R;
   REAL fudgecool=param->fudgecool;
@@ -213,25 +209,25 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   for(i=0;i<nread;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
 
-      fudgecool=param->fudgecool;
+     
       if(stencil[i].oct[6].cell[icell].split) continue; // we dont treat split cells
       memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
       
       // switch to physical units, chemistry remains unchanged with and without cosmo
       for (igrp=0;igrp<NGRP;igrp++)
 	{			
-	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n+ebkg[igrp]; 
-	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/pow(aexp,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;//+ebkg[igrp]; 
+	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
 	}
 
 
       x0[idloc]=R.xion;
-      nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
-      eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
-      emin=PMIN/(GAMMA-1.)/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
+      nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
+      eint[idloc]=R.eint/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
+      emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
+      srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/pow(aexporg,3); 
       
       /* if(((isnan(eint[idloc]))||(isnan(x0[idloc])))||(eint[idloc]==0.)){ */
       /* 	printf("start with nans or ZErO egy %e\n",eint[idloc]); */
@@ -260,20 +256,49 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 
 
       // local cooling loop -------------------------------
-
+      aexp=aexporg;
+      fudgecool=param->fudgecool;
       currentcool_t=0.;
       nitcool=0.;
-      
+      REAL da;
       while(currentcool_t<dt)
 	{
-	  nitcool++;
 
-	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
+	  z=1./aexp-1.;
+
+	  // ==================== UV Background
+#ifdef UVBKG
+	  if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
+	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 	  
+	  // Poor FIT to Haardt & MAdau 2012
+	  for(igrp=0;igrp<NGRP;igrp++){
+	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
+	    ebkg[igrp]=amp/(sig*sqrt(2*M_PI))*exp(-pow((z-zavg),2)/(2.*pow(sig,2)))+mz*z+pz; // comoving photons/s/m3
+	  }
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
+#endif
+
+	  // Cosmological Adiabatic expansion effects ==============
+#ifdef TESTCOSMO
+	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
+
+  	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
+	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
+
+#else
+	  REAL hubblet=0.;
+#endif
+	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
+
 	  //== Getting a timestep
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 	  
 	  ai_tmp1=0.;
+
+
+
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
@@ -281,7 +306,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	  
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
+	  alphab=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
@@ -300,107 +325,121 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	      ai_tmp1 = alphai[igrp];
 	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
 	      
-	      if(et[igrp]<0){
+	      if((et[igrp]<0)||(isnan(et[igrp]))){
 		test=1;
 	      }
-	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
+	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+4.*hubblet)*dtcool);
 	    }
+	  
 	  ai_tmp1=0.;
 
 	  
 	  if(test) 
 	    {
 	      fudgecool=fudgecool/10.; 
+	      //printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
 	      continue;	
 	    } 
 
-	  /* if((et[0]<0.)||(isnan(et[0]))){ */
-	  /*   printf("bnd err ? x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e %d\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool,nitcool); */
-	  /* } */
 	  
 	  // IONISATION
 #ifndef S_X
+#ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp];}
-	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL];}
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL];}
+#endif
 #else
 	  N2[0]=1.0;
 	  REAL pp=(1.-pow(x0[idloc],0.4092)); 
 	  if(pp<0.) pp=0.; 
-    
-	  N2[1]=1.0+0.3908*pow(pp,1.7592)*E0overI[1]; 
-	  if(N2[1]<1.0) N2[1]=1.0; 
+
+	  for(igrp=1;igrp<NGRP;igrp++){
+	    N2[igrp]=1.0+0.3908*pow(pp,1.7592)*E0overI[igrp]; 
+	    if(N2[igrp]<1.0) N2[igrp]=1.0; 
+	  }
+#ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp]*N2[igrp];}
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL]*N2[igrp];}
+#endif
 #endif
 	  
-	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
+	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet));
 	  ai_tmp1=0.;
 
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
- 	      /* if(nitcool>10000){ */
-	      /* 	printf("loopin xion g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
-	      /* } */
+	      //printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]);
+
 	      continue;	
 	    } 
 
+#ifdef SEMI_IMPLICIT
 	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
-	  //cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+#else
+	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+#endif
 
 #ifdef COOLING
 	  // HEATING
 #ifndef S_X
+#ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
-	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+5.*hubblet*dtcool);
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);
+#endif
 #else
 	  REAL pp2;
 	  F2[0]=1.0;
-	  F2[1]=1.0;
+#ifdef SEMI_IMPLICIT
 	  pp2=1.0-pow(xt,0.2663); 
+#else
+	  pp2=1.0-pow(x0[idloc],0.2663); 
+#endif
 	  if(pp2<0.) pp2=0.; 
-	  F2[1]=0.9971*(1.0-pow(pp2,1.3163)); 
+	  for(igrp=1;igrp<NGRP;igrp++){
+	    F2[igrp]=1.0;
+	    F2[igrp]=0.9971*(1.0-pow(pp2,1.3163)); 
 	  
-	  if(F2[1]>1.0) F2[1]=1.0; 
-	  if(F2[1]<0.0) F2[1]=0.0; 
-	  
+	    if(F2[igrp]>1.0) F2[igrp]=1.0; 
+	    if(F2[igrp]<0.0) F2[igrp]=0.0; 
+	  }
+#ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp];}
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+5.*hubblet*dtcool);
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp];}
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);
+#endif
 #endif
 	  
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+3*hubblet*dtcool);
+	  
 	  ai_tmp1=0;
 
 
 	  if(eintt<0.)
  	    {
 	      fudgecool=fudgecool/10.;
-	      /* if(nitcool>10000){ */
-	      /* 	printf("loopin g e<0  x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
-	      /* } */
-
+	      //printf("loop 3\n");
 	      continue;
 	    }
 
 	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
-	      if(srcloc[idloc]==0.){
-		fudgecool=fudgecool/10.;
-	      /* if(nitcool>10000){ */
-	      /* 	printf("loopin fracvar g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e f=%e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
-	      /* } */
+	      fudgecool=fudgecool/10.;
+	      //printf("loop 4 %e %e\n",eintt,eint[idloc]);
 
-		continue;
-	      }
+	      continue;
 	    }
   	  else{
  	    fudgecool=fmin(fudgecool*1.5,param->fudgecool);
-	      /* if(nitcool>10000){ */
-	      /* 	printf(" going up loopin g x0=%e eint=%e nH=%e src=%e xt=%e et=%e eintt=%e %e\n",x0[idloc],eint[idloc],nH[idloc],srcloc[idloc],xt,et[0],eintt,fudgecool); */
-	      /* } */
 	  }
 
 	  eintt=fmax(emin,eintt);
-
-	  
 #else
 	  eintt=eint[idloc];
 #endif
@@ -418,13 +457,20 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #ifdef COOLING
 	  eint[idloc]=eintt;
 #endif
+	  
+#ifdef TESTCOSMO
+	  REAL da=hubblet*dtcool*aexp;
+	  aexp+=da;
+#endif
 	  currentcool_t+=dtcool;
 	  fudgecool=param->fudgecool;
+	  nitcool++;
+	  //printf("nitcool=%d %e %e %e\n",nitcool,aexp,xt,eintt);
 	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
 	}
-
       // ====================== End of the cooling loop
 
+      aexp=aexporg;
       // FIlling the rad structure to send it back
       for(igrp=0;igrp<NGRP;igrp++)
 	{

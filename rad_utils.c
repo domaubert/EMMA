@@ -1360,7 +1360,13 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
       /* Rupdate.src=stencil[i].oct[6].cell[icell].rfield.src; */
 
       if(Rupdate.e[0]<0){
-	printf("ERROR Neg rad energy\n");
+	printf("ERROR Neg rad energy %e %e %e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
+	one=1.;
+	for(flx=0;flx<6;flx++){
+	  printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
+	  one*=-1.;
+	}
+	printf("Flux %e %e %e delta %e %e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0]);
 	abort();
       }
       //memcpy(&(curoct->cell[icell].rfieldnew),&Rupdate,sizeof(struct Rtype));

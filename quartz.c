@@ -634,8 +634,8 @@ int main(int argc, char *argv[])
   }
 
   grid->cpu=-1;
-  grid->vecpos=-1;
-  grid->border=0;
+  /* grid->vecpos=-1; */
+  /* grid->border=0; */
 
   // start the creation of the initial amr grid from level 1
   firstoct[0]=grid;
@@ -701,8 +701,8 @@ int main(int argc, char *argv[])
 	    }
 
 	    // vector data
-	    newoct->vecpos=-1;
-	    newoct->border=0;
+	    /* newoct->vecpos=-1; */
+	    /* newoct->border=0; */
 	    
 	    // preparing the next creations on level+1
 	    newoct->next=NULL;
@@ -1119,6 +1119,7 @@ int main(int argc, char *argv[])
     tp1=MPI_Wtime();
 
     for(i=0;i<npart;i++){
+      if(cpu.rank==0) if(i%65536==0) printf("%d\n",i);
       unsigned long int key;
       unsigned long hidx;
       int found=0;
