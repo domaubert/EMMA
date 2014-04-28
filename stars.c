@@ -114,7 +114,10 @@ void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL E){
 	for(icell=0; icell<6;icell++){
 		parent = cell2oct(cell);
 
-		curcell = parent->nei[vnei[icell]]->cell[vcell[icell]];		
+		curcell = parent->nei[vnei[icell]];
+	//	if (curcell->child!=NULL)
+
+	//	->cell[vcell[icell]];		
 	
 
 	}
