@@ -581,9 +581,6 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 
 #endif
 #endif
-	    
-	    //if(Wi[idir].p<0) abort();
-	    //Wi[idir].E=Wi[idir].p/(GAMMA-1.)+0.5*Wi[idir].d*(Wi[idir].u*Wi[idir].u+Wi[idir].v*Wi[idir].v+Wi[idir].w*Wi[idir].w);
 	    dgetE(Wi+idir);
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 

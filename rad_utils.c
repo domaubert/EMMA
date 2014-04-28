@@ -1268,6 +1268,12 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	memcpy(&(stencil[iread].oct[6].cell[icell].rfield),&(curoct->cell[icell].rfield),sizeof(struct Rtype)); // for calculations
 	memcpy(&(stencil[iread].New.cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
 	stencil[iread].oct[6].cell[icell].split=(curoct->cell[icell].child!=NULL);
+
+	if(curoct->cell[icell].rfieldnew.eint!=curoct->cell[icell].rfield.eint){
+	  printf("ouhla\n");
+	  abort();
+	}
+
       }
 
       cell=curoct->parent;
@@ -1339,7 +1345,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
       
       //memcpy(&Rupdate,&stencil[i].oct[6].cell[icell].rfield,sizeof(struct Rtype));
       memcpy(&Rupdate,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));
-
+      
       for(igrp=0;igrp<NGRP;igrp++){
 	Rupdate.e[igrp]   +=R.e[igrp];
 	Rupdate.fx[igrp]  +=R.fx[igrp];
@@ -1347,7 +1353,22 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 	Rupdate.fz[igrp]  +=R.fz[igrp];
       }
       
-      if(Rupdate.e[0]<0) abort();
+      /* // we copy back chemistry quantities */
+      /* Rupdate.xion=stencil[i].oct[6].cell[icell].rfield.xion; */
+      /* Rupdate.nh=stencil[i].oct[6].cell[icell].rfield.nh; */
+      /* Rupdate.eint=stencil[i].oct[6].cell[icell].rfield.eint; */
+      /* Rupdate.src=stencil[i].oct[6].cell[icell].rfield.src; */
+
+      if(Rupdate.e[0]<0){
+	printf("ERROR Neg rad energy %e %e %e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
+	one=1.;
+	for(flx=0;flx<6;flx++){
+	  printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
+	  one*=-1.;
+	}
+	printf("Flux %e %e %e delta %e %e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0]);
+	abort();
+      }
       //memcpy(&(curoct->cell[icell].rfieldnew),&Rupdate,sizeof(struct Rtype));
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&Rupdate,sizeof(struct Rtype));
 
@@ -1459,7 +1480,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	      }
  	      
 	      memcpy(&(curoct->nei[vnei[inei]]->rfieldnew),&R,sizeof(struct Rtype));
-	      //if(curoct->cell[icell].rfield.e[0]!=0.) if(curoct->level==6) printf("R2=%e\n",R.e[0]);
+	      if(curoct->cell[icell].rfieldnew.e[0]==0.) printf("R2=%e\n",R.e[0]);
 	      
 	    }
 	  }
@@ -1513,6 +1534,8 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 
       // ----------- perform physical cooling and ionisation 
 #ifdef WCHEM
+      int nitcool=0;
+      int nitmin,nitmax,nitsum;
       chemrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
 #endif
 
@@ -1573,6 +1596,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifndef GPUAXL
   nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #else
+  //nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
   nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #endif
 
@@ -1597,6 +1621,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 	  //if(curoct->cell[icell].rfieldnew.temp!=curoct->cell[icell].rfield.temp) abort();
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
+
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
@@ -1611,6 +1636,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  int i;
 	  child=curoct->cell[icell].child;
 	  memset(&R,0,sizeof(struct Rtype));
+	  REAL nh0=0.;
 	  for(i=0;i<8;i++){
 	    for(igrp=0;igrp<NGRP;igrp++){
 	      R.e[igrp] +=child->cell[i].rfield.e[igrp]*0.125;
@@ -1620,12 +1646,16 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    }
 	    R.src+=child->cell[i].rfield.src*0.125;
 #ifdef WCHEM
+	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
 	    R.xion+=child->cell[i].rfield.xion*0.125;
 	    R.eint+=child->cell[i].rfield.eint*0.125;
 	    R.nh+=child->cell[i].rfield.nh*0.125;
 #endif
-
 	  }
+
+/* #ifdef WCHEM */
+/* 	  R.xion=nh0/R.nh; */
+/* #endif */
 
 #ifdef WCHEM
 	  E2T(&R,aexp,param);
@@ -1638,7 +1668,6 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  curoct->cell[icell].field.X=curoct->cell[icell].rfield.xion;
 	  getE(&curoct->cell[icell].field);
 #endif
-
 	}
       }
     }while(nextoct!=NULL);
@@ -1689,8 +1718,13 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 	curoct=nextoct;
 	nextoct=curoct->next; 
 	if(curoct->cpu!=cpu->rank){
+	  // Note: only boundary coarse octs are set to zero
 	  for(icell=0;icell<8;icell++) {
 	    memset(&(curoct->cell[icell].rfieldnew),0,sizeof(struct Rtype));
+	    /* curoct->cell[icell].rfieldnew.xion=curoct->cell[icell].rfield.xion; */
+	    /* curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh; */
+	    /* curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src; */
+	    /* curoct->cell[icell].rfieldnew.temp=curoct->cell[icell].rfield.temp; */
 	  }
 	}
       }while(nextoct!=NULL);

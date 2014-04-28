@@ -372,8 +372,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		desoct->parent=NULL;
 
 		// we cancels some flags
-		desoct->vecpos=-1;
-		desoct->border=0;
+		/* desoct->vecpos=-1; */
+		/* desoct->border=0; */
 		
 		// we remove the oct from the list
 		
@@ -479,8 +479,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		newoct->cpu=curoct->cpu;
 
 		// it is not vectorized yet
-		newoct->vecpos=-1;
-		newoct->border=0;
+		/* newoct->vecpos=-1; */
+		/* newoct->border=0; */
 
 		//the neighbours
 		for(ii=0;ii<6;ii++){
@@ -557,7 +557,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef PIC
 		  newoct->cell[ii].density=curoct->cell[icell].density;
 		  newoct->cell[ii].phead=NULL;
-		  newoct->cell[ii].temp=0.;
+		  //newoct->cell[ii].temp=0.;
 #endif
 
 #ifdef WGRAV

@@ -231,7 +231,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
       srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/pow(aexporg,3); 
 
-      
       /* if(((isnan(eint[idloc]))||(isnan(x0[idloc])))||(eint[idloc]==0.)){ */
       /* 	printf("start with nans or ZErO egy %e\n",eint[idloc]); */
       /* 	abort(); */
@@ -425,7 +424,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  
 	  ai_tmp1=0;
 
-	  //
 
 	  if(eintt<0.)
  	    {

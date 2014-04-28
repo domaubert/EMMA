@@ -575,10 +575,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Courant Condition Radiation
 #ifdef WRAD
+    //#ifndef UVBKG
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
     //printf("dtrad= %e ",dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
+    //#endif
 #endif
 
 #ifdef FLOORDT
@@ -795,6 +797,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
     //=============== Radiation Update ======================
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+    sanity_rad(level,param,firstoct,cpu,aexp);
 
 #ifdef WMPI
     //printf("proc %d waiting\n",cpu->rank);

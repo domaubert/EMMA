@@ -693,8 +693,8 @@ int main(int argc, char *argv[])
   }
 
   grid->cpu=-1;
-  grid->vecpos=-1;
-  grid->border=0;
+  /* grid->vecpos=-1; */
+  /* grid->border=0; */
 
   // start the creation of the initial amr grid from level 1
   firstoct[0]=grid;
@@ -760,8 +760,8 @@ int main(int argc, char *argv[])
 	    }
 
 	    // vector data
-	    newoct->vecpos=-1;
-	    newoct->border=0;
+	    /* newoct->vecpos=-1; */
+	    /* newoct->border=0; */
 	    
 	    // preparing the next creations on level+1
 	    newoct->next=NULL;
@@ -1182,6 +1182,7 @@ int main(int argc, char *argv[])
     for(i=0;i<npart;i++){
       unsigned long long int key;
       unsigned long long hidx;
+
       int found=0;
       key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
       hidx=hfun(key,cpu.maxhash);
@@ -1328,7 +1329,7 @@ int main(int argc, char *argv[])
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
-    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS;
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
 #endif
@@ -1415,7 +1416,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef TESTCLUMP		
-		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS;
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
@@ -1429,7 +1430,7 @@ int main(int argc, char *argv[])
 		
 		
 #ifdef WRADHYD
-		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
 		  curoct->cell[icell].field.v=0.0;
 		  curoct->cell[icell].field.w=0.0;
@@ -1587,14 +1588,9 @@ int main(int argc, char *argv[])
     // dumping ICs
     cpu.ndumps=&ndumps; // preparing the embedded IO
     cpu.tinit=tinit;
+
     int *ptot = (int*)calloc(2,sizeof(int));
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
-    sprintf(filename,"data/start.%05d.p%05d",0,cpu.rank);
-    dumpgrid(levelmax,firstoct,filename,tdump,&param);
-#ifdef PIC
-    sprintf(filename,"data/pstart.%05d.p%05d",0,cpu.rank);
-    dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
-#endif
 
 
 

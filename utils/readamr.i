@@ -7,18 +7,6 @@
 // close,fp;
 //dens=reform(dens,[3,128,128,128]);
 
-func readmap(fname){
-  fp=open(fname,"rb");
-  adress=0;
-  nmap=array(int);
-  _read,fp,adress,nmap;adress+=sizeof(nmap);
-  map=array(float,nmap^2);
-  _read,fp,adress,map;
-  close,fp;
-
-  map=reform(map,[2,nmap,nmap]);
-  return map;
-}
 
 func readcube(fname,&time){
   fp=open(fname,"rb");
@@ -31,11 +19,16 @@ func readcube(fname,&time){
   _read,fp,adress,nmapy;adress+=sizeof(nmapy);
   _read,fp,adress,nmapz;adress+=sizeof(nmapz);
   _read,fp,adress,time;adress+=sizeof(time);
-  map=array(double,nmapx*nmapy*nmapz);
-  _read,fp,adress,map;
+  
+  map=array(double,nmapx,nmapy,nmapz);
+  dummy=array(double,nmapx*nmapy);
+  for(i=1;i<=nmapz;i++){
+    _read,fp,adress,dummy;adress+=sizeof(dummy);
+    map(,,i)=reform(dummy,[2,nmapx,nmapy]);
+  }
   close,fp;
 
-  map=reform(map,[3,nmapx,nmapy,nmapz]);
+  //map=reform(map,[3,nmapx,nmapy,nmapz]);
   return map;
 }
 
@@ -148,7 +141,7 @@ func ext_amr1D(levmap,field,color=,lmin=)
 }
 
 
-func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,ymax=,mono=){
+func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,ymax=,mono=,proj=,fout=){
   if(is_void(execut)) execut="../utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(zmin)) zmin=0.;
@@ -158,9 +151,11 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,
   if(is_void(ymin)) ymin=0.;
   if(is_void(ymax)) ymax=1.;
   if(is_void(mono)) mono=-1;
+  if(is_void(proj)) proj=0;
+  if(is_void(fout)) fout=fname+".f"+pr1(field);
   time=array(double);
-  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(xmin)+" "+pr1(xmax)+" "+pr1(ymin)+" "+pr1(ymax)+" "+pr1(zmin)+" "+pr1(zmax);
-  commande;
+  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fout+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(xmin)+" "+pr1(xmax)+" "+pr1(ymin)+" "+pr1(ymax)+" "+pr1(zmin)+" "+pr1(zmax)+" "+pr1(proj);
+  //commande;
   system(commande);
   cube=readcube(fname+".f"+pr1(field),time);
   return cube;

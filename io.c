@@ -2064,7 +2064,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  icell=icx+icy*2+icz*4;
 	
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/pow(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(MOLECULAR_MU*PROTON_MASS))*KBOLTZ*temp; // physical pressure
+	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS))*KBOLTZ*temp; // physical pressure
 	  
 	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values
@@ -2180,6 +2180,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
+#ifdef BKP
 	  // backups for restart
 
 	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
@@ -2189,6 +2190,9 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
 	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 
-
 	}	
+
+#endif
+	//  *(cpu->ndumps)=*(cpu->ndumps)+1;		A CHECKER
+
 }

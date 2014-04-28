@@ -1,16 +1,16 @@
 ##==MemoryManagement=========
-max_number_of_octs 400000
+max_number_of_octs 320000
 max_number_of_part 3000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 10
+output_frequency 67
 max_nuber_of_steps 7000000
 time_step_max  1e-0
-tmax_or_amax 0.2
+tmax_or_amax 1.0
 ##==AMRGrid==================
-level_coarse 8
-level_max 13
-amr_thresh 4.76e-7
+level_coarse 7
+level_max 12
+amr_thresh 3.81e-6
 n_smooth 2
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 100
@@ -27,7 +27,7 @@ max_subcycles 2
 nthread 16
 nstream 16
 ##==RadTransfert======
-clight 1e0
+clight 1e-2
 dens_threshold 0.5
 temp_threshold 1e5
-src_int 1e58
+src_int 0e58

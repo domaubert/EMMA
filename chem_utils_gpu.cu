@@ -13,7 +13,7 @@
 #include "gpu_type.h"
 
 
-#define FRAC_VAR (0.1)
+#define FRAC_VAR (0.3)
 
 //================================================================================
 __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
@@ -181,9 +181,9 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 #endif
 
   REAL ebkg[NGRP];
-#ifdef UVBKG
   REAL z=1./aexp-1.;
-  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))*0.  ;  // Katz simple model
+#ifdef UVBKG
+  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z));  // Katz simple model
 #else
   for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -207,6 +207,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
   
   
   REAL dt=dtnew*param->unit.unit_t*pow(aexp,2);
+  REAL emin;
   struct Rtype R;
   REAL fudgecool=param->fudgecool;
   int ncvgcool=param->ncvgcool;
@@ -236,6 +237,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
     x0[idloc]=R.xion;
     nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;
     eint[idloc]=R.eint/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
+    emin=PMIN/(GAMMA-1.)/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
     srcloc[idloc]=R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)/pow(aexp,3); 
     
       // at this stage we are ready to do the calculations
@@ -288,10 +290,16 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  
 	  // ABSORPTION + SOURCE
 	  int test = 0;
+	  REAL factotsa[NGRP];
 	  for(igrp=0;igrp<NGRP;igrp++)
 	    {
+#ifdef OTSA
+	      factotsa[igrp]=0;
+#else
+	      factotsa[igrp]=(igrp==0);
+#endif
 	      ai_tmp1 = alphai[igrp];
-	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factgrp[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3.*hubblet));
+	      et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
 	      
 	      if(et[igrp]<0) 	{test=1;}
 	      p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+2*hubblet)*dtcool);
@@ -300,7 +308,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  
 	  if (test) 
 	    {
-	      fudgecool/=10.; 
+	      fudgecool=fudgecool/10.; 
 	      continue;	
 	    } 
 	  
@@ -363,8 +371,10 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  	continue;
 	      }
 	    }
-
-
+	  else{
+ 	    fudgecool=fudgecool*1.5;
+	  }
+	  eintt=fmax(emin,eintt);
 #else
 	  eintt=eint[idloc];
 #endif
