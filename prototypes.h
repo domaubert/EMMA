@@ -80,8 +80,10 @@ struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
   REAL density_cond;	// Hydrogen density (m-3)
   REAL tcar;		// caracteristic time (yr)
-  REAL tlife;		// life time of the radiation source (yr) 
-
+  REAL tlife;		// life time of a radiative source (yr) 
+  REAL feedback_eff;	// feedback efficiency
+  REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
+	
   REAL mstars;
   int  n;
   REAL thresh;

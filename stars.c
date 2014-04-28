@@ -49,51 +49,6 @@ REAL a2t(struct RUNPARAMS *param, REAL az ){
 	return zage_Gyr*1e9;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int feedback(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, REAL t, REAL dt){
-
-	REAL t0=0;
-	struct PART *nexp;
-	struct PART *curp;
-
-	nexp=cell->phead;
-	if(nexp==NULL) return 0;
- 	do{ 	curp=nexp;
-		nexp=curp->next;
-
-		if (curp->isStar){
-			t0 = t - curp->age;
-			if (  t0>0 && t0<2e8 ) {
-
-				REAL rhoE 	= 3.7e-15 * 1.0e-7 * 1e3; // erg.g-1  en J.kg-1   Kay 2002 // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
-
-				REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-				REAL rhostar 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
-
-				REAL Mtot 	= rhostar * pow(param->cosmo->unit_l,3.0);
-				REAL M 		= param->stars->mstars * Mtot;
-
-
-				REAL s8 = 2e7 * 31556926;
-				
-
-				dt *= pow(aexp,2.0) * 2.0/(H0 *sqrt(param->cosmo->om));
-				
-
-				cell->field.E  += M * rhoE * exp( -t0/s8 ) *dt/s8 ;
-			}
-		}
-	}while(nexp!=NULL);
-
-	return 1;
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
@@ -116,6 +71,92 @@ int gpoiss(REAL lambda, REAL max_k){
   	}
 
 	return k;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+REAL getFeedbackEgy(struct RUNPARAMS *param, REAL aexp){
+
+	REAL rhoE 	= 3.7e-15; 	// erg.g-1 Kay 2002 // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
+	rhoE 		*= 1.0e-7 * 1e3; 	// erg.g-1  en J.kg-1
+
+
+	
+	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
+	REAL rho0 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G) ;
+
+	REAL Mtot 	= rho0 * pow(param->cosmo->unit_l,3.0);
+	REAL M 		= param->stars->mstars * Mtot;	
+
+	REAL E 		= M * rhoE;
+
+
+	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
+	REAL rs		= param->cosmo->unit_l;
+	REAL es		= pow(rs/ts,2);
+
+	E 		*=  pow(aexp,2.0) / es;
+
+	return E;
+}
+
+void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL E){
+
+	int vnei[6],vcell[6];
+	getcellnei(cell->idx, vnei, vcell); 
+
+	struct CELL *curcell;
+	struct OCT  *parent;
+	E *= (1.-param->stars->feedback_frac) ;
+
+
+	int icell;
+	for(icell=0; icell<6;icell++){
+		parent = cell2oct(cell);
+
+		curcell = parent->nei[vnei[icell]]->cell[vcell[icell]];		
+	
+
+	}
+
+
+
+}
+
+int feedback(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, REAL t, REAL dt){
+
+	REAL eff 	= 1.;  		// feedback efficiency
+	REAL s8 	= 2e7 ;		// life time of a 8 M0 star
+
+
+	s8 		*= 31556926; 	// years en s 
+
+	REAL E		= getFeedbackEgy(param,aexp)  * param->stars->feedback_eff ;
+
+	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
+	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
+	dt 		*= pow(aexp,2.0) * ts; 
+
+
+	REAL t0;
+	struct PART *nexp;
+	struct PART *curp;
+
+	nexp=cell->phead;
+	if(nexp==NULL) return 0;
+ 	do{ 	curp=nexp;
+		nexp=curp->next;
+
+		if (curp->isStar){
+			t0 = t - curp->age;
+			if (  t0>0 && t0<2e8 ) {
+				cell->field.E  += param->stars->feedback_frac * E * exp( -t0/s8 ) *dt/s8 ;    //thermal Feedback
+				kineticFeedback(cell, param, E);
+			}
+		}
+	}while(nexp!=NULL);
+
+	return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +200,7 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 
 	int A = param->stars->overdensity_cond? 		(cell->field.d > param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om) )  	: 1;
 	int B = param->stars->density_cond?			(cell->field.d > param->stars->thresh)   							: 1;
-	int C = false?						cell->field.a/pow(2.,-level) > sqrt(6.*aexp * cell->gdata.d +1.) 				: 1;
+	int C = 0?						cell->field.a/pow(2.,-level) > sqrt(6.*aexp * cell->gdata.d +1.) 				: 1;
 
 	return 		A && B && C;
 ;
@@ -191,7 +232,7 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 /*	REAL rhocrit 	= param->stars->density_cond * PROTON_MASS;
 
 	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL a3rhostar 	= pow(aexp,3.0) *  3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
+	REAL a3rhostar 	= pow(aexp,	3.0) *  3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
 
 //	printf("H0\t%e\t\t a3rs\t%e\t\t a^-3\t%e\n",H0 , a3rhostar, pow(aexp,-alpha0) );
 //	printf("rho\t%e\t\t rcrit\t%e\t\t seuil\t%e\n",cell->field.d , rhocrit,rhocrit/a3rhostar*pow(aexp,-alpha0) );
@@ -264,8 +305,7 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		cpu->nstar[level-1]++;
 	
 		removeMfromgas(cell, star, param->stars->mstars/pow(2.0,-3.0*level) );
-		initStar(cell, star, param, level, xc, yc, zc, param->stars->n+nstars, aexp, is, dttilde, pow(2.0,-level));
-		
+		initStar(cell, star, param, level, xc, yc, zc, param->stars->n+nstars, aexp, is, dttilde, pow(2.0,-level));	
 	}
 }
 
@@ -335,7 +375,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 				N = getNstars2create(curcell, param, dt, aexp, level);
 
-				if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+			//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 				for (ipart=0;ipart< N; ipart++){
 						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
@@ -350,7 +390,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	}while(nextoct!=NULL);
 
 #ifdef WMPI
-	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,MPI_SUM,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_DOUBLE,MPI_MAX,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmin,  1,MPI_DOUBLE,MPI_MIN,cpu->comm);
 #endif

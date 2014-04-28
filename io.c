@@ -1028,6 +1028,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar		=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_eff	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_frac	=dummyf;
 #endif
       fclose(buf);
     }
