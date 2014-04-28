@@ -16,14 +16,14 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   int nnei=0;
   int *neicpu; // the reduced list of neighbors CPU (not redundant); 
-  unsigned long hidx;
+  unsigned long long hidx;
   int inidx; // counts the number of inner boundaries octs
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
   struct OCT *desoct;
   struct OCT *newoct;
-  unsigned long key;
+  unsigned long long key;
   int inei;
   int i,j;
   int nbnd;
@@ -440,7 +440,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
 
 //======================================================================================
 #ifdef PIC
-int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
+int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
   
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
@@ -451,7 +451,7 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
   struct PART *curp;
   struct PART *nexp;
   int i,ii;
-  int nrem=0;
+  int* nrem=(int*)calloc(2,sizeof(int));
 
   // we create a counter of values for each neighbor
   countpacket=(int*)calloc(cpu->nnei,sizeof(int));
@@ -485,7 +485,13 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 	  part->mass=curp->mass;
 	  part->idx=curp->idx;
 	  part->is=curp->is;
-	  
+
+#ifdef STARS
+	  part->rhocell=curp->rhocell;
+	  part->age=curp->age;
+	  part->isStar=curp->isStar;
+#endif
+
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
 	  if(countpacket[icpu]>cpu->nbuffpart){
@@ -494,7 +500,14 @@ int gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 	  }
 	  // switching the mass to -1 to flag exiting particles
 	  curp->mass=-1.;
-	  nrem++;
+
+#ifdef STARS
+	if(part->isStar){
+		nrem[1] ++;
+	//	printf("cpu %d nremstar %d\n",cpu->rank,nrem[1]);
+	}
+#endif
+	  nrem[0]++;
 
 	  // disconnecting the particle from its list
 
@@ -529,7 +542,7 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct PACKET *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -621,7 +634,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct PACKET *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -718,7 +731,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct PACKET *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -797,7 +810,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct PACKET *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -873,18 +886,20 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 
  //------------------------------------------------------------------------
 #ifdef PIC
-int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
+int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct PART_MPI *part;
   struct PART *curp;
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;
-  int nadd=0;
+  int* nadd=(int*)calloc(2,sizeof(int));;
+
   struct PART *lastp;
+
 
   for(j=0;j<cpu->nnei;j++){
     for(i=0;i<cpu->nbuffpart;i++){
@@ -923,13 +938,26 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 	    (lastp)->vx=part->vx;
 	    (lastp)->vy=part->vy;
 	    (lastp)->vz=part->vz;
-	      
+
+
 	    (lastp)->mass=part->mass;
+
 	    (lastp)->idx=part->idx;
 	    (lastp)->level=part->level;
 	    (lastp)->is=part->is;
 
-	    nadd++;
+#ifdef STARS
+	    (lastp)->rhocell=part->rhocell;
+	    (lastp)->age=part->age;
+	    (lastp)->isStar=part->isStar;
+
+	if ((lastp)->isStar) {
+		nadd[1] ++;
+	//	printf("cpu %d naddstar %d\n",cpu->rank, nadd[1]);
+	}
+#endif
+	    nadd[0]++;
+
 	    //if(cpu->firstoct[0]->next!=NULL) abort();
 
 	    // if recepction cell is refined
@@ -944,7 +972,6 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 	      int zp=(int)(2*(part->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 	      int ip=xp+yp*2+zp*4;
 	      
-
 	      newcell=&(newoct->cell[ip]);
 	      part->icell=ip;
 	      (lastp)->level=part->level+1;
@@ -965,7 +992,7 @@ int scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 	      (lastp)->prev=NULL;
 	    }
 	    //if(cpu->firstoct[0]->next!=NULL) abort();
-	    
+
 	  }
 	  else{
 	    printf("error no reception oct found !");
@@ -1005,7 +1032,7 @@ void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
 
   int i;
   for(i=0;i<cpu->nebnd;i++) {
-    unsigned long keyloc;
+    unsigned long long keyloc;
     int cpuloc;
     int inei;
     keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
@@ -1018,7 +1045,6 @@ void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
 
     countpacket[inei]++;
   }  
-
 
   free(countpacket);
 }
@@ -1037,7 +1063,7 @@ void compute_bndkeys_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
 
   int i;
   for(i=0;i<cpu->nebnd;i++) {
-    unsigned long keyloc;
+    unsigned long long keyloc;
     int cpuloc;
     int inei;
     keyloc=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level);
@@ -1068,7 +1094,7 @@ void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MP
 
   int i;
   for(i=0;i<cpu->nebnd;i++) {
-    unsigned long keyloc;
+    unsigned long long keyloc;
     int cpuloc;
     int inei;
 
@@ -1084,7 +1110,6 @@ void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MP
 
     countpacket[inei]++;
   }  
-
 }
 
 
@@ -1106,7 +1131,7 @@ void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **
 
   int i;
   for(i=0;i<cpu->nebnd;i++) {
-    unsigned long keyloc;
+    unsigned long long keyloc;
     int cpuloc;
     int inei;
 
@@ -1146,7 +1171,7 @@ void compute_bndkeys_level(struct CPUINFO *cpu, struct PACKET **recvbuffer, int 
 
   int i;
   for(i=0;i<cpu->nebnd;i++) {
-    unsigned long keyloc;
+    unsigned long long keyloc;
     int cpuloc;
     int inei;
 
@@ -1304,7 +1329,7 @@ void gather_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct HYDRO_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1372,7 +1397,7 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct HYDRO_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1440,7 +1465,7 @@ void scatter_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct HYDRO_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1490,7 +1515,7 @@ void scatter_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct HYDRO_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1540,7 +1565,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct HYDRO_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1795,7 +1820,7 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
 
   int i,j,igrp;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct RAD_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1858,7 +1883,7 @@ void gather_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, int 
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct RAD_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -1924,7 +1949,7 @@ void scatter_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int 
 
   int i,j;
   int found=0;
-  unsigned long hidx;
+  unsigned long long hidx;
   struct RAD_MPI *pack;
   struct OCT *curoct;
   struct OCT *nextoct;
@@ -2342,14 +2367,15 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
 #endif
 
 #ifdef PIC
-int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
+int* mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
 
-  int nrem,nadd;
+  int* delta = (int*)calloc(2,sizeof(int));
+  int val;
   int mpitag=1;
   int i;
 
   clean_mpibuff_part(cpu,psendbuffer,precvbuffer);
-  nrem=gather_ex_part(cpu,psendbuffer);
+  int* nrem=gather_ex_part(cpu,psendbuffer);
   MPI_Barrier(cpu->comm);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
@@ -2357,13 +2383,14 @@ int mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct
     MPI_Sendrecv(psendbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
   }
   //printf("17 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
-  nadd=scatter_mpi_part(cpu,precvbuffer);
+  int* nadd = scatter_mpi_part(cpu,precvbuffer);
   //printf("18 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
   MPI_Barrier(cpu->comm);
 
-  // Return delta part
-  
-  return nadd-nrem;
+  delta[0] = nadd[0]-nrem[0];
+  delta[1] = nadd[1]-nrem[1];
+
+  return delta;		// Return delta part
 }
 #endif
 

@@ -4,6 +4,7 @@
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
+#include "tools.h"
 #ifdef WRAD
 #include "rad_utils.h"
 #include "src_utils.h"
@@ -11,6 +12,13 @@
 #include "friedmann.h"
 #include "cic.h"
 #include "particle.h"
+
+
+#include "communication.h"
+
+#ifdef STARS
+#include "stars.h"
+#endif
 
 // ===============================================================
 // ===============================================================
@@ -199,8 +207,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int hstride=param->hstride;
   int gstride=param->gstride;
   int nsub=param->nsubcycles;
-  int ptot=0;
   int ip;
+  int *ptot = (int*)calloc(2,sizeof(int));
   
   REAL ekp,epp,ein;
   REAL RHS;
@@ -219,15 +227,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
   }
 
-
   // ==================================== Check the number of particles and octs
-  ptot=0; for(ip=1;ip<=param->lmax;ip++){
-    ptot+=cpu->npart[ip-1]; // total of local particles
-    /* if((level==12)&&(cpu->rank==217)){ */
-    /*   printf("l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
-    /* } */
+  ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+    ptot[0]+=cpu->npart[ip-1]; // total of local particles
+ 
+ //    if((level==12)&&(cpu->rank==217)){ 
+ //     printf("l=%ip n=%ip\n",ip,cpu->npart[ip-1]); 
+ //    } 
   }
-  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,0);
+#ifdef STARS
+  ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+
+
+  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,0);
 
   if(level==param->lcoarse){
     // =========== Grid Census ========================================
@@ -285,13 +298,23 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       cpu->freeoct=curoct;
     }
     // ==================================== Check the number of particles and octs
-    ptot=0; for(ip=1;ip<=param->lmax;ip++){
-      ptot+=cpu->npart[ip-1]; // total of local particles
+    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+      ptot[0]+=cpu->npart[ip-1]; // total of local particles
     }
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,1);
 
-    ptot=0; for(ip=1;ip<=param->lmax;ip++){
-      ptot+=cpu->npart[ip-1]; // total of local particles
+#ifdef STARS
+  ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+
+
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
+
+    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+      ptot[0]+=cpu->npart[ip-1]; // total of local particles
+      /* if((level==11)&&(cpu->rank==217)){ */
+      /* 	printf("AP l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
+      /* } */
+
     }
 
 #ifdef WMPI
@@ -365,6 +388,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+
+
+
+
+
+
+
     /* //====================================  I/O======= ========================== */
     // at this stage particles are synchronized at aexp
     // ready to dump particles
@@ -379,6 +409,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 #endif
+
+
+
 
     // =============== Computing Energy diagnostics
 
@@ -488,6 +521,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 
+
     // ================= II We compute the timestep of the current level
 
     REAL adtold=adt[level-1]; // for energy conservation
@@ -519,6 +553,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     //printf("dtcosmo= %e ",dtcosmo);
 #endif
+
+
 
 
     // Courant Condition Hydro
@@ -612,6 +648,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 
+
+  /* //===================================creating new stars=================================// need to be called before the dt computation because of the random speed component  */
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#endif
+
+
+
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
@@ -626,8 +670,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
     if(cpu->rank==0) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
-    ptot=0; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,2);
+    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
+#ifdef STARS
+    ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+#endif
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,2);
+
+
+
 
 #ifdef PIC
     //================ Part. Update ===========================
@@ -638,8 +688,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
     //printf("1 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-
-
 
     // moving particles around
 
@@ -661,18 +709,22 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WMPI
 
-    int deltan;
-
     //printf("3 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-    cpu->firstoct=firstoct;
-    deltan=mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer);
+    cpu->firstoct = firstoct;
+    int* deltan = mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer);
 
     //printf("4 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
-    //printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
+ //   printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
     //update the particle number within this process
     //npart=npart+deltan;
-    ptot=deltan; for(ip=1;ip<=param->lmax;ip++) ptot+=cpu->npart[ip-1]; // total of local particles
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,3);
+
+    ptot[0]=deltan[0]; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
+#ifdef STARS
+    ptot[1]=deltan[1]; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1]; // total of local stars
+#endif
+
+
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 #endif
 
 
@@ -691,11 +743,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     MPI_Barrier(cpu->comm);
     th[1]=MPI_Wtime();
+
+
+
+#endif
     //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
     MPI_Barrier(cpu->comm);
     th[2]=MPI_Wtime();
+
+
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
@@ -717,7 +775,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
-#endif
+
 
 
 #ifdef WRAD
@@ -761,6 +819,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 #endif
+
 
 
 

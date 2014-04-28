@@ -66,7 +66,7 @@ void flipcell(struct OCT *oct, int dir){
       for(i=0;i<4;i++){
 	temp=oct->cell[c1[i]];
 	memcpy(&(oct->cell[c1[i]]),&(oct->cell[c2[i]]),sizeof(struct CELL));
-      memcpy(&(oct->cell[c2[i]]),&temp,sizeof(struct CELL));
+        memcpy(&(oct->cell[c2[i]]),&temp,sizeof(struct CELL));
       }
     }
     break;

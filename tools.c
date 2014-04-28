@@ -22,7 +22,7 @@ void breakmpi()
 
 
  //------------------------------------------------------------------------
-REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, int label){
+REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu,struct RUNPARAMS *param, int label){
 
   int ntot;
   REAL ntotd;
@@ -30,12 +30,13 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   int level;
   struct OCT *nextoct;
   struct OCT *curoct;
-  REAL dx;
+  REAL dx,dv;
   int nlev,noct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
   REAL mtot;
+  REAL Mtot=0;
   
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -46,16 +47,30 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
   ntotd=0.;
   nlevd=0.;
 
+#ifdef STARS
+  int slev=0;
+  int stot=0;
+  int *vnstar=cpu->nstar;
+#endif
+
   for(level=1;level<=levelmax;level++)
     {
       nextoct=firstoct[level-1];
       dx=1./pow(2,level);
+      dv=pow(dx,3);
       nlev=0;
       nlevd=0.;
       noct=0;
+#ifdef STARS
+      slev=0;
+#endif
+
       if(nextoct==NULL){
 	vnoct[level-1]=0;
 	vnpart[level-1]=0;
+#ifdef STARS
+	vnstar[level-1]=0;
+#endif
 	continue;
       }
       do // sweeping level
@@ -66,35 +81,49 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
 
 	  if(level>=levelcoarse)
 	    {
-	      //if(rank==0) printf("np=%d nlev\n",nlev);
+	//      if(rank==0) printf("np=%d nlev\n",nlev);
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 	      
-		  xc=curoct->x+(icell&1)*dx+dx*0.5;
-		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
-		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
+//		  xc=curoct->x+(icell&1)*dx+dx*0.5;
+//		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
+//		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
+
+		  ntotd+=curoct->cell[icell].density*dv;
+		  nlevd+=curoct->cell[icell].density*dv;
+		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+
+		  if(curoct->cell[icell].field.d<0) {
+			printf("Negative value for density -> abort\n");
+			abort;
+		  }	
 #ifdef PIC
 	     
-		  ntotd+=curoct->cell[icell].density*dx*dx*dx;
-		  nlevd+=curoct->cell[icell].density*dx*dx*dx;
-		  
-		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
-		  
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
 		  if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		    printf("check: split cell with particles !\n");
 		    printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
 		    abort();
 		  }
-		  
+
+		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 		  if(nexp==NULL)continue;
 		  do{ 
-		    nlev++;
-		    ntot++;
 		    curp=nexp;
 		    nexp=curp->next;
+
+		    nlev++;
+		    ntot++;
+#ifdef STARS
+		    if (curp->isStar){
+			slev++;
+		 	stot++;
+			Mtot+=curp->mass;
+		    }
+#endif
 		  }while(nexp!=NULL);
 #endif
+
 		}
 	    }
 	  noct++;
@@ -102,22 +131,50 @@ REAL multicheck(struct OCT **firstoct,int npart,int levelcoarse, int levelmax, i
       //if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
       
       if(level==levelcoarse) mtot=nlevd;
-      vnoct[level-1]=noct;
+      vnoct[level-1] =noct;
       vnpart[level-1]=nlev;
+#ifdef STARS
+      vnstar[level-1]=slev;
+#endif
     }
-  
+
+	MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+	REAL tmw = param->cosmo->ob/param->cosmo->om ;
+	REAL dm = Mtot - tmw;
+
+	if(  fabs(dm) > 1e-6 && cpu->rank==0){
+		printf("\n=================================================\n");
+		printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
+		printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
+		printf("\tDelta \t\t\t\t %lf \n",dm); 
+		printf("=================================================\n");
+	//	abort();
+	}
+
+//printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
+//printf("nPart %d\tnStar %d\n",npart[0], npart[1]);
+
 #ifdef PIC
   //ultimate check
-  if(npart!=0){ // for initial call to multicheck that always provide a zero
-    if(ntot!=npart) {
-      printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart,ntot,cpu->rank,label);
-      abort();
-    }
+
+  if(npart[0]!=0){ // for initial call to multicheck that always provide a zero
+  if(ntot!=npart[0]) {
+    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart[0],ntot,cpu->rank,label);
+    abort();
   }
-  //printf("npart=%d ntot=%d on rank %d\n",npart,ntot,cpu->rank);
+#ifdef STARS
+  if(stot!=npart[1]) {
+    printf("ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n",npart[1],stot,cpu->rank,label);
+    abort();
+  }
 #endif
+
+  }
+
+
+#endif
+
 #ifdef WMPI
-  
  MPI_Barrier(cpu->comm);
  if(rank==0) printf("Check done \n");
 #endif
@@ -164,13 +221,20 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
   int level;
   int ltot,gtot=0,nomax,nomin;
   int lpart,ptot=0;
+#ifdef STARS
+  int lstar;
+#endif
+
 
   if(cpu->rank==0){
     printf("===============================================================\n");
   }
   for(level=2;level<=param->lmax;level++){
-    ltot=cpu->noct[level-1];
+    ltot =cpu->noct[level-1];
     lpart=cpu->npart[level-1];
+#ifdef STARS
+    lstar=cpu->nstar[level-1];
+#endif
     nomax=ltot;
     nomin=ltot;
     gtot+=ltot;
@@ -180,12 +244,21 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     MPI_Allreduce(&ltot,&nomin,1,MPI_INT,MPI_MIN,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&ltot,1,MPI_INT,MPI_SUM,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&lpart,1,MPI_INT,MPI_SUM,cpu->comm);
+#ifdef STARS
+    MPI_Allreduce(MPI_IN_PLACE,&lstar,1,MPI_INT,MPI_SUM,cpu->comm);
+    lpart-=lstar;
 #endif
+#endif
+
+
     if(cpu->rank==0){
       if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d npart=%9d",level,ltot,nomin,nomax,lpart);
+#ifdef STARS
+	printf(" nstar=%9d",lstar);
+#endif
 	int I;
 	REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
-	printf("[");
+	printf(" [");
 	for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
 	printf("]\n");
       }
@@ -234,4 +307,5 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 
 }
+
 

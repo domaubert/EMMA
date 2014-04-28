@@ -5,6 +5,349 @@
 #include "friedmann.h"
 #include "segment.h"
 #include <string.h>
+#include "stars.h"
+
+
+void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
+  printf("Dumping parameters file\n");
+
+  FILE *fp; 
+  fp=fopen("data/param.00000.p00000","wb");
+
+  int t = 1;
+  int f = 0;
+
+
+#ifdef PIC
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WHYDRO2
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WGRAV 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WRAD
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WRADHYD
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TESTCOSMO
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WDBG
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef STARS
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WMPI
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef FLOORDT
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WCUDA_ERR
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef NOCOMP
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef GRAFIC
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef ZELDOVICH
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef EVRARD
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef EDBERT
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TUBE
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef PARTN
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef PART2
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WRADTEST  
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TESTCLUMP 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef PART_EGY
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef PERFECT
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef FASTGRAV 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef ONFLYRED
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef RIEMANN_HLLC
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef RIEMANN_EXACT
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef PRIMITIVE
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef DUAL_E
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef WCHEM 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef S_100000
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef COOLING
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef UVBKG
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSZM
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSZP
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSYM
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSYP
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSXM
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef TRANSXP
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef REFXM 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef REFYM 
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+#ifdef REFZM
+  fwrite(&t,		sizeof(int  ),1,fp);
+#else
+  fwrite(&f,		sizeof(int  ),1,fp);
+#endif
+
+
+  fwrite(&(param->npartmax),			sizeof(int  ),1,fp); 	// the max particles number (per process)
+  fwrite(&(param->ngridmax),			sizeof(int  ),1,fp); 	// the max oct numbers (per process)
+  fwrite(&(param->nbuff),			sizeof(int  ),1,fp); 	// the mpi buffer size
+  fwrite(&(param->ndumps),			sizeof(int  ),1,fp); 	// the frequency of outputs
+  fwrite(&(param->nsteps),			sizeof(int  ),1,fp); 	// the maximal number of timesteps
+
+  fwrite(&(param->lcoarse),			sizeof(int  ),1,fp); 	// the coarse level
+  fwrite(&(param->lmax),			sizeof(int  ),1,fp); 	// the max level of refinement
+
+  fwrite(&(param->niter),			sizeof(int  ),1,fp); 	// the maximal number of iterations for the Poisson solver
+  
+  fwrite(&(param->gstride),			sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (gravity)
+  fwrite(&(param->hstride),			sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (hydro)
+
+  fwrite(&(param->dt),				sizeof(float),1,fp); 	// the timsestep
+  fwrite(&(param->tmax),			sizeof(float),1,fp); 	// the simulation stops at tmax : corresponds to amax in cosmo
+  fwrite(&(param->time_max),			sizeof(float),1,fp); 	// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
+
+  fwrite(&(param->maxhash),			sizeof(int  ),1,fp); 	// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
+  
+  fwrite(&(param->amrthresh),			sizeof(float),1,fp); 	// the refinement criterion (refine if mcell>amrthresh)
+  fwrite(&(param->nsmooth),			sizeof(int  ),1,fp); 	// the number of neighbour refinement steps
+
+  fwrite(&(param->poissonacc),			sizeof(float),1,fp); 	// relaxation accuracy for Poisson equation
+  fwrite(&(param->mgridlmin),			sizeof(int  ),1,fp); 	// coarsest level for multigrid relaxation
+  fwrite(&(param->nvcycles),			sizeof(int  ),1,fp); 	// number of vcycles for multigrid relaxation
+  fwrite(&(param->nrelax),			sizeof(int  ),1,fp); 	// number of smoothing cycles
+
+  fwrite(&(param->nrestart),			sizeof(int  ),1,fp); 	// the restart snapshot
+  fwrite(&(param->nsubcycles),			sizeof(int  ),1,fp); 	// number of subcyles in AMR advance procedure
+
+  fwrite(&(param->nthread),			sizeof(int  ),1,fp);	// number of thread
+  fwrite(&(param->nstream),			sizeof(int  ),1,fp);	// number of stream
+
+  fwrite(&(param->egy_rhs),			sizeof(float),1,fp); 	// the right hand side of the energy conservation equation (0 in non cosmological case);
+  fwrite(&(param->egy_0),			sizeof(float),1,fp); 	// the initial energy
+  fwrite(&(param->egy_last),			sizeof(float),1,fp); 	// the last integrand for the energy equation (used for trapezoidal rule)
+  fwrite(&(param->egy_timelast),		sizeof(float),1,fp); 	// the last time for the integrand (used for trapezoidal rule)
+  fwrite(&(param->egy_totlast),			sizeof(float),1,fp); 
+
+//  printf("%lf\n",param->egy_0);
+
+#ifdef WRAD
+  fwrite(&(param->unit.unit_l),			sizeof(float),1,fp);	// comoving length size of the box [meters]
+  fwrite(&(param->unit.unit_v),			sizeof(float),1,fp);	// unit velocity
+  fwrite(&(param->unit.unit_t),			sizeof(float),1,fp);	// unit time [seconds]
+  fwrite(&(param->unit.unit_n),			sizeof(float),1,fp);	// unit number [moles typically]
+  fwrite(&(param->unit.unit_mass),		sizeof(float),1,fp);	// unit mass [in kg, total mass is equal to one in unit codes]
+
+  fwrite(&(param->clight),			sizeof(float),1,fp); 	// speed of light in units of the real one
+  fwrite(&(param->fudgecool),			sizeof(float),1,fp); 	// cooling fraction
+  fwrite(&(param->ncvgcool),			sizeof(int  ),1,fp); 	// cooling max iterations
+  
+  fwrite(&(param->denthresh),			sizeof(float),1,fp);	// density threshold to turn the sources on
+  fwrite(&(param->tmpthresh),			sizeof(float),1,fp);	// temperature threshold to turn the sources on
+  fwrite(&(param->srcint),			sizeof(float),1,fp);	// intensity of the sources
+#endif
+
+#ifdef TESTCOSMO
+  fwrite(&(param->cosmo->om),			sizeof(float),1,fp);	// Omega matter
+  fwrite(&(param->cosmo->ov),			sizeof(float),1,fp);	// Omega vacuum
+  fwrite(&(param->cosmo->ob),			sizeof(float),1,fp);	// Omega baryon
+  fwrite(&(param->cosmo->H0),			sizeof(float),1,fp);	// Hubble constant
+#endif
+
+#ifdef STARS 
+  fwrite(&(param->stars->overdensity_cond),	sizeof(float),1,fp);	// need overdensity_cond times the mean density to begin star formation
+  fwrite(&(param->stars->density_cond),		sizeof(float),1,fp);	// minimum Hydrogen density [cm-3]
+  fwrite(&(param->stars->tcar),			sizeof(float),1,fp);	// carateristic time [yr]
+#endif
+
+  fclose(fp);
+
+//  abort();
+}
+
+
 
 //====================================================================================================
 void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int nsteps, int ndumps, struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt){
@@ -198,13 +541,11 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     for(ic=0;ic<6;ic++){
 
       if(curoct->nei[ic]!=NULL){
-	if(curoct->level>1) {
-	  curoct->nei[ic]=(struct CELL *)(((unsigned long int)(curoct->nei[ic])-(unsigned long int)rootcell_sna)+(unsigned long int)rootcell_mem);
-	}
-	else{
-	  curoct->nei[ic]=root;
-	}
-       }
+
+	curoct->nei[ic]=(struct CELL *)(((unsigned long long int)(curoct->nei[ic])-(unsigned long long int)rootcell_sna)+(unsigned long long int)rootcell_mem);
+      }
+      
+
     }
     
     // Ugly fix
@@ -221,14 +562,16 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
  
 
     if(curoct->parent!=NULL){
+
 	struct CELL *co;
 	if(curoct->level>1){
-	  co=(struct CELL *)((unsigned long int)curoct->parent-(unsigned long int) rootcell_sna+(unsigned long int) rootcell_mem);
+	  co=(struct CELL *)((unsigned long long int)curoct->parent-(unsigned long long int) rootcell_sna+(unsigned long long int) rootcell_mem);
 	  curoct->parent=co;
 	}
 	else{
 	  curoct->parent=root;
 	}
+
     }
     
 
@@ -318,8 +661,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   struct OCT oct;
   FILE *fp;
 
-
-   fp=fopen(filename,"wb");
+  fp=fopen(filename,"wb");
 
   //printf("tsim=%f\n",tsim);
   fwrite(&tsim,sizeof(REAL),1,fp); 
@@ -351,7 +693,6 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 	  fwrite(&oct,sizeof(struct OCT),1,fp);
 	}while(nextoct!=NULL);
     }
-
   
   fclose(fp);
 }
@@ -363,6 +704,9 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   //------------------------------------------------------------------------
 
   //------------------------------------------------------------------------
+
+
+
 #ifdef PIC
 void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
@@ -380,11 +724,25 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
   float tsimf=tsim;
 
   int npart=0; 
-  for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
+#ifdef STARS
+  int nstar=0; 
+
+  char filenamestar[128];							char filenamepart[128];	
+  FILE *fstar;									FILE *fpart;
+  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+  fstar=fopen(filenamestar,"wb");						fpart=fopen(filenamepart,"wb");
+  fwrite(&nstar,1,sizeof(int)  ,fstar);						fwrite(&npart,1,sizeof(int)  ,fpart);
+  fwrite(&tsimf,1,sizeof(float),fstar);						fwrite(&tsimf,1,sizeof(float),fpart);
+
+
+
+#else
   fp=fopen(filename,"wb");
-  fwrite(&npart,1,sizeof(int),fp);
+  fwrite(&npart,1,sizeof(int)  ,fp);
   fwrite(&tsimf,1,sizeof(float),fp);
+#endif
+
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       //printf("level=%d\n",level);
@@ -395,44 +753,64 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 	{
 	  if(nextoct==NULL) continue; // in case the level is empty
 	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
+//	  dxcur=1./pow(2,oct.level);
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
-		do{ 
-		  curp=nexp; 
-		  nexp=curp->next; 
-		  val=curp->x;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->y;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->z;fwrite(&val,1,sizeof(float),fp);
+		do{
+		  curp=nexp;
+		  nexp=curp->next;
+
+#ifdef STARS
+		  if(curp->isStar) 	{	fp=fstar;	nstar++;	}
+		  else 			{	fp=fpart;	npart++;	}
+#else
+		  npart++;
+#endif	
+		  val=curp->x;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->y;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->z;			fwrite(&val,1,sizeof(float),fp);
 #ifndef PARTN
 #ifdef PART_EGY
-		  val=curp->ekin+curp->epot;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->ekin+curp->epot;	fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
 #else
-		  val=curp->vx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->vy;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->vz;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vy;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->vz;			fwrite(&val,1,sizeof(float),fp);
 #endif
 #else
-		  val=curp->fx;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fy;fwrite(&val,1,sizeof(float),fp);
-		  val=curp->fz;fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fx;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
+		  val=curp->fz;			fwrite(&val,1,sizeof(float),fp);
 #endif
-		  val=(REAL)(curp->idx);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->mass);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->epot);fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->ekin);fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->idx);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->mass);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
+		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
+#ifdef STARS
+		  if(curp->isStar) {
+			  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
+		  }
+#endif
 		  ipart++;
+
 		}while(nexp!=NULL);
 	      }
 	    }
 	}while(nextoct!=NULL);
     }
-  fclose(fp);
+
+#ifdef STARS
+  rewind(fpart);	fwrite(&npart,1,sizeof(int)  ,fpart);	fclose(fpart);
+  rewind(fstar);	fwrite(&nstar,1,sizeof(int)  ,fstar);	fclose(fstar);
+#else
+  rewind(fp);		fwrite(&npart,1,sizeof(int)  ,fp);	fclose(fp);
+#endif
+
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 
@@ -456,9 +834,11 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
   fp=fopen(filename,"wb");
-  fwrite(&npart,1,sizeof(int),fp);
-  fwrite(&tsim,1,sizeof(REAL),fp);
-  fwrite(&proot,1,sizeof(struct PART *),fp);
+  fwrite(&npart,1,sizeof(int),fp);		
+  fwrite(&tsim,1,sizeof(REAL),fp);		
+  fwrite(&proot,1,sizeof(struct PART *),fp);	
+
+//	printf("cpu %d \t%d\t%e\t%p \n", cpu->rank, npart, tsim,proot );
 
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
@@ -489,6 +869,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 	    }
 	}while(nextoct!=NULL);
     }
+  	
   fclose(fp);
   //printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
 
@@ -520,7 +901,6 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   // opening the file
   fp=fopen(filename,"rb");
-  
 
   // reading snapshot time
   size_t outf;
@@ -528,10 +908,15 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   outf=fread(tsim,1,sizeof(REAL),fp);
   outf=fread(&rootpart_sna,1,sizeof(struct PART *),fp);
 
+//	printf("cpu %d \t%d\t%e\t%p \n", cpu->rank, npart, *tsim,rootpart_sna);
+
   // reading the particle sequence
    
   outf=fread(&part_ad,sizeof(struct PART*),1,fp);
   outf=fread(&part,sizeof(struct PART),1,fp);
+
+
+ // printf("debut de lecture %ld\t%p\t%p\t%p\n ", (unsigned long long int)(part_ad-rootpart_sna), part_ad,rootpart_sna,rootpart_mem );
 
   while(!feof(fp)){
 
@@ -540,25 +925,28 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
     /* } */
     // do stuff
     ipart++;
+
     // 1 copy the content of the particle at the right location
 
     curp=(part_ad-rootpart_sna)+rootpart_mem;
+
     memcpy(curp,&part,sizeof(struct PART));
+ //   printf("memcpy OK \n");
 
     // 2.a modify the particle pointers 
     curp->next=(curp->next==NULL?NULL:(curp->next-rootpart_sna)+rootpart_mem);
     curp->prev=(curp->prev==NULL?NULL:(curp->prev-rootpart_sna)+rootpart_mem);
     
-
+  //  printf("*part ok \n");
 
     // read next particle
-
     outf=fread(&part_ad,sizeof(struct PART*),1,fp);
     outf=fread(&part,sizeof(struct PART),1,fp);
 
+//    printf("%d\t ", ipart);
   }
 
-
+//  printf("READ OK \n ");
   // Building back the freepart chained list
 
   struct PART * lpart;
@@ -627,13 +1015,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmax=dummyf;
 
-       rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->amrthresh=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
-       rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->poissonacc=dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
@@ -658,10 +1046,26 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
       param->fudgecool=1.0;
       param->ncvgcool=0;
+#else
+	int i;
+				rstat=fscanf(buf,"%s",stream);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,"%s %lf",stream,&dummyf);
+#endif
 
+#ifdef STARS
+      rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife		=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_eff	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_frac	=dummyf;
 #endif
       fclose(buf);
     }
+
+
+
 
   // computing the maxhash
   int val=(pow(2,param->lmax-1)<256?pow(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
@@ -677,7 +1081,11 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     abort();
   }
 #endif
-    
+
+#ifdef STARS
+    param->stars->n		= 0;
+#endif
+
 }
 
 //==================================================================================
@@ -715,7 +1123,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&ov,1,4,fx);
     outf=fread(&h0,1,4,fx);
     outf=fread(&dummy,1,sizeof(dummy),fx);
-
     outf=fread(&dummy,1,sizeof(dummy),fy);
     outf=fread(&np1,1,4,fy);
     outf=fread(&np2,1,4,fy);
@@ -832,8 +1239,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       outf=fread(&dummy,1,sizeof(dummy),fz);
       outf=fread(velz,np1*np2,sizeof(float),fz);
       outf=fread(&dummy,1,sizeof(dummy),fz);
-      
-
     }
 
 
@@ -1541,10 +1946,10 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 
   int i1,i2,i3;
   int icx,icy,icz,icell;
-  unsigned long key;
+  unsigned long long key;
   struct OCT *curoct;
   struct OCT *nextoct;
-  unsigned long hidx;
+  unsigned long long hidx;
   int found;
   float z0,y0,x0;
   int ifound=0;
@@ -1573,7 +1978,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
     if(cpu->rank==0) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
-    printf("No temperature law for cosmologies other than SCDM -> F** it\n");
+    if(cpu->rank==0) printf("No temperature law for cosmologies other than SCDM -> F** it\n");
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
     //    abort();
   }
@@ -1679,7 +2084,6 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
 	  W.X=0.2e-3;
 #endif
-
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
 	  ifound++;
@@ -1712,6 +2116,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   param->cosmo->ov=ov;
   param->cosmo->ob=ob;
   param->cosmo->H0=h0;
+  param->cosmo->unit_l=rstar;
 
 #ifdef WRAD
   param->unit.unit_l=rstar;
@@ -1739,7 +2144,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   REAL tdump,adump;
   char filename[128]; 
-  
+
+
 #ifndef TESTCOSMO
 #ifdef WRAD
 	tdump=(tsim)*param->unit.unit_t/MYR;
@@ -1761,7 +2167,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("%s %p\n",filename,cpu->part);
 	  }
 	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
-	  
+
 #endif
 	}
 	else{
@@ -1775,6 +2181,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
 	  // backups for restart
+
 	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
 	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 
@@ -1782,6 +2189,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
 	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 
-	  *(cpu->ndumps)=*(cpu->ndumps)+1;
-	}
+
+	}	
 }

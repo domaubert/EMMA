@@ -10,6 +10,10 @@
 #include "atomic_data/Atomic.h"
 
 
+#ifdef STARS
+#include "stars.h"
+#endif
+
 // ============================================================================================
 int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, struct OCT *curoct){
   REAL X0=1./pow(2,param->lcoarse);
@@ -82,13 +86,39 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
     flag=0;
   }
 #endif
+
+#ifdef STARS
+	REAL t = a2t(param,aexp) ;
+
+	struct PART *nexp;
+	struct PART *curp;
+
+	cell->rfield.src=0.;
+	cell->rfieldnew.src=0.;
+	flag=0;
+
+	nexp=cell->phead;
+	if(nexp==NULL) return 0;
+ 	do{ 	curp=nexp;
+		nexp=curp->next;
+
+		if (curp->isStar){
+			if ( t - curp->age < param->stars->tlife  ) {
+				cell->rfield.src += param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+				flag++;
+			}
+		}
+	}while(nexp!=NULL);
+
+	cell->rfieldnew.src=cell->rfield.src;
+#endif
+
+
 #endif
 
 
   return flag;
 }
-
-
 
 // ============================================================================================
 
@@ -119,7 +149,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  continue; // src are built on the finest level
 	}
 #endif
-	
+
         flag=putsource(&(curoct->cell[icell]),param,level,aexp,curoct); // creating sources if required
 	
 	// filling the temperature, nh, and xion

@@ -1,7 +1,4 @@
-
-
 typedef double REAL;
-
 
 #ifdef WMPI
 #include <mpi.h>
@@ -16,7 +13,7 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049);
-#define PMIN 1e-10
+#define PMIN 1e-13
 #endif
 
 #define NCOSMOTAB (262144)
@@ -46,6 +43,8 @@ typedef double REAL;
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 
+
+#define PI 3.14159265
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.)
 #define KBOLTZ (1.3806e-23) // J/K
@@ -71,6 +70,24 @@ struct COSMOPARAM{
   REAL *tab_aexp;
   REAL *tab_ttilde;
   REAL tsim;
+  REAL unit_l;
+  REAL tphy;
+};
+#endif
+
+#ifdef STARS 
+struct STARSPARAM{
+  REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
+  REAL density_cond;	// Hydrogen density (m-3)
+  REAL tcar;		// caracteristic time (yr)
+  REAL tlife;		// life time of a radiative source (yr) 
+  REAL feedback_eff;	// feedback efficiency
+  REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
+	
+  REAL mstars;
+  int  n;
+  REAL thresh;
+
 };
 #endif
 
@@ -123,6 +140,10 @@ struct RUNPARAMS{
   struct COSMOPARAM *cosmo;
 #endif
 
+#ifdef STARS
+  struct STARSPARAM *stars;
+#endif
+
   int nthread;
   int nstream;
 
@@ -154,7 +175,7 @@ struct RUNPARAMS{
 
 struct PACKET{
   REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -169,8 +190,8 @@ struct CPUINFO{
   int rank;
   int nproc;
 
-  unsigned long kmin;
-  unsigned long kmax;
+  unsigned long long kmin;
+  unsigned long long kmax;
   int nkeys;
 
   REAL load;
@@ -231,12 +252,15 @@ struct CPUINFO{
   MPI_Comm comm; // the communicator
   
   
-
 #endif
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
   int *npart; // the number of particles per levels
+#ifdef STARS
+  int *nstar;// the number of stars per levels
+#endif
+
   int levelcoarse; // the levelcoarse
 
   struct OCT *freeoct; // the location of the first free oct
@@ -278,7 +302,7 @@ struct CPUINFO{
 
   REAL * gresA;
   REAL * gresB;
-  unsigned long int cuparam;
+  unsigned long long int cuparam;
 #endif
 };
 
@@ -403,7 +427,6 @@ struct PART
   REAL fz;
 #endif
 
-
   struct PART *next;
   struct PART *prev;
 
@@ -415,6 +438,12 @@ struct PART
 
   REAL epot;
   REAL ekin;
+
+#ifdef STARS
+  int  isStar;
+  REAL rhocell;
+  REAL age;
+#endif
 
 };
 
@@ -429,12 +458,27 @@ struct PART_MPI // For mpi communications
   REAL vz;
 
   REAL mass;
+
+#ifdef STARS
+  REAL rhocell;
+  REAL age;
+#endif
+
+
   int idx;
   int level; // the level of the destination (to remove the key degeneracy)
   int icell; // the cell of destination
-  int is; //current step of particle
+  int is;    // current step of particle
 
-  unsigned long key; // the destination hilbert key
+
+#ifdef STARS
+  int isStar;
+#endif
+
+
+  unsigned long long key; // the destination hilbert key
+
+
 };
 
 //=======================================
@@ -443,14 +487,14 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
 #ifdef WRAD
 struct RAD_MPI{
   struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 #endif
@@ -458,7 +502,7 @@ struct RAD_MPI{
 // this structure is for the communication of Flux data
 struct FLUX_MPI{
   REAL data[8*NFLUX]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long key; // the destination hilbert key
+  unsigned long long key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -466,8 +510,8 @@ struct FLUX_MPI{
 //=========================================================
 
 struct Gtype{
-  REAL d;
-  REAL p;
+  REAL d; //density
+  REAL p; //pottential
 };
 
 //-------------------------------------

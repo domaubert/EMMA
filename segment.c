@@ -29,7 +29,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   char first=1;
   int max,min;
-  unsigned long keyloc;
+  unsigned long long keyloc;
 
 
   // First we compute the current cell position (lower left corner)
@@ -92,9 +92,9 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	      c[1]=iy+(int)(j*pow(0.5,curoct->level-levelcoarse+1))-(j==1);
 	      c[2]=iz+(int)(k*pow(0.5,curoct->level-levelcoarse+1))-(k==1);
 #ifndef TUBE
-	      keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
+	      keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
-	      keyloc=(unsigned long)(c[0]+c[1]*pow(2,levelcoarse-1)+c[2]*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+	      keyloc=(unsigned long long)(c[0]+c[1]*pow(2,levelcoarse-1)+c[2]*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
 #endif	      
 	      //if((curoct->level==1)) printf("i=%d j=%d k=%d|| %d %d %d || %d || %d %d\n",i,j,k,(int)(c[0]),(int)(c[1]),(int)(c[2]),keyloc,cpu->kmin,cpu->kmax);
 	      if(first){
@@ -133,12 +133,12 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 
 //------------------------------------------------------------------------
 
-unsigned long oct2key(struct OCT *curoct,int level){
+unsigned long long oct2key(struct OCT *curoct,int level){
   
   REAL xc,yc,zc;
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned long keyloc;
+  unsigned long long keyloc;
 
   xc=curoct->x;
   yc=curoct->y;
@@ -155,9 +155,9 @@ unsigned long oct2key(struct OCT *curoct,int level){
   c[1]=iy;
   c[2]=iz;
 #ifndef TUBE
-  keyloc=(unsigned long)(hilbert_c2i(3,level,c));
+  keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
 #else
-  keyloc=(unsigned long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
+  keyloc=(unsigned long long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
 #endif
 
 
@@ -166,11 +166,11 @@ unsigned long oct2key(struct OCT *curoct,int level){
 }
 
 //------------------------------------------------------------------------
-unsigned long pos2key(REAL xc, REAL yc, REAL zc,int level){
+unsigned long long pos2key(REAL xc, REAL yc, REAL zc,int level){
   
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned long keyloc;
+  unsigned long long keyloc;
 
 	
   // we convert it in dxcoarse octs unit
@@ -184,9 +184,9 @@ unsigned long pos2key(REAL xc, REAL yc, REAL zc,int level){
   c[1]=iy;
   c[2]=iz;
 #ifndef TUBE
-  keyloc=(unsigned long)(hilbert_c2i(3,level,c));
+  keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
 #else
-  keyloc=(unsigned long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
+  keyloc=(unsigned long long)(ix+iy*pow(2,level-1)+iz*pow(2,level-1)*pow(2,level-1));
 #endif
 
   return keyloc;
@@ -202,7 +202,7 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
   int ix,iy,iz;
   REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned long keyloc;
+  unsigned long long keyloc;
   int cpuloc;
 
   if(curoct->level<=LCO){
@@ -225,9 +225,9 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
     c[1]=iy;
     c[2]=iz;
 #ifndef TUBE
-    keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
+    keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
-    keyloc=(unsigned long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+    keyloc=(unsigned long long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
 #endif
     cpuloc=keyloc/cpu->nkeys;
     curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
@@ -242,7 +242,7 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
   int ix,iy,iz;
   REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
-  unsigned long keyloc;
+  unsigned long long keyloc;
   int cpuloc;
 	
   // we convert it in dxcoarse octs unit
@@ -256,9 +256,9 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
   c[1]=iy;
   c[2]=iz;
 #ifndef TUBE
-  keyloc=(unsigned long)(hilbert_c2i(3,levelcoarse,c));
+  keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
-  keyloc=(unsigned long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
+  keyloc=(unsigned long long)(ix+iy*pow(2,levelcoarse-1)+iz*pow(2,levelcoarse-1)*pow(2,levelcoarse-1));
 #endif
   if((keyloc>=cpu->kmin)&&(keyloc<=cpu->kmax)){
     return 1;
@@ -277,7 +277,7 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
  //------------------------------------------------------------------------
 
  // the hash function
-unsigned long hfun(unsigned long key, unsigned long maxval){
+unsigned long long hfun(unsigned long long key, unsigned long long maxval){
   // warnign maxval must be a power of two
   //return key>>6;
   return key&(maxval-1);
@@ -287,7 +287,7 @@ unsigned long hfun(unsigned long key, unsigned long maxval){
  //------------------------------------------------------------------------
 void load_balance(int levelcoarse,struct CPUINFO *cpu){
 
-  unsigned long keymax=pow(2,3*(levelcoarse-1))-1; // the maximal key along the Hilbert curve
+  unsigned long long keymax=pow(2,3*(levelcoarse-1))-1; // the maximal key along the Hilbert curve
   
   cpu->kmin=((keymax+1)/cpu->nproc)*cpu->rank; // the min key of the current cpu
   cpu->nkeys=((keymax+1)/cpu->nproc); // the number of keys per cpu

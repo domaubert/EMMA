@@ -18,8 +18,9 @@ c
 c  Top grid mesh size.
 c
 	integer np1,np2,np3
-	parameter (np1=512,np2=512,np3=512)
+	parameter (np1=128,np2=128,np3=128)
 c
 c np[1-3]:      particle lattice size for computing initial conditions.
 c                 All must be divisible by 2.  They need not be equal.
 c  The memory required by grafic1 is np1*np2*np3 words plus a few.
+
