@@ -128,10 +128,7 @@ void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL E){
 
 int feedback(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, REAL t, REAL dt){
 
-	REAL eff 	= 1.;  		// feedback efficiency
 	REAL s8 	= 2e7 ;		// life time of a 8 M0 star
-
-
 	s8 		*= 31556926; 	// years en s 
 
 	REAL E		= getFeedbackEgy(param,aexp)  * param->stars->feedback_eff ;

@@ -2190,8 +2190,4 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 
 	}	
-
-
-	//  *(cpu->ndumps)=*(cpu->ndumps)+1;		A CHECKER
-
 }
