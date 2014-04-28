@@ -1,0 +1,40 @@
+##==MemoryManagement=========
+max_number_of_octs 500000
+max_number_of_part 10000000
+mpi_buffer_size 500000
+##==TimestepManagement=======
+output_frequency 50
+max_nuber_of_steps 10000000
+time_step_max  1e-0
+tmax_or_amax 1.0
+##==AMRGrid==================
+level_coarse 7
+level_max 7
+amr_thresh 8
+n_smooth 2
+##==PoissonSolver============
+max_number_of_relaxation_poisson 1000
+poisson_accuracy 1e-3
+mgrid_lmin 4
+mgrid_nvcycles 3
+mgrid_nsmooth 5
+##==Restart==================
+restart_snap 0
+##==ThreadManagement======
+grav_stencil_size 32
+cons_stencil_size 32
+max_subcycles 2
+nthread 16
+nstream 16
+##==RadTransfert======
+clight 1e-2
+dens_threshold 5e3
+temp_threshold 1e5
+src_int 5e50 
+##==StarFormation=========
+overdensity_cond 5
+density_cond 0
+tcar 3e9
+tlife 3e7
+feedback_eff 1
+feedback_frac 1
