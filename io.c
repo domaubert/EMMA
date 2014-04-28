@@ -2180,7 +2180,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
-#ifdef BKP
 	  // backups for restart
 
 	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
@@ -2192,7 +2191,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	}	
 
-#endif
+
 	//  *(cpu->ndumps)=*(cpu->ndumps)+1;		A CHECKER
 
 }
