@@ -74,6 +74,40 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
   // ===========================================================================
 
 
+
+#ifdef STARS
+	REAL t = a2t(param,aexp) ;
+
+	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
+	REAL rho0 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G) ;
+
+	REAL Mtot 	= rho0 * pow(param->cosmo->unit_l,3.0);
+	REAL M 		= param->stars->mstars * Mtot;	
+
+	REAL srcint = param->srcint * M;
+
+	struct PART *nexp;
+	struct PART *curp;
+
+	cell->rfield.src   =0.;
+	cell->rfieldnew.src=0.;
+	flag=0;
+
+	nexp=cell->phead;
+	if(nexp==NULL) return 0;
+ 	do{ 	curp=nexp;
+		nexp=curp->next;
+
+		if (curp->isStar){
+			if ( t - curp->age < param->stars->tlife  ) {
+				cell->rfield.src +=  srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+				flag++;
+			}
+		}
+	}while(nexp!=NULL);
+
+	cell->rfieldnew.src=cell->rfield.src;
+#else
 #ifdef WHYDRO2
   if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
     cell->rfield.src=param->srcint*cell->field.d/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
@@ -85,33 +119,11 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
     cell->rfieldnew.src=0.;
     flag=0;
   }
+
+#endif
 #endif
 
-#ifdef STARS
-	REAL t = a2t(param,aexp) ;
 
-	struct PART *nexp;
-	struct PART *curp;
-
-	cell->rfield.src=0.;
-	cell->rfieldnew.src=0.;
-	flag=0;
-
-	nexp=cell->phead;
-	if(nexp==NULL) return 0;
- 	do{ 	curp=nexp;
-		nexp=curp->next;
-
-		if (curp->isStar){
-			if ( t - curp->age < param->stars->tlife  ) {
-				cell->rfield.src += param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
-				flag++;
-			}
-		}
-	}while(nexp!=NULL);
-
-	cell->rfieldnew.src=cell->rfield.src;
-#endif
 
 
 #endif
@@ -158,6 +170,14 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #ifdef WRADHYD
 	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
 	curoct->cell[icell].rfield.nh=d/(PROTON_MASS/param->unit.unit_mass); // switch to atom/unit_length^3
+
+	
+	if (curoct->cell[icell].rfield.nh <= 0) {
+		printf("densité negative FILLRAD");
+		printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);		
+		abort();	
+	}
+
 	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
 
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start

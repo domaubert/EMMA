@@ -7,13 +7,11 @@
 #include "cic.h"
 #include "vector.h"
 
-
 #ifdef WMPI
 #include <mpi.h>
 #include "communication.h"
 #endif
 
-#define FRACDX 0.25
 
 #ifdef PIC
 //------------------------------------------------------------------------

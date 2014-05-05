@@ -1480,7 +1480,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	      }
  	      
 	      memcpy(&(curoct->nei[vnei[inei]]->rfieldnew),&R,sizeof(struct Rtype));
-	      if(curoct->cell[icell].rfieldnew.e[0]==0.) printf("R2=%e\n",R.e[0]);
+	   //   if(curoct->cell[icell].rfieldnew.e[0]==0.) printf("R2=%e\n",R.e[0]);
 	      
 	    }
 	  }
@@ -1681,7 +1681,6 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
     printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
   }
-  
 }
 
 
@@ -1739,6 +1738,7 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 // ==============================================================
 void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
+//  printf("sanity rad on cpu %d\n", cpu->rank);
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;

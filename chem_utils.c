@@ -227,6 +227,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
       x0[idloc]=R.xion;
 
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
+
+
+	if (nH[idloc] <= 0) {
+		printf("densité negative");		
+		abort();	
+	}
+
       eint[idloc]=R.eint/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
       srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/pow(aexporg,3); 
@@ -289,6 +296,10 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
 	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
 
+	if (nH[idloc] <= 0) {
+		printf("densité negative");		
+		abort();	
+		}
 #else
 	  REAL hubblet=0.;
 #endif
@@ -339,7 +350,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(test) 
 	    {
 	      fudgecool=fudgecool/10.; 
-	      //printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
+	      printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
 	      continue;	
 	    } 
 
@@ -374,8 +385,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
-	      //printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]);
-
+	      printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]);
+	      printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
 
 	      continue;	
 	    } 
@@ -435,7 +446,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
 	      fudgecool=fudgecool/10.;
-	      //printf("loop 4 %e %e\n",eintt,eint[idloc]);
+	  //    printf("loop 4 %e %e\n",eintt,eint[idloc]);
 
 	      continue;
 	    }

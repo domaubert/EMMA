@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 
 #ifdef TESTCOSMO
   threshold*=pow(2.0,-3.0*param.lcoarse);
-  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement %e goes to a density thresold of %e \n ", param.amrthresh, threshold);
+  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh, threshold);
   param.amrthresh= threshold;
 #endif
 
@@ -499,6 +499,7 @@ int main(int argc, char *argv[])
 
 #ifdef STARS
   nopn *= 2;					// you can create as many stars as initial DM particles
+
 #endif
 
   if (npartmax < nopn && cpu.rank==0 ){
