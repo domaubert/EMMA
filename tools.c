@@ -94,18 +94,11 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 
 		  if(curoct->cell[icell].field.d<=0) {
-			printf("Negative value for density -> abort\n");
+			printf("Negative value for density -> abort in multicheck\n");
 			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
 			abort();
 		  }	
 
-/*		  if(curoct->cell[icell].fieldnew.d<=0) {
-			printf("Negative value for density new -> abort\n");
-printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E);
-			abort();
-		  }	
-
-*/
 #ifdef PIC
 	     
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
@@ -151,7 +144,7 @@ printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[i
 	REAL tmw = param->cosmo->ob/param->cosmo->om ;
 	REAL dm = Mtot - tmw;
 
-	if(  fabs(dm) > 1e-6 && cpu->rank==0){
+	if(  fabs(dm) > 1e-3 && cpu->rank==0){
 		printf("\n=================================================\n");
 		printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
 		printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);

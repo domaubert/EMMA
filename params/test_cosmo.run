@@ -32,7 +32,7 @@ dens_threshold 5e20
 temp_threshold 1e5
 src_int 0
 ##==StarFormation=========
-overdensity_cond 5
+overdensity_cond 50
 density_cond 0
 tcar 3e9   
 tlife 3e7

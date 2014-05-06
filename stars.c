@@ -172,10 +172,6 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx ) {
 
-	REAL r 		= fmin( sqrt(pow(cell->field.u,2) + pow(cell->field.v,2) + pow(cell->field.w,2)) + rdm(-1,1) * cell->field.a , FRACDX * dx/dt);
-	REAL theta 	= rdm(0,2*PI);
-	REAL phi   	= acos(rdm(-1,1));
-
 	star->next  = NULL;
 	star->idx   = idx;
 	star->level = level;
@@ -185,9 +181,20 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
-	star->vx = r * cos(theta) * cos(phi);
-	star->vy = r * cos(theta) * sin(phi);
-	star->vz = r * sin(theta) ;
+	star->vx = cell->field.u;
+	star->vy = cell->field.v;
+	star->vz = cell->field.w;
+
+
+/*	REAL r 		= rdm(0,1) * cell->field.a ;
+	REAL theta   	= acos(rdm(-1,1));
+	REAL phi 	= rdm(0,2*PI);
+
+	star->vx += r * sin(theta) * cos(phi);
+	star->vy += r * sin(theta) * sin(phi);
+	star->vz += r * cos(theta) ;
+*/
+
 
 	star->mass  = param->stars->mstars;
 
@@ -311,12 +318,13 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde;
 
-	REAL N = gpoiss(lambda );
+	REAL N = gpoiss(lambda);
 	
 
 	if(N * param->stars->mstars >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
 
-	if (N) printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda);
+//	if (N) printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda);
+
 	return N;
 }
 
@@ -363,12 +371,9 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void initThresh(struct RUNPARAMS *param,  REAL aexp){
-	REAL k	= 0;
-	if ( param->stars->density_cond > 0 ){
-		k = 1;
-	}else{
-		k = -pow(aexp,3.0);
-	}	
+
+	REAL k =(param->stars->density_cond >0)? 1 : -pow(aexp,3.0);
+	
 
 	REAL H0 		= param->cosmo->H0 *1000.0/1e6/PARSEC;
 	REAL rhostar 		= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
@@ -426,7 +431,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 				N = getNstars2create(curcell, param, dt, aexp, level);
 
-				if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+			//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 				if (N * param->stars->mstars >= curcell->field.d *dx*dx*dx){
 					printf("Problem mass in createStars %e %e \n", N * param->stars->mstars, curcell->field.d *dx*dx*dx);
