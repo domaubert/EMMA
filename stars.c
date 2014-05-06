@@ -175,9 +175,9 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
-	REAL vx = cell->field.u + rdm(-1.,1.) * cell->field.a;
-	REAL vy = cell->field.v + rdm(-1.,1.) * cell->field.a;
-	REAL vz = cell->field.w + rdm(-1.,1.) * cell->field.a;
+	REAL vx = cell->field.u;// + rdm(-1.,1.) * cell->field.a;
+	REAL vy = cell->field.v;// + rdm(-1.,1.) * cell->field.a;
+	REAL vz = cell->field.w;// + rdm(-1.,1.) * cell->field.a;
 
 	REAL vmax = pow(2.0,-level)/dt;
 
@@ -385,7 +385,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 				}
 			}
 
-			feedback(curcell, param, aexp, t, dt);
+			if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
 
 			if (curcell->field.d > mmax) mmax = curcell->field.d;
 			if (curcell->field.d < mmin) mmin = curcell->field.d;

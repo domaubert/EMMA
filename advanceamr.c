@@ -651,10 +651,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 
-  /* //===================================creating new stars=================================// need to be called before the dt computation because of the random speed component  */
-#ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
-#endif
 
 
 
@@ -823,6 +819,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
+    /* //===================================creating new stars=================================*/
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#endif
 
 
 

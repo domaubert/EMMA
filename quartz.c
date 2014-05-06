@@ -474,8 +474,8 @@ int main(int argc, char *argv[])
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 
-  int ncellscoarse = pow(2,3*param.lcoarse); // number of cells before refinement 
-  int ncellsmax    = 3 * ncellscoarse; 		 // max number of cells after refinement
+  int ncellscoarse = pow(2,3*param.lcoarse)/8; // number of cells before refinement 
+  int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid
   int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
   if (ngridmax < noon && cpu.rank==0 ) {
