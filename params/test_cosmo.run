@@ -30,7 +30,7 @@ nstream 16
 clight 1e-2
 dens_threshold 5e20
 temp_threshold 1e5
-src_int 5e56 
+src_int 5e59 
 ##==StarFormation=========
 overdensity_cond 5
 density_cond 0

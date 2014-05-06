@@ -444,7 +444,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 				}
 			}
 
-			if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
+			//if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
 
 			mmax = fmax(curcell->field.d, mmax);
 			mmin = fmin(curcell->field.d, mmin);
