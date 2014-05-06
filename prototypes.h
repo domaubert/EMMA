@@ -8,6 +8,8 @@ typedef double REAL;
 #define GAMMA (5./3.)
 #define CFL (0.85)
 #define GRAV (0.25)
+#define FRACDX  (0.25)
+
 
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)

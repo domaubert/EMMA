@@ -530,8 +530,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Overshoot tmax
     dtnew=((param->time_max-tloc)<dtnew?(param->time_max-tloc):dtnew);
-    //printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
-    //printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
+//    printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
+//    printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
 
     // Free Fall
 #ifdef WGRAV
@@ -542,7 +542,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
-    //printf("dtff= %e ",dtff);
+//    printf("dtff= %e ",dtff);
 #endif
 
 
@@ -551,7 +551,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-    //printf("dtcosmo= %e ",dtcosmo);
+//    printf("dtcosmo= %e ",dtcosmo);
 #endif
 
 
@@ -561,7 +561,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WHYDRO2
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
-    //printf("dtnew=%e dthydro= %e ",dtnew,dthydro);
+//    printf("dthydro= %e ",dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
 #endif
 
@@ -569,7 +569,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-    //printf("dtpic= %e \n",dtpic);
+//    printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
@@ -578,7 +578,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //#ifndef UVBKG
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-    //printf("dtrad= %e ",dtrad);
+//    printf("dtrad= %e ",dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
     //#endif
 #endif
@@ -627,6 +627,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-2]=tdum2;
 #endif
 
+//printf("dtnew %e\n",tdum);
 
 
    // ================= III Recursive call to finer level
@@ -652,8 +653,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-
-
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
@@ -673,7 +672,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
 #endif
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,2);
-
 
 
 
@@ -792,11 +790,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     tcomp[2]=MPI_Wtime();
 #endif
     //=============== Radiation Update ======================
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+#endif
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+#endif
     sanity_rad(level,param,firstoct,cpu,aexp);
 
 #ifdef WMPI
-    //printf("proc %d waiting\n",cpu->rank);
+ //   printf("proc %d waiting\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
@@ -824,6 +828,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
 #endif
 
+  /* //===================================creating new stars=================================// 
+	need to be called before the dt computation because of the random speed component  */
+#ifdef STARS
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#endif
 
 
   // ================= V Computing the new refinement map
