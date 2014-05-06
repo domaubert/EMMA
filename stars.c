@@ -315,7 +315,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL M_in_cell = cell->field.d * pow(2.0,-3.0*level);
 
-	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde;
+	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
 
 	REAL N = gpoiss(lambda );
 	
@@ -410,12 +410,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	param->cosmo->tphy	= a2t(param, aexp);
 
 
-	if(cpu->rank==0){
-		printf("\n");
-		printf("================================\n");
-		printf("   Starting Add Stars routine   \n");
-		printf("================================\n");	
-	}
+	/* if(cpu->rank==0){ */
+	/* 	printf("\n"); */
+	/* 	printf("================================\n"); */
+	/* 	printf("   Starting Add Stars routine   \n"); */
+	/* 	printf("================================\n");	 */
+	/* } */
 
 	do {	if(nextoct==NULL) 		continue;
 		curoct=nextoct;
@@ -432,7 +432,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 				N = getNstars2create(curcell, param, dt, aexp, level);
 
-				if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+				//if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 				if (N * param->stars->mstars >= curcell->field.d *dx*dx*dx){
 					printf("Problem mass in createStars %e %e \n", N * param->stars->mstars, curcell->field.d *dx*dx*dx);

@@ -1,6 +1,6 @@
 ##==MemoryManagement=========
-max_number_of_octs 120000
-max_number_of_part 1200000
+max_number_of_octs 80000
+max_number_of_part 800000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
 output_frequency 50
@@ -9,7 +9,7 @@ time_step_max  1e-0
 tmax_or_amax 1.0
 ##==AMRGrid==================
 level_coarse 7
-level_max 8
+level_max 7
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============
@@ -30,7 +30,7 @@ nstream 16
 clight 1e-2
 dens_threshold 5e20
 temp_threshold 1e5
-src_int 5e59 
+src_int 5e56
 ##==StarFormation=========
 overdensity_cond 5
 density_cond 0
