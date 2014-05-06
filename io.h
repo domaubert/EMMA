@@ -15,3 +15,6 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param, struct OCT **firstoct);
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump);
 void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, struct OCT **firstoct);
+
+void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu);
+void dumpHeaderOnScreen(struct RUNPARAMS *param, struct CPUINFO *cpu);

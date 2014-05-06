@@ -7,344 +7,765 @@
 #include <string.h>
 #include "stars.h"
 
-
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
   printf("Dumping parameters file\n");
 
   FILE *fp; 
-  fp=fopen("data/param.00000.p00000","wb");
+  fp=fopen("data/param.00000.p00000","w");
 
   int t = 1;
   int f = 0;
 
 
+fprintf(fp, "PIC\t");
 #ifdef PIC
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WHYDRO2\t");
 #ifdef WHYDRO2
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WGRAV\t");
 #ifdef WGRAV 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WRAD\t");
 #ifdef WRAD
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WRADHYD\t");
 #ifdef WRADHYD
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TESTCOSMO\t");
 #ifdef TESTCOSMO
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WDBG\t");
 #ifdef WDBG
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "STARS\t");
 #ifdef STARS
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WMPI\t");
 #ifdef WMPI
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "FLOORDT\t");
 #ifdef FLOORDT
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WCUDA_ERR\t");
 #ifdef WCUDA_ERR
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "NOCOMP\t");
 #ifdef NOCOMP
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "GRAFIC\t");
 #ifdef GRAFIC
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "ZELDOVICH\t");
 #ifdef ZELDOVICH
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "EVRARD\t");
 #ifdef EVRARD
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "EDBERT\t");
 #ifdef EDBERT
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TUBE\t");
 #ifdef TUBE
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "PARTN\t");
 #ifdef PARTN
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "PART2\t");
 #ifdef PART2
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WRADTEST\t");
 #ifdef WRADTEST  
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TESTCLUMP\t");
 #ifdef TESTCLUMP 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "PART_EGY\t");
 #ifdef PART_EGY
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "PERFECT\t");
 #ifdef PERFECT
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "FASTGRAV\t");
 #ifdef FASTGRAV 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "ONFLYRED\t");
 #ifdef ONFLYRED
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "RIEMANN_HLLC\t");
 #ifdef RIEMANN_HLLC
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "RIEMANN_EXACT\t");
 #ifdef RIEMANN_EXACT
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "PRIMITIVE\t");
 #ifdef PRIMITIVE
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "DUAL_E\t");
 #ifdef DUAL_E
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "WCHEM\t");
 #ifdef WCHEM 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "S_100000\t");
 #ifdef S_100000
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "COOLING\t");
 #ifdef COOLING
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "UVBKG\t");
 #ifdef UVBKG
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSZM\t");
 #ifdef TRANSZM
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSZP\t");
 #ifdef TRANSZP
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSYM\t");
 #ifdef TRANSYM
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSYP\t");
 #ifdef TRANSYP
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSXM\t");
 #ifdef TRANSXM
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "TRANSXP\t");
 #ifdef TRANSXP
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "REFXM\t");
 #ifdef REFXM 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "REFYM\t");
 #ifdef REFYM 
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
+fprintf(fp, "REFZM\t");
 #ifdef REFZM
-  fwrite(&t,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 1);
 #else
-  fwrite(&f,		sizeof(int  ),1,fp);
+  fprintf(fp, "%d\n", 0);
 #endif
 
 
-  fwrite(&(param->npartmax),			sizeof(int  ),1,fp); 	// the max particles number (per process)
-  fwrite(&(param->ngridmax),			sizeof(int  ),1,fp); 	// the max oct numbers (per process)
-  fwrite(&(param->nbuff),			sizeof(int  ),1,fp); 	// the mpi buffer size
-  fwrite(&(param->ndumps),			sizeof(int  ),1,fp); 	// the frequency of outputs
-  fwrite(&(param->nsteps),			sizeof(int  ),1,fp); 	// the maximal number of timesteps
+  fprintf(fp, "npartmax\t%d\n",(param->npartmax)); 	// the max particles number (per process)
+  fprintf(fp, "ngridmax\t%d\n",(param->ngridmax) ); 	// the max oct numbers (per process)
+  fprintf(fp, "nbuff\t%d\n",(param->nbuff) ); 	// the mpi buffer size
+  fprintf(fp, "ndumps\t%d\n",(param->ndumps) ); 	// the frequency of outputs
+  fprintf(fp, "nsteps\t%d\n",(param->nsteps) ); 	// the maximal number of timesteps
 
-  fwrite(&(param->lcoarse),			sizeof(int  ),1,fp); 	// the coarse level
-  fwrite(&(param->lmax),			sizeof(int  ),1,fp); 	// the max level of refinement
+  fprintf(fp, "lcoarse\t%d\n",(param->lcoarse) ); 	// the coarse level
+  fprintf(fp, "lmax\t%d\n",(param->lmax) ); 	// the max level of refinement
 
-  fwrite(&(param->niter),			sizeof(int  ),1,fp); 	// the maximal number of iterations for the Poisson solver
+  fprintf(fp, "niter\t%d\n",(param->niter) ); 	// the maximal number of iterations for the Poisson solver
   
-  fwrite(&(param->gstride),			sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (gravity)
-  fwrite(&(param->hstride),			sizeof(int  ),1,fp); 	// the size of the stencil for vector based computations (hydro)
+  fprintf(fp, "gstride\t%d\n",(param->gstride) ); 	// the size of the stencil for vector based computations (gravity)
+  fprintf(fp, "hstride\t%d\n",(param->hstride) ); 	// the size of the stencil for vector based computations (hydro)
 
-  fwrite(&(param->dt),				sizeof(float),1,fp); 	// the timsestep
-  fwrite(&(param->tmax),			sizeof(float),1,fp); 	// the simulation stops at tmax : corresponds to amax in cosmo
-  fwrite(&(param->time_max),			sizeof(float),1,fp); 	// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
+  fprintf(fp, "dt\t%e\n",(param->dt) ); 		// the timsestep
+  fprintf(fp, "tmax\t%e\n",(param->tmax) ); 	// the simulation stops at tmax : corresponds to amax in cosmo
+  fprintf(fp, "time_max\t%e\n",(param->time_max) ); 	// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
 
-  fwrite(&(param->maxhash),			sizeof(int  ),1,fp); 	// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
+  fprintf(fp, "maxhash\t%d\n",(param->maxhash) ); 	// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
   
-  fwrite(&(param->amrthresh),			sizeof(float),1,fp); 	// the refinement criterion (refine if mcell>amrthresh)
-  fwrite(&(param->nsmooth),			sizeof(int  ),1,fp); 	// the number of neighbour refinement steps
+  fprintf(fp, "amrthresh\t%e\n",(param->amrthresh) ); 	// the refinement criterion (refine if mcell>amrthresh)
+  fprintf(fp, "nsmooth\t%d\n",(param->nsmooth) ); 	// the number of neighbour refinement steps
 
-  fwrite(&(param->poissonacc),			sizeof(float),1,fp); 	// relaxation accuracy for Poisson equation
-  fwrite(&(param->mgridlmin),			sizeof(int  ),1,fp); 	// coarsest level for multigrid relaxation
-  fwrite(&(param->nvcycles),			sizeof(int  ),1,fp); 	// number of vcycles for multigrid relaxation
-  fwrite(&(param->nrelax),			sizeof(int  ),1,fp); 	// number of smoothing cycles
+  fprintf(fp, "poissonacc\t%e\n",(param->poissonacc) ); 	// relaxation accuracy for Poisson equation
+  fprintf(fp, "mgridlmin\t%d\n",(param->mgridlmin) ); 	// coarsest level for multigrid relaxation
+  fprintf(fp, "nvcycles\t%d\n",(param->nvcycles) ); 	// number of vcycles for multigrid relaxation
+  fprintf(fp, "nrelax\t%d\n",(param->nrelax) ); 	// number of smoothing cycles
 
-  fwrite(&(param->nrestart),			sizeof(int  ),1,fp); 	// the restart snapshot
-  fwrite(&(param->nsubcycles),			sizeof(int  ),1,fp); 	// number of subcyles in AMR advance procedure
+  fprintf(fp, "nrestart\t%d\n",(param->nrestart) ); 	// the restart snapshot
+  fprintf(fp, "nsubcycles\t%d\n",(param->nsubcycles) ); 	// number of subcyles in AMR advance procedure
 
-  fwrite(&(param->nthread),			sizeof(int  ),1,fp);	// number of thread
-  fwrite(&(param->nstream),			sizeof(int  ),1,fp);	// number of stream
+  fprintf(fp, "nthread\t%d\n",(param->nthread) );	// number of thread
+  fprintf(fp, "nstream\t%d\n",(param->nstream) );	// number of stream
 
-  fwrite(&(param->egy_rhs),			sizeof(float),1,fp); 	// the right hand side of the energy conservation equation (0 in non cosmological case);
-  fwrite(&(param->egy_0),			sizeof(float),1,fp); 	// the initial energy
-  fwrite(&(param->egy_last),			sizeof(float),1,fp); 	// the last integrand for the energy equation (used for trapezoidal rule)
-  fwrite(&(param->egy_timelast),		sizeof(float),1,fp); 	// the last time for the integrand (used for trapezoidal rule)
-  fwrite(&(param->egy_totlast),			sizeof(float),1,fp); 
+  fprintf(fp, "egy_rhs\t%e\n",(param->egy_rhs) ); 	// the right hand side of the energy conservation equation (0 in non cosmological case);
+  fprintf(fp, "egy_0\t%e\n",(param->egy_0) ); 	// the initial energy
+  fprintf(fp, "egy_last\t%e\n",(param->egy_last) ); 	// the last integrand for the energy equation (used for trapezoidal rule)
+  fprintf(fp, "egy_timelast\t%e\n",(param->egy_timelast) ); 	// the last time for the integrand (used for trapezoidal rule)
+  fprintf(fp, "egy_totlast\t%e\n",(param->egy_totlast) ); 
 
 //  printf("%lf\n",param->egy_0);
 
 #ifdef WRAD
-  fwrite(&(param->unit.unit_l),			sizeof(float),1,fp);	// comoving length size of the box [meters]
-  fwrite(&(param->unit.unit_v),			sizeof(float),1,fp);	// unit velocity
-  fwrite(&(param->unit.unit_t),			sizeof(float),1,fp);	// unit time [seconds]
-  fwrite(&(param->unit.unit_n),			sizeof(float),1,fp);	// unit number [moles typically]
-  fwrite(&(param->unit.unit_mass),		sizeof(float),1,fp);	// unit mass [in kg, total mass is equal to one in unit codes]
+  fprintf(fp, "unit_l\t%e\n",(param->unit.unit_l) );	// comoving length size of the box [meters]
+  fprintf(fp, "unit_v\t%e\n",(param->unit.unit_v) );	// unit velocity
+  fprintf(fp, "unit_t\t%e\n",(param->unit.unit_t) );	// unit time [seconds]
+  fprintf(fp, "unit_\t%e\n",(param->unit.unit_n) );	// unit number [moles typically]
+  fprintf(fp, "unit_mass\t%e\n",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
 
-  fwrite(&(param->clight),			sizeof(float),1,fp); 	// speed of light in units of the real one
-  fwrite(&(param->fudgecool),			sizeof(float),1,fp); 	// cooling fraction
-  fwrite(&(param->ncvgcool),			sizeof(int  ),1,fp); 	// cooling max iterations
+  fprintf(fp, "clight\t%e\n",(param->clight) ); 	// speed of light in units of the real one
+  fprintf(fp, "fudgecool\t%e\n",(param->fudgecool) ); 	// cooling fraction
+  fprintf(fp, "ncvgcool\t%d\n",(param->ncvgcool) ); 	// cooling max iterations
   
-  fwrite(&(param->denthresh),			sizeof(float),1,fp);	// density threshold to turn the sources on
-  fwrite(&(param->tmpthresh),			sizeof(float),1,fp);	// temperature threshold to turn the sources on
-  fwrite(&(param->srcint),			sizeof(float),1,fp);	// intensity of the sources
+  fprintf(fp, "denthresh\t%e\n",(param->denthresh) );	// density threshold to turn the sources on
+  fprintf(fp, "tmpthresh\t%e\n",(param->tmpthresh) );	// temperature threshold to turn the sources on
+  fprintf(fp, "srcint\t%e\n",(param->srcint) );	// intensity of the sources
 #endif
 
 #ifdef TESTCOSMO
-  fwrite(&(param->cosmo->om),			sizeof(float),1,fp);	// Omega matter
-  fwrite(&(param->cosmo->ov),			sizeof(float),1,fp);	// Omega vacuum
-  fwrite(&(param->cosmo->ob),			sizeof(float),1,fp);	// Omega baryon
-  fwrite(&(param->cosmo->H0),			sizeof(float),1,fp);	// Hubble constant
+  fprintf(fp, "om\t%e\n",(param->cosmo->om) );	// Omega matter
+  fprintf(fp, "ov\t%e\n",(param->cosmo->ov) );	// Omega vacuum
+  fprintf(fp, "ob\t%e\n",(param->cosmo->ob) );	// Omega baryon
+  fprintf(fp, "H0\t%e\n",(param->cosmo->H0) );	// Hubble constant
 #endif
 
 #ifdef STARS 
-  fwrite(&(param->stars->overdensity_cond),	sizeof(float),1,fp);	// need overdensity_cond times the mean density to begin star formation
-  fwrite(&(param->stars->density_cond),		sizeof(float),1,fp);	// minimum Hydrogen density [cm-3]
-  fwrite(&(param->stars->tcar),			sizeof(float),1,fp);	// carateristic time [yr]
+  fprintf(fp, "overdensity_cond\t%e\n",(param->stars->overdensity_cond) );	// need overdensity_cond times the mean density to begin star formation
+  fprintf(fp, "density_cond\t%e\n",(param->stars->density_cond) );	// minimum Hydrogen density [cm-3]
+  fprintf(fp, "tcar\t%e\n",(param->stars->tcar) );	// carateristic time [yr]
+  fprintf(fp, "tlife\t%e\n",(param->stars->tlife) );	// radiative life time of a stellar particle [yr]
+  fprintf(fp, "feedback_eff\t%e\n",(param->stars->feedback_eff) );	// SN feedback efficiency
+  fprintf(fp, "feedback_frac\t%e\n",(param->stars->feedback_frac) );	// fraction of thermal feedback (the other part goes to kinetic feedback) 
+
 #endif
 
   fclose(fp);
 
-//  abort();
+
+  dumpHeaderOnScreen(param,cpu);
+  //abort();
+}
+
+void dumpHeaderOnScreen(struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+printf( "PIC\t");
+#ifdef PIC
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WHYDRO2\t");
+#ifdef WHYDRO2
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WGRAV\t");
+#ifdef WGRAV 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WRAD\t");
+#ifdef WRAD
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WRADHYD\t");
+#ifdef WRADHYD
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TESTCOSMO\t");
+#ifdef TESTCOSMO
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WDBG\t");
+#ifdef WDBG
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "STARS\t");
+#ifdef STARS
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WMPI\t");
+#ifdef WMPI
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "FLOORDT\t");
+#ifdef FLOORDT
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WCUDA_ERR\t");
+#ifdef WCUDA_ERR
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "NOCOMP\t");
+#ifdef NOCOMP
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "GRAFIC\t");
+#ifdef GRAFIC
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "ZELDOVICH\t");
+#ifdef ZELDOVICH
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "EVRARD\t");
+#ifdef EVRARD
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "EDBERT\t");
+#ifdef EDBERT
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TUBE\t");
+#ifdef TUBE
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "PARTN\t");
+#ifdef PARTN
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "PART2\t");
+#ifdef PART2
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WRADTEST\t");
+#ifdef WRADTEST  
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TESTCLUMP\t");
+#ifdef TESTCLUMP 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "PART_EGY\t");
+#ifdef PART_EGY
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "PERFECT\t");
+#ifdef PERFECT
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "FASTGRAV\t");
+#ifdef FASTGRAV 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "ONFLYRED\t");
+#ifdef ONFLYRED
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "RIEMANN_HLLC\t");
+#ifdef RIEMANN_HLLC
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "RIEMANN_EXACT\t");
+#ifdef RIEMANN_EXACT
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "PRIMITIVE\t");
+#ifdef PRIMITIVE
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "DUAL_E\t");
+#ifdef DUAL_E
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "WCHEM\t");
+#ifdef WCHEM 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "S_100000\t");
+#ifdef S_100000
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "COOLING\t");
+#ifdef COOLING
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "UVBKG\t");
+#ifdef UVBKG
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSZM\t");
+#ifdef TRANSZM
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSZP\t");
+#ifdef TRANSZP
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSYM\t");
+#ifdef TRANSYM
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSYP\t");
+#ifdef TRANSYP
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSXM\t");
+#ifdef TRANSXM
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "TRANSXP\t");
+#ifdef TRANSXP
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "REFXM\t");
+#ifdef REFXM 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "REFYM\t");
+#ifdef REFYM 
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "REFZM\t");
+#ifdef REFZM
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+
+  printf( "npartmax\t%d\n",(param->npartmax)); 	// the max particles number (per process)
+  printf( "ngridmax\t%d\n",(param->ngridmax) ); 	// the max oct numbers (per process)
+  printf( "nbuff\t%d\n",(param->nbuff) ); 	// the mpi buffer size
+  printf( "ndumps\t%d\n",(param->ndumps) ); 	// the frequency of outputs
+  printf( "nsteps\t%d\n",(param->nsteps) ); 	// the maximal number of timesteps
+
+  printf( "lcoarse\t%d\n",(param->lcoarse) ); 	// the coarse level
+  printf( "lmax\t%d\n",(param->lmax) ); 	// the max level of refinement
+
+  printf( "niter\t%d\n",(param->niter) ); 	// the maximal number of iterations for the Poisson solver
+  
+  printf( "gstride\t%d\n",(param->gstride) ); 	// the size of the stencil for vector based computations (gravity)
+  printf( "hstride\t%d\n",(param->hstride) ); 	// the size of the stencil for vector based computations (hydro)
+
+  printf( "dt\t%e\n",(param->dt) ); 		// the timsestep
+  printf( "tmax\t%e\n",(param->tmax) ); 	// the simulation stops at tmax : corresponds to amax in cosmo
+  printf( "time_max\t%e\n",(param->time_max) ); 	// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
+
+  printf( "maxhash\t%d\n",(param->maxhash) ); 	// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
+  
+  printf( "amrthresh\t%e\n",(param->amrthresh) ); 	// the refinement criterion (refine if mcell>amrthresh)
+  printf( "nsmooth\t%d\n",(param->nsmooth) ); 	// the number of neighbour refinement steps
+
+  printf( "poissonacc\t%e\n",(param->poissonacc) ); 	// relaxation accuracy for Poisson equation
+  printf( "mgridlmin\t%d\n",(param->mgridlmin) ); 	// coarsest level for multigrid relaxation
+  printf( "nvcycles\t%d\n",(param->nvcycles) ); 	// number of vcycles for multigrid relaxation
+  printf( "nrelax\t%d\n",(param->nrelax) ); 	// number of smoothing cycles
+
+  printf( "nrestart\t%d\n",(param->nrestart) ); 	// the restart snapshot
+  printf( "nsubcycles\t%d\n",(param->nsubcycles) ); 	// number of subcyles in AMR advance procedure
+
+  printf( "nthread\t%d\n",(param->nthread) );	// number of thread
+  printf( "nstream\t%d\n",(param->nstream) );	// number of stream
+
+  printf( "egy_rhs\t%e\n",(param->egy_rhs) ); 	// the right hand side of the energy conservation equation (0 in non cosmological case);
+  printf( "egy_0\t%e\n",(param->egy_0) ); 	// the initial energy
+  printf( "egy_last\t%e\n",(param->egy_last) ); 	// the last integrand for the energy equation (used for trapezoidal rule)
+  printf( "egy_timelast\t%e\n",(param->egy_timelast) ); 	// the last time for the integrand (used for trapezoidal rule)
+  printf( "egy_totlast\t%e\n",(param->egy_totlast) ); 
+
+//  printf("%lf\n",param->egy_0);
+
+#ifdef WRAD
+  printf( "unit_l\t%e\n",(param->unit.unit_l) );	// comoving length size of the box [meters]
+  printf( "unit_v\t%e\n",(param->unit.unit_v) );	// unit velocity
+  printf( "unit_t\t%e\n",(param->unit.unit_t) );	// unit time [seconds]
+  printf( "unit_\t%e\n",(param->unit.unit_n) );	// unit number [moles typically]
+  printf( "unit_mass\t%e\n",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
+
+  printf( "clight\t%e\n",(param->clight) ); 	// speed of light in units of the real one
+  printf( "fudgecool\t%e\n",(param->fudgecool) ); 	// cooling fraction
+  printf( "ncvgcool\t%d\n",(param->ncvgcool) ); 	// cooling max iterations
+  
+  printf( "denthresh\t%e\n",(param->denthresh) );	// density threshold to turn the sources on
+  printf( "tmpthresh\t%e\n",(param->tmpthresh) );	// temperature threshold to turn the sources on
+  printf( "srcint\t%e\n",(param->srcint) );	// intensity of the sources
+#endif
+
+#ifdef TESTCOSMO
+  printf( "om\t%e\n",(param->cosmo->om) );	// Omega matter
+  printf( "ov\t%e\n",(param->cosmo->ov) );	// Omega vacuum
+  printf( "ob\t%e\n",(param->cosmo->ob) );	// Omega baryon
+  printf( "H0\t%e\n",(param->cosmo->H0) );	// Hubble constant
+#endif
+
+#ifdef STARS 
+  printf( "overdensity_cond\t%e\n",(param->stars->overdensity_cond) );	// need overdensity_cond times the mean density to begin star formation
+  printf( "density_cond\t%e\n",(param->stars->density_cond) );	// minimum Hydrogen density [cm-3]
+  printf( "tcar\t%e\n",(param->stars->tcar) );	// carateristic time [yr]
+  printf( "tlife\t%e\n",(param->stars->tlife) );	// radiative life time of a stellar particle [yr]
+  printf( "feedback_eff\t%e\n",(param->stars->feedback_eff) );	// SN feedback efficiency
+  printf( "feedback_frac\t%e\n",(param->stars->feedback_frac) );	// fraction of thermal feedback (the other part goes to kinetic feedback) 
+
+#endif
+
 }
 
 

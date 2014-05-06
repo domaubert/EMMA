@@ -194,8 +194,6 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
 */
-
-
 	star->mass  = param->stars->mstars;
 
 	star->epot = 0.0;
