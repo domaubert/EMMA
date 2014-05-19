@@ -111,10 +111,6 @@ int main(int argc, char *argv[])
   nmapz=(zmax-zmin)/dxmap;
   k0=zmin/dxmap;
 
-  /* if((dumpsilo==1)&&(nmapz!=nmap)) { */
-  /*   printf("Silo can only handle cubic data !\n"); */
-  /*   abort(); */
-  /* } */
 
   /// allocating the cube or the map
   if(proj==0){
@@ -134,6 +130,7 @@ int main(int argc, char *argv[])
   if(mono<0){
     icpustart=0;
     icpustop=ncpu;
+    printf("Asked to parse %d files\n",ncpu);
   }
   else{
     icpustart=mono;
@@ -196,218 +193,142 @@ int main(int argc, char *argv[])
       if(oct.level<=lmap){
 	ic++;
 	dxcur=1./pow(2.,oct.level);
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      if(((oct.cell[icell].child==NULL)||(oct.level==lmap)))
-		{
-		  xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
-		  yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
-		  zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
-		  if((zc<zmin)||(zc>zmax)){
-		    continue;
-		  }
-		  if((yc<ymin)||(yc>ymax)){
-		    continue;
-		  }
-		  if((xc<xmin)||(xc>xmax)){
-		    continue;
-		  }
-
-		  imap=xc/dxmap;
-		  jmap=yc/dxmap;
-		  kmap=zc/dxmap;
-	      
-		  for(kk=0;kk<pow(2,lmap-oct.level);kk++)
-		    {
-		      if((kmap+kk)>=(nmapz+k0)){
-			continue;
-		      }
-		      for(jj=0;jj<pow(2,lmap-oct.level);jj++)
-			{
-		      if((jmap+jj)>=(nmapy+j0)){
-			continue;
-		      }
-		      for(ii=0;ii<pow(2,lmap-oct.level);ii++)
-			{
-		      if((imap+ii)>=(nmapx+i0)){
-			continue;
-		      }
-
-			  int flag;
-			  if(mono>=0){
-			    flag=(oct.cpu>=0);
-			  }
-			  else{
-			    flag=(oct.cpu==icpu);
-			  }
-			  if(flag) {
-
-			    switch(field){
-			    case 0:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.level;
-			      break;
-#ifdef WGRAV
-			    case 1:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].gdata.d;
-			      break;
-#ifdef PIC
-			    case -1:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].density;
-			      break;
-#endif
-			    case 2:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].gdata.p;
-			      break;
-			    case 6:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]+=oct.cell[icell].res;
-			      break;
-			    case 201:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].f[0];
-			      break;
-			    case 202:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].f[1];
-			      break;
-			    case 203:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].f[2];
-			      break;
-#endif
-			    case 3:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cpu;
-			      break;
-			    case 4:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].marked;
-			      break;
-#ifdef WHYDRO2
-			    case 101:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.d;
-			     // printf("%f\n",oct.cell[icell].field.d);
-			      break;
-			    case 102:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.u;
-			      break;
-			    case 103:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.v;
-			      break;
-			    case 104:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.w;
-			      break;
-			    case 105:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.p;
-			      break;
-			    case 106:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.E;
-			      break;
-			    case 107:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
-			      break;
-			    case 110:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=sqrt(pow(oct.cell[icell].field.w,2)+pow(oct.cell[icell].field.v,2)+pow(oct.cell[icell].field.u,2))/oct.cell[icell].field.a;
-			      break;
-#ifdef WRADHYD
-			    case 108:
-			      map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct.cell[icell].field.X;
-			      break;
-#endif
-#endif			  
-
-			    if(proj==0){
-			      assign_cube(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
-			    }
-			    else if(proj==3){
-			      assign_zmap(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
-			    }
-
-			  }
-			}
-			}
-		    } 
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    if(((oct.cell[icell].child==NULL)||(oct.level==lmap)))
+	      {
+		xc=oct.x+( icell   %2)*dxcur;//+0.5*dxcur;
+		yc=oct.y+((icell/2)%2)*dxcur;//+0.5*dxcur;
+		zc=oct.z+( icell/4   )*dxcur;//+0.5*dxcur;
+		if((zc<zmin)||(zc>zmax)){
+		  continue;
 		}
-	    }
+		if((yc<ymin)||(yc>ymax)){
+		  continue;
+		}
+		if((xc<xmin)||(xc>xmax)){
+		  continue;
+		}
+
+		imap=xc/dxmap;
+		jmap=yc/dxmap;
+		kmap=zc/dxmap;
+
+		for(kk=0;kk<pow(2,lmap-oct.level);kk++)
+		  {
+		    if((kmap+kk)>=(nmapz+k0)){
+		      continue;
+		    }
+		    for(jj=0;jj<pow(2,lmap-oct.level);jj++)
+		      {
+			if((jmap+jj)>=(nmapy+j0)){
+			  continue;
+			}
+			for(ii=0;ii<pow(2,lmap-oct.level);ii++)
+			  {
+			    if((imap+ii)>=(nmapx+i0)){
+			      continue;
+			    }
+
+			    int flag;
+			    if(mono>=0){
+			      flag=(oct.cpu>=0);
+			    }
+			    else{
+			      flag=(oct.cpu==icpu);
+			    }
+
+			    if(flag) {
+			      if(proj==0){
+				assign_cube(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
+			      }
+			      else if(proj==3){
+				assign_zmap(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
+			      }
+			    }
+			  }
+		      }
+		  } 
+	      }
+	  }
       }
       dummy=fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
-    }    
-  }
+    }
     fclose(fp);
-    printf("done with %d octs\n",ic);
+  }
+  printf("done with %d octs\n",ic);
       
-    //============= dump
+  //============= dump
 
-    /* int i3,j3; */
-    /* for(i3=0;i3<nmapx;i3++){ */
-    /* for(j3=0;j3<nmapy;j3++){ */
-    /*   REAL dat=map[i3+j3*nmapx]; */
-    /*   if(dat>0.) printf("%d %d %lf\n",i3,j3,dat); */
-    /* }       */
-    /* } */
 
-    // simple array style
-    if(!dumpsilo){
-      if(proj==3){
-	nmapz=1;
-      }
-      printf("dumping %s with nmap=%d\n",fname2,nmap*nmapx*nmapy);
-      fp=fopen(fname2,"wb");
-      fwrite(&nmapx,1,sizeof(int),fp);
-      fwrite(&nmapy,1,sizeof(int),fp);
-      fwrite(&nmapz,1,sizeof(int),fp);
-      fwrite(&tsimf,1,sizeof(float),fp);
-      for(I=0;I<nmapz;I++) fwrite(map+I*nmapx*nmapy,nmapx*nmapy,sizeof(REAL),fp);
-      status=ferror(fp);
-      fclose(fp);
+  // simple array style
+  if(!dumpsilo){
+    if(proj==3){
+      nmapz=1;
     }
-    else{
-      // silo style
+    printf("dumping %s with nmap=%d\n",fname2,nmap*nmapx*nmapy);
+    fp=fopen(fname2,"wb");
+    fwrite(&nmapx,1,sizeof(int),fp);
+    fwrite(&nmapy,1,sizeof(int),fp);
+    fwrite(&nmapz,1,sizeof(int),fp);
+    fwrite(&tsimf,1,sizeof(float),fp);
+    for(I=0;I<nmapz;I++) fwrite(map+I*nmapx*nmapy,nmapx*nmapy,sizeof(REAL),fp);
+    status=ferror(fp);
+    fclose(fp);
+  }
+  else{
+    // silo style
       
-       DBfile *dbfile=NULL;
-      dbfile=DBCreate(strcat(fname2,".silo"),DB_CLOBBER, DB_LOCAL,"silo file created by Quartz",DB_PDB);
-      if(dbfile==NULL){
-	printf("Error while writing file");
-      }
-
-
-      REAL *x;
-      REAL *y;
-      REAL *z;
-      int dims[]={nmap+1,nmap+1,nmap+1};
-      int ndims=3;
-      
-      x=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-      y=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-      z=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-
-      REAL *coords[]={x,y,z};
-      
-      int i;
-      for(i=0;i<=nmap;i++){
-	x[i]=((i*1.0)/nmap-0.);
-	y[i]=((i*1.0)/nmap-0.);
-	z[i]=((i*1.0)/nmap-0.);
-      }
-
-      int dimsvar[]={nmap,nmap,nmap};
-      int ndimsvar=3;
-      
-      if(sizeof(REAL)==4){
-	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
-	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
-      }
-      else if(sizeof(REAL)==8){
-	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_DOUBLE,DB_COLLINEAR,NULL);
-	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_DOUBLE,DB_ZONECENT,NULL);
-      }
-
-      DBClose(dbfile);
+    DBfile *dbfile=NULL;
+    dbfile=DBCreate(strcat(fname2,".silo"),DB_CLOBBER, DB_LOCAL,"silo file created by Quartz",DB_PDB);
+    if(dbfile==NULL){
+      printf("Error while writing file");
     }
+
+
+    REAL *x;
+    REAL *y;
+    REAL *z;
+    int dims[]={nmap+1,nmap+1,nmap+1};
+    int ndims=3;
+      
+    x=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+    y=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+    z=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+
+    REAL *coords[]={x,y,z};
+      
+    int i;
+    for(i=0;i<=nmap;i++){
+      x[i]=((i*1.0)/nmap-0.);
+      y[i]=((i*1.0)/nmap-0.);
+      z[i]=((i*1.0)/nmap-0.);
+    }
+
+    int dimsvar[]={nmap,nmap,nmap};
+    int ndimsvar=3;
+      
+    if(sizeof(REAL)==4){
+      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
+      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
+    }
+    else if(sizeof(REAL)==8){
+      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_DOUBLE,DB_COLLINEAR,NULL);
+      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_DOUBLE,DB_ZONECENT,NULL);
+    }
+
+    DBClose(dbfile);
+  }
+
   printf("status=%d\n",status);
   free(map);
-  
 }
 
-
 // ================================================================
+#if 1
 
 void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
-  
+
   switch(field){
   case 0:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->level;
@@ -501,6 +422,10 @@ void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, 
   case 714:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.fz[1];
     break;
+  case 715:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.snfb;
+    break;
+
 
   case 721:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.e[2];
@@ -530,7 +455,7 @@ void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, 
     break;
 #endif
 #endif
-			      
+
   }  
 }
 
@@ -661,9 +586,11 @@ void assign_zmap(int field, int icell, REAL *map, int imap, int jmap, int kmap, 
     break;
 #endif
 #endif
-			      
-  }  
+
+  } 
 }
 
 
+
+#endif
 

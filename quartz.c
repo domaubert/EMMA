@@ -17,7 +17,7 @@
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
-
+#include "stars.h"
 
 #ifdef WGPU
 #include "interface.h"
@@ -1537,6 +1537,13 @@ int main(int argc, char *argv[])
 
 #ifdef STARS
 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+	if(cpu.rank==0) printf("mstars set to %e\n",param.stars->mstars);
+
+	param.srcint *= param.stars->mstars * param.unit.unit_mass;
+	if(cpu.rank==0) printf("srcint set to %e\n",param.srcint);
+
+	param.stars->Esnfb = getFeedbackEgy(&param,aexp,level) ;
+	if(cpu.rank==0) printf("Esnfb set to %e\n",param.stars->Esnfb);
 #endif
 
   //================================================================================

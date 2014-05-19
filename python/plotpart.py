@@ -6,12 +6,12 @@ from fonction_part import *
 from fonction_physique import *
 
 
-def plotpart(N,parts):
+def plotpart(args,N,parts):
 	N=len(parts)
 	x=np.zeros(N)
 	y=np.zeros(N)
 
-	Lmax=7
+	Lmax=args.level
 	S=pow(2.0,Lmax)
 
 	for i in range(N) :
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
 	N,t, parts=ReadStars(args.files[0], args)		
 
-	plotpart(N,parts)
+	plotpart(args,N,parts)
 #	spectre(N,t,parts)	
 
 	plt.show()

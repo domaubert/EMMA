@@ -158,9 +158,7 @@ def listOriginePart(foldername) :
 	tmp=[]
 	for file in files :
 		if file[-3:]!= ".3D" and file[-7:]== ".p00000" :
-			tmp.append( file)
-			
-
+			tmp.append( file)	
 	return tmp
 
 
@@ -171,8 +169,10 @@ def getNproc(args):
 	files = os.listdir(args.folder[0])
 	tmp =0
 	for file in files:
-		if file[0:10]=="grid.00000" and file[-3:]!=".3D" :	
+		if file[0:10]=="part.00000" and file[-3:]!=".3D" and file[-5:]!=".cube":	
 			tmp +=1
+
+	print "nproc", tmp
 	return tmp
 
 
@@ -199,6 +199,21 @@ def num2snap(args):
 			f.append(args.files[i])
 		args.files = f
 
+def getA(filename):
+	try : 
+		filePart = open(filename, "rb")
+	except IOError:
+		print 'cannot open', filename 
+		return 1			
+
+	N = unpack('i',filePart.read(4))[0]
+	a = unpack('f',filePart.read(4))[0]
+	filePart.close()
+	return a
+
+def getZ(filename):
+	return 1.0/getA(filename) -1
+
 
 def getargs() :
 	parser = argparse.ArgumentParser(description='EMMA analyse program')
@@ -222,18 +237,15 @@ def getargs() :
 	if args.nproc == -1:
 		args.nproc = getNproc(args)
 
-
 	for fol in args.folder:
 		if (fol[-1]!="/"):
 			fol += "/"
 
 	snaprange(args)
-	num2snap(args)
 	
+	if files== []:
+		num2snap(args)
 	
-	param = Param(args.folder[0] + "param.00000.p00000")
-
-	print param.unit_l
 
 	return args
 

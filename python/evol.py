@@ -53,6 +53,18 @@ def uvbkg():
 	plt.plot(range(n),bkg1,label = "Katz")
 	plt.plot(range(n),bkg2,label = "Moi")
 	
+def observation():
+	Z   = [0.2,2,3.8,4.9,5.9,6.8,7.9,10.4]
+
+	SFR1 = [-2.2,-1.4,-1.44,-1.53,-1.84,-1.95,-2.2,-3.33]
+	SFR1 = [ pow(10,x) for x in SFR1]
+	plt.plot(Z,SFR1, label = "obs dust uncorrected")
+
+
+	
+	SFR2 = [-1.7,-1,-1.06,-1.19,-1.59,-1.72,-2.05,-3.18]
+	SFR2 = [ pow(10,x) for x in SFR2]
+	plt.plot(Z,SFR2, label = "obs dust corrected")
 
 
 if __name__ == "__main__":
@@ -79,15 +91,21 @@ if __name__ == "__main__":
 		T = np.zeros(n, dtype = np.float64)
 		SFR = np.zeros(len(Mtot))
 
-		for i in range(n) :
-			Z[i] = a2z(A[i])
-			T[i] = a2t(A[i]) 
+		for i in range(n-1) :
+			Z[i] = a2z(A[i+1]) 
+			T[i] = a2t(A[i+1]) 
 		
 		for i in range(n-1) :
 			SFR[i] = ( m2mo(Mtot[i+1],1) - m2mo(Mtot[i],1) ) / (T[i+1] - T[i]) 
 		print SFR
 
 
+		for i in range(n-1) :
+			Z[i] = (a2z(A[i+1]) + a2z(A[i]))/2.
+			T[i] = (a2t(A[i+1]) + a2t(A[i]))/2.
+
+
+		
 		Fol +=1
 
 		f= findfirststar(N)
@@ -95,8 +113,10 @@ if __name__ == "__main__":
 #		plt.plot(T[f:-1]/1e9,Mtot[f:-1]/0.154330706937 , label = folder)		# Masse d'etoile en fonction du temps
 
 
-	#uvbkg()
 
+
+#	uvbkg()
+	observation()
 
 	plt.xlim(0,15)
 #	plt.ylim(1e-3,10)

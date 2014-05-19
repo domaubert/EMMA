@@ -5,6 +5,7 @@ import numpy as np
 
 from fonction_part import *
 from fonction_IO import *
+from decimal import Decimal
 
 
 if __name__ == "__main__":
@@ -13,18 +14,22 @@ if __name__ == "__main__":
 	foldername=args.folder
 	files= args.files	
 
-	size = len(files)
+	n = 1
+
+	size=  len(files)/n
+
+	print size
 	N = np.zeros(size, dtype=np.int32)
 	A = np.zeros(size, dtype=np.float64)
 	Mtot = np.zeros(size, dtype=np.float64)
 	
-	i=0
-	for j in range(size) :
-		file = files[i][:-17] +  "star" +  files[i][-13:]
-		N[j] = getNtot(file,args)
-		A[j] = getA(file) 
-		Mtot[j] = getMtotPart(file, args)
-		i+=1
+
+	for j in range(0, len(files), n) :
+		file = files[j][:-17] +  "star" +  files[j][-13:]
+		N[j/n] = getNtot(file,args)
+		A[j/n] = getA(file) 
+		Mtot[j/n] = getMtotPart(file, args)
+
 
 	print Mtot
 

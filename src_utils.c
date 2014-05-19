@@ -76,16 +76,6 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 
 
 #ifdef STARS
-	REAL t = a2t(param,aexp) ;
-
-	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL rho0 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G) ;
-
-	REAL Mtot 	= rho0 * pow(param->cosmo->unit_l,3.0);
-	REAL M 		= param->stars->mstars * Mtot;	
-
-	REAL srcint = param->srcint * M;
-
 	struct PART *nexp;
 	struct PART *curp;
 
@@ -99,8 +89,8 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, str
 		nexp=curp->next;
 
 		if (curp->isStar){
-			if ( t - curp->age < param->stars->tlife  ) {
-				cell->rfield.src +=  srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+			if ( (param->cosmo->tphy - curp->age) < param->stars->tlife  ) {
+				cell->rfield.src +=  param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
 				flag++;
 			}
 		}

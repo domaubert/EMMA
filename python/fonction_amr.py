@@ -57,8 +57,6 @@ def denoct2grid(data,args,silo):
 		f=" 3 "
 	if args.field[0]=="marked" : 
 		f=" 4 "
-	if args.field[0]=="temp" : 
-		f=" 707 "
 	if args.field[0]=="field.d" : 
 		f=" 101 "
 	if args.field[0]=="field.u" : 
@@ -69,8 +67,17 @@ def denoct2grid(data,args,silo):
 		f=" 104 "
 	if args.field[0]=="field.p" : 
 		f=" 105 "
-	if args.field[0]=="x" : 
+	if args.field[0]=="field.E" : 
 		f=" 106 "
+	if args.field[0]=="rfield.src" : 
+		f=" 705 "
+	if args.field[0]=="rfield.temp" : 
+		f=" 707 "
+	if args.field[0]=="field.u" : 
+		f=" 102 "
+	if args.field[0]=="rfield.snfb" : 
+		f=" 715 "
+	
 	if f=="0 ":
 		print "entrez un champ"
 		sys.exit()

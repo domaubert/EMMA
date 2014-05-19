@@ -28,7 +28,7 @@ http://www.sns.ias.edu/~eisenste/hop/hop_doc.html */
 
 // HACKED BY DOM
 //int ReadSimulationFile(KD, FILE *);
-int ReadSimulationFile(KD, char *);
+int ReadSimulationFile(KD, char *, int);
 // END HACKED BY DOM
 
 void smDensityTH(SMX smx,int pi,int nSmooth,int *pList,float *fList);
@@ -80,7 +80,7 @@ void main(int argc,char **argv)
 	FILE *fp, *fpb;
 	char ach[80],achFile[80], *inputfile, *densfile;
 	float fPeriod[3];
-	int bDensity,bGroup,bSym,bMerge,nDens,nHop,nMerge,bTopHat;
+	int bDensity,bGroup,bSym,bMerge,nDens,nHop,nMerge,bTopHat,nfile;
 	float fDensThresh;
 	
    	nBucket = 16;
@@ -132,6 +132,12 @@ void main(int argc,char **argv)
 			++i;
 			if (i >= argc) usage();
 			inputfile = argv[i];
+			++i;
+			}
+		else if (!strcmp(argv[i],"-nf")) {
+			++i;
+			if (i >= argc) usage();
+			nfile = atoi(argv[i]);
 			++i;
 			}
 		else if (!strcmp(argv[i],"-den")) {
@@ -208,8 +214,8 @@ void main(int argc,char **argv)
 /* 	ReadSimulationFile(kd,fp); */
 /* 	if (fp!=NULL) fclose(fp); */
 
-
-	ReadSimulationFile(kd, inputfile);
+	printf("nfile=%d\n",nfile);
+	ReadSimulationFile(kd, inputfile, nfile);
 
 	// STOP HACKING BY DOM
 

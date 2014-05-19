@@ -3,42 +3,24 @@ import os
 import numpy as np
 from fonction_IO import *
 from fonction_part import *
-
+from fonction_physique import *
 	
-def PartToVisit(N,parts, NameFileOut) :
+def PartToVisit(N,t,parts, NameFileOut) :
 	print "writing file", NameFileOut
-	'''
-	stars = False
-	if NameFileOut[-8:-3] == "stars":
-		stars = True
-
-	stars = True
-	f = open(NameFileOut , "wb")
-	f.write("x y z value\n");
-
-	if stars :
-		b = len(parts)
-		inc = 1
-	else :
-		N = len(parts)
-		Nmax = pow(64,3)
-		inc =1
-		b=N
-
-		if N>Nmax :
-			inc = N/Nmax
-			b=Nmax
-	'''
-
-	print 
 
 	f = open(NameFileOut , "wb")
 	f.write("x y z value\n");
+
+
+	t=a2t(t)
+
 
 	inc = 1
 	p=0
 	while p<N:
-		f.write("%g %g %g %g\n" % (parts[p].x,parts[p].y,parts[p].z,parts[p].age))
+		age = t - parts[p].age
+
+		f.write("%g %g %g %g\n" % (parts[p].x,parts[p].y,parts[p].z, age  ))
 		p += inc
 
 	f.close()	
@@ -55,7 +37,7 @@ def p2v(args, case):
 		filename = filename[:-17] +  "star" +  filename[-13:]
 
 	if N :	
-		PartToVisit(N,part, filename + ".3D")
+		PartToVisit(N,t,part, filename + ".3D")
 	else :
 		print "pas de particules"
 

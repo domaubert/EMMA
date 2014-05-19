@@ -48,18 +48,17 @@ def getN(filename):
 def getRes(filename):
 	try :
 		filePart = open(filename, "rb")
-		filePart.read(8)
-		R = Part(read(44))
-		filePart.close()
-
-		Res = m2mo(R.mass, 100)
-
-		return Res
-
 	except IOError:
 		print 'cannot open', filename 
 		return 1
 
+	filePart.read(8)
+	R = Part(filePart.read(44))
+	filePart.close()
+
+	Res = m2mo(R.mass, 100)
+
+	return Res
 
 def getNtot(filename, args):
 
@@ -70,22 +69,6 @@ def getNtot(filename, args):
 	print  Ntot, "Particles"
 	return Ntot
 
-
-
-def getA(filename):
-	try : 
-		filePart = open(filename, "rb")
-	except IOError:
-		print 'cannot open', filename 
-		return 1			
-
-	N = unpack('i',filePart.read(4))[0]
-	a = unpack('f',filePart.read(4))[0]
-	filePart.close()
-	return a
-
-def getZ(filename):
-	return 1.0/getA(filename) -1
 
 
 def ReadPart(filename, args):
@@ -102,9 +85,9 @@ def ReadPart(filename, args):
 	N=0
 	P=0
 
+	t= getA(filename)
 	print "Reading file ", filename[:-7]
 	for proc in range(args.nproc):
-
 		filename = filename[0:-5] + str(proc).zfill(5)		
 		try:
 			filePart = open(filename, "rb")	
@@ -115,7 +98,7 @@ def ReadPart(filename, args):
 		N = unpack('i',filePart.read(4))[0]
 		t = unpack('f',filePart.read(4))[0]
 		i=0
-	
+
 		while i<N:
 			data[P]=( filePart.read(sizeofPart) )			
 			i+=1
@@ -135,15 +118,38 @@ def ReadStars(filename, args):
 	filename = filename[:-17] +  "star" +  filename[-13:]
 	return ReadPart(filename,args)
 
+
 #################################################################################################################################
 
 def getMtotPart(file, args):
 
-	N,t,stars = ReadStars(file, args)
-	M=0
 
-	for s in stars :
-		M += s.mass
+	M = 0
+
+	for proc in range(args.nproc):
+		filename = file[0:-5] + str(proc).zfill(5)		
+		try:
+			filePart = open(filename, "rb")	
+		except IOError:
+			print 'cannot open', filename 
+			return 1			
+
+		N = unpack('i',filePart.read(4))[0]
+		t = unpack('f',filePart.read(4))[0]
+
+		if N : 
+			p = Part(filePart.read(44) )
+			filePart.close()
+			M = p.mass * N
+			break
+		filePart.close()
+
+
+		
+
+
+
+	
 	return M
 
 

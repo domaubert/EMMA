@@ -86,9 +86,11 @@ struct STARSPARAM{
   REAL feedback_eff;	// feedback efficiency
   REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
 	
-  REAL mstars;
-  int  n;
-  REAL thresh;
+  REAL mstars;		// Mass of a stellar particle
+  int  n;		// total number of stars
+  REAL thresh;		// density threshold to allow star formation
+
+  REAL Esnfb;		// total Energy of a SN  
 
 };
 #endif
@@ -323,6 +325,11 @@ struct Rtype{
   REAL fz[NGRP];
   REAL src;
 
+#ifdef STARS
+  REAL snfb;
+#endif
+
+
 #ifdef WCHEM
   REAL xion;
   REAL eint;
@@ -533,7 +540,7 @@ struct CELL
 #ifdef WGRAV
   struct Gtype gdata;
   REAL pnew; // new potential
-  REAL res; // residual
+  REAL res;  // residual
   REAL f[3]; // the gravitational force component
 #endif
 
