@@ -355,7 +355,7 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
     
     // assigning the values
     pack->level=cpu->bndoct[i]->level;
-    pack->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
+    pack->key=(double) oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
     for(ii=0;ii<8;ii++){
       switch(field){
 #ifdef PIC
@@ -399,7 +399,7 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int leve
     
     // assigning the values
     pack->level=cpu->bndoct[i]->level;
-    pack->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
+    pack->key=(double)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
     for(ii=0;ii<8;ii++) pack->data[ii]=cpu->bndoct[i]->cell[ii].fieldnew;
     // counting the number of packets for icpu
     countpacket[icpu]++;
@@ -430,8 +430,15 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
     
     // assigning the values
     pack->level=cpu->bndoct[i]->level;
-    pack->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
-    for(ii=0;ii<8;ii++) pack->data[ii]=cpu->bndoct[i]->cell[ii].rfieldnew;
+    pack->key=(double)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
+    for(ii=0;ii<8;ii++){
+      pack->data[ii]=cpu->bndoct[i]->cell[ii].rfieldnew;
+      /* if(pack->key==251496){ */
+      /* 	printf("ATTT\n"); */
+      /* 	printf("from cpu %d to cpu%d || key=%ld lev=%d data=%e dataorg=%e\n",cpu->rank,cpu->bndoct[i]->cpu,pack->key,level,pack->data[ii].e[0],cpu->bndoct[i]->cell[ii].rfield.e[0]); */
+      /* 	printf("x=%e %e %e\n",cpu->bndoct[i]->x,cpu->bndoct[i]->y,cpu->bndoct[i]->z); */
+      /* } */
+    }
     // counting the number of packets for icpu
     countpacket[icpu]++;
   }
@@ -440,7 +447,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
 
 //======================================================================================
 #ifdef PIC
-int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
+void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nrem){
   
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
@@ -451,7 +458,8 @@ int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
   struct PART *curp;
   struct PART *nexp;
   int i,ii;
-  int* nrem=(int*)calloc(2,sizeof(int));
+  nrem[0]=0;
+  nrem[1]=0;
 
   // we create a counter of values for each neighbor
   countpacket=(int*)calloc(cpu->nnei,sizeof(int));
@@ -470,9 +478,10 @@ int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 
 	  // assigning the values
 	  part->level=cpu->bndoct[i]->level;
-	  part->key=oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct (is the eventual destination)
+	  part->key=(double) oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct (is the eventual destination)
 	  part->icell=ii;
 
+ 
 	  // we assign the data to the communicator
 	  part->x=curp->x;
 	  part->y=curp->y;
@@ -491,6 +500,16 @@ int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
 	  part->age=curp->age;
 	  part->isStar=curp->isStar;
 #endif
+
+	  if(part->level==12){
+	    printf("key part %e key oct %llu\n",part->key,oct2key(cpu->bndoct[i],cpu->bndoct[i]->level));
+	    printf("level=%d rank emission=%d reception=%d\n",part->level,cpu->rank,cpu->bndoct[i]->cpu);
+	    printf("oct coord %e %e %e \n",cpu->bndoct[i]->x,cpu->bndoct[i]->y,cpu->bndoct[i]->z);
+	    printf("part coord %e %e %e\n",part->x,part->y,part->z);
+	    printf(" isstar=%d age=%e is=%d idx=%d\n",curp->isStar,curp->age,curp->is,curp->idx);
+	    printf("parent cell id=%d mark=%e d=%e\n",cpu->bndoct[i]->parent->idx,cpu->bndoct[i]->parent->marked,cpu->bndoct[i]->parent->gdata.d);
+	    printf("key superoc %llu\n",oct2key(cell2oct(cpu->bndoct[i]->parent),11));
+	  }
 
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
@@ -531,7 +550,7 @@ int* gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer){
   }
   free(countpacket);
 
-  return nrem; // we return the number of exiting particles
+  //return nrem; // we return the number of exiting particles
 }
 #endif
 
@@ -560,14 +579,14 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key,cpu->maxhash);
+	  hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
 	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
 	    //t[1]=MPI_Wtime();
@@ -656,14 +675,14 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key,cpu->maxhash);
+	  hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
 	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
 	    //t[1]=MPI_Wtime();
@@ -743,13 +762,13 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
       if(pack->level!=0){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -789,7 +808,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -822,13 +841,13 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
       if(pack->level==level){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -868,7 +887,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -886,7 +905,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 
  //------------------------------------------------------------------------
 #ifdef PIC
-int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
+void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *nadd, int level){
 
   int i,j;
   int found=0;
@@ -896,24 +915,46 @@ int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
   struct OCT *curoct;
   struct OCT *nextoct;
   int icell;
-  int* nadd=(int*)calloc(2,sizeof(int));;
+  nadd[0]=0;
+  nadd[1]=0;
 
   struct PART *lastp;
 
 
+  /* if(SOCT!=NULL){ */
+  /*   printf("test SOCT level=%d key=%llu on rank %d\n",level,oct2key(SOCT,12),cpu->rank); */
+  /* } */
+  /* else{ */
+  /*   printf("SOCT NULL at level=%d on rank=%d\n",level,cpu->rank); */
+  /* } */
+ 
   for(j=0;j<cpu->nnei;j++){
     for(i=0;i<cpu->nbuffpart;i++){
       part=precvbuffer[j]+i;
       //      if(part==NULL) continue;
+
+
+
       if(part->level!=0){ // we do something
+
+	/* if(part->level!=level){ */
+	/*   printf("level=%d plevel=%d rg part=%d cpu=%d key=%lld\n",level,part->level,i,cpu->rank,part->key); */
+	/*   abort(); */
+	/* } */
+
+	if(part->level==12){
+	  printf("RECEPTION level 12 particle found with key=%e with pos= %e %e %e\n",part->key,part->x,part->y,part->z);
+	  
+	}
+
 	// first we compute the adress from the hashfunction
-	hidx=hfun(part->key,cpu->maxhash);
+	hidx=hfun((unsigned long long) part->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==part->key)&&(part->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)part->key)&&(part->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -997,15 +1038,19 @@ int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
 	  else{
 	    printf("error no reception oct found !");
 
-	    hidx=hfun(part->key,cpu->maxhash);
+	    hidx=hfun((unsigned long long)part->key,cpu->maxhash);
 	    nextoct=cpu->htable[hidx];
 	    found=0;
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==part->key)&&(part->level==curoct->level));
-	      printf("o2key=%lu part.key=%lu part.level=%d curoct.level=%d hidx=%ld hidx ex=%ld maxhash=%d, curoct cpu=%d\n",oct2key(curoct,curoct->level),part->key,part->level,curoct->level,hidx,hfun(oct2key(curoct,curoct->level),cpu->maxhash),cpu->maxhash,curoct->cpu);
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) part->key)&&(part->level==curoct->level));
+	      printf("o2key=%llu part.key=%llu part.level=%d curoct.level=%d hidx=%llu hidx ex=%llu maxhash=%d, curoct cpu=%d\n",oct2key(curoct,curoct->level),(unsigned long long) part->key,part->level,curoct->level,hidx,hfun(oct2key(curoct,curoct->level),cpu->maxhash),cpu->maxhash,curoct->cpu);
+#ifdef STARS
+	      printf("is=%d is star=%d age=%e\n",part->is,part->isStar,part->age);
+#endif
 	    }while((nextoct!=NULL)&&(!found));
+
 	    abort();
 	  }
 	}else{
@@ -1015,8 +1060,25 @@ int* scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer){
       }
     }
   }
+
+  // --- check
+  int icpu;
+  struct PART *nexp;
+  int ii;
+  for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
+    icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
+    for(ii=0;ii<8;ii++){
+      nexp=cpu->bndoct[i]->cell[ii].phead;
+      // sweeping the particles of the boundary cells
+      if(nexp!=NULL){
+	printf("hey!\n");
+	abort();
+      }
+    }
+  }
+
     
-  return nadd; // returning the new number of particles
+  //return nadd; // returning the new number of particles
 }
 #endif
 
@@ -1040,7 +1102,7 @@ void compute_bndkeys(struct CPUINFO *cpu, struct PACKET **recvbuffer){
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
 
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
-    pack->key=keyloc;
+    pack->key=(double) keyloc;
     pack->level=cpu->bndoct[i]->level;
 
     countpacket[inei]++;
@@ -1071,7 +1133,7 @@ void compute_bndkeys_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
 
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
-    pack->key=keyloc;
+    pack->key=(double)keyloc;
     pack->level=cpu->bndoct[i]->level;
 
     countpacket[inei]++;
@@ -1105,7 +1167,7 @@ void compute_bndkeys_hydro_level(struct CPUINFO *cpu, int level, struct HYDRO_MP
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
 
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
-    pack->key=keyloc;
+    pack->key=(double)keyloc;
     pack->level=cpu->bndoct[i]->level;
 
     countpacket[inei]++;
@@ -1142,7 +1204,7 @@ void compute_bndkeys_rad_level(struct CPUINFO *cpu, int level, struct RAD_MPI **
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
 
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
-    pack->key=keyloc;
+    pack->key=(double)keyloc;
     pack->level=cpu->bndoct[i]->level;
 
     countpacket[inei]++;
@@ -1182,7 +1244,7 @@ void compute_bndkeys_level(struct CPUINFO *cpu, struct PACKET **recvbuffer, int 
     inei=cpu->dict[cpuloc]; // we recover the local neighbor index by using the dictionnary
 
     pack=recvbuffer[inei]+countpacket[inei]; // we get the pack
-    pack->key=keyloc;
+    pack->key=(double)keyloc;
     pack->level=cpu->bndoct[i]->level;
 
     countpacket[inei]++;
@@ -1224,15 +1286,6 @@ void  clean_mpibuff_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct
 }
 #endif
 
-void  clean_mpibuff_flux(struct CPUINFO *cpu, struct FLUX_MPI **sendbuffer, struct FLUX_MPI **recvbuffer){
-  int i;
-  
-  for(i=0;i<cpu->nnei;i++) {
-    memset(sendbuffer[i],0,cpu->nbuff*sizeof(struct FLUX_MPI));
-    memset(recvbuffer[i],0,cpu->nbuff*sizeof(struct FLUX_MPI));
-  }
-
-}
 
 
 void  clean_mpibuff_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
@@ -1351,14 +1404,14 @@ void gather_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key,cpu->maxhash);
+	  hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
 	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
 	    //t[1]=MPI_Wtime();
@@ -1419,14 +1472,14 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key,cpu->maxhash);
+	  hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
 	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
 	    //t[1]=MPI_Wtime();
@@ -1477,13 +1530,13 @@ void scatter_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
       if(pack->level!=0){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -1492,7 +1545,7 @@ void scatter_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer){
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -1527,13 +1580,13 @@ void scatter_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,
       if(pack->level==level){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -1542,7 +1595,7 @@ void scatter_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -1579,13 +1632,13 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
       if(pack->level!=0){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -1617,7 +1670,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -1837,13 +1890,13 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
       if(pack->level!=0){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -1853,6 +1906,7 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
 	      R=&(curoct->cell[icell].rfieldnew);
 	      Re=&(pack->data[icell]);
 
+	      REAL vali=R->e[0];
 	      for(igrp=0;igrp<NGRP;igrp++){
 		// update
 		R->e[igrp] += Re->e[igrp];
@@ -1866,11 +1920,16 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
 	      /* R->eint=curoct->cell[icell].rfield.eint; */
 	      /* R->src=curoct->cell[icell].rfield.src; */
 
-	      memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype));
+	      if(R->e[0]<0){ printf(" WARNING new = %e delta=%e old=%e vali=%e\n",R->e[0],Re->e[0],curoct->cell[icell].rfield.e[0],vali);
+		printf("current cpu=%d curoct->cpu=%d\n",cpu->rank,curoct->cpu);
+		printf("level=%d x=%e y=%e z=%e\n",curoct->level,curoct->x,curoct->y,curoct->z);
+		printf("key=%e\n",pack->key);
+	      } 
+	      //memcpy(&(curoct->cell[icell].rfieldnew),R,sizeof(struct Rtype)); // inutile ?
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -1910,14 +1969,14 @@ void gather_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, int 
 	  countpacket[j]++;
 
 	  // first we compute the adress from the hashfunction
-	  hidx=hfun(pack->key,cpu->maxhash);
+	  hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	  nextoct=cpu->htable[hidx];
 	  //t[3]=MPI_Wtime();
 	  if(nextoct!=NULL){
 	    do{ // resolving collisions
 	      curoct=nextoct;
 	      nextoct=curoct->nexthash;
-	      found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
 	    }while((nextoct!=NULL)&&(!found));
 
 	    //t[1]=MPI_Wtime();
@@ -1969,13 +2028,13 @@ void scatter_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int 
       if(pack->level==level){ // we do something
 
 	// first we compute the adress from the hashfunction
-	hidx=hfun(pack->key,cpu->maxhash);
+	hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
 	nextoct=cpu->htable[hidx];
 	if(nextoct!=NULL){
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,curoct->level)==pack->key)&&(pack->level==curoct->level));
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
 	  }while((nextoct!=NULL)&&(!found));
 
 	  if(found){ // the reception oct has been found
@@ -1984,7 +2043,7 @@ void scatter_mpi_rad_level(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int 
 	    }
 	  }
 	  else{
-	    printf("error no reception oct found ! for buff #%d lev=%d key=%ld\n",i,pack->level,pack->key);
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
 	    abort();
 	  }
 	    
@@ -2375,15 +2434,19 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
 #endif
 
 #ifdef PIC
-int* mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer){
+void mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struct PART_MPI **precvbuffer, int *delta,int level){
 
-  int* delta = (int*)calloc(2,sizeof(int));
+  //int* delta = (int*)calloc(2,sizeof(int));
   int val;
   int mpitag=1;
   int i;
+  static int nrem[2];
+  static int nadd[2];
+  delta[0]=0;
+  delta[1]=0;
 
   clean_mpibuff_part(cpu,psendbuffer,precvbuffer);
-  int* nrem=gather_ex_part(cpu,psendbuffer);
+  gather_ex_part(cpu,psendbuffer,nrem);
   MPI_Barrier(cpu->comm);
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
@@ -2391,14 +2454,14 @@ int* mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struc
     MPI_Sendrecv(psendbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
   }
   //printf("17 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
-  int* nadd = scatter_mpi_part(cpu,precvbuffer);
+  scatter_mpi_part(cpu,precvbuffer,nadd,level);
   //printf("18 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
   MPI_Barrier(cpu->comm);
 
   delta[0] = nadd[0]-nrem[0];
   delta[1] = nadd[1]-nrem[1];
 
-  return delta;		// Return delta part
+  //return delta;		// Return delta part
 }
 #endif
 

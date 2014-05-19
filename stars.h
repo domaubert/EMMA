@@ -4,3 +4,4 @@ int  testCond(struct CELL *curcell,REAL dt, REAL dx, struct RUNPARAMS *param, RE
 void initStar(struct CELL *cell, struct PART *star,struct RUNPARAMS *param, int level,  REAL m ,REAL xc, REAL yc, REAL zc, int idx, REAL aexp, int is, REAL dthydro);
 REAL getdrho(struct CELL *cell, REAL dt, REAL aexp);
 void removeMfromgas(struct CELL * cell,struct PART *star, REAL m);
+REAL a2t(struct RUNPARAMS *param, REAL az );

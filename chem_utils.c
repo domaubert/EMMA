@@ -288,7 +288,6 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
-
 	  // Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
 	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
@@ -350,7 +349,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(test) 
 	    {
 	      fudgecool=fudgecool/10.; 
-	      printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
+	      //printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
 	      continue;	
 	    } 
 
@@ -385,8 +384,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
-	      printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]);
-	      printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
+	      /* printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]); */
+	      /* printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool); */
 
 	      continue;	
 	    } 

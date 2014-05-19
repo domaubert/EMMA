@@ -175,7 +175,8 @@ struct RUNPARAMS{
 
 struct PACKET{
   REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long long key; // the destination hilbert key
+  //unsigned long long key; // the destination hilbert key
+  REAL key; // MODKEY
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
@@ -190,8 +191,8 @@ struct CPUINFO{
   int rank;
   int nproc;
 
-  unsigned long long kmin;
-  unsigned long long kmax;
+  unsigned long long  kmin;
+  unsigned long long  kmax;
   int nkeys;
 
   REAL load;
@@ -259,6 +260,7 @@ struct CPUINFO{
   int *npart; // the number of particles per levels
 #ifdef STARS
   int *nstar;// the number of stars per levels
+  int trigstar; // set to 1 after the first star has been formed
 #endif
 
   int levelcoarse; // the levelcoarse
@@ -302,7 +304,7 @@ struct CPUINFO{
 
   REAL * gresA;
   REAL * gresB;
-  unsigned long long int cuparam;
+  unsigned long cuparam;
 #endif
 };
 
@@ -463,6 +465,8 @@ struct PART_MPI // For mpi communications
   REAL rhocell;
   REAL age;
 #endif
+  //unsigned long long key; // the destination hilbert key
+  double key; // the destination hilbert key
 
 
   int idx;
@@ -475,10 +479,6 @@ struct PART_MPI // For mpi communications
   int isStar;
 #endif
 
-
-  unsigned long long key; // the destination hilbert key
-
-
 };
 
 //=======================================
@@ -487,24 +487,20 @@ struct PART_MPI // For mpi communications
 // this structure is for the communication of Hydro data
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long long key; // the destination hilbert key
+  //unsigned long long key; // the destination hilbert key
+  double key; // the destination hilbert key MODKEY
   int level; // the level of the destination (to remove the key degeneracy)
 };
 
 #ifdef WRAD
 struct RAD_MPI{
   struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long long key; // the destination hilbert key
+  //unsigned long long key; // the destination hilbert key MODKEY
+  double key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
 };
 #endif
 
-// this structure is for the communication of Flux data
-struct FLUX_MPI{
-  REAL data[8*NFLUX]; // the data to be transfered (8 since we transmit data per octs)
-  unsigned long long key; // the destination hilbert key
-  int level; // the level of the destination (to remove the key degeneracy)
-};
 
 
 //=========================================================
@@ -693,6 +689,8 @@ struct OCT
 
 };
 
+
+struct OCT *SOCT;
 
 // ========================================
 struct OCTLIGHT_H

@@ -1949,7 +1949,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   unsigned long long key;
   struct OCT *curoct;
   struct OCT *nextoct;
-  unsigned long long hidx;
+  unsigned long hidx;
   int found;
   float z0,y0,x0;
   int ifound=0;

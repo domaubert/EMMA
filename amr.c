@@ -10,7 +10,7 @@
 #ifdef WMPI
 #include <mpi.h>
 #endif
-
+#include "segment.h"
 #include "communication.h"
 #include "particle.h"
 
@@ -358,6 +358,15 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		if(cpu->rank==curoct->cpu) ndes++;
 		
+ 		if(level==11){
+		  if(oct2key(curoct,11)==592427779){
+		    if(icell==6){
+		      printf("SPOTTED DESTROY on rank %d with mark=%e with oct cpu=%d d=%e\n",cpu->rank,curoct->cell[icell].marked,curoct->cpu,curoct->cell[icell].field.d);
+		    }
+		  }
+		}
+
+
 		desoct=curoct->cell[icell].child; // the oct to destroy
 #ifdef PIC		
 		if(curoct->cell[icell].phead!=NULL){
@@ -441,7 +450,18 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 	      }
 #endif	      
 	      // creation of a new oct ==================
+		// gros test
+ 		if(level==11){
+		  if(oct2key(curoct,11)==592427779){
+		    if(icell==6){
+		      printf("SPOTTED on rank %d with mark=%e\n",cpu->rank,curoct->cell[icell].marked);
+		    }
+		  }
+		}
+
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
+
+
 		if(curoct->cell[icell].marked<10){
 #ifdef WMPI
 		if((curoct->cpu!=cpu->rank)&&(curoct->level>=(param->lcoarse))){
@@ -458,7 +478,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		 
 		// Past here the rule are respected
-		
+ 		
+ 		
+		//
 
 
 
@@ -578,7 +600,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
-		    curoct->cell[icell].rfield.src=0.;
+		    //curoct->cell[icell].rfield.src=0.;
 		    //printf("xion=%e %e\n",curoct->cell[icell].rfield.xion,Ri[ii].xion);
 		  }
 		  else{
@@ -673,11 +695,25 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		}
 		lastoct[level]=newoct;
 
+ 		if(level==11){
+		  if(oct2key(curoct,11)==592427779){
+		    if(icell==6){
+		      printf("SPOTTED CREATION on rank %d with mark=%e with oct cpu=%d d=%e\n",cpu->rank,curoct->cell[icell].marked,curoct->cpu,curoct->cell[icell].field.d);
+		      printf("key of new oct=%llu on rank %d\n",oct2key(newoct,12),cpu->rank);
+		      SOCT=newoct;
+		      printf("SOCT= %p key=%llu\n",SOCT,oct2key(SOCT,12));
+		    }
+		  }
+		} 
+
 		newoct=freeoct; //ready to go to the next free oct
 		if(newoct>=(limit-1)){
 		  printf("\n ERROR === Allocated grid full, please increase ngridmax");
 		  abort();
 		}
+
+
+
 		}
 	      }
 	      
@@ -1181,9 +1217,16 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
- 			      curoct->cell[icell].marked=marker;
+  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+/* #ifdef WRADHYD */
+/* 			    else if((curoct->cell[icell].rfield.src>0)&&(curoct->cell[icell].marked==0)) { */
+/* 			      // sources are refined too */
+/*  			      curoct->cell[icell].marked=marker; */
+/* 			      nmark++;stati[2]++; */
+/* 			    } */
+/* #endif */
 #endif
 #endif
 #else

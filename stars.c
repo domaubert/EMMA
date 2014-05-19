@@ -62,13 +62,17 @@ int gpoiss(REAL lambda){
 	REAL p = rdm(0,1); 	
 	REAL P = exp(-lambda);  
 	REAL sum=P;               
-	if (sum>=p) return 0;     
-	do { 	P*=lambda/(REAL)k;
-		sum+=P;           
-		if (sum>=p) break;
-		k++;
-  	}while(k<1e6);
-
+	if (sum>=p){
+	  k=0;     
+	}
+	else{
+	  do { 	P*=lambda/(REAL)k;
+	    sum+=P;           
+	    if (sum>=p) break;
+	    k++;
+	  }while(k<1e6);
+	}
+	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
 	return k;
 }
 
@@ -189,11 +193,24 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	REAL vy = cell->field.v;// + rdm(-1.,1.) * cell->field.a;
 	REAL vz = cell->field.w;// + rdm(-1.,1.) * cell->field.a;
 
-	REAL vmax = pow(2.0,-level)/dt;
+	REAL vmax = pow(2.0,-level)/dt*FRACDX; 
 
-	star->vx = (fabs(vx)<vmax)?vx:vmax;
-	star->vy = (fabs(vy)<vmax)?vy:vmax;
-	star->vz = (fabs(vz)<vmax)?vz:vmax;
+	/* star->vx = (fabs(vx)<vmax)?vx:vmax; */
+	/* star->vy = (fabs(vy)<vmax)?vy:vmax; */
+	/* star->vz = (fabs(vz)<vmax)?vz:vmax; */
+
+	REAL vfact=fabs(vx*vx+vy*vy+vz*vz);
+
+	if(vfact>vmax){
+	  vx=vx/vfact*vmax;
+	  vy=vy/vfact*vmax;
+	  vz=vz/vfact*vmax;
+	}
+
+	star->vx=vx;
+	star->vy=vy;
+	star->vz=vz;
+	
 
 	star->mass  = param->stars->mstars;
 
@@ -320,9 +337,9 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	REAL N = gpoiss(lambda );
 	
 
-	if(N * param->stars->mstars >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
+	if((N * param->stars->mstars) >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
 
-	if (N) printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda);
+	//printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
 	return N;
 }
 
@@ -347,11 +364,13 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 
 		if (cell->phead==NULL){
 			cell->phead 		= star;
-			star->prev 		= NULL;				
+			star->prev 		= NULL;	
+			star->next =NULL;
 		}else{
 			struct PART *lasp 	= findlastpart(cell->phead);
 			lasp->next 		= star;
 			star->prev 		= lasp;
+			star->next=NULL;
 		}
 
 		cpu->npart[level-1]++;
@@ -417,61 +436,59 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	/* 	printf("================================\n");	 */
 	/* } */
 
-	do {	if(nextoct==NULL) 		continue;
-		curoct=nextoct;
-		nextoct=curoct->next;
-		if(curoct->cpu != cpu->rank) 	continue;
-
-	      	for(icell=0;icell<8;icell++) {
-			curcell = &curoct->cell[icell];
-
-			if( testCond(curcell, dt, dx, param, aexp, level) ) {
-				xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
-				yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-				zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
-
-				N = getNstars2create(curcell, param, dt, aexp, level);
-
-				//if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
-
-				if (N * param->stars->mstars >= curcell->field.d *dx*dx*dx){
-					printf("Problem mass in createStars %e %e \n", N * param->stars->mstars, curcell->field.d *dx*dx*dx);
-					abort();
-				}
-
-				for (ipart=0;ipart< N; ipart++){
-						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
-				}
-			}
-
-			//if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
-
-			mmax = fmax(curcell->field.d, mmax);
-			mmin = fmin(curcell->field.d, mmin);
+	if(nextoct!=NULL){
+	  do {	
+	    curoct=nextoct;
+	    nextoct=curoct->next;
+	    if(curoct->cpu != cpu->rank) 	continue;
+	    
+	    for(icell=0;icell<8;icell++) {
+	      curcell = &curoct->cell[icell];
+	      
+	      if( testCond(curcell, dt, dx, param, aexp, level) ) {
+		xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
+		yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+		zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
+		
+		N = getNstars2create(curcell, param, dt, aexp, level);
+		if (N * param->stars->mstars >= curcell->field.d *dx*dx*dx){
+		  printf("Problem mass in createStars %e %e \n", N * param->stars->mstars, curcell->field.d *dx*dx*dx);
+		  abort();
 		}
-	}while(nextoct!=NULL);
+		
+		for (ipart=0;ipart< N; ipart++){
+		  addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);
+		}
+	      }
+
+	      //if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
+	      
+	      mmax = fmax(curcell->field.d, mmax);
+	      mmin = fmin(curcell->field.d, mmin);
+	    }
+	  }while(nextoct!=NULL);
+	}
 
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_DOUBLE,MPI_MAX,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&mmin,  1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+	//MPI_Allreduce(MPI_IN_PLACE,&mmin,  1,MPI_DOUBLE,MPI_MIN,cpu->comm);
 #endif
 
 	param->stars->n += nstars ;
 	if(cpu->rank==0) {
-		printf("Mmax_thresh_overthresh\t%e\t%e\t%e\n", mmax, param->stars->thresh, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om) );
-		printf("%d stars added on level %d \n", nstars, level);
-		printf("%d stars in total\n",param->stars->n);
-		printf("\n");
+	  printf("Mmax_thresh_overthresh\t%e\t%e\t%e\n", mmax, param->stars->thresh, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om) );
+	  printf("%d stars added on level %d \n", nstars, level);
+	  printf("%d stars in total at a=%e\n",param->stars->n,aexp);
 	}
-
+	
 	for (l = param->lcoarse; l<=param->lmax;l++){
 #ifdef WMPI
-		MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
-		MPI_Barrier(cpu->comm);
+	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
+	  MPI_Barrier(cpu->comm);
 #endif
-		if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
+	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
-	if(cpu->rank==0) {	printf("\n");}
+	
 }
 #endif

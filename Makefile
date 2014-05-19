@@ -7,7 +7,6 @@ DEFINES  =
 #=========================================== CODE PARAMETERS =====================
 
 #------------ MAIN OPTIONS --------------------
-
 DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
@@ -59,7 +58,8 @@ DEFINES  += -DWCHEM
 DEFINES  += -DS_100000
 DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
-DEFINES += -DSEMI_IMPLICIT 
+DEFINES  += -DSEMI_IMPLICIT 
+DEFINES  += -DACCEL_RAD_STAR
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM

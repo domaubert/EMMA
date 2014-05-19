@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   struct PART *curp;
 
   struct PART *lastpart;
-
+  SOCT=NULL;
   int curc;
   REAL dtnew=0.;
   int nbnd;
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   REAL idx;
   REAL faexp, faexp2;
   REAL aexp;
-  unsigned key;
+  unsigned long long key;
   int nsteps;
   int nstepstart=0;
   int ndumps=0;
@@ -263,22 +263,24 @@ int main(int argc, char *argv[])
   /* Setup description of the 8 MPI_REAL fields data */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = 8;
+  blockcounts[0] = 8+1; // MODKEY
   
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_UNSIGNED_LONG;
+  offsets[1] = blockcounts[0] * extent;
+  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; // MODKEY
+  oldtypes[1] = MPI_INT; // MODKEY
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
-  offsets[2] = offsets[1]+extent;
-  oldtypes[2] = MPI_INT;
-  blockcounts[2] = 1;
+  // MODKEY
+  /* MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent); */
+  /* offsets[2] = offsets[1]+extent; */
+  /* oldtypes[2] = MPI_INT; */
+  /* blockcounts[2] = 1; */
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET);
+  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PACKET); //MODKEY
   MPI_Type_commit(&MPI_PACKET);
 
 #ifdef PIC
@@ -288,9 +290,9 @@ int main(int argc, char *argv[])
   /* Setup description of the 7 (+2 if STARS) MPI_REAL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
   offsets[0] = 0;
   oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = 7;
+  blockcounts[0] = 7+1; //MODKEY
 #ifdef STARS
-  blockcounts[0] = 9;
+  blockcounts[0] = 9+1; //MODKEY
 #endif
   
   /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
@@ -304,13 +306,15 @@ int main(int argc, char *argv[])
   blockcounts[1] = 5;
 #endif
 
-  MPI_Type_extent(MPI_INT, &extent);
-  offsets[2] = blockcounts[1] * extent+offsets[1];
-  oldtypes[2] = MPI_UNSIGNED_LONG;
-  blockcounts[2] = 1;
+  //MODKEY
+  /* MPI_Type_extent(MPI_INT, &extent); */
+  /* offsets[2] = blockcounts[1] * extent+offsets[1]; */
+  /* oldtypes[2] = MPI_UNSIGNED_LONG_LONG; */
+  /* //oldtypes[2] = MPI_DOUBLE; // testing real key */
+  /* blockcounts[2] = 1; */
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART);
+  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
   
 #endif
@@ -344,10 +348,12 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_WTYPE, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_UNSIGNED_LONG;
+  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG;
+  oldtypes[1] = MPI_DOUBLE; // MODKEY
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
+  //MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent);
+  MPI_Type_extent(MPI_DOUBLE, &extent); // MODKEY
   offsets[2] = offsets[1]+extent;
   oldtypes[2] = MPI_INT;
   blockcounts[2] = 1;
@@ -388,10 +394,12 @@ int main(int argc, char *argv[])
   /* Need to first figure offset by getting size of MPI_REAL */
   MPI_Type_extent(MPI_RTYPE, &extent);
   offsets[1] = 8 * extent;
-  oldtypes[1] = MPI_UNSIGNED_LONG;
+  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; //MODKEY
+  oldtypes[1] = MPI_DOUBLE;
   blockcounts[1] = 1;
 
-  MPI_Type_extent(MPI_UNSIGNED_LONG, &extent);
+  //MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent); //MODKEY
+  MPI_Type_extent(MPI_DOUBLE, &extent);
   offsets[2] = offsets[1]+extent;
   oldtypes[2] = MPI_INT;
   blockcounts[2] = 1;
@@ -527,6 +535,9 @@ int main(int argc, char *argv[])
   cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles* per level	*(DM+stars ifdef STARS)
 #ifdef STARS
   cpu.nstar=	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of stars per level
+  cpu.trigstar=0;
+  //  srand(time(NULL));
+  srand(4569);
 #endif
 
 
@@ -789,7 +800,7 @@ int main(int argc, char *argv[])
   
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
-
+  
 #ifdef WMPI
   if(cpu.rank==0) printf("Set up MPI \n");
 
@@ -846,12 +857,6 @@ int main(int argc, char *argv[])
   cpu.hsendbuffer=hsendbuffer;
   cpu.hrecvbuffer=hrecvbuffer;
 
-  /* fsendbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
-  /* frecvbuffer=(struct FLUX_MPI **)(calloc(cpu.nnei,sizeof(struct FLUX_MPI*))); */
-  /* for(i=0;i<cpu.nnei;i++) { */
-  /*   fsendbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
-  /*   frecvbuffer[i]=(struct FLUX_MPI *) (calloc(cpu.nbuff,sizeof(struct FLUX_MPI))); */
-  /* } */
 #endif 
 
 #ifdef WRAD
@@ -1181,7 +1186,7 @@ int main(int argc, char *argv[])
     tp1=MPI_Wtime();
 
     for(i=0;i<npart;i++){
-      unsigned long long int key;
+      unsigned long long key;
       unsigned long long hidx;
 
       int found=0;

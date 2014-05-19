@@ -231,6 +231,13 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 #endif
     cpuloc=keyloc/cpu->nkeys;
     curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
+
+    /* if(xc==0.53125) */
+    /* if(yc==0.53125) */
+    /*   if(zc==0.53125){ */
+    /* 	printf("TESTO rank=%d\n",curoct->cpu); */
+    /* 	abort(); */
+    /*   } */
   }
 }
 

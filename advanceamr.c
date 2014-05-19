@@ -165,12 +165,16 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   int icell;
   REAL dtloc;
   REAL dt;
-
   dt=tmax;
   // setting the first oct
+#ifdef STARS
+#ifdef ACCEL_RAD_STAR
+  if(cpu->trigstar==0) return param->dt;
+#endif
+#endif
       
   nextoct=firstoct[level-1];
-      
+  
   if(nextoct!=NULL){
     dxcur=pow(0.5,level); // +1 to protect level change
     dt=CFL*dxcur/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
@@ -208,8 +212,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   int gstride=param->gstride;
   int nsub=param->nsubcycles;
   int ip;
-  int *ptot = (int*)calloc(2,sizeof(int));
-  
+  //int *ptot = (int*)calloc(2,sizeof(int));
+  int ptot[2];
+  int deltan[2];
+  ptot[0]=0;
+  ptot[1]=0;
+
   REAL ekp,epp,ein;
   REAL RHS;
   REAL delta_e;
@@ -578,7 +586,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //#ifndef UVBKG
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-//    printf("dtrad= %e ",dtrad);
+    if(cpu->rank==0) printf("dt default=%e dtrad= %e ",param->dt,dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
     //#endif
 #endif
@@ -707,10 +715,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     //printf("3 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
     cpu->firstoct = firstoct;
-    int* deltan = mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer);
+    int deltan[2];
+    mpi_exchange_part(cpu, cpu->psendbuffer, cpu->precvbuffer,deltan,level);
 
     //printf("4 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
- //   printf("proc %d receives %d particles freepart=%p\n",cpu->rank,deltan,cpu->freepart);
+    //printf("proc %d receives %d particles %d stars freepart=%p\n",cpu->rank,deltan[0],deltan[1],cpu->freepart);
     //update the particle number within this process
     //npart=npart+deltan;
 
@@ -728,7 +737,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-
+    //=============== Hydro Update ======================
 #ifdef WHYDRO2
     double th[10];
     MPI_Barrier(cpu->comm);
@@ -739,11 +748,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     MPI_Barrier(cpu->comm);
     th[1]=MPI_Wtime();
-
-
-
-#endif
-    //=============== Hydro Update ======================
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
     MPI_Barrier(cpu->comm);
@@ -762,6 +766,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     if(level>param->lcoarse){
       mpi_hydro_correct(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,level);
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
+#endif
+
     }
     MPI_Barrier(cpu->comm);
 #endif
@@ -771,7 +781,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==0) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
-
+#endif
 
 
 #ifdef WRAD
@@ -797,7 +807,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
 #endif
-    sanity_rad(level,param,firstoct,cpu,aexp);
+    //sanity_rad(level,param,firstoct,cpu,aexp);
 
 #ifdef WMPI
  //   printf("proc %d waiting\n",cpu->rank);
@@ -805,14 +815,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
       mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
+
+      MPI_Barrier(cpu->comm);
+      tcomp[5]=MPI_Wtime();
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+
     }
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
 #endif
 
-    MPI_Barrier(cpu->comm);
-    tcomp[5]=MPI_Wtime();
-    //mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
 
     if(cpu->rank==0) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
@@ -823,17 +835,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
-    /* //===================================creating new stars=================================*/
-#ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
-#endif
-
-  /* //===================================creating new stars=================================// 
+    /* //===================================creating new stars=================================// 
 	need to be called before the dt computation because of the random speed component  */
 #ifdef STARS
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+    createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
 #endif
-
 
   // ================= V Computing the new refinement map
     
@@ -841,12 +847,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       if((ndt[level-1]%2==1)||(level==param->lcoarse)){
       
-#ifdef WHYDRO2
-      mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level); // propagate hydro for refinement
-#endif
-#ifdef WRAD
-      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement
-#endif
+/* #ifdef WHYDRO2 */
+/*       mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level); // propagate hydro for refinement */
+/* #endif */
+/* #ifdef WRAD */
+/*       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement */
+/* #endif */
       
       // cleaning the marks
       L_clean_marks(level,firstoct);

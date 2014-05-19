@@ -91,6 +91,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 		  ntotd+=curoct->cell[icell].density*dv;
 		  nlevd+=curoct->cell[icell].density*dv;
+#ifdef WHYDRO2
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 
 		  if(curoct->cell[icell].field.d<=0) {
@@ -98,6 +99,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
 			abort();
 		  }	
+#endif
 
 /*		  if(curoct->cell[icell].fieldnew.d<=0) {
 			printf("Negative value for density new -> abort\n");
@@ -147,18 +149,19 @@ printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[i
 #endif
     }
 
-	MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-	REAL tmw = param->cosmo->ob/param->cosmo->om ;
-	REAL dm = Mtot - tmw;
+  MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 
-	if(  fabs(dm) > 1e-6 && cpu->rank==0){
-		printf("\n=================================================\n");
-		printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot);
-		printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw);
-		printf("\tDelta \t\t\t\t %lf \n",dm); 
-		printf("=================================================\n");
-	//	abort();
-	}
+  /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
+  /* REAL dm = Mtot - tmw; */
+  
+  /* if(  fabs(dm) > 1e-6 && cpu->rank==0){ */
+  /*   printf("\n=================================================\n"); */
+  /*   printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot); */
+  /*   printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw); */
+  /*   printf("\tDelta \t\t\t\t %lf \n",dm);  */
+  /*   printf("=================================================\n"); */
+  /*   //	abort(); */
+  /* } */
 
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
 //printf("nPart %d\tnStar %d\n",npart[0], npart[1]);
@@ -255,6 +258,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     MPI_Allreduce(MPI_IN_PLACE,&lpart,1,MPI_INT,MPI_SUM,cpu->comm);
 #ifdef STARS
     MPI_Allreduce(MPI_IN_PLACE,&lstar,1,MPI_INT,MPI_SUM,cpu->comm);
+    if(lstar>0) cpu->trigstar=1;
     lpart-=lstar;
 #endif
 #endif
