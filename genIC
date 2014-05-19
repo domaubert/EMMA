@@ -1,0 +1,93 @@
+#!/usr/bin/env python
+import sys, os
+import argparse
+from struct import *
+
+
+def graficinc(N,folder):
+
+	
+	grafic1 = folder+"grafic1.inc"
+
+	f = open(grafic1, "w")
+
+	f.write("cc  grafic1.inc\n")
+	f.write("c  User must set parameters then make grafic1\n")
+	f.write("c\n")
+	f.write("c  Parameters for offsetting baryon and CDM velocity fields by\n")
+	f.write("c  0.5 grid spacing.\n")
+	f.write("c  The origin of the baryon density field is (0,0,0).  The origin\n")
+	f.write("c  of the baryon velocity field will be offvelb*(0.5,0.5,0.5)*dx\n")
+	f.write("c  and similarly for offvelc.  offvelb/c should be +/-1 or 0.\n")
+	f.write("	integer offvelb,offvelc\n")
+	f.write("	parameter (offvelb=0,offvelc=0)\n")
+	f.write("c\n")
+	f.write("c  Initial density fluctuation amplitude on the ultimate subgrid scale.\n")
+	f.write("c  For large grids (> 10^7) one may wish to decrease this; for small\n")
+	f.write("c  refinement grids (< 10^6) and multiple levels one may wish to increase it.\n")
+	f.write("	real sigstart\n")
+	f.write("	parameter (sigstart=0.1)\n")
+	f.write("c\n")
+	f.write("c  Top grid mesh size.\n")
+	f.write("c\n")
+	f.write("	integer np1,np2,np3\n")
+	f.write("	parameter (np1=" +str(N)+ ",np2=" +str(N)+ ",np3=" +str(N)+ ")\n")
+	f.write("c\n")
+	f.write("c np[1-3]:      particle lattice size for computing initial conditions.\n")
+	f.write("c                 All must be divisible by 2.  They need not be equal.\n")
+	f.write("c  The memory required by grafic1 is np1*np2*np3 words plus a few.\n")
+
+	f.close()
+
+
+
+def inputplanck(size,folder):
+
+	planck = folder + "Input.planck"
+	f= open(planck,"w")
+
+	f.write("2\n")
+	f.write("0.3175 0.6825 67.\n")
+	f.write("1\n")
+	f.write("-0.8344\n")
+	f.write("1e-3 1e3\n")
+	f.write("-" +str(size)+ ".\n")
+	f.write("1\n")
+	f.write("0\n")
+	f.write("\n")
+	f.write("\n")
+	f.write("\n")
+	f.write("\n")
+	f.write("\n")
+	f.write("0\n")
+	f.write("555555555\n")
+	f.write("0\n")
+
+	f.close
+
+if __name__ == "__main__":
+
+
+	folder = "utils/grafic_src/"
+
+	parser = argparse.ArgumentParser(description='Grafic')
+
+	parser.add_argument('N', 	default=-1, type=int,  help = "Resolution of IC ")
+	parser.add_argument('size',     default=-1, type=int,  help = "Physical size of IC")
+
+	args = parser.parse_args()
+
+	graficinc(args.N,folder)
+	inputplanck(args.size,folder)
+
+	commande = "make -C " +folder+ " clean"
+	os.system(commande)
+
+	commande = "make -C " +folder
+	os.system(commande)
+
+	commande = "./" +folder+ "grafic1 <" +folder+ "Input.planck"
+	os.system(commande)
+
+
+
