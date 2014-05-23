@@ -1,32 +1,13 @@
 #!/usr/bin/env python
 
+import time, sys
 import numpy as np
 import matplotlib.pylab as plt
 from fonction_part import *
 from fonction_physique import *
 
 
-def plotpart(args,N,parts):
-	N=len(parts)
-	x=np.zeros(N)
-	y=np.zeros(N)
 
-	Lmax=args.level
-	S=pow(2.0,Lmax)
-
-	for i in range(N) :
-		x[i]=parts[i].x * S
-		y[i]=parts[i].y * S
-
-	
-
-	'''
-	H, xedges, yedges = np.histogram2d(x, y, bins=(N,N))
-	plt.imshow(np.log10(H), interpolation='nearest')
-	plt.colorbar()
-	'''
-
-	plt.plot(x,y,'.')
 
 def spectre(N,t,parts) :
 
@@ -52,9 +33,11 @@ if __name__ == "__main__":
 	
 	args= getargs()
 
-	N,t, parts=ReadStars(args.files[0], args)		
+	file = args.folder[0] + "part." + str(args.snap[0]).zfill(5)
 
-	plotpart(args,N,parts)
+	N,t, parts=readPart(file, args)		
+
+	plotpart(args,N,t,parts)
 #	spectre(N,t,parts)	
 
 	plt.show()

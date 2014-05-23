@@ -27,6 +27,7 @@ if __name__ == "__main__":
 	for j in range(0, len(files), n) :
 		file = files[j][:-17] +  "star" +  files[j][-13:]
 		N[j/n] = getNtot(file,args)
+		print N[j/n], "particles"
 		A[j/n] = getA(file) 
 		Mtot[j/n] = getMtotPart(file, args)
 

@@ -18,9 +18,9 @@ def PartToVisit(N,t,parts, NameFileOut) :
 	inc = 1
 	p=0
 	while p<N:
-		age = t - parts[p].age
+		age = t - parts.age[p]
 
-		f.write("%g %g %g %g\n" % (parts[p].x,parts[p].y,parts[p].z, age  ))
+		f.write("%g %g %g %g\n" % (parts.x[p],parts.y[p],parts.z[p], age  ))
 		p += inc
 
 	f.close()	
@@ -29,12 +29,14 @@ def PartToVisit(N,t,parts, NameFileOut) :
 def p2v(args, case): 
 
 	filename = args.files[0]
+	print filename
 
 	if   case == 0:
 		N,t,part = ReadPart(filename, args)
 	elif case == 1:
-		N,t,part = ReadStars(filename, args)
-		filename = filename[:-17] +  "star" +  filename[-13:]
+		N,t,part = readStars(filename, args)
+		filename = filename[:-10] +  "star" +  filename[-6:]
+
 
 	if N :	
 		PartToVisit(N,t,part, filename + ".3D")

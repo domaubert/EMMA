@@ -48,7 +48,7 @@ def m2mo(m, L) :
 	rho = 3.0*pow(H0,2.0) * c.WM / (8.0 * np.pi * c.G)
 	
 	L *= 1e6 * c.Parsec #Mpc en m
-	V   = pow(L,3.0)
+	V   = pow(L/0.67,3.0)
 
 	Mtot = rho * V
 

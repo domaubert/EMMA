@@ -59,8 +59,8 @@ def plotdiffslice(args):
 	plt.imshow( data, interpolation='nearest',extent=(0,N,0,N), origin='top' ,label =args.files[0] + " - " + args.files[1] )
 	plt.colorbar()
 
-#	N,t,parts=ReadStars(args.files[0], args)
-#	plotpart(args,N,parts)
+	N,t,parts=readStars(args.files[0], args)
+	plotpart(args,N,t,parts)
 
 	plt.legend()
 	plt.show()
@@ -90,8 +90,8 @@ def plotslice(args):
 	plt.imshow( data, interpolation='nearest',extent=(0,N,0,N), origin='top' )
 	plt.colorbar()
 
-#	N,t,parts=ReadStars(args.files[0], args)
-#	plotpart(args,N,parts)
+	N,t,parts=readStars(args.files[0], args)
+	plotpart(args,N,parts)
 
 	plt.show()
 
