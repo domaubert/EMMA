@@ -224,8 +224,8 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	}
 
 
+      //printf("R.xion=%e x0=%e\n",R.xion,x0[idloc]);
       x0[idloc]=R.xion;
-
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
 
 
@@ -290,7 +290,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 #endif
 	  // Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1
+	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
 
   	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
 	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
@@ -380,11 +380,13 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet));
 	  ai_tmp1=0.;
 
+	  /* printf("xt=%e alphat=%e betat=%e betat2=%e\n",xt,alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool,dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet),dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1)); */
+	  /* abort(); */
 
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
-	      /* printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]); */
+	      //printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]); 
 	      /* printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool); */
 
 	      continue;	
@@ -469,7 +471,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	    }
 	  
 	  x0[idloc]=xt;
-
+	  //printf("xt=%e\n",xt);
 #ifdef COOLING
 	  eint[idloc]=eintt;
 #endif

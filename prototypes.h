@@ -144,8 +144,9 @@ struct RUNPARAMS{
   struct STARSPARAM *stars;
 #endif
 
-  int nthread;
-  int nstream;
+  int nthread; // number of GPU threads
+  int nstream; // number of GPU streams
+  int ompthread; // numberf of OMP threads
 
 #ifdef WRAD
   REAL clight; // speed of light in units of the real one

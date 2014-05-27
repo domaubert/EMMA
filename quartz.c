@@ -232,6 +232,9 @@ int main(int argc, char *argv[])
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
 
+
+omp_set_num_threads(param.ompthread);
+
 #ifndef TESTCOSMO
   tmax=param.tmax;
 #else

@@ -1037,6 +1037,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
+      rstat=fscanf(buf,"%s %d",stream,&param->ompthread);
 
 #ifdef WRAD
       rstat=fscanf(buf,"%s",stream);

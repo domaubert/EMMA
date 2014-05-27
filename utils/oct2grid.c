@@ -18,8 +18,8 @@ avconv -i mpeg_link%04d.jpeg -r 24 -b 65536k video.mp4
 
  */
 
-void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit);
-void assign_zmap(int field, int icell, REAL *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit);
+void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit);
+void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit);
 
 
 int main(int argc, char *argv[])
@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
   int status;
   int I;
   int lmap;
-  REAL *map;
+  //REAL *map;
+  float *map;
   int imap,jmap,kmap;
   int nmap;
   REAL dxmap,dxcur;
@@ -114,10 +115,10 @@ int main(int argc, char *argv[])
 
   /// allocating the cube or the map
   if(proj==0){
-    map=(REAL *)calloc(nmapx*nmapy*nmapz,sizeof(REAL));
+    map=(float *)calloc(nmapx*nmapy*nmapz,sizeof(float));
   }
   else if(proj==3){
-    map=(REAL *)calloc(nmapx*nmapy,sizeof(REAL));
+    map=(float *)calloc(nmapx*nmapy,sizeof(float));
   }
   else{
     printf("proj other than 0 or 3 not implemented yet");
@@ -286,17 +287,17 @@ int main(int argc, char *argv[])
     }
 
 
-    REAL *x;
-    REAL *y;
-    REAL *z;
+    float *x;
+    float *y;
+    float *z;
     int dims[]={nmap+1,nmap+1,nmap+1};
     int ndims=3;
       
-    x=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-    y=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-    z=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+    x=(float*)malloc(sizeof(float)*(nmap+1));
+    y=(float*)malloc(sizeof(float)*(nmap+1));
+    z=(float*)malloc(sizeof(float)*(nmap+1));
 
-    REAL *coords[]={x,y,z};
+    float *coords[]={x,y,z};
       
     int i;
     for(i=0;i<=nmap;i++){
@@ -308,14 +309,8 @@ int main(int argc, char *argv[])
     int dimsvar[]={nmap,nmap,nmap};
     int ndimsvar=3;
       
-    if(sizeof(REAL)==4){
-      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
-      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
-    }
-    else if(sizeof(REAL)==8){
-      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_DOUBLE,DB_COLLINEAR,NULL);
-      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_DOUBLE,DB_ZONECENT,NULL);
-    }
+    DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
+    DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
 
     DBClose(dbfile);
   }
@@ -327,7 +322,7 @@ int main(int argc, char *argv[])
 // ================================================================
 #if 1
 
-void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
+void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
 
   switch(field){
   case 0:
@@ -458,7 +453,7 @@ void assign_cube(int field, int icell, REAL *map, int imap, int jmap, int kmap, 
 // ===============================================================
 // ===============================================================
 
-void assign_zmap(int field, int icell, REAL *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
+void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
   
   switch(field){
   case 0:

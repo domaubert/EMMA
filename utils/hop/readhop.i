@@ -1,4 +1,4 @@
-#include "ascii2ls.i"
+//#include "ascii2ls.i"
 
 func read_size(sizefile)
 {
