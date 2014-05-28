@@ -14,7 +14,7 @@ class array :
 		self.Z    = 1.0/self.a-1.0
 		self.N    = int(self.x*self.y*self.z)
 	
-		self.data    		= np.fromfile(file, dtype=np.float64  ,count=self.N)
+		self.data    		= np.fromfile(file, dtype=np.float32  ,count=self.N)
 
 		
 	def getData(self):
@@ -72,7 +72,7 @@ def denoct2grid(data,args,silo):
 	if args.field[0]=="field.u" : 
 		f=" 102 "
 	if args.field[0]=="rfield.snfb" : 
-		f=" 715 "
+		f=" 706 "
 	
 	if f=="0 ":
 		print "entrez un champ"

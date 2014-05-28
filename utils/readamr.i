@@ -20,8 +20,8 @@ func readcube(fname,&time){
   _read,fp,adress,nmapz;adress+=sizeof(nmapz);
   _read,fp,adress,time;adress+=sizeof(time);
   
-  map=array(double,nmapx,nmapy,nmapz);
-  dummy=array(double,nmapx*nmapy);
+  map=array(float,nmapx,nmapy,nmapz);
+  dummy=array(float,nmapx*nmapy);
   for(i=1;i<=nmapz;i++){
     _read,fp,adress,dummy;adress+=sizeof(dummy);
     map(,,i)=reform(dummy,[2,nmapx,nmapy]);
@@ -42,7 +42,7 @@ func readcell(fname,&time){
   _read,fp,adress,time;adress+=sizeof(time);
   nc;
   time;
-  map=array(double,nc*5);
+  map=array(float,nc*5);
   _read,fp,adress,map;
   close,fp;
 

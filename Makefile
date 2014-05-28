@@ -1,13 +1,12 @@
 ########################################## 
 ARCH = CPU
-C_LIBS =   -O2 # -lstdc++ -g
+C_LIBS =   -O2 -fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
 
 #------------ MAIN OPTIONS --------------------
-
 DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
@@ -21,6 +20,9 @@ DEFINES  +=  -DSTARS
 
 DEFINES  +=  -DWMPI
 #DEFINES  +=  -DFLOORDT
+
+#------------ OPEN MP OPTIONS ---------------------
+#DEFINES += -DWOMP
 
 #------------ CUDA OPTIONS ---------------------
 #DEFINES  +=  -DWCUDA_ERR
@@ -59,7 +61,8 @@ DEFINES  += -DWCHEM
 DEFINES  += -DS_100000
 DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
-DEFINES += -DSEMI_IMPLICIT 
+DEFINES  += -DSEMI_IMPLICIT 
+#DEFINES  += -DACCEL_RAD_STAR
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM

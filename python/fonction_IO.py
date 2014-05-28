@@ -259,6 +259,13 @@ def getargs() :
 		else :
 			args.folder.append("data/")
 
+	for fol in args.folder:
+		if (fol[-1]!="/"):
+			fol += "/"
+
+
+
+
 	if args.nmax == -1:
 		getSnapMax(args)
 
@@ -266,14 +273,12 @@ def getargs() :
 		nproc = getNproc(args)
 
 
-	for fol in args.folder:
-		if (fol[-1]!="/"):
-			fol += "/"
+
 
 
 	snaprange(args)
 
-	if args.files== []:
+	if args.files == []:
 		num2snap(args)
 	
 

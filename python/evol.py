@@ -123,7 +123,7 @@ def SFRFromSnap(stars, lab):
 
 
 	if len(stars.mass):
-		b = 10
+		b = 16
 		n0, bin_edges = np.histogram(stars.age, bins = b)
 	
 		z  =a2z(t2a( bin_edges))
@@ -141,9 +141,9 @@ if __name__ == "__main__":
 
 
 	args=getargs()
-	
-	Ntot,t,stars = readStars(args.files[0], args)
-	SFRFromSnap(stars,args.files[0] )
+	for file in args.files:
+		Ntot,t,stars = readStars(file, args)
+		SFRFromSnap(stars,file )
 
 
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 #	plt.ylim(1e-3,10)
 #	plt.xlabel(r'$Z$')
 #	plt.ylabel(r'$SFR (M_{o}.yr^{-1}.Mpc^{-3})$' )
-#	plt.legend(loc=1)
+	plt.legend()
 
 	plt.show()
 

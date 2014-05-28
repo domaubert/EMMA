@@ -1,5 +1,5 @@
 ##==MemoryManagement=========
-max_number_of_octs 120000
+max_number_of_octs 200000
 max_number_of_part 2000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
@@ -13,7 +13,7 @@ level_max 7
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 1000
+max_number_of_relaxation_poisson 10
 poisson_accuracy 1e-3
 mgrid_lmin 4
 mgrid_nvcycles 3
@@ -26,6 +26,7 @@ cons_stencil_size 32
 max_subcycles 2
 nthread 16
 nstream 16
+ompthreads 1
 ##==RadTransfert======
 clight 1e-2
 dens_threshold 5e20
@@ -36,5 +37,5 @@ overdensity_cond 20
 density_cond -2000
 tcar 3e9   
 tlife 3e7
-feedback_eff 1
+feedback_eff 0
 feedback_frac 1.

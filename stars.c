@@ -61,28 +61,22 @@ int gpoiss(REAL lambda){
 	REAL p = rdm(0,1); 	
 	REAL P = exp(-lambda);  
 	REAL sum=P;               
-	if (sum>=p) return 0;     
-	do { 	P*=lambda/(REAL)k;
-		sum+=P;           
-		if (sum>=p) break;
-		k++;
-  	}while(k<1e6);
-
+	if (sum>=p){
+	  k=0;     
+	}
+	else{
+	  do { 	P*=lambda/(REAL)k;
+	    sum+=P;           
+	    if (sum>=p) break;
+	    k++;
+	  }while(k<1e6);
+	}
+	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
 	return k;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		FEEDBACK
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-REAL getFeedbackEgy(struct RUNPARAMS *param, REAL aexp, int level){
-
-	REAL 	rhoE 	 = 3.7e15; 		// 3.7e15 erg.g-1 Kay 2002 // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
-		rhoE 	*= 1e-7 / 1e-3 	;	// [erg.g-1] -> [J.kg-1]
-
-	return param->stars->mstars * param->unit.unit_mass * rhoE * param->stars->feedback_eff; // [J]
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt ){
@@ -95,15 +89,14 @@ void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL a
 	REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac;
 	     E	       *= exp( -t0/s8 )/s8;
 
-	cell->rfieldnew.snfb += E;	
+	cell->rfield.snfb += E;	
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
-	cell->rfieldnew.snfb = 0;
+	cell->rfield.snfb = 0;
 
 	if(param->stars->feedback_eff){
 
@@ -120,12 +113,13 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 			if (curp->isStar && curp->isStar < 3){
 				t0 =  param->cosmo->tphy - curp->age;
-
-				if ( t0 >= param->stars->tlife 	)  	curp->isStar = 2; 
-				if ( t0 >= 2e8 			)  	curp->isStar = 3;
+				if(t0>=0){ // for inter-level communications
+					if ( t0 >= param->stars->tlife 	)  	curp->isStar = 2; 
+					if ( t0 >= 2e8 			)  	curp->isStar = 3;
 	
-				thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
-				Nsn++;
+					thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
+					Nsn++;
+				}
 			}
 		}while(nexp!=NULL);
 		return Nsn;
@@ -147,6 +141,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->x = xc + rdm(-0.5,0.5) * dx;
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
+
 
 	star->vx = cell->field.u;
 	star->vy = cell->field.v;
@@ -226,7 +221,8 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL M_in_cell 	= cell->field.d * pow(2.0,-3.0*level);
 
-	REAL lambda 	= gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde;
+	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
+
 
 	int N 		= gpoiss(lambda);
 	
@@ -234,7 +230,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	//if (N) printf("N %d \t M in cell %e \t Mstars %e \t dt %e\t dtt %e\t E %e \t l %e  \n",N,M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->rfieldnew.eint, lambda);
 	//if (N) printf("rfield.eint %e \t rfieldnew.eint %e \n ", cell->rfield.eint, cell->rfieldnew.eint);
-
+	//printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
 	return N;
 }
 
@@ -259,11 +255,13 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 
 		if (cell->phead==NULL){
 			cell->phead 		= star;
-			star->prev 		= NULL;				
+			star->prev 		= NULL;	
+			star->next =NULL;
 		}else{
 			struct PART *lasp 	= findlastpart(cell->phead);
 			lasp->next 		= star;
 			star->prev 		= lasp;
+			star->next=NULL;
 		}
 
 		cpu->npart[level-1]++;
@@ -314,13 +312,13 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	param->cosmo->tphy	= a2t(param, aexp);
 
 
-	if(cpu->rank==0){
+/*	if(cpu->rank == 0){
 		printf("\n");
 		printf("================================\n");
 		printf("   Starting Add Stars routine   \n");
 		printf("================================\n");	
 	}
-
+*/
 	do {	if(nextoct==NULL) 		continue;
 		curoct=nextoct;
 		nextoct=curoct->next;
@@ -344,10 +342,10 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 			}
 
 			Nsn += feedback(curcell, param, cpu, aexp,level,dt);
-
 			mmax = fmax(curcell->field.d, mmax);
 		}
-	}while(nextoct!=NULL);
+	  }while(nextoct!=NULL);
+	
 
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
@@ -362,14 +360,15 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("%d stars in total\n",param->stars->n);
 		printf("\n");
 	}
-
+	
 	for (l = param->lcoarse; l<=param->lmax;l++){
 #ifdef WMPI
-		MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
-		MPI_Barrier(cpu->comm);
+	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
+	  MPI_Barrier(cpu->comm);
 #endif
-		if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
+	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
+
 	if(cpu->rank==0) {	printf("%d\tActive SN\n",Nsn);}
 	if(cpu->rank==0) {	printf("\n");}
 }

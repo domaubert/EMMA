@@ -1454,6 +1454,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nthread);
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
+      rstat=fscanf(buf,"%s %d",stream,&param->ompthread);
 
 #ifdef WRAD
       rstat=fscanf(buf,"%s",stream);
@@ -2366,7 +2367,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   unsigned long long key;
   struct OCT *curoct;
   struct OCT *nextoct;
-  unsigned long long hidx;
+  unsigned long hidx;
   int found;
   float z0,y0,x0;
   int ifound=0;

@@ -1,8 +1,17 @@
 
 
-func readpart(fname,&time){
+func readpart(fname,&time,star=){
   //fname=exec("ls -d data/part.*")
   //x=y=[];for(i=1;i<=numberof(fname);i++){phase=readpart(fname(i));www=where(phase(7,)==1);grow,x,phase(1,www);grow,y,phase(2,www);}
+  nvar=array(int);
+  if(is_void(star))
+    {
+      nvar=10;
+    }
+  else{
+    nvar=11;
+  }
+  
   fp=open(fname,"rb");
   adress=0;
   npart=array(int);
@@ -10,7 +19,7 @@ func readpart(fname,&time){
   _read,fp,adress,npart;adress+=sizeof(npart);
   _read,fp,adress,time;adress+=sizeof(time);
   if(npart!=0){
-  phase=array(float,10,npart);
+    phase=array(float,nvar,npart);
   _read,fp,adress,phase;adress+=sizeof(phase);
   write,"found "+pr1(npart)+" particles";
   close,fp;
@@ -24,12 +33,12 @@ func readpart(fname,&time){
 
 
 
-func mergepart(fname,ncpu,&time){
+func mergepart(fname,ncpu,&time,star=){
   pf=[];
   time=array(float);
   for(i=0;i<ncpu;i++){
     fname2=swrite(format=fname+".p%05d",i);
-    p=readpart(fname2,time);
+    p=readpart(fname2,time,star=star);
     if(numberof(p)!=1) grow,pf,p;
   }
   return pf;

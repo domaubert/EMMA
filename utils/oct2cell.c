@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   int status;
   int I;
   int lmap;
-  REAL *map;
+  float *map;
   int imap,jmap,kmap;
   int nmap;
   REAL dxmap,dxcur;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
   }
   printf("Found %ld leaf cells\n",nc);
   
-  map=(REAL *)calloc(nc*NREAL,sizeof(REAL)); // NREAL=5 3 for pos, 1 for level, 1 for data
+  map=(float *)calloc(nc*NREAL,sizeof(float)); // NREAL=5 3 for pos, 1 for level, 1 for data
 
   ic=0;
   for(icpu=icpustart;icpu<icpustop;icpu++){
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 		map[ic*NREAL+0]=xc;
 		map[ic*NREAL+1]=yc;
 		map[ic*NREAL+2]=zc;
-		map[ic*NREAL+3]=(REAL)oct.level;
+		map[ic*NREAL+3]=(float)oct.level;
 		switch(field){
 		case 0:
 		  map[ic*NREAL+4]=oct.level;
@@ -378,17 +378,17 @@ int main(int argc, char *argv[])
       }
 
 
-      REAL *x;
-      REAL *y;
-      REAL *z;
+      float *x;
+      float *y;
+      float *z;
       int dims[]={nmap+1,nmap+1,nmap+1};
       int ndims=3;
       
-      x=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-      y=(REAL*)malloc(sizeof(REAL)*(nmap+1));
-      z=(REAL*)malloc(sizeof(REAL)*(nmap+1));
+      x=(float*)malloc(sizeof(float)*(nmap+1));
+      y=(float*)malloc(sizeof(float)*(nmap+1));
+      z=(float*)malloc(sizeof(float)*(nmap+1));
 
-      REAL *coords[]={x,y,z};
+      float *coords[]={x,y,z};
       
       int i;
       for(i=0;i<=nmap;i++){
@@ -400,14 +400,8 @@ int main(int argc, char *argv[])
       int dimsvar[]={nmap,nmap,nmap};
       int ndimsvar=3;
       
-      if(sizeof(REAL)==4){
-	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
-	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
-      }
-      else if(sizeof(REAL)==8){
-	DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_DOUBLE,DB_COLLINEAR,NULL);
-	DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_DOUBLE,DB_ZONECENT,NULL);
-      }
+      DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
+      DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
 
       DBClose(dbfile);
     }

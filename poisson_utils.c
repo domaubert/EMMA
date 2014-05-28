@@ -802,9 +802,13 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
   ilast=stride;
 #endif
 
-  for(icell=0;icell<8;icell++){ // we scan the cells
-    getcellnei(icell, vnei, vcell); // we get the neighbors
-    for(i=0;i<ilast;i++){ // we scan the octs
+
+      for(icell=0;icell<8;icell++){ // we scan the cells
+	getcellnei(icell, vnei, vcell); // we get the neighbors
+	
+	
+	//printf("Start openmp on thread %d on mpirank =%d icell=%d ival=%d nread=%d\n",omp_get_thread_num(),curcpu,icell,ival,nread);
+	for(i=0;i<ilast;i++){ // we scan the octs
       // we skip octs that are non valid
 
 #ifdef FASTGRAV
@@ -879,12 +883,14 @@ int PoissonJacobi_single(struct STENGRAV *gstencil, int level, int curcpu, int n
 #endif
       // ready for the next cell
       if(icell==0) ival++;
-    }
-
+      //printf("i=%d on thread %d on mpirank =%d \n",i,omp_get_thread_num(),curcpu);
+      
+      }
+    
     //ready for the next oct
   }
+  //printf("ival=%d nread=%d\n",ival,nread);
 
-  if(ival!=nread) abort();
   return 0;
 }
 
@@ -1548,6 +1554,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   int icell;
   double t[10];
 
+  MPI_Barrier(cpu->comm);
  t[0]=MPI_Wtime();
   if(cpu->rank==0) printf("Start Poisson Solver ");
 
@@ -1601,6 +1608,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
       }while(nextoct!=NULL);
   }
 
+  MPI_Barrier(cpu->comm);
  t[9]=MPI_Wtime();
  if(cpu->rank==0){  
 #ifndef GPUAXL
