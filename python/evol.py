@@ -58,13 +58,14 @@ def observation():
 
 	SFR1 = [-2.2,-1.4,-1.44,-1.53,-1.84,-1.95,-2.2,-3.33]
 	SFR1 = [ pow(10,x) for x in SFR1]
-	plt.plot(Z,SFR1, label = "obs dust uncorrected")
-
+	plt.plot(Z,SFR1, 'k--')
+#, label = "obs dust uncorrected"
 
 	
 	SFR2 = [-1.7,-1,-1.06,-1.19,-1.59,-1.72,-2.05,-3.18]
 	SFR2 = [ pow(10,x) for x in SFR2]
-	plt.plot(Z,SFR2, label = "obs dust corrected")
+	plt.plot(Z,SFR2, 'k--')
+#,label = "obs dust corrected"
 
 def SFRFromTdata(args) :
 
@@ -122,7 +123,7 @@ def SFRFromSnap(stars, lab):
 
 
 	if len(stars.mass):
-		b = 64
+		b = 10
 		n0, bin_edges = np.histogram(stars.age, bins = b)
 	
 		z  =a2z(t2a( bin_edges))
@@ -142,7 +143,7 @@ if __name__ == "__main__":
 	args=getargs()
 	
 	Ntot,t,stars = readStars(args.files[0], args)
-	SFRFromSnap(stars)
+	SFRFromSnap(stars,args.files[0] )
 
 
 
