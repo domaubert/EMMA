@@ -67,6 +67,31 @@ class Part :
 			self.age 	= part.age[ma]	
 
 
+
+	def append(self, part):
+
+		for i in range(len(part)):
+
+			self.x 		= np.append(self.x, part[i].x)
+			self.y 		= np.append(self.y, part[i].y)
+			self.z 		= np.append(self.z, part[i].z)
+
+			'''
+			self.vx 	= part.vx[ma]
+			self.vy 	= part.vy[ma]
+			self.vz 	= part.vz[ma]
+
+			self.idx 	= part.idx[ma]
+			'''
+			self.mass	= np.append(self.mass, part[i].mass)
+			'''			
+			self.epot 	= part.epot[ma]
+			self.ekin 	= part.ekin[ma]
+			'''
+			if self.isStar :
+				self.age 	= np.append(self.age, part[i].age)
+
+
 def getN(filename):
 
 	filePart = open(filename, "rb")

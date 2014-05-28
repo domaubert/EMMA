@@ -67,6 +67,28 @@ class Part :
 			self.age 	= part.age[ma]	
 
 
+
+	def append(self, part):
+
+		for i in range(len(part)):
+
+			self.x 		= np.append(self.x, part.x)
+			self.y 		= np.append(self.y, part.y)
+			self.z 		= np.append(self.z, part.z)
+
+			self.vx 	= part.vx[ma]
+			self.vy 	= part.vy[ma]
+			self.vz 	= part.vz[ma]
+
+			self.idx 	= part.idx[ma]
+			self.mass	= np.append(self.mass, part.mass)
+			self.epot 	= part.epot[ma]
+			self.ekin 	= part.ekin[ma]
+		
+			if self.isStar :
+				self.age 	= part.age[ma]	
+
+
 def getN(filename):
 
 	filePart = open(filename, "rb")
@@ -93,7 +115,7 @@ def readPart(filename,args):
 
 	print "Reading file ", filename
 	Ntot = getNtot(filename, args)
-	parts = Part(Ntot)
+	parts = Part(Ntot, star)
 	print  Ntot, "Particles"
 
 	i = 0

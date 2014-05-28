@@ -1,6 +1,7 @@
 import sys
 import os 
 import numpy as np
+import matplotlib.pylab as plt 
 
 class Constantes : 
 	def __init__(self):
@@ -39,21 +40,30 @@ def a2t(a) :
 
 	return zage_Gyr*1e9
 
+def t2a(t):
 
+	n = 10000
+
+	A = np.arange(n+1) / float(n)
+	T = a2t(A)
+
+	return np.interp(t,T,A)
+	
+	
 
 def m2mo(m, L) :
 	c = Constantes()
 	H0 = c.H0 * 1000.0/1e6/c.Parsec
 
 	rho = 3.0*pow(H0,2.0) * c.WM / (8.0 * np.pi * c.G)
-	print rho	
+#	print rho	
 
 	L *= 1e6 * c.Parsec #Mpc en m
 	V   = pow(L/0.67,3.0)
 
 	Mtot = rho * V
 
-	return Mtot * m / c.MO
+	return Mtot/c.MO  * m 
 
 
 def findfirststar(N) :

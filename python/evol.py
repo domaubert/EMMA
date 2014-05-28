@@ -66,23 +66,15 @@ def observation():
 	SFR2 = [ pow(10,x) for x in SFR2]
 	plt.plot(Z,SFR2, label = "obs dust corrected")
 
+def SFRFromTdata(args) :
 
-if __name__ == "__main__":
-
-
-	args=getargs()
-	
 	Fol=0
 
-#	h=62.0/100.0
-#	L = [x * h for x in L] 
 
 	for folder in args.folder:
 
 		n,N,A,Mtot = readTdata(folder)
-	#	print Mtot
 
-	
 		npart0 = N[0]
 		for i in range(n) :
 			N[i] -= npart0
@@ -123,6 +115,45 @@ if __name__ == "__main__":
 	plt.xlabel(r'$Z$')
 	plt.ylabel(r'$SFR (M_{o}.yr^{-1}.Mpc^{-3})$' )
 	plt.legend(loc=1)
+
+	plt.show()
+
+def SFRFromSnap(stars, lab):
+
+
+	if len(stars.mass):
+		b = 64
+		n0, bin_edges = np.histogram(stars.age, bins = b)
+	
+		z  =a2z(t2a( bin_edges))
+
+		n= len(n0)
+		sfr = np.zeros(n)
+		for i in range(n):
+			sfr[i] = m2mo( stars.mass[0] * (n0[i]) ,1 )  / float( bin_edges[i+1] -bin_edges[i])
+	
+		plt.semilogy(z[:-1],sfr, label = lab)
+
+
+
+if __name__ == "__main__":
+
+
+	args=getargs()
+	
+	Ntot,t,stars = readStars(args.files[0], args)
+	SFRFromSnap(stars)
+
+
+
+#	uvbkg()
+	observation()
+
+#	plt.xlim(0,15)
+#	plt.ylim(1e-3,10)
+#	plt.xlabel(r'$Z$')
+#	plt.ylabel(r'$SFR (M_{o}.yr^{-1}.Mpc^{-3})$' )
+#	plt.legend(loc=1)
 
 	plt.show()
 

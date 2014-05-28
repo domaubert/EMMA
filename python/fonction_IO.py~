@@ -238,7 +238,7 @@ def getargs() :
 	parser.add_argument('-part', action="store_true", default= True,         help = "is it a particle snap?")
 	parser.add_argument('-grid', action="store_true", default= False,        help = "is it a grid snap?")
 	parser.add_argument('-np',   action="store",      default=-1, type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
-	parser.add_argument('-l'    ,action="store",      default= , type=int,  help = "level param of oct2grid", dest = "level")
+	parser.add_argument('-l'    ,action="store",      default=0 , type=int,  help = "level param of oct2grid", dest = "level")
 	parser.add_argument('-field',action="append",     default=["field.d"] ,  help = "field param of oct2grid", dest = "field")
 
 	parser.add_argument('-tag',  action="append",     default=[], type=int,  help = "halo number", dest = "tag")
@@ -276,8 +276,6 @@ def getargs() :
 	if args.files== []:
 		num2snap(args)
 	
-
-
 
 	return args
 

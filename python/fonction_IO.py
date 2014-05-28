@@ -191,7 +191,7 @@ def getNproc(args):
 
 def snaprange(args):
 	
-	if args.fro != -1 and args.to != -1 : 
+	if args.fro != -1 or args.to != -1 : 
 		if args.fro != -1 : 
 			fro = args.fro
 		else :
@@ -276,8 +276,6 @@ def getargs() :
 	if args.files== []:
 		num2snap(args)
 	
-
-
 
 	return args
 
