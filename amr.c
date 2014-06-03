@@ -358,13 +358,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		if(cpu->rank==curoct->cpu) ndes++;
 		
- 		if(level==11){
-		  if(oct2key(curoct,11)==592427779){
-		    if(icell==6){
-		      printf("SPOTTED DESTROY on rank %d with mark=%e with oct cpu=%d d=%e\n",cpu->rank,curoct->cell[icell].marked,curoct->cpu,curoct->cell[icell].field.d);
-		    }
-		  }
-		}
 
 
 		desoct=curoct->cell[icell].child; // the oct to destroy
@@ -695,16 +688,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		}
 		lastoct[level]=newoct;
 
- 		if(level==11){
-		  if(oct2key(curoct,11)==592427779){
-		    if(icell==6){
-		      printf("SPOTTED CREATION on rank %d with mark=%e with oct cpu=%d d=%e\n",cpu->rank,curoct->cell[icell].marked,curoct->cpu,curoct->cell[icell].field.d);
-		      printf("key of new oct=%llu on rank %d\n",oct2key(newoct,12),cpu->rank);
-		      SOCT=newoct;
-		      printf("SOCT= %p key=%llu\n",SOCT,oct2key(SOCT,12));
-		    }
-		  }
-		} 
 
 		newoct=freeoct; //ready to go to the next free oct
 		if(newoct>=(limit-1)){

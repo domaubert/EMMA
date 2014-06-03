@@ -1588,7 +1588,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 #ifdef WCHEM
       int nitcool=0;
       int nitmin,nitmax,nitsum;
-      chemrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
+      chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
 #endif
 
 
@@ -1648,7 +1648,6 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifndef GPUAXL
   nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #else
-  //nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
   nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #endif
 

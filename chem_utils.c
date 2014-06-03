@@ -146,7 +146,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
 // ===========================================================================================================================
 
-void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexporg)
+void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexporg)
 {
   int i,icell,igrp;
   int idloc;
@@ -295,10 +295,10 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
   	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
 	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
 
-	if (nH[idloc] <= 0) {
-		printf("densité negative");		
-		abort();	
-		}
+	   if (nH[idloc] <= 0) {
+	     printf("densité negative");		
+	     abort();	
+	   }
 #else
 	  REAL hubblet=0.;
 #endif

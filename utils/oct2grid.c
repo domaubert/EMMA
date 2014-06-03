@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
       printf("Casting Rays on %dx%dx%d cube from %s\n",nmapx,nmapy,nmapz,fname);
     }
     
-    printf("size= %ld\n",nmapx*nmapy*nmapz*sizeof(REAL)+sizeof(int)*2);
+    printf("size= %ld\n",nmapx*nmapy*nmapz*sizeof(float)+sizeof(int)*2);
     // reading the time
     dummy=fread(&tsim,sizeof(REAL),1,fp);
 #ifdef WRAD
@@ -267,13 +267,13 @@ int main(int argc, char *argv[])
     if(proj==3){
       nmapz=1;
     }
-    printf("dumping %s with nmap=%d\n",fname2,nmap*nmapx*nmapy);
+    printf("dumping %s with nmap=%d hohoh\n",fname2,nmap*nmapx*nmapy);
     fp=fopen(fname2,"wb");
     fwrite(&nmapx,1,sizeof(int),fp);
     fwrite(&nmapy,1,sizeof(int),fp);
     fwrite(&nmapz,1,sizeof(int),fp);
     fwrite(&tsimf,1,sizeof(float),fp);
-    for(I=0;I<nmapz;I++) fwrite(map+I*nmapx*nmapy,nmapx*nmapy,sizeof(REAL),fp);
+    for(I=0;I<nmapz;I++) fwrite(map+I*nmapx*nmapy,nmapx*nmapy,sizeof(float),fp);
     status=ferror(fp);
     fclose(fp);
   }

@@ -478,7 +478,7 @@ void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nre
 
 	  // assigning the values
 	  part->level=cpu->bndoct[i]->level;
-	  part->key=(double) oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct (is the eventual destination)
+	  part->key=(double) oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current o509ct (is the eventual destination)
 	  part->icell=ii;
 
  
@@ -501,15 +501,6 @@ void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nre
 	  part->isStar=curp->isStar;
 #endif
 
-	  if(part->level==12){
-	    printf("key part %e key oct %llu\n",part->key,oct2key(cpu->bndoct[i],cpu->bndoct[i]->level));
-	    printf("level=%d rank emission=%d reception=%d\n",part->level,cpu->rank,cpu->bndoct[i]->cpu);
-	    printf("oct coord %e %e %e \n",cpu->bndoct[i]->x,cpu->bndoct[i]->y,cpu->bndoct[i]->z);
-	    printf("part coord %e %e %e\n",part->x,part->y,part->z);
-	    printf(" isstar=%d age=%e is=%d idx=%d\n",curp->isStar,curp->age,curp->is,curp->idx);
-	    printf("parent cell id=%d mark=%e d=%e\n",cpu->bndoct[i]->parent->idx,cpu->bndoct[i]->parent->marked,cpu->bndoct[i]->parent->gdata.d);
-	    printf("key superoc %llu\n",oct2key(cell2oct(cpu->bndoct[i]->parent),11));
-	  }
 
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
