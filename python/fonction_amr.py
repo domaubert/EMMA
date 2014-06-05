@@ -8,18 +8,14 @@ class array :
 		fileName = fileName[:-15] +  "grid" +  fileName[-11:] 
 		file = open(fileName, "rb")
 
-		self.x    = unpack('i',file.read(4))[0]
-		self.y    = unpack('i',file.read(4))[0]
-		self.z    = unpack('i',file.read(4))[0]
-		self.a    = unpack('f',file.read(4))[0]
+		self.x,self.y,self.z    = np.fromfile(file, dtype=np.int32    ,count=3)
+		self.a    		= np.fromfile(file, dtype=np.float32  ,count=1)[0]
+
 		self.Z    = 1.0/self.a-1.0
 		self.N    = int(self.x*self.y*self.z)
+	
+		self.data    		= np.fromfile(file, dtype=np.float32  ,count=self.N)
 
-		self.data = np.zeros( self.N, dtype=np.float64)
-
-		for i in range(self.N) : 
-			self.data[i]  = unpack('d',file.read(8))[0]
-		
 		
 	def getData(self):
 		return self.data
@@ -35,7 +31,7 @@ class array :
 class cube :
 	def __init__(self,fileName):
 
-		self.a = array(fileName)	
+		self.a    = array(fileName)	
 		self.data = np.reshape(self.a.getData(),  (self.a.getSize()) ) 
 		
 	def getData(self):
@@ -57,8 +53,6 @@ def denoct2grid(data,args,silo):
 		f=" 3 "
 	if args.field[0]=="marked" : 
 		f=" 4 "
-	if args.field[0]=="temp" : 
-		f=" 707 "
 	if args.field[0]=="field.d" : 
 		f=" 101 "
 	if args.field[0]=="field.u" : 
@@ -69,8 +63,17 @@ def denoct2grid(data,args,silo):
 		f=" 104 "
 	if args.field[0]=="field.p" : 
 		f=" 105 "
-	if args.field[0]=="x" : 
+	if args.field[0]=="field.E" : 
 		f=" 106 "
+	if args.field[0]=="rfield.src" : 
+		f=" 705 "
+	if args.field[0]=="rfield.temp" : 
+		f=" 707 "
+	if args.field[0]=="field.u" : 
+		f=" 102 "
+	if args.field[0]=="rfield.snfb" : 
+		f=" 706 "
+	
 	if f=="0 ":
 		print "entrez un champ"
 		sys.exit()

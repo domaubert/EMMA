@@ -8,7 +8,6 @@
 #include "oct.h"
 #include <string.h>
 #include "vector.h"
-
 #include <mpi.h>
 
 #define NITERMAX 10

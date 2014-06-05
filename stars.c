@@ -57,7 +57,6 @@ REAL rdm(REAL a, REAL b){
 }
 
 int gpoiss(REAL lambda){
-
 	int k=1;                
 	REAL p = rdm(0,1); 	
 	REAL P = exp(-lambda);  
@@ -80,77 +79,31 @@ int gpoiss(REAL lambda){
 //		FEEDBACK
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-REAL getFeedbackEgy(struct RUNPARAMS *param, REAL aexp){
+void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt ){
 
-	REAL 	rhoE 	= 3.7e-15; 		// erg.g-1 Kay 2002 // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
-		rhoE 	*= 1.0e-7 * 1e3; 	// erg.g-1  en J.kg-1
+	REAL s8 	 = 2e7;		// life time of a 8 M0 star
+	     s8 	*= 31556926; 	// years en s
 
-	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL rho0 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G) ;
+	REAL dv 	= pow( pow(2.,-level) * aexp * param->cosmo->unit_l, 3.); 
 
-	REAL Mtot 	= rho0 * pow(param->cosmo->unit_l,3.0);
-	REAL M 		= param->stars->mstars * Mtot;	
+	REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac;
+	     E	       *= exp( -t0/s8 )/s8;
 
-	REAL E 		= M * rhoE;
-
-	REAL rs		= param->cosmo->unit_l;
-	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
-	REAL es		= pow(rs/ts,2);
-
-	E 		*=  pow(aexp,2.0) / es;
-
-	return E;
+	cell->rfield.snfb += E;	
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL E ,REAL t0, REAL dt, REAL aexp){
+int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
-	REAL s8 	= 2e7;		// life time of a 8 M0 star
-	s8 		*= 31556926; 	// years en s 
-
-	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
-	dt 		*= pow(aexp,2.0) * ts;
-
-	E *= exp( -t0/s8 ) *dt/s8;
-
-	cell->field.E  += E  ;   		 //thermal Feedback
-	cell->field.p  += E  * (GAMMA-1.);
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL E ,REAL t0, REAL dt, REAL aexp){
-
-	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
-	dt 		*= pow(aexp,2.0) * ts;
-
-  	int nread = 0;
-	int stride = 0;
-	int hstride=fmax(8,param->hstride);//pow(2,levelcoarse);
-/*	struct HGRID *stencil;
-	stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
-	
-	struct OCT *curoct = cell2oct(cell);
-	gatherstencil(curoct,stencil,stride,cpu, &nread);
-*/
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, REAL t, REAL dt){
+	cell->rfield.snfb = 0;
 
 	if(param->stars->feedback_eff){
-		REAL E = getFeedbackEgy(param,aexp)  * param->stars->feedback_eff ;
 
+		int Nsn = 0;
 		REAL t0;
-		struct PART *nexp;
 
-
+		struct PART *nexp; //
 		struct PART *curp;
 
 		nexp=cell->phead;
@@ -158,16 +111,20 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 	 	do{ 	curp=nexp;
 			nexp=curp->next;
 
-			if (curp->isStar){
-				t0 = t - curp->age;
-				if (  t0>0 && t0<2e8 ) {
-					thermalFeedback(cell, param      , E* (     param->stars->feedback_frac), t0, dt, aexp);
-				//	kineticFeedback(cell, param, cpu , E* (1. - param->stars->feedback_frac), t0, dt, aexp);
+			if (curp->isStar && curp->isStar < 3){
+				t0 =  param->cosmo->tphy - curp->age;
+				if(t0>=0){ // for inter-level communications
+					if ( t0 >= param->stars->tlife 	)  	curp->isStar = 2; 
+					if ( t0 >= 2e8 			)  	curp->isStar = 3;
+	
+					thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
+					Nsn++;
 				}
 			}
 		}while(nexp!=NULL);
+		return Nsn;
 	}
-	return 1;
+	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,10 +132,6 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx ) {
-
-	REAL r 		= fmin( sqrt(pow(cell->field.u,2) + pow(cell->field.v,2) + pow(cell->field.w,2)) + rdm(-1,1) * cell->field.a , FRACDX * dx/dt);
-	REAL theta 	= rdm(0,2*PI);
-	REAL phi   	= acos(rdm(-1,1));
 
 	star->next  = NULL;
 	star->idx   = idx;
@@ -189,36 +142,26 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
-	REAL vx = cell->field.u;// + rdm(-1.,1.) * cell->field.a;
-	REAL vy = cell->field.v;// + rdm(-1.,1.) * cell->field.a;
-	REAL vz = cell->field.w;// + rdm(-1.,1.) * cell->field.a;
 
-	REAL vmax = pow(2.0,-level)/dt*FRACDX; 
+	star->vx = cell->field.u;
+	star->vy = cell->field.v;
+	star->vz = cell->field.w;
 
-	/* star->vx = (fabs(vx)<vmax)?vx:vmax; */
-	/* star->vy = (fabs(vy)<vmax)?vy:vmax; */
-	/* star->vz = (fabs(vz)<vmax)?vz:vmax; */
+/*	REAL r 		= rdm(0,1) * cell->field.a ;
+	REAL theta   	= acos(rdm(-1,1));
+	REAL phi 	= rdm(0,2*PI);
 
-	REAL vfact=fabs(vx*vx+vy*vy+vz*vz);
-
-	if(vfact>vmax){
-	  vx=vx/vfact*vmax;
-	  vy=vy/vfact*vmax;
-	  vz=vz/vfact*vmax;
-	}
-
-	star->vx=vx;
-	star->vy=vy;
-	star->vz=vz;
-	
-
+	star->vx += r * sin(theta) * cos(phi);
+	star->vy += r * sin(theta) * sin(phi);
+	star->vz += r * cos(theta) ;
+*/
 	star->mass  = param->stars->mstars;
 
 	star->epot = 0.0;
 	star->ekin = 0.5 * star->mass * (pow(star->vx,2) + pow(star->vy,2) + pow(star->vz,2));
 
 	star->isStar = 1;
-	star->age = a2t(param,aexp);
+	star->age = param->cosmo->tphy;
 	star->rhocell = cell->field.d;
 }
 
@@ -228,48 +171,10 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 
 	if (cell->child != NULL) return 0;
 
-	int A = cell->field.d > param->stars->thresh;
-	int B = 0?						cell->field.a/pow(2.,-level) > sqrt(6.*aexp * cell->gdata.d +1.) 				: 1;
-
+	int A = 	cell->field.d > param->stars->thresh;
+	int B = 0?	cell->field.a/pow(2.,-level) > sqrt(6.*aexp * cell->gdata.d +1.) 				: 1;
 
 	return 		A && B;
-
-
-	//return (cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh);
-
-	
-
-//	printf("%e\t%e\n", cell->field.d, n*param->stars->mstars);
-
-//	return cell->field.d > param->amrthresh * (param->cosmo->ob/param->cosmo->om) / pow(2.0,-3.0*level);
-
-//	printf("%e\t%e\n", (cell->gdata.d + 1.0)*pow(2.0,-3.0*level) , param->amrthresh);
-
-//	return 	(cell->gdata.d+1.0)*pow(2.0,-3.0*level) > param->amrthresh;
-
-
-/*	REAL DVcoarse 	=  pow(2.0,-3.0*param->lcoarse);
-	REAL DV		=  pow(2.0,-3.0*param->level);
-
-	REAL rhobarre 	= (param->cosmo->ob/param->cosmo->om);
-
-	REAL N 		= param->amrthresh / pow(2.0,-3.0*param->lcoarse);
-
-	REAL rhocrit 	= N * rhobarre * DVcoarse/DV ;
-	*/
-
-
-//	return cell->field.d > param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om) * pow(aexp,-alpha0) ;
-
-/*	REAL rhocrit 	= param->stars->density_cond * PROTON_MASS;
-
-	REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL a3rhostar 	= pow(aexp,	3.0) *  3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
-
-//	printf("H0\t%e\t\t a3rs\t%e\t\t a^-3\t%e\n",H0 , a3rhostar, pow(aexp,-alpha0) );
-//	printf("rho\t%e\t\t rcrit\t%e\t\t seuil\t%e\n",cell->field.d , rhocrit,rhocrit/a3rhostar*pow(aexp,-alpha0) );
-	return cell->field.d > rhocrit/a3rhostar*pow(aexp,-alpha0);
-*/
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -280,7 +185,6 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	struct Utype U;
 	struct Wtype W;
 
-
 	memcpy(&W,field,sizeof(struct Wtype));
 
 	W2U(&W, &U);
@@ -288,24 +192,13 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 //	density
 	U.d    -= drho;
 
-	if (U.d <=0) {
-		printf("negative density in conserveField from createStars \t field->d %e U.d %e drho %e ", field->d, U.d, drho);
-		abort();
-	}
-
 //	momentum
 	U.du -= star->vx * drho;		
 	U.dv -= star->vy * drho;		
 	U.dw -= star->vz * drho;		
 
 //	internal energy
-/*	REAL H0 = param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL rs		= param->cosmo->unit_l;
-	REAL ts 	= 2.0/(H0 *sqrt(param->cosmo->om));
-	REAL es		= pow(rs/ts,2);
-
-	U.eint -= (-3./5. * NEWTON_G *  pow(param->stars->mstars,2) / (dx * pow(4./3.*PI,-1./3.) ))*  pow(aexp,2.0) / es  ; //Viriel	
-*/
+//	???????????????
 
 	U2W(&U, &W);
 
@@ -323,22 +216,20 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	
 	REAL gas_efficiency = 1.;	// maybe need to be passed in param??
 
-	REAL H0 = param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL a2ts = pow(aexp,2.0) * 2.0/(H0 *sqrt(param->cosmo->om));
-
-
 	REAL tstars 	= param->stars->tcar * 31556926 / sqrt(cell->field.d / param->stars->thresh );
-	REAL tstartilde = tstars / a2ts;
+	REAL tstartilde = tstars / pow(aexp,2)/param->unit.unit_t;
 
-	REAL M_in_cell = cell->field.d * pow(2.0,-3.0*level);
+	REAL M_in_cell 	= cell->field.d * pow(2.0,-3.0*level);
 
 	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
 
-	REAL N = gpoiss(lambda );
+
+	int N 		= gpoiss(lambda);
 	
+	if(N * param->stars->mstars >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
 
-	if((N * param->stars->mstars) >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
-
+	//if (N) printf("N %d \t M in cell %e \t Mstars %e \t dt %e\t dtt %e\t E %e \t l %e  \n",N,M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->rfieldnew.eint, lambda);
+	//if (N) printf("rfield.eint %e \t rfieldnew.eint %e \n ", cell->rfield.eint, cell->rfieldnew.eint);
 	//printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
 	return N;
 }
@@ -388,16 +279,10 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void initThresh(struct RUNPARAMS *param,  REAL aexp){
-	REAL k	= 0;
-	if ( param->stars->density_cond > 0 ){
-		k = 1;
-	}else{
-		k = -pow(aexp,3.0);
-	}	
 
-	REAL H0 		= param->cosmo->H0 *1000.0/1e6/PARSEC;
-	REAL rhostar 		= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G);
-
+	REAL k =(param->stars->density_cond >0)? 1 : -pow(aexp,3.0);
+	
+	REAL rhostar		= param->unit.unit_mass/pow(param->unit.unit_l,3) ;
 	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
 
 	param->stars->thresh    = fmax( k * rhocrittilde / rhostar, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
@@ -416,70 +301,64 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	REAL mmax = 0;
 	REAL mmin = 1e9;
 
-	REAL t = a2t(param,aexp) ;
-
 	int l,icell, ipart;
 	int nstars = 0;
 	int nsl = 0;
 	int N;
+	int Nsn=0;
 
 
 	initThresh(param, aexp);
-	param->stars->mstars	= (param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse);
 	param->cosmo->tphy	= a2t(param, aexp);
 
 
-	/* if(cpu->rank==0){ */
-	/* 	printf("\n"); */
-	/* 	printf("================================\n"); */
-	/* 	printf("   Starting Add Stars routine   \n"); */
-	/* 	printf("================================\n");	 */
-	/* } */
-
-	if(nextoct!=NULL){
-	  do {	
-	    curoct=nextoct;
-	    nextoct=curoct->next;
-	    if(curoct->cpu != cpu->rank) 	continue;
-	    
-	    for(icell=0;icell<8;icell++) {
-	      curcell = &curoct->cell[icell];
-	      
-	      if( testCond(curcell, dt, dx, param, aexp, level) ) {
-		xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
-		yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-		zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
-		
-		N = getNstars2create(curcell, param, dt, aexp, level);
-		if (N * param->stars->mstars >= curcell->field.d *dx*dx*dx){
-		  printf("Problem mass in createStars %e %e \n", N * param->stars->mstars, curcell->field.d *dx*dx*dx);
-		  abort();
-		}
-		
-		for (ipart=0;ipart< N; ipart++){
-		  addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);
-		}
-	      }
-
-	      //if(param->stars->feedback_eff>0) feedback(curcell, param, aexp, t, dt);
-	      
-	      mmax = fmax(curcell->field.d, mmax);
-	      mmin = fmin(curcell->field.d, mmin);
-	    }
-	  }while(nextoct!=NULL);
+/*	if(cpu->rank == 0){
+		printf("\n");
+		printf("================================\n");
+		printf("   Starting Add Stars routine   \n");
+		printf("================================\n");	
 	}
+*/
+	do {	if(nextoct==NULL) 		continue;
+		curoct=nextoct;
+		nextoct=curoct->next;
+		if(curoct->cpu != cpu->rank) 	continue;
+
+	      	for(icell=0;icell<8;icell++) {
+			curcell = &curoct->cell[icell];
+
+			if( testCond(curcell, dt, dx, param, aexp, level) ) {
+				xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
+				yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+				zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
+
+				N = getNstars2create(curcell, param, dt, aexp, level);
+
+			//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+
+				for (ipart=0;ipart< N; ipart++){
+						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
+				}
+			}
+
+			Nsn += feedback(curcell, param, cpu, aexp,level,dt);
+			mmax = fmax(curcell->field.d, mmax);
+		}
+	  }while(nextoct!=NULL);
+	
 
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_DOUBLE,MPI_MAX,cpu->comm);
-	//MPI_Allreduce(MPI_IN_PLACE,&mmin,  1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
 #endif
 
 	param->stars->n += nstars ;
 	if(cpu->rank==0) {
-	  printf("Mmax_thresh_overthresh\t%e\t%e\t%e\n", mmax, param->stars->thresh, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om) );
-	  printf("%d stars added on level %d \n", nstars, level);
-	  printf("%d stars in total at a=%e\n",param->stars->n,aexp);
+		printf("Mmax_thresh\t%e\t%e\n", mmax, param->stars->thresh );
+		printf("%d stars added on level %d \n", nstars, level);
+		printf("%d stars in total\n",param->stars->n);
+		printf("\n");
 	}
 	
 	for (l = param->lcoarse; l<=param->lmax;l++){
@@ -489,6 +368,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #endif
 	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
-	
+
+	if(cpu->rank==0) {	printf("%d\tActive SN\n",Nsn);}
+	if(cpu->rank==0) {	printf("\n");}
 }
 #endif

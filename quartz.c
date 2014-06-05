@@ -17,7 +17,7 @@
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
-
+#include "stars.h"
 
 #ifdef WGPU
 #include "interface.h"
@@ -377,9 +377,18 @@ int main(int argc, char *argv[])
   oldtypes[0] = MPI_DOUBLE;
 #ifdef WCHEM
   blockcounts[0] = NGRP*4+5;
+
+#ifdef STARS
+blockcounts[0]++; // For SN feedback
+#endif
+
 #else
   blockcounts[0] = NGRP*4+1;
 #endif
+
+
+
+
   /* Now define structured type and commit it */
   MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_RTYPE);
   MPI_Type_commit(&MPI_RTYPE);
@@ -1545,6 +1554,13 @@ int main(int argc, char *argv[])
 
 #ifdef STARS
 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+	if(cpu.rank==0) printf("mstars set to %e\n",param.stars->mstars);
+
+	param.srcint *= param.stars->mstars * param.unit.unit_mass;
+	if(cpu.rank==0) printf("srcint set to %e\n",param.srcint);
+
+	param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J]
+	if(cpu.rank==0) printf("Esnfb set to %e\n",param.stars->Esnfb);
 #endif
 
   //================================================================================

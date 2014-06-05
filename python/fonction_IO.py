@@ -139,6 +139,21 @@ def isfloat(value):
 	except ValueError:
 		return False
 
+
+def getSnapMax(args):
+	
+	print args.folder[0]
+	files = sorted(os.listdir(args.folder[0]))
+
+	idx = len(files)-1
+	while 1 :
+		f = files[idx]
+		if f[0:4]== "part" or f[0:4]== "grid" or f[0:4]== "star":	
+			break
+		idx -= 1
+
+	args.nmax = int(f[-12:-7])
+
 def listPart(foldername):
 
 	files = os.listdir(foldername)
@@ -158,9 +173,7 @@ def listOriginePart(foldername) :
 	tmp=[]
 	for file in files :
 		if file[-3:]!= ".3D" and file[-7:]== ".p00000" :
-			tmp.append( file)
-			
-
+			tmp.append( file[:-7])	
 	return tmp
 
 
@@ -171,14 +184,14 @@ def getNproc(args):
 	files = os.listdir(args.folder[0])
 	tmp =0
 	for file in files:
-		if file[0:10]=="grid.00000" and file[-3:]!=".3D" and file[-5:]!=".cube":	
+		if file[0:10]=="part.00000" and file[-3:]!=".3D" and file[-5:]!=".cube":	
 			tmp +=1
-	return tmp
+	args.nproc = tmp
 
 
 def snaprange(args):
 	
-	if args.fro != -1 and args.to != -1 : 
+	if args.fro != -1 or args.to != -1 : 
 		if args.fro != -1 : 
 			fro = args.fro
 		else :
@@ -199,6 +212,19 @@ def num2snap(args):
 			f.append(args.files[i])
 		args.files = f
 
+def getA(filename):
+	filePart = open(filename, "rb")
+	filePart.read(4)
+	a = unpack('f',filePart.read(4))[0]
+	filePart.close()
+	return a
+
+def getZ(filename):
+	return 1.0/getA(filename) -1
+
+def getFolder(args):
+	for i in range(len(args.files)):
+		args.folder.append(args.files[0][:-10])
 
 def getargs() :
 	parser = argparse.ArgumentParser(description='EMMA analyse program')
@@ -212,28 +238,49 @@ def getargs() :
 	parser.add_argument('-part', action="store_true", default= True,         help = "is it a particle snap?")
 	parser.add_argument('-grid', action="store_true", default= False,        help = "is it a grid snap?")
 	parser.add_argument('-np',   action="store",      default=-1, type=int,  help = "number of procs used to generate the snap. only usefull to force it", dest = "nproc")
-	parser.add_argument('-l'    ,action="store",      default=6 , type=int,  help = "level param of oct2grid", dest = "level")
+	parser.add_argument('-l'    ,action="store",      default=0 , type=int,  help = "level param of oct2grid", dest = "level")
 	parser.add_argument('-field',action="append",     default=["field.d"] ,  help = "field param of oct2grid", dest = "field")
 
-	args = parser.parse_args()
-	if args.folder == []:
-		args.folder.append("data/")
-	
-	if args.nproc == -1:
-		args.nproc = getNproc(args)
+	parser.add_argument('-tag',  action="append",     default=[], type=int,  help = "halo number", dest = "tag")
 
+	parser.add_argument('-nmax', action="store",      default=-1, type=int,  help = "max snapshot number", dest = "nmax")
+	parser.add_argument('-nmin', action="store",      default=0, type=int,   help = "min snapshot number", dest = "nmin")
+
+
+
+	args = parser.parse_args()
+
+
+
+
+	if args.folder == []:
+		if args.files !=[] :
+			getFolder(args)
+		else :
+			args.folder.append("data/")
 
 	for fol in args.folder:
 		if (fol[-1]!="/"):
 			fol += "/"
 
-	snaprange(args)
-	num2snap(args)
-	
-	
-	param = Param(args.folder[0] + "param.00000.p00000")
 
-	print param.unit_l
+
+
+	if args.nmax == -1:
+		getSnapMax(args)
+
+	if args.nproc == -1:
+		nproc = getNproc(args)
+
+
+
+
+
+	snaprange(args)
+
+	if args.files == []:
+		num2snap(args)
+	
 
 	return args
 

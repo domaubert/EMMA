@@ -95,19 +95,12 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 
 		  if(curoct->cell[icell].field.d<=0) {
-			printf("Negative value for density -> abort\n");
+			printf("Negative value for density -> abort in multicheck\n");
 			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
 			abort();
 		  }	
 #endif
 
-/*		  if(curoct->cell[icell].fieldnew.d<=0) {
-			printf("Negative value for density new -> abort\n");
-printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E);
-			abort();
-		  }	
-
-*/
 #ifdef PIC
 	     
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
@@ -151,6 +144,7 @@ printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[i
 
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 
+
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
   
@@ -162,6 +156,7 @@ printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].fieldnew.d,curoct->cell[i
   /*   printf("=================================================\n"); */
   /*   //	abort(); */
   /* } */
+
 
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
 //printf("nPart %d\tnStar %d\n",npart[0], npart[1]);

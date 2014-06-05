@@ -61,6 +61,8 @@ typedef double REAL;
 #else
 #define MOLECULAR_MU (0.59)
 #endif
+#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
+
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -86,9 +88,11 @@ struct STARSPARAM{
   REAL feedback_eff;	// feedback efficiency
   REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
 	
-  REAL mstars;
-  int  n;
-  REAL thresh;
+  REAL mstars;		// Mass of a stellar particle
+  int  n;		// total number of stars
+  REAL thresh;		// density threshold to allow star formation
+
+  REAL Esnfb;		// total Energy of a SN  
 
 };
 #endif
@@ -326,6 +330,11 @@ struct Rtype{
   REAL fz[NGRP];
   REAL src;
 
+#ifdef STARS
+  REAL snfb;
+#endif
+
+
 #ifdef WCHEM
   REAL xion;
   REAL eint;
@@ -530,7 +539,7 @@ struct CELL
 #ifdef WGRAV
   struct Gtype gdata;
   REAL pnew; // new potential
-  REAL res; // residual
+  REAL res;  // residual
   REAL f[3]; // the gravitational force component
 #endif
 

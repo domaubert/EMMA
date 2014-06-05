@@ -660,7 +660,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 
-
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
@@ -799,6 +798,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     tcomp[2]=MPI_Wtime();
 #endif
+
+
+
+
     //=============== Radiation Update ======================
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -835,11 +838,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
+
     /* //===================================creating new stars=================================// 
 	need to be called before the dt computation because of the random speed component  */
 #ifdef STARS
     createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
 #endif
+
+
+
 
   // ================= V Computing the new refinement map
     

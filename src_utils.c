@@ -76,15 +76,31 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
 
 #ifdef STARS
-  //REAL t = a2t(param,aexp) ;
-  
-  /* REAL H0 	= param->cosmo->H0 *1000.0/1e6/PARSEC; */
-  /* REAL rho0 	= 3.0 * pow(H0,2.0) * param->cosmo->om /(8.0*PI*NEWTON_G) ; */
-  
-  /* REAL Mtot 	= rho0 * pow(param->cosmo->unit_l,3.0); */
-  /* REAL M 		= param->stars->mstars * Mtot;	 */
-  
-  REAL srcint = param->srcint;//; * M;
+/*
+<<<<<<< HEAD
+	struct PART *nexp;
+	struct PART *curp;
+
+	cell->rfield.src   =0.;
+	cell->rfieldnew.src=0.;
+	flag=0;
+
+	nexp=cell->phead;
+	if(nexp==NULL) return 0;
+ 	do{ 	curp=nexp;
+		nexp=curp->next;
+
+		if (curp->isStar){
+			if ( (param->cosmo->tphy - curp->age) < param->stars->tlife  ) {
+				cell->rfield.src +=  param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+				flag++;
+			}
+		}
+	}while(nexp!=NULL);
+=======
+*/
+
+  REAL srcint = param->srcint;
   
   struct PART *nexp;
   struct PART *curp;
@@ -106,22 +122,11 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 	if ( (tcur - curp->age) < param->stars->tlife  ) {
 	  cell->rfield.src +=  srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
 	  flag=1;
-	  //printf("using star #%d as a source with age %e t=%e on rank %d\n",curp->idx,curp->age,tcur,cpu->rank);
-
-	  // for test
-	  /* if(flag){ */
-	  /*   int iloc; */
-	  /*   for(iloc=0;iloc<6;iloc++){ */
-	  /*     printf(" %p %e/ ",curoct->nei[iloc],curoct->nei[iloc]->rfield.e[0]); */
-	  /*   } */
-	  /*   printf(" for star %d\n",curp->idx); */
-	  /* }  */
 	  
 	}
       }
     }
   }while(nexp!=NULL);
-
 	
   cell->rfieldnew.src=cell->rfield.src;
   //if(nss>0) printf("src=%e %e\n",cell->rfield.src,cell->rfieldnew.src);

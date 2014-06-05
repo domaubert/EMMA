@@ -214,7 +214,6 @@ int main(int argc, char *argv[])
 		imap=xc/dxmap;
 		jmap=yc/dxmap;
 		kmap=zc/dxmap;
-	      
 		for(kk=0;kk<pow(2,lmap-oct.level);kk++)
 		  {
 		    if((kmap+kk)>=(nmapz+k0)){
@@ -286,7 +285,6 @@ int main(int argc, char *argv[])
       printf("Error while writing file");
     }
 
-
     float *x;
     float *y;
     float *z;
@@ -309,6 +307,7 @@ int main(int argc, char *argv[])
     int dimsvar[]={nmap,nmap,nmap};
     int ndimsvar=3;
       
+
     DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
     DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
 
@@ -321,6 +320,7 @@ int main(int argc, char *argv[])
 
 // ================================================================
 #if 1
+
 
 void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct OCT *oct, struct UNITS *unit){
 
@@ -417,6 +417,10 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
   case 714:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.fz[1];
     break;
+  case 709:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.snfb;
+    break;
+
 
   case 721:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].rfield.e[2];
@@ -446,7 +450,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
     break;
 #endif
 #endif
-			      
+
   }  
 }
 
@@ -577,7 +581,7 @@ void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap,
     break;
 #endif
 #endif
-			      
+
   } 
 }
 
