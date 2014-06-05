@@ -1046,7 +1046,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
       param->fudgecool=1.0;
-      param->ncvgcool=0;
+      param->ncvgcool=1;
 #else
 	int i;
 				rstat=fscanf(buf,"%s",stream);

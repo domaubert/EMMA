@@ -229,10 +229,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
 
 
-	if (nH[idloc] <= 0) {
-		printf("densité negative");		
-		abort();	
-	}
+	/* if (nH[idloc] <= 0) { */
+	/* 	printf("densité negative");		 */
+	/* 	abort();	 */
+	/* } */
 
       eint[idloc]=R.eint/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
@@ -270,6 +270,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       currentcool_t=0.;
       nitcool=0.;
       REAL da;
+      //printf("fudge=%e ncv=%d currentcool_t=%e dt=%e\n",param->fudgecool,ncvgcool,currentcool_t,dt);
+
       while(currentcool_t<dt)
 	{
 
@@ -295,10 +297,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
 	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
 
-	   if (nH[idloc] <= 0) {
-	     printf("densité negative");		
-	     abort();	
-	   }
+	   /* if (nH[idloc] <= 0) { */
+	   /*   printf("densité negative");		 */
+	   /*   abort();	 */
+	   /* } */
 #else
 	  REAL hubblet=0.;
 #endif
@@ -315,10 +317,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
+	  //printf("eint[idloc]=%e nH[idloc]=%e X0[idloc=%e ai=%e Cool=%e tcool=%e, t2=%e\n",eint[idloc],nH[idloc],x0[idloc],ai_tmp1,Cool,fudgecool*tcool,dt-currentcool_t);
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	  
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
+	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update

@@ -62,6 +62,7 @@ DEFINES  += -DS_100000
 DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
 DEFINES  += -DSEMI_IMPLICIT 
+#DEFINES  += -DOLDCHEMRAD 
 #DEFINES  += -DACCEL_RAD_STAR
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
@@ -84,7 +85,7 @@ ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartzgpu
 CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o 
-CUDA_LIBS =  -I/workdir/observatoire/aubert/cudpp_src_2.0/include -L/workdir/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda5/lib64 -lcudart  -I/usr/local/cuda5/include -I/usr/local/openmpi-1.6.i13/include -L/usr/local/openmpi-1.6.i13/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
+CUDA_LIBS =  -I/workdir/observatoire/aubert/cudpp_src_2.0/include -L/workdir/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda-5.0/lib64 -lcudart  -I/usr/local/cuda-5.0/include -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
 else
 DEFINESGLOB= $(DEFINES) 
 EXECUTABLE = quartzcpu

@@ -691,7 +691,7 @@ struct OCT
 };
 
 
-struct OCT *SOCT;
+//struct OCT *SOCT;
 
 // ========================================
 struct OCTLIGHT_H

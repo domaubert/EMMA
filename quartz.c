@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
   struct PART *curp;
 
   struct PART *lastpart;
-  SOCT=NULL;
+  //SOCT=NULL;
   int curc;
   REAL dtnew=0.;
   int nbnd;
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
   GetParameters(argv[1],&param); // reading the parameters file
 
 
-omp_set_num_threads(param.ompthread);
+  //omp_set_num_threads(param.ompthread);
 
 #ifndef TESTCOSMO
   tmax=param.tmax;

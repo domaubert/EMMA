@@ -419,12 +419,11 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 }
 
 #else
-//__global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexp)
 
 __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, struct RUNPARAMS *param, REAL aexporg)
 {
   int i,icell,igrp;
-  int idloc;
+  //int idloc;
   int nitcool=0;
 
   REAL hnu0=13.6*1.6022e-19,
@@ -485,8 +484,8 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
   i=bx*blockDim.x+tx;
-
-  if(i<nread){ // we scan the octs
+  
+  if(i<nread){
     for(icell=0;icell<8;icell++){ // we scan the cells
 
      
@@ -506,12 +505,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
       //printf("R.xion=%e x0=%e\n",R.xion,x0[idloc]);
       x0[idloc]=R.xion;
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
-
-
-	if (nH[idloc] <= 0) {
-		printf("densité negative");		
-		abort();	
-	}
 
       eint[idloc]=R.eint/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
@@ -549,13 +542,14 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
       currentcool_t=0.;
       nitcool=0.;
       REAL da;
+      //printf("fudge=%e ncv=%d currentcool_t=%e dt=%e\n",fudgecool,ncvgcool,currentcool_t,dt);
+#if 1
       while(currentcool_t<dt)
 	{
 
-	  z=1./aexp-1.;
-
 	  // ==================== UV Background
 #ifdef UVBKG
+	  z=1./aexp-1.;
 	  if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
 	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 	  
@@ -569,22 +563,18 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 #endif
 	  // Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
+	  REAL hubblet=0.;
+	  /* REAL hubblet=0.*param->cosmo->H0*sqrt(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE */
 
-  	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  
-	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
-
-	   if (nH[idloc] <= 0) {
-	     printf("densité negative");		
-	     abort();	
-	   }
+  	  /*  srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);   */
+	  /*  nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;  */
 #else
 	  REAL hubblet=0.;
 #endif
 	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 
 	  //== Getting a timestep
-	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  dcuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 	  
 	  ai_tmp1=0.;
 
@@ -594,11 +584,12 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
+	  //printf("eint[idloc]=%e nH[idloc]=%e X0[idloc=%e ai=%e Cool=%e tcool=%e, t2=%e %e %e %e\n",eint[idloc],nH[idloc],x0[idloc],ai_tmp1,Cool,fudgecool*tcool,dt-currentcool_t,(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool)),fudgecool,param->fudgecool);
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	  
-	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
+	  alpha=dcucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
+	  alphab=dcucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
+	  beta=dcucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
 	  
@@ -628,8 +619,9 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if(test) 
 	    {
 	      fudgecool=fudgecool/10.; 
-	      //printf("loop 1 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);
+	      /* printf("loop 1 %e %e %e %e %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool,fudgecool,((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp]),(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet))); */
 	      continue;	
+	      //break;
 	    } 
 
 	  
@@ -665,16 +657,16 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
 	      fudgecool/=10.; 
-	      //printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]); 
-	      /* printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool); */
+	      /* printf("loop 2 x0=%e xt=%e e=%e\n",x0[idloc],xt,et[0]);  */
+	      /* printf("loop 3 %e %e %e %e %e\n",et[0],egyloc[idloc],nH[idloc],srcloc[0],dtcool);  */
 
 	      continue;	
 	    } 
 
 #ifdef SEMI_IMPLICIT
-	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  dcuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 #else
-	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  dcuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 #endif
 
 #ifdef COOLING
@@ -726,8 +718,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
 	      fudgecool=fudgecool/10.;
-	  //    printf("loop 4 %e %e\n",eintt,eint[idloc]);
-
+	      /* printf("loop 4 %e %e\n",eintt,eint[idloc]); */
 	      continue;
 	    }
   	  else{
@@ -765,6 +756,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  //printf("nitcool=%d %e %e %e\n",nitcool,aexp,xt,eintt);
 	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
 	}
+#endif
       // ====================== End of the cooling loop
 
       aexp=aexporg;

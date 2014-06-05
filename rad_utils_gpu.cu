@@ -53,8 +53,20 @@ void destroy_pinned_stencil_rad(struct RGRID **stencil, int stride){
 
 // ===================================================================
 void create_param_GPU(struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+  struct RUNPARAMS paramgpu;
+  memcpy(&paramgpu,param,sizeof(struct RUNPARAMS));
+
+  struct COSMOPARAM CG;
+  struct COSMOPARAM *dCG;
+  memcpy(&CG,param->cosmo,sizeof(struct COSMOPARAM));
+
+  cudaMalloc((void **)&(dCG),sizeof(struct COSMOPARAM)); // allocate cosmo struct on GPU
+  cudaMemcpy(dCG,&CG,sizeof(struct COSMOPARAM),cudaMemcpyHostToDevice);  
+  paramgpu.cosmo=dCG; // we save the pointer location
+
   cudaMalloc((void **)&(cpu->dparam),sizeof(struct RUNPARAMS));
-  cudaMemcpy(cpu->dparam,param,sizeof(struct RUNPARAMS),cudaMemcpyHostToDevice);  
+  cudaMemcpy(cpu->dparam,&paramgpu,sizeof(struct RUNPARAMS),cudaMemcpyHostToDevice);  
   cudaDeviceSynchronize(); 
 }
 
@@ -930,12 +942,15 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 
 	cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
 	
+	//	printf("Start Error  1=%s\n",cudaGetErrorString(cudaGetLastError()));
+
 #ifndef NOCOMP
 	/* // ------------ solving the hydro */
 	drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);   
 	drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
 	drad_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
 	
+	//printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
       // ------------ updating values within the stencil
 	
 	//t[4]=MPI_Wtime();
@@ -943,12 +958,14 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew); 
 	
       // ----------- perform physical cooling and ionisation 
+	//printf("Start Error  3=%s\n",cudaGetErrorString(cudaGetLastError()));
+	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 #ifdef WCHEM
 	dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp); 
 #endif
 #endif
-	//printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
 	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
+	//printf("Start Error  4=%s\n",cudaGetErrorString(cudaGetLastError()));
 
   	offset+=vnread[is];
 	}
