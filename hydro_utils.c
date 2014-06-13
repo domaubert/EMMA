@@ -2325,9 +2325,9 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 
 void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
-  static int ix[6]={-1,1,0,0,0,0};
-  static int iy[6]={0,0,-1,1,0,0};
-  static int iz[6]={0,0,0,0,-1,1};
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
   int icell;
   int i;
   int ioct2;
@@ -2646,10 +2646,6 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   for(icell=0;icell<8;icell++){
 
-    /* if(isnan(Wi[face[icell]].u)){ */
-    /*   printf(" %p %e %d %d |%p | %e %e %e\n",neicell,oct->x,oct->level,oct->cpu,neicell->child,neicell->field.d,neicell->field.u,neicell->field.p); */
-    /*   abort(); */
-    /* } */
     memcpy(&(stencil->oct[ioct].cell[icell].field),Wi+face[icell],sizeof(struct Wtype)); //
     // ---------------------------
 
@@ -2725,9 +2721,9 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
   char visit[27];
-  static int ix[6]={-1,1,0,0,0,0};
-  static int iy[6]={0,0,-1,1,0,0};
-  static int iz[6]={0,0,0,0,-1,1};
+  int ix[6]={-1,1,0,0,0,0};
+  int iy[6]={0,0,-1,1,0,0};
+  int iz[6]={0,0,0,0,-1,1};
   int ioct;
   
   memset(visit,0,27*sizeof(char));
@@ -2742,15 +2738,16 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 
       memset(visit,0,27*sizeof(char));
       // filling the values in the central oct
+
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
 	//memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
-
-
+	
+	
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
 #endif
-
+	
 #ifdef WGRAV 
  	memcpy(stencil[iread].oct[13].cell[icell].f,curoct->cell[icell].f,sizeof(REAL)*3); // 
 #endif 
@@ -2767,19 +2764,6 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 	  visit[ioct]=1;
 	  recursive_neighbor_gather_oct(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
-
-      /* if(curoct->level==7 && curoct->cpu==0){ */
-      /* 	if(curoct->x==(0.5-1./64)){ */
-      /* 	  int i3; */
-      /* 	  for(i3=1;i3<=7;i3+=2) { */
-      /* 	    struct Wtype field=stencil[iread].oct[13].cell[i3].field; */
-      /* 	    struct Wtype field2=stencil[iread].oct[14].cell[i3-1].field; */
-      /* 	    printf("rank=%d icell=%d d=%e %e %e ||| %e %e %e ||| s=%d\n",curoct->cpu,i3,field.d,field.u,field.p,field2.d,field2.u,field2.p,stencil[iread].oct[14].cell[i3-1].split); */
-      /* 	  } */
-      /* 	} */
-      /* } */
-
-
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
   }
@@ -3057,7 +3041,8 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       // ------------ gathering the stencil value values
       nextoct= gatherstencil(curoct,stencil,stride,cpu, &nread);
       
-      t[2]=MPI_Wtime();
+      if(nread>0){
+	t[2]=MPI_Wtime();
       // ------------ solving the hydro
 	    
       hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);   
@@ -3080,17 +3065,19 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       t[8]=MPI_Wtime();
 
       nreadtot+=nread;
-
-
       ts+=(t[8]-t[6]);
       tu+=(t[6]-t[4]);
       th+=(t[4]-t[2]);
       tg+=(t[2]-t[0]);
+      }
 
-    }while(nextoct!=NULL);
+      
+      
+    }while((nextoct!=NULL)&&(nread>0));
   }
   
-  if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  printf("CPU %d | tgat=%e tcal=%e tup=%e tscat=%e\n",cpu->rank,tg,th,tu,ts);
+  //if(cpu->rank==0) 
 
   return nreadtot;
 }

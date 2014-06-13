@@ -1,5 +1,5 @@
 ########################################## 
-ARCH = GPU
+ARCH = CPU
 C_LIBS =   -O2 -lstdc++ #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o
@@ -85,7 +85,7 @@ ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = quartzgpu
 CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o 
-CUDA_LIBS =  -I/workdir/observatoire/aubert/cudpp_src_2.0/include -L/workdir/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda-5.0/lib64 -lcudart  -I/usr/local/cuda-5.0/include -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
+CUDA_LIBS = -lcudart -lcudpp -I/ccs/home/daubert/Quartz/cudpp/include -L/ccs/home/daubert/Quartz/cudpp/lib -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib
 else
 DEFINESGLOB= $(DEFINES) 
 EXECUTABLE = quartzcpu
@@ -94,7 +94,7 @@ CUDA_LIBS =
 endif
 
 NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
-CC = mpicc 
+CC = cc 
 OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 .c.o:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $<
@@ -107,7 +107,7 @@ all:$(C_OBJS) $(CUDA_OBJS)
 	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
 
 oct2grid:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	
+	$(CC) -target=native -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	
 oct2cell:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2cell utils/oct2cell.c utils/silo/lib/libsilo.a	
 

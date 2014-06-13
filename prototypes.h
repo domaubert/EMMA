@@ -557,6 +557,51 @@ struct CELL
 };
 
 
+struct LCELL
+{
+  REAL marked; // REAL for consistency with physical quantities during communications
+  //int idx; //index of the cell within the oct
+  int child; 
+
+#ifdef PIC 
+   // the physical quantities */
+  float density; // total density */
+ #endif 
+  
+#ifdef WGRAV 
+  //struct Gtype gdata; 
+  float den;
+  float pot;
+  float res;  // residual */
+  float f[3]; // the gravitational force component */
+#endif 
+
+
+#ifdef WHYDRO2 
+  //struct Wtype field;
+  float d;
+  float u;
+  float v;
+  float w;
+  float p;
+#endif
+
+
+#ifdef WRAD 
+  //  struct Rtype rfield;
+  float e[NGRP];
+  float fx[NGRP];
+  float fy[NGRP];
+  float fz[NGRP];
+  float src;
+  float snfb;
+  float xion;
+  float temp; // is a direct function of eint, nh and xion but stored for conveniency
+
+#endif 
+};
+
+
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
 
@@ -690,15 +735,23 @@ struct OCT
   int cpu; 
   int level;// level of the cells in the oct
 
-
-  // ***************** CAN BE DELETED *****************//
-  // vector info
-  /* int vecpos; */
-  /* int border; // equal to zero if not a border */
-
-
 };
 
+struct LOCT
+{
+/*   // the cell properties */
+   struct LCELL cell[8]; // MUSTN'T BE MOVED !! */
+
+   // the oct position (lowest left corner) */
+   float x; 
+   float y; 
+   float z; 
+
+  // parallel data
+  int cpu; 
+  int level;// level of the cells in the oct
+
+};
 
 //struct OCT *SOCT;
 

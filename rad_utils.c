@@ -13,6 +13,7 @@
 #include "chem_utils.h"
 #endif
 
+#include <omp.h>
 
 
 //================================================================================
@@ -947,7 +948,7 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 //==================================================================================
 //==================================================================================
 
-void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil,char *visit){
+void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
 
 
   // =======================================
@@ -1285,7 +1286,7 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
   int iread=0;
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
-  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+  //char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
   static int ix[6]={-1,1,0,0,0,0};
   static int iy[6]={0,0,-1,1,0,0};
   static int iz[6]={0,0,0,0,-1,1};
@@ -1301,12 +1302,12 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 
       //memset(visit,0,27*sizeof(char));
       // filling the values in the central oct
+
+
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[6].cell[icell].rfield),&(curoct->cell[icell].rfield),sizeof(struct Rtype)); // for calculations
 	memcpy(&(stencil[iread].New.cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
 	stencil[iread].oct[6].cell[icell].split=(curoct->cell[icell].child!=NULL);
-
-
       }
 
       cell=curoct->parent;
@@ -1317,7 +1318,7 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	  //ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
 	  ioct=inei;
 	  //visit[ioct]=1;
-	  recursive_neighbor_gather_oct_rad(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
+	  recursive_neighbor_gather_oct_rad(ioct, inei, -1, -1, 1, cell, stencil+iread);
 	}
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -1571,7 +1572,9 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   
       // ------------ gathering the stencil value values
       nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread);
-      
+
+
+      if(nread>0){
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
       rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
@@ -1602,14 +1605,14 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       t[8]=MPI_Wtime();
 
       nreadtot+=nread;
-
-
       ts+=(t[8]-t[6]);
       tu+=(t[6]-t[4]);
       th+=(t[4]-t[2]);
       tg+=(t[2]-t[0]);
+      }
+      
 
-    }while(nextoct!=NULL);
+    }while((nextoct!=NULL)&&(nread>0));
   }
   
   if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);

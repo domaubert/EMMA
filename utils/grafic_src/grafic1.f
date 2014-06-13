@@ -180,7 +180,7 @@ c	print*,'    irand=0 to generate new noise and don''t save it'
 c
 c  Outer loop over components to be refined.
 c
-      do 10 icomp=0,12
+      do 10 icomp=0,6
 c  0: baryon density.
 c  1,2: inner,outer baryon x-velocity.
 c  3,4: inner,outer baryon y-velocity.

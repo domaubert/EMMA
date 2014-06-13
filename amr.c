@@ -444,13 +444,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif	      
 	      // creation of a new oct ==================
 		// gros test
- 		if(level==11){
-		  if(oct2key(curoct,11)==592427779){
-		    if(icell==6){
-		      printf("SPOTTED on rank %d with mark=%e\n",cpu->rank,curoct->cell[icell].marked);
-		    }
-		  }
-		}
 
 	      if(((curoct->cell[icell].child==NULL)&&(curoct->cell[icell].marked!=0))){
 

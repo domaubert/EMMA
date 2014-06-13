@@ -413,7 +413,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
 	if(cpu->rank==0) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
-
       }
     }
 #endif

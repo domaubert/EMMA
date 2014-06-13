@@ -7,6 +7,66 @@
 #include <string.h>
 #include "stars.h"
 
+
+void cell2lcell(struct CELL *cell, struct LCELL *lcell){
+
+  lcell->marked=cell->marked;
+  lcell->child=(cell->child!=NULL);
+#ifdef PIC
+  lcell->density=cell->density;
+#endif
+
+#ifdef WGRAV
+  lcell->den=cell->gdata.d;
+  lcell->pot=cell->gdata.p;
+  lcell->res=cell->res;
+ 
+  lcell->f[0]=cell->f[0];
+  lcell->f[1]=cell->f[1];
+  lcell->f[2]=cell->f[2];
+#endif
+
+#ifdef WHYDRO2
+  lcell->d=cell->field.d;
+  lcell->u=cell->field.u;
+  lcell->v=cell->field.v;
+  lcell->w=cell->field.w;
+  lcell->p=cell->field.p;
+#endif
+
+#ifdef WRAD
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+    lcell->e[igrp]=cell->rfield.e[igrp];
+    lcell->fx[igrp]=cell->rfield.fx[igrp];
+    lcell->fy[igrp]=cell->rfield.fy[igrp];
+    lcell->fz[igrp]=cell->rfield.fz[igrp];
+  }
+  lcell->src=cell->rfield.src;
+  lcell->snfb=cell->rfield.snfb;
+  lcell->xion=cell->rfield.xion;
+  lcell->temp=cell->rfield.temp;
+#endif
+
+}
+
+void oct2loct(struct OCT *oct, struct LOCT *loct){
+  int icell;
+
+  for(icell=0;icell<8;icell++){ 
+    cell2lcell(&oct->cell[icell],&loct->cell[icell]);
+    //    memcpy(&loct->cell[icell],&oct->cell[icell],sizeof(struct CELL)); 
+  } 
+
+  loct->x=oct->x; 
+  loct->y=oct->y; 
+  loct->z=oct->z; 
+
+  loct->cpu=oct->cpu;
+  loct->level=oct->level;
+}
+
+
 void dumpHeaderOnScreen(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 printf( "PIC\t");
@@ -1076,7 +1136,9 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   int level;
   struct OCT * nextoct;
   struct OCT oct;
+  struct LOCT loct;
   FILE *fp;
+  int noct=0;
 
   fp=fopen(filename,"wb");
 
@@ -1094,7 +1156,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
 
 
-  for(level=1;level<=levelmax;level++) // looping over octs
+  for(level=param->lcoarse;level<=levelmax;level++) // looping over octs
     {
       //printf("level=%d\n",level);
       // setting the first oct
@@ -1106,10 +1168,16 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 	  if(nextoct==NULL) continue; // in case the level is empty
 	  oct=(*nextoct);
 	  nextoct=oct.next;
-	  
-	  fwrite(&oct,sizeof(struct OCT),1,fp);
+
+	  oct2loct(&oct,&loct);
+	  fwrite(&loct,sizeof(struct LOCT),1,fp);
+	  noct++;
+/* 	  fwrite(&oct,sizeof(struct OCT),1,fp); */
 	}while(nextoct!=NULL);
     }
+
+  //printf("noct=%d\n",noct);
+  fwrite(&noct,sizeof(int),1,fp); 
   
   fclose(fp);
 }
@@ -2562,7 +2630,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   REAL tdump,adump;
   char filename[128]; 
-
+  int idir=cpu->rank%8;
 
 #ifndef TESTCOSMO
 #ifdef WRAD

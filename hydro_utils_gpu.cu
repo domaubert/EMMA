@@ -23,7 +23,10 @@ extern "C" void destroy_pinned_stencil(struct HGRID **stencil, int stride);
 
 // ===================================================================
 void create_hydstencil_GPU(struct CPUINFO *cpu, int stride){
+  printf("start %d\n",sizeof(struct HGRID)*stride/1024/1024);
   cudaMalloc((void **)&(cpu->hyd_stencil),sizeof(struct HGRID)*stride);
+  //cudaMalloc(&(cpu->hyd_stencil),11*1024*1024);
+  printf("done\n");
 }
 
 // ===================================================================
@@ -1827,9 +1830,9 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	  dim3 blockoct(nt);
 	
 	
+#ifndef NOCOMP     
 	  cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,vnread[is]*sizeof(struct HGRID),cudaMemcpyHostToDevice,stream[is]);  
 
-#ifndef NOCOMP     
 	  //printf("Sweep hydro\n");
 	  // ------------ solving the hydro
 	  dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew);
@@ -1839,13 +1842,13 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 	  // ------------ updating values within the stencil
 
 	  dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew);
-#endif
 	
 	  cudaMemcpyAsync(stencil+offset,cpu->hyd_stencil+offset,vnread[is]*sizeof(struct HGRID),cudaMemcpyDeviceToHost,stream[is]);  
+#endif
 	
 	  offset+=vnread[is];
+	  }
 	}
-      }
       }
 #endif
 

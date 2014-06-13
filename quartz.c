@@ -610,18 +610,26 @@ blockcounts[0]++; // For SN feedback
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
   countdevices(0);
-  initlocaldevice(0,1);
+  //  initlocaldevice(0,1);
   checkdevice(0);
+
+
+  // FOR THE MOMENT: GPU POISSON IS DISABLED, HENCE NO NEED FOR ALLOCATIONS on GPU
 #ifdef WGRAV
   create_pinned_gravstencil(&gstencil,gstride);
-#ifdef FASTGRAV
-  struct STENGRAV dev_stencil;
-  cpu.dev_stencil=&dev_stencil;
+/* #ifdef FASTGRAV */
+/*   struct STENGRAV dev_stencil; */
+/*   cpu.dev_stencil=&dev_stencil; */
+/* #endif */
+/*   create_gravstencil_GPU(&cpu,gstride); */
+/*   cpu.gresA=GPUallocREAL(gstride*8); */
+/*   cpu.gresB=GPUallocREAL(gstride*8); */
+/*   cpu.cuparam=GPUallocScanPlan(gstride*8); */
 #endif
-  create_gravstencil_GPU(&cpu,gstride);
-  cpu.gresA=GPUallocREAL(gstride*8);
-  cpu.gresB=GPUallocREAL(gstride*8);
-  cpu.cuparam=GPUallocScanPlan(gstride*8);
+
+#ifdef WMPI
+    MPI_Barrier(cpu.comm);
+    if(cpu.rank==0) printf("gpu alloc Poisson done\n");
 #endif
 
 #ifdef WHYDRO2 
@@ -632,6 +640,11 @@ blockcounts[0]++; // For SN feedback
   create_hydstencil_GPU(&cpu,hstride); 
 #endif 
 
+#ifdef WMPI
+    MPI_Barrier(cpu.comm);
+    if(cpu.rank==0) printf("gpu alloc hydro done\n");
+#endif
+
 #ifdef WRAD
   rstencil=(struct RGRID*)calloc(rstride,sizeof(struct RGRID));
   //printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
@@ -639,6 +652,11 @@ blockcounts[0]++; // For SN feedback
   // UNCOMMENT BELOW FOR FASTRT GPU
   create_pinned_stencil_rad(&rstencil,rstride);  
   create_radstencil_GPU(&cpu,rstride); 
+#endif
+
+#ifdef WMPI
+    MPI_Barrier(cpu.comm);
+    if(cpu.rank==0) printf("gpu alloc rad done\n");
 #endif
 
 
@@ -1657,8 +1675,20 @@ blockcounts[0]++; // For SN feedback
       if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
 #ifndef EDBERT
 
-	// dumping fields only
-	dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+	int fdump=8;
+	if(cpu.nproc>fdump){
+	  // dumping fields only
+	  int idump;
+	  for(idump=0;idump<fdump;idump++){
+	    if(cpu.rank==0) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	    if(cpu.rank%fdump==idump) dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+	    sleep(1);
+	    MPI_Barrier(cpu.comm);
+	  }
+	}
+	else{
+	  dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+	}
 #else
 	
 	#ifndef TESTCOSMO
@@ -1715,7 +1745,22 @@ blockcounts[0]++; // For SN feedback
 
 	// writting the last particle file
 	ndumps-=1;
-  	dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+  	//dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+
+	int fdump=8;
+	if(cpu.nproc>fdump){
+	  // dumping fields only
+	  int idump;
+	  for(idump=0;idump<fdump;idump++){
+	    if(cpu.rank==0) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+	    sleep(1);
+	    MPI_Barrier(cpu.comm);
+	  }
+	}
+	else{
+	  dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+	}
 
 
 

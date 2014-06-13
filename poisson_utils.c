@@ -1198,7 +1198,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	 } 
 
 #endif
-	
+	if(nread>0){
 	// ------------ solving the hydro
 	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
 
@@ -1237,7 +1237,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	tscat+=temps[9]-temps[7];
 	tgat+=temps[3]-temps[0];
 	nreadtot+=nread;
-      }while(nextoct!=NULL);
+	}
+
+      }while((nextoct!=NULL)&&(nread>0));
     }
 
     //printf("iter=%d nreadtot=%d\n",iter,nreadtot);
