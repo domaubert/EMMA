@@ -1989,7 +1989,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	      {
-		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+ 		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
 		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
 		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 

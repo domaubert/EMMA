@@ -170,6 +170,10 @@ struct RUNPARAMS{
   REAL egy_totlast; 
   FILE *fpegy; // the file with egy stats
 
+  REAL rzoom; // the inner zoom radius
+  REAL fzoom; // the scale factor for zoom radii (>1.)
+  REAL lmaxzoom; // the maximal zoom level
+
 };
 
 

@@ -1,32 +1,115 @@
-##########################################
-ARCH = GPU
-C_LIBS = -lm 
-C_FLAGS = -g
-C_OBJS= quartz.o hilbert.o vector.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o mgrid.o
-DEFINES  = -DNEWASSIGN -DTESTCOSMO -DALLCELL  -DNEWCIC -DNEWFORCE  -DNEWJACK -DNEWJACK2 -DMULTIGRID -DAXLFORCE -DWMPI #-DZELDO #-DPERFECT #-DWMPI #-DNEWPART #-DWMPI # -DEGYCSV O2 #-DNEWCIC #-O2 -DWMPI
+########################################## 
+ARCH = CPU
+C_LIBS =   -O2 -lstdc++ #-fopenmp # -lstdc++ -g
+C_FLAGS =
+C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o
+DEFINES  =  
+#=========================================== CODE PARAMETERS =====================
+
+#------------ MAIN OPTIONS --------------------
+DEFINES  +=  -DPIC
+DEFINES  +=  -DWHYDRO2
+DEFINES  +=  -DWGRAV 
+DEFINES  +=  -DWRAD
+DEFINES  +=  -DWRADHYD
+DEFINES  +=  -DTESTCOSMO
+#DEFINES  +=  -DWDBG
+DEFINES  +=  -DSTARS
+
+#------------ MPI OPTIONS ---------------------
+
+DEFINES  +=  -DWMPI
+#DEFINES  +=  -DFLOORDT
+
+#------------ OPEN MP OPTIONS ---------------------
+#DEFINES += -DWOMP
+
+#------------ CUDA OPTIONS ---------------------
+#DEFINES  +=  -DWCUDA_ERR
+#DEFINES  +=  -DNOCOMP
+
+#------------ ICs OPTIONS ---------------------
+
+DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DZELDOVICH
+#DEFINES  +=  -DEVRARD
+#DEFINES  +=  -DEDBERT
+#DEFINES  +=  -DTUBE
+#DEFINES  +=  -DPARTN
+#DEFINES  +=  -DPART2
+#DEFINES  +=  -DWRADTEST  
+#DEFINES  +=  -DTESTCLUMP # RADTEST MUST BE SET
+
+#------------ PIC OPTIONS ----------------------
+
+#DEFINES += -DPART_EGY
+#DEFINES += -DPERFECT
+
+#------------ GRAV OPTIONS ----------------------
+#DEFINES  +=  -DFASTGRAV 
+DEFINES  += -DONFLYRED
+
+# ----------- HYDRODYNAMICS OPTIONS ------------
+DEFINES  +=  -DRIEMANN_HLLC
+#DEFINES  +=  -DRIEMANN_EXACT
+DEFINES  +=  -DPRIMITIVE
+DEFINES  +=  -DDUAL_E
+
+
+# ----------- RADIATION OPTIONS ------------
+DEFINES  += -DWCHEM 
+DEFINES  += -DS_100000
+DEFINES  += -DCOOLING
+#DEFINES  += -DUVBKG
+DEFINES  += -DSEMI_IMPLICIT 
+#DEFINES  += -DOLDCHEMRAD 
+#DEFINES  += -DACCEL_RAD_STAR
+
+# ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
+#DEFINES  +=  -DTRANSZM
+#DEFINES  +=  -DTRANSZP
+#DEFINES  +=  -DTRANSYM
+#DEFINES  +=  -DTRANSYP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DREFXM # TRANS must be turned on too
+#DEFINES  +=  -DREFYM # TRANS must be turned on too
+#DEFINES  +=  -DREFZM # TRANS must be turned on too
+
+
+
+
+#=================================================================================
+
 ifeq ($(ARCH),GPU)
-DEFINESGLOB= $(DEFINES) -DWGPU
-EXECUTABLE = quartz
-CUDA_OBJS= interface.o vector_gpu.o # cic_gpu.o 
-CUDA_LIBS = -lcuda -L/opt/cuda/lib -lcudart -lcudpp64 -L/opt/cuda/sdk/2.2/common/lib -L/opt/cuda/sdk/2.2/lib -L/opt/cuda/sdk/2.2/common/lib/linux -lcudpp64 -lcudpp64D -I/opt/cuda/sdk/2.2/common/inc -I/opt/cuda/sdk/2.2/common/inc/cudpp -lm -L/opt/mpi/bullxmpi/1.0.2/lib -I/opt/mpi/bullxmpi/1.0.2/include -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -lpthread 
+DEFINESGLOB= $(DEFINES) -DGPUAXL
+EXECUTABLE = quartzgpu
+CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o 
+CUDA_LIBS = -lcudart -lcudpp -I/ccs/home/daubert/Quartz/cudpp/include -L/ccs/home/daubert/Quartz/cudpp/lib -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib
 else
 DEFINESGLOB= $(DEFINES) 
 EXECUTABLE = quartzcpu
 CUDA_OBJS= 
 CUDA_LIBS =
 endif
-NVCC= nvcc #--device-emulation
-CC = mpicc
+
+NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
+CC = cc 
 OBJECTS = $(C_OBJS) $(CUDA_OBJS)
 .c.o:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -c $<
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $<
 ifeq ($(ARCH),GPU)
 %.o:%.cu
-	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -c $*.cu	
+	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_35 -c $*.cu	
 endif
 
 all:$(C_OBJS) $(CUDA_OBJS)
-	$(CC)  $(CUDA_OBJS) $(C_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+
+oct2grid:
+	$(CC) -target=native -I$(MPICH_DIR)/include -L$(MPICH_DIR)/lib $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	
+oct2cell:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2cell utils/oct2cell.c utils/silo/lib/libsilo.a	
 
 clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~

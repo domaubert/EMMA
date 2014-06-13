@@ -53,6 +53,10 @@
 #include "rad_utils_gpu.h"
 #endif
 
+#ifdef ZOOM
+#include "zoom.h"
+#endif
+
 
 void gdb_debug()
 {
@@ -1635,6 +1639,22 @@ blockcounts[0]++; // For SN feedback
     int *ptot = (int*)calloc(2,sizeof(int));
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
+
+
+#ifdef ZOOM
+    // we trigger the zoom region
+    int izoom;
+
+    param.rzoom=0.15;
+    param.fzoom=1.05;
+    param.lmaxzoom=param.lcoarse+2;
+
+    for(izoom=levelcoarse;izoom<=param.lmaxzoom;izoom++){
+      zoom_level(levelcoarse,&cpu,&param,firstoct,lastoct);
+    }
+    tsim=tmax;
+    dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+#endif
 
 
 

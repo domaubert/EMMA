@@ -16,6 +16,23 @@
 
 #include "hydro_utils.h"
 
+#ifdef ZOOM
+int queryzoom(struct OCT *curoct, int icell, REAL dxcur, REAL Rin) {
+  
+  REAL xc,yc,zc;
+  int res=0.;
+
+  // we assume that the zoom region is at the center
+  xc=curoct->x+( icell&1)*dxcur+dxcur*0.5    -0.5;
+  yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5-0.5;
+  zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5  -0.5;
+
+  if((xc*xc+yc*yc+zc*zc)<(Rin*Rin)){
+    res=1;
+  }
+  return res;  
+}
+#endif
 
 #ifdef WHYDRO2
 
@@ -880,7 +897,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   REAL mcell;
   REAL mmax=0.;
   int stati[3]={0,0,0};
-
+  REAL rin;
+  
   if(cpu->rank==0) printf("==> start marking\n");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
   marker=0;
@@ -889,7 +907,11 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
     {
 	  //printf("level=%d ",level);
 	  dx=1./pow(2,level);
-	    
+	  
+#ifdef ZOOM
+ 	  rin=param->rzoom*pow(param->fzoom,param->lmaxzoom-level);
+	  printf("rin=%e\n",rin);
+#endif
 	  for(pass=0;pass<3;pass++)
 	    {
 	      marker++;
@@ -1131,6 +1153,19 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  //=========================================================
 			case 2: // marking cells satisfying user defined criterion marker=3/6
 			  if((curoct->level<=param->lmax)&&(ismooth==0)){ // we don't need to test the finest level
+
+
+#ifdef ZOOM
+			    // if within zoomed region the cell is marked in any case
+			    if(level<param->lmaxzoom){
+			      int flagz;
+			      flagz=queryzoom(curoct,icell,dx,rin);
+			      if((flagz)&&(curoct->cell[icell].marked==0)) {
+				curoct->cell[icell].marked=marker;
+				nmark++;stati[2]++;
+			      }
+			    }
+#endif
 
 			    REAL den;
 
