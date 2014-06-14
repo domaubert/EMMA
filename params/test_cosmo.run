@@ -8,7 +8,7 @@ max_nuber_of_steps 0
 time_step_max  0e-0
 tmax_or_amax 1
 ##==AMRGrid==================
-level_coarse 7
+level_coarse 5
 level_max 10
 amr_thresh 8
 n_smooth 2

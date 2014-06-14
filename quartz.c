@@ -922,6 +922,12 @@ blockcounts[0]++; // For SN feedback
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
 
+#ifdef ZOOM
+  // some parameters for ZOOM DEBUG
+  param.rzoom=0.15;
+  param.fzoom=1.45;
+  param.lmaxzoom=param.lcoarse+2;
+#endif
 
 
   //=================================  building the array of timesteps
@@ -1187,7 +1193,7 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef GRAFIC // ==================== read grafic file
 
-    lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param);
+    lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
 #endif
 
 
@@ -1203,83 +1209,14 @@ blockcounts[0]++; // For SN feedback
 
 
 #endif
-
   
     // we set all the "remaining" particles mass to -1
     for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
-
-	/// assigning PARTICLES TO COARSE GRID
+    /// assigning PARTICLES TO COARSE GRID
     if(cpu.rank==0) printf("start populating coarse grid with particles\n");
-    double tp1,tp2;
-    double *tp;
-  
-    tp=(double *)calloc(cpu.nproc,sizeof(double));
-
-    MPI_Barrier(cpu.comm);
-    tp1=MPI_Wtime();
-
-    for(i=0;i<npart;i++){
-      unsigned long long key;
-      unsigned long long hidx;
-
-      int found=0;
-      key=pos2key(part[i].x,part[i].y,part[i].z,levelcoarse);
-      hidx=hfun(key,cpu.maxhash);
-      nextoct=cpu.htable[hidx];
-      if(nextoct!=NULL){
-	do{ // resolving collisions
-	  curoct=nextoct;
-	  nextoct=curoct->nexthash;
-	  found=((oct2key(curoct,curoct->level)==key)&&(levelcoarse==curoct->level));
-	}while((nextoct!=NULL)&&(!found));
-      }
-
-      if(found){ // the reception oct has been found
-
-	REAL dxcur=1./pow(2.,levelcoarse);
-				
-	int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-	int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-	int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
-	int ip=xp+yp*2+zp*4;
       
-	if((ip>7)||(i<0)){
-	  printf("%e %e %e oct= %e %e %e xp=%d %d %d ip=%d\n",part[i].x,part[i].y,part[i].z,curoct->x,curoct->y,curoct->z,xp,yp,zp,ip);
-	  abort();
-	}
-      
-	//part[i].icell=ip;
-	part[i].level=levelcoarse;
-  
-	// the reception cell 
-	struct CELL *newcell=&(curoct->cell[ip]);
-	curp=findlastpart(newcell->phead);
-	if(curp!=NULL){
-	  curp->next=part+i;
-	  part[i].next=NULL;
-	  part[i].prev=curp;
-	}
-	else{
-	  newcell->phead=part+i;
-	  part[i].next=NULL;
-	  part[i].prev=NULL;
-	}
-      }
-    }
-
-    MPI_Barrier(cpu.comm);
-    tp2=MPI_Wtime();
-
-    tp[cpu.rank]=tp2-tp1;
-    MPI_Allgather(MPI_IN_PLACE,0,MPI_DOUBLE,tp,1,MPI_DOUBLE,cpu.comm);
-    if(cpu.rank==0){
-      int ic;
-      for(ic=0;ic<cpu.nproc;ic++) printf("%e ",tp[ic]);
-      printf("\n");
-    }
- 
-
+    part2grid(part,&cpu,npart);
 
   // ========================  computing the memory location of the first freepart and linking the free parts
 
@@ -1644,16 +1581,41 @@ blockcounts[0]++; // For SN feedback
 #ifdef ZOOM
     // we trigger the zoom region
     int izoom;
-
-    param.rzoom=0.15;
-    param.fzoom=1.05;
-    param.lmaxzoom=param.lcoarse+2;
-
+    
     for(izoom=levelcoarse;izoom<=param.lmaxzoom;izoom++){
       zoom_level(levelcoarse,&cpu,&param,firstoct,lastoct);
     }
+
+#if 1
+    // at this stage the amr zoomed grid exists
+    // let us fill it with some data
+    struct PART *lpartloc;
+    
+    for(izoom=levelcoarse+1;izoom<=(param.lmaxzoom);izoom++){
+      int npz;
+      REAL munit;
+      lpartloc=lastpart+1;
+      lastpart=read_grafic_part(lpartloc, &cpu, &munit, &ainit, &npz, &param,izoom);
+
+      part2grid(lpartloc,&cpu,npz);
+
+      // ========================  computing the memory location of the first freepart and linking the free parts
+
+      freepart=lastpart+1; // at this stage the memory is perfectly aligned
+      freepart->prev=NULL;
+      freepart->next=freepart+1;
+      for(curp=freepart+1;curp<(part+npartmax);curp++){
+	curp->prev=curp-1;
+	curp->next=NULL;
+	if(curp!=(freepart+npartmax-1)) curp->next=curp+1; // GNHEIN ?
+      }
+    }
+#endif
+
     tsim=tmax;
     dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
+    dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1);
+    abort();
 #endif
 
 

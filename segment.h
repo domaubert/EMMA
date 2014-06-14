@@ -6,3 +6,4 @@ unsigned long long hfun(unsigned long long key, unsigned long long maxval);
 void load_balance(int levelcoarse,struct CPUINFO *cpu);
 unsigned long long oct2key(struct OCT *curoct,int level);
 unsigned long long pos2key(REAL xc, REAL yc, REAL zc, int level);
+void part2grid(struct PART *part, struct CPUINFO *cpu,int npart);

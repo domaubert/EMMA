@@ -22,6 +22,51 @@
 
 #ifdef ZOOM
 
+int queryzoom(struct OCT *curoct, int icell, REAL dxcur, REAL Rin) {
+  
+  REAL xc,yc,zc;
+  int res=0.;
+
+  // we assume that the zoom region is at the center
+  xc=curoct->x+( icell&1)*dxcur+dxcur*0.5    -0.5;
+  yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5-0.5;
+  zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5  -0.5;
+
+  if((xc*xc+yc*yc+zc*zc)<(Rin*Rin)){
+    res=1;
+  }
+  return res;  
+}
+
+// ===========================================================
+// ===========================================================
+
+int pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param){
+
+  int res=param->lmaxzoom;
+
+  // we assume that the zoom region is at the center
+  xc-=0.5;
+  yc-=0.5;
+  zc-=0.5;
+
+  REAL rc=sqrt(xc*xc+yc*yc+zc*zc);
+  REAL rcur=param->rzoom;
+  
+  while((rc>rcur)&&(res>param->lcoarse)){
+    //      printf("res=%d lcoarse=%d\n",res,param->lcoarse);
+      rcur*=param->fzoom;
+      res=res-1;
+      //   abort();
+  }
+  
+  return res;
+
+}
+
+
+
+
 void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct){
  
 #ifdef TESTCOSMO
@@ -179,7 +224,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
       // cleaning the marks
       L_clean_marks(level,firstoct);
       // marking the cells of the current level
-      L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
+      L_mark_cells(level,param,firstoct,1,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
     }
   
   

@@ -1578,7 +1578,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 //==================================================================================
 #ifdef PIC
 #ifdef GRAFIC
-struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param)
+struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
   FILE *fx, *fy, *fz;
   int np1,np2,np3;
@@ -1586,12 +1586,17 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   int dummy;
   struct PART *lastpart;
   int ip;
-
+  char filename[256];
 
   if(cpu->rank==0){
-    fx=fopen("./ic_velcx","rb");
-    fy=fopen("./ic_velcy","rb");
-    fz=fopen("./ic_velcz","rb");
+
+    sprintf(filename,"./level_%03d/ic_velcx",level); 
+    fx=fopen(filename,"rb");
+    sprintf(filename,"./level_%03d/ic_velcy",level); 
+    fy=fopen(filename,"rb");
+    sprintf(filename,"./level_%03d/ic_velcz",level); 
+    fz=fopen(filename,"rb");
+    
 
     // reading the headers
     size_t outf;
@@ -1694,7 +1699,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   double x0,y0,z0;
 
   int i1,i2,i3;
-
+  int keep;
   double mass;
 
 #ifdef WHYDRO2
@@ -1703,10 +1708,13 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   mass=1./(np1*np2*np3);
 #endif
 
+  
+
   velx=(float*)malloc(sizeof(float)*np1*np2);
   vely=(float*)malloc(sizeof(float)*np1*np2);
   velz=(float*)malloc(sizeof(float)*np1*np2);
 
+  //REAL rmin=2.;
 
   ip=0;
   size_t outf;
@@ -1735,6 +1743,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     MPI_Bcast(velz,np1*np2,MPI_FLOAT,0,cpu->comm);
 #endif
     
+
     z0=(i3-0.5)*dx;
     for(i2=1;i2<=np2;i2++){
       y0=(i2-0.5)*dx;
@@ -1758,19 +1767,37 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// if it belongs to the current cpu, we proceed and assign the particle to the particle array
 	if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
+
+	  keep=1;
+#ifdef ZOOM
+	  // is the current particle at the coarse level ?
+	  int lzoom;
+	  lzoom=pos2levelzoom(x,y,z,param);
+	  REAL rloc;
+	  rloc=sqrt(((x-0.5)*(x-0.5)+(y-0.5)*(y-0.5)+(z-0.5)*(z-0.5)));
 	  
-	  part[ip].x=x;
-	  part[ip].y=y;
-	  part[ip].z=z;
-	  
-	  part[ip].vx=vx;
-	  part[ip].vy=vy;
-	  part[ip].vz=vz;
-	  
-	  part[ip].mass=mass;
-	  part[ip].idx=(i1-1)+(i2-1)*np1+(i3-1)*np1*np2;
-	  lastpart=part+ip;
-	  ip++;
+	  if(lzoom!=level){
+	    keep=0;
+	  }
+ #endif
+
+	  if(keep) {
+ 	    part[ip].x=x;
+	    part[ip].y=y;
+	    part[ip].z=z;
+	    
+ 	    //rmin=(rloc<rmin?rloc:rmin);
+
+	    part[ip].vx=vx;
+	    part[ip].vy=vy;
+	    part[ip].vz=vz;
+	    part[ip].level=level;
+	    
+	    part[ip].mass=mass;
+	    part[ip].idx=(i1-1)+(i2-1)*np1+(i3-1)*np1*np2;
+	    lastpart=part+ip;
+	    ip++; 
+	  }
 	}
       }
     }
@@ -1793,7 +1820,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   param->cosmo->ob=ob;
   //param->cosmo->Hubble=h0;
   *npart=ip;
-
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif
@@ -1936,6 +1962,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
 	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
 	if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
+
 	  part[ip].x=x;
 	  part[ip].y=y;
 	  part[ip].z=z;

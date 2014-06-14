@@ -7,6 +7,7 @@
 #include "hilbert.h"
 #include "oct.h"
 #include "cic.h"
+#include "particle.h"
 
 #ifdef WMPI
 #include <mpi.h>
@@ -278,8 +279,6 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
 
  //------------------------------------------------------------------------
 
- //------------------------------------------------------------------------
-
 
  //------------------------------------------------------------------------
 
@@ -290,6 +289,59 @@ unsigned long long hfun(unsigned long long key, unsigned long long maxval){
   return key&(maxval-1);
 }
 
+ //------------------------------------------------------------------------
+
+#ifdef PIC
+void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
+
+  int i;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  struct PART *curp;
+
+  for(i=0;i<npart;i++){
+    unsigned long long key;
+    unsigned long long hidx;
+    
+    int found=0;
+    key=pos2key(part[i].x,part[i].y,part[i].z,part[i].level);
+    hidx=hfun(key,cpu->maxhash);
+    nextoct=cpu->htable[hidx];
+    if(nextoct!=NULL){
+      do{ // resolving collisions
+	curoct=nextoct;
+	nextoct=curoct->nexthash;
+	found=((oct2key(curoct,curoct->level)==key)&&(part[i].level==curoct->level));
+      }while((nextoct!=NULL)&&(!found));
+    }
+    
+    if(found){ // the reception oct has been found
+      
+      REAL dxcur=pow(0.5,part[i].level);
+      
+      int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+      int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+      int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+      int ip=xp+yp*2+zp*4;
+      
+      
+      // the reception cell 
+      struct CELL *newcell=&(curoct->cell[ip]);
+      curp=findlastpart(newcell->phead);
+      if(curp!=NULL){
+	curp->next=part+i;
+	part[i].next=NULL;
+	part[i].prev=curp;
+      }
+      else{
+	newcell->phead=part+i;
+	part[i].next=NULL;
+	part[i].prev=NULL;
+      }
+    }
+  }
+}
+#endif
 
  //------------------------------------------------------------------------
 void load_balance(int levelcoarse,struct CPUINFO *cpu){

@@ -17,22 +17,9 @@
 #include "hydro_utils.h"
 
 #ifdef ZOOM
-int queryzoom(struct OCT *curoct, int icell, REAL dxcur, REAL Rin) {
-  
-  REAL xc,yc,zc;
-  int res=0.;
-
-  // we assume that the zoom region is at the center
-  xc=curoct->x+( icell&1)*dxcur+dxcur*0.5    -0.5;
-  yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5-0.5;
-  zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5  -0.5;
-
-  if((xc*xc+yc*yc+zc*zc)<(Rin*Rin)){
-    res=1;
-  }
-  return res;  
-}
+#include "zoom.h"
 #endif
+
 
 #ifdef WHYDRO2
 
@@ -909,7 +896,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	  dx=1./pow(2,level);
 	  
 #ifdef ZOOM
- 	  rin=param->rzoom*pow(param->fzoom,param->lmaxzoom-level);
+ 	  rin=param->rzoom*pow(param->fzoom,param->lmaxzoom-level-1);
 	  printf("rin=%e\n",rin);
 #endif
 	  for(pass=0;pass<3;pass++)
