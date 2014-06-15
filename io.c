@@ -1606,6 +1606,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&np2,1,4,fx);
     outf=fread(&np3,1,4,fx);
     outf=fread(&dx,1,4,fx);
+    printf("DX=%e\n",dx);
     outf=fread(&x1o,1,4,fx);
     outf=fread(&x2o,1,4,fx);
     outf=fread(&x3o,1,4,fx);
@@ -1651,6 +1652,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   MPI_Bcast(&dx,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&x1o,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&x2o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x3o,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&astart,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&om,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&ov,1,MPI_FLOAT,0,cpu->comm);
@@ -2334,7 +2336,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 
 #ifdef TESTCOSMO
 #ifdef GRAFIC
-int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param){
+ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param,int level){
   
   FILE *fx;
   FILE *fy;
@@ -2346,14 +2348,25 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   int ip;
   struct Wtype W;
   size_t outf;
+  char filename[256];
 
   // Note only the rank 0 reads the file.
  
   if(cpu->rank==0){
-    fdx=fopen("./ic_deltab","rb");
-    fx=fopen("./ic_velcx","rb");
-    fy=fopen("./ic_velcy","rb");
-    fz=fopen("./ic_velcz","rb");
+
+    sprintf(filename,"./level_%03d/ic_deltab",level); 
+    fdx=fopen(filename,"rb");
+    sprintf(filename,"./level_%03d/ic_velcx",level); 
+    fx=fopen(filename,"rb");
+    sprintf(filename,"./level_%03d/ic_velcy",level); 
+    fy=fopen(filename,"rb");
+    sprintf(filename,"./level_%03d/ic_velcz",level); 
+    fz=fopen(filename,"rb");
+
+    /* fdx=fopen("./ic_deltab","rb"); */
+    /* fx=fopen("./ic_velcx","rb"); */
+    /* fy=fopen("./ic_velcy","rb"); */
+    /* fz=fopen("./ic_velcz","rb"); */
   
     // reading the headers
 
@@ -2425,6 +2438,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
   MPI_Bcast(&dx,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&x1o,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&x2o,1,MPI_FLOAT,0,cpu->comm);
+  MPI_Bcast(&x3o,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&astart,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&om,1,MPI_FLOAT,0,cpu->comm);
   MPI_Bcast(&ov,1,MPI_FLOAT,0,cpu->comm);
@@ -2444,8 +2458,8 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 
 
 
-  if(np1!=(int)pow(2,cpu->levelcoarse)){
-    printf("ERROR !ABORT! Grafic file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,cpu->levelcoarse));
+  if(np1!=(int)pow(2,level)){
+    printf("ERROR !ABORT! Grafic hydro  file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,level));
     abort();
   }
 
@@ -2551,7 +2565,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
       for(i1=0;i1<np1;i1++){
 	x0=(i1*1.0)/(np1);
 	
-	key=pos2key(x0,y0,z0,cpu->levelcoarse);
+	key=pos2key(x0,y0,z0,level);
 
 	// first we compute the adress from the hashfunction
 	hidx=hfun(key,cpu->maxhash);
@@ -2563,7 +2577,7 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
 	  do{ // resolving collisions
 	    curoct=nextoct;
 	    nextoct=curoct->nexthash;
-	    found=((oct2key(curoct,cpu->levelcoarse)==key)&&(curoct->level==cpu->levelcoarse));
+	    found=((oct2key(curoct,level)==key)&&(curoct->level==level));
 	  }while((nextoct!=NULL)&&(!found));
 	}
 

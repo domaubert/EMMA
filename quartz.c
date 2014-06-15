@@ -1247,7 +1247,7 @@ blockcounts[0]++; // For SN feedback
   
 #ifdef GRAFIC
     int ncellhydro;
-    ncellhydro=read_grafic_hydro(&cpu,&ainit, &param);
+    ncellhydro=read_grafic_hydro(&cpu,&ainit, &param,param.lcoarse);
 
     if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
 #else
@@ -1589,9 +1589,12 @@ blockcounts[0]++; // For SN feedback
 #if 1
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
+
     struct PART *lpartloc;
     
     for(izoom=levelcoarse+1;izoom<=(param.lmaxzoom);izoom++){
+    // first PARTICLES
+
       int npz;
       REAL munit;
       lpartloc=lastpart+1;
@@ -1609,7 +1612,18 @@ blockcounts[0]++; // For SN feedback
 	curp->next=NULL;
 	if(curp!=(freepart+npartmax-1)) curp->next=curp+1; // GNHEIN ?
       }
+
+
+    // SECOND HYDRO FIELD
+      int ncellhydro;
+      ncellhydro=read_grafic_hydro(&cpu,&ainit, &param, izoom);
+
+      if(cpu.rank==0) printf("zoom level=%d %d hydro cell found in grafic file with aexp=%e\n",izoom, ncellhydro, ainit);
+
     }
+
+
+
 #endif
 
     tsim=tmax;
