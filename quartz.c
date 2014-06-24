@@ -236,6 +236,12 @@ int main(int argc, char *argv[])
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
 
+#ifdef ZOOM
+  // some parameters for ZOOM DEBUG
+  param.rzoom=0.055;
+  param.fzoom=1.45;
+  param.lmaxzoom=param.lcoarse+2;
+#endif
 
   //omp_set_num_threads(param.ompthread);
 
@@ -473,7 +479,11 @@ blockcounts[0]++; // For SN feedback
   threshold=param.amrthresh;
 
 #ifdef TESTCOSMO
+#ifndef ZOOM
   threshold*=pow(2.0,-3.0*param.lcoarse);
+#else
+  threshold*=pow(2.0,-3.0*param.lmaxzoom);
+#endif
   if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh, threshold);
   param.amrthresh= threshold;
 #endif
@@ -922,12 +932,6 @@ blockcounts[0]++; // For SN feedback
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
 
-#ifdef ZOOM
-  // some parameters for ZOOM DEBUG
-  param.rzoom=0.15;
-  param.fzoom=1.45;
-  param.lmaxzoom=param.lcoarse+2;
-#endif
 
 
   //=================================  building the array of timesteps
@@ -1194,6 +1198,7 @@ blockcounts[0]++; // For SN feedback
 #ifdef GRAFIC // ==================== read grafic file
 
     lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
+    printf("read part =%d diff p=%ld\n",npart,lastpart-part+1);
 #endif
 
 
@@ -1226,7 +1231,7 @@ blockcounts[0]++; // For SN feedback
     for(curp=freepart+1;curp<(part+npartmax);curp++){
       curp->prev=curp-1;
       curp->next=NULL;
-      if(curp!=(freepart+npartmax-1)) curp->next=curp+1;
+      if(curp!=(part+npartmax-1)) curp->next=curp+1;
     }
     
 #endif
@@ -1512,7 +1517,11 @@ blockcounts[0]++; // For SN feedback
   if(cpu.rank==0) dumpHeader(&param,&cpu);
 
 #ifdef STARS
-	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+#ifndef ZOOM
+ 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+#else
+	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmaxzoom);
+#endif
 	if(cpu.rank==0) printf("mstars set to %e\n",param.stars->mstars);
 
 	param.srcint *= param.stars->mstars * param.unit.unit_mass;
@@ -1586,32 +1595,43 @@ blockcounts[0]++; // For SN feedback
       zoom_level(levelcoarse,&cpu,&param,firstoct,lastoct);
     }
 
+    if(cpu.rank==0) printf("zoom amr ok\n");
+    mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
+      
 #if 1
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
 
     struct PART *lpartloc;
     
+
     for(izoom=levelcoarse+1;izoom<=(param.lmaxzoom);izoom++){
+      if(cpu.rank==0){
+	printf("------ ZOOM: filling data at l=%d\n",izoom);
+      }
     // first PARTICLES
 
       int npz;
       REAL munit;
       lpartloc=lastpart+1;
       lastpart=read_grafic_part(lpartloc, &cpu, &munit, &ainit, &npz, &param,izoom);
-
+      printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
+      
       part2grid(lpartloc,&cpu,npz);
-
+      mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
       // ========================  computing the memory location of the first freepart and linking the free parts
-
+      
       freepart=lastpart+1; // at this stage the memory is perfectly aligned
       freepart->prev=NULL;
       freepart->next=freepart+1;
       for(curp=freepart+1;curp<(part+npartmax);curp++){
 	curp->prev=curp-1;
 	curp->next=NULL;
-	if(curp!=(freepart+npartmax-1)) curp->next=curp+1; // GNHEIN ?
+	if(curp!=(part+npartmax-1)) curp->next=curp+1; // GNHEIN ?
       }
+
+      cpu.freepart=freepart;
+
 
 
     // SECOND HYDRO FIELD
@@ -1620,19 +1640,21 @@ blockcounts[0]++; // For SN feedback
 
       if(cpu.rank==0) printf("zoom level=%d %d hydro cell found in grafic file with aexp=%e\n",izoom, ncellhydro, ainit);
 
+      mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
+
     }
 
 
 
 #endif
 
-    tsim=tmax;
-    dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
-    dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1);
-    abort();
+    /* tsim=tmax; */
+    /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
+    /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
+    
 #endif
 
-
+#ifndef JUSTIC
 
     // Loop over time
     for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
@@ -1646,8 +1668,8 @@ blockcounts[0]++; // For SN feedback
 #else
 #ifndef WRAD
       if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
-#else
-      if(cpu.rank==0) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+#else 
+     if(cpu.rank==0) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
 
@@ -1758,7 +1780,7 @@ blockcounts[0]++; // For SN feedback
 	  dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 	}
 
-
+#endif
 
     // we are done let's free the ressources
 

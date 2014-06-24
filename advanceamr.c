@@ -851,19 +851,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
 
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+
+#ifndef ZOOM
       if((ndt[level-1]%2==1)||(level==param->lcoarse)){
-      
-/* #ifdef WHYDRO2 */
-/*       mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level); // propagate hydro for refinement */
-/* #endif */
-/* #ifdef WRAD */
-/*       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement */
-/* #endif */
-      
-      // cleaning the marks
-      L_clean_marks(level,firstoct);
-      // marking the cells of the current level
-      L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
+#else
+	if(level>=param->lmaxzoom){
+#endif
+	L_clean_marks(level,firstoct);
+	// marking the cells of the current level
+	L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
       }
     }
 

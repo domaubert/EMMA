@@ -933,10 +933,9 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
 	/*   abort(); */
 	/* } */
 
-	if(part->level==12){
-	  printf("RECEPTION level 12 particle found with key=%e with pos= %e %e %e\n",part->key,part->x,part->y,part->z);
-	  
-	}
+	/* if(part->level==12){ */
+	/*   printf("RECEPTION level 12 particle found with key=%e with pos= %e %e %e\n",part->key,part->x,part->y,part->z); */
+	/* } */
 
 	// first we compute the adress from the hashfunction
 	hidx=hfun((unsigned long long) part->key,cpu->maxhash);
@@ -999,9 +998,9 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
 	      struct OCT *newoct=newcell->child;
 	      REAL dxcur2=1./pow(2.,newoct->level);
 				
-	      int xp=(int)(2*(part->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
-	      int yp=(int)(2*(part->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
-	      int zp=(int)(2*(part->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+	      int xp=(int)(DFACT*(part->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+	      int yp=(int)(DFACT*(part->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+	      int zp=(int)(DFACT*(part->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 	      int ip=xp+yp*2+zp*4;
 	      
 	      newcell=&(newoct->cell[ip]);

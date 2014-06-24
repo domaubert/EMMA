@@ -1,4 +1,3 @@
-#ifdef STARS 
 
 #include <math.h>
 #include <stdio.h>
@@ -52,6 +51,7 @@ REAL a2t(struct RUNPARAMS *param, REAL az ){
 	return zage_Gyr*1e9;
 }
 
+#ifdef STARS
 REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
@@ -230,7 +230,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	//if (N) printf("N %d \t M in cell %e \t Mstars %e \t dt %e\t dtt %e\t E %e \t l %e  \n",N,M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->rfieldnew.eint, lambda);
 	//if (N) printf("rfield.eint %e \t rfieldnew.eint %e \n ", cell->rfield.eint, cell->rfieldnew.eint);
-	//printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
+	//if(M_in_cell>1e3) printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
 	return N;
 }
 
@@ -320,31 +320,31 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	}
 */
 	do {	if(nextoct==NULL) 		continue;
-		curoct=nextoct;
-		nextoct=curoct->next;
-		if(curoct->cpu != cpu->rank) 	continue;
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  if(curoct->cpu != cpu->rank) 	continue;
 
-	      	for(icell=0;icell<8;icell++) {
-			curcell = &curoct->cell[icell];
+	  for(icell=0;icell<8;icell++) {
+	    curcell = &curoct->cell[icell];
+	    
+	    if( testCond(curcell, dt, dx, param, aexp, level) ) {
+	      xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
+	      yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+	      zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
 
-			if( testCond(curcell, dt, dx, param, aexp, level) ) {
-				xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
-				yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-				zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
+	      N = getNstars2create(curcell, param, dt, aexp, level);
 
-				N = getNstars2create(curcell, param, dt, aexp, level);
+	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
-			//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
-
-				for (ipart=0;ipart< N; ipart++){
-						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
-				}
-			}
-
-			Nsn += feedback(curcell, param, cpu, aexp,level,dt);
-			mmax = fmax(curcell->field.d, mmax);
-		}
-	  }while(nextoct!=NULL);
+	      for (ipart=0;ipart< N; ipart++){
+		addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
+	      }
+	    }
+	    
+	    Nsn += feedback(curcell, param, cpu, aexp,level,dt);
+	    mmax = fmax(curcell->field.d, mmax);
+	  }
+	}while(nextoct!=NULL);
 	
 
 #ifdef WMPI

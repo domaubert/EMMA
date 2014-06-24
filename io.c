@@ -43,7 +43,9 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
     lcell->fz[igrp]=cell->rfield.fz[igrp];
   }
   lcell->src=cell->rfield.src;
+#ifdef STARS
   lcell->snfb=cell->rfield.snfb;
+#endif
   lcell->xion=cell->rfield.xion;
   lcell->temp=cell->rfield.temp;
 #endif
@@ -1278,7 +1280,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
 #ifdef STARS
 		  if(curp->isStar) {
-			  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
+		    val = curp->age;		fwrite(&val,1,sizeof(float),fp);
 		  }
 #endif
 		  ipart++;
@@ -1669,11 +1671,12 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     printf("============================================\n");
   }
 
+  if(level==param->lcoarse){
   if((np1*np2*np3)/(cpu->nproc)*1.>param->npartmax){
     printf("Error : Number of particles greater than npartmax Np(grafic, est. )=%d Npartmax=%d!\n",(np1*np2*np3)/(cpu->nproc),param->npartmax);
     abort();
   }
-
+  }
   //setting omegab
 
   ob=OMEGAB;
@@ -1701,6 +1704,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   double x0,y0,z0;
 
   int i1,i2,i3;
+  int offidx=0;
   int keep;
   double mass;
 
@@ -1710,7 +1714,11 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   mass=1./(np1*np2*np3);
 #endif
 
-  
+#ifdef ZOOM
+  if(level>param->lcoarse){
+    offidx=pow(2,3*(level-param->lcoarse)); // for ids of particles
+  }
+#endif
 
   velx=(float*)malloc(sizeof(float)*np1*np2);
   vely=(float*)malloc(sizeof(float)*np1*np2);
@@ -1772,7 +1780,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	  keep=1;
 #ifdef ZOOM
-	  // is the current particle at the coarse level ?
+	  // is the current particle at the correct level?
 	  int lzoom;
 	  lzoom=pos2levelzoom(x,y,z,param);
 	  REAL rloc;
@@ -1796,7 +1804,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	    part[ip].level=level;
 	    
 	    part[ip].mass=mass;
-	    part[ip].idx=(i1-1)+(i2-1)*np1+(i3-1)*np1*np2;
+	    part[ip].idx=(i1-1)+(i2-1)*np1+(i3-1)*np1*np2+offidx;
 	    lastpart=part+ip;
 	    ip++; 
 	  }

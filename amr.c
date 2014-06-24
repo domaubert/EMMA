@@ -897,7 +897,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	  
 #ifdef ZOOM
  	  rin=param->rzoom*pow(param->fzoom,param->lmaxzoom-level-1);
-	  printf("rin=%e\n",rin);
+	  //printf("rin=%e\n",rin);
 #endif
 	  for(pass=0;pass<3;pass++)
 	    {
@@ -1144,10 +1144,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef ZOOM
 			    // if within zoomed region the cell is marked in any case
+			    int flagzoom=0;
 			    if(level<param->lmaxzoom){
-			      int flagz;
-			      flagz=queryzoom(curoct,icell,dx,rin);
-			      if((flagz)&&(curoct->cell[icell].marked==0)) {
+			      flagzoom=queryzoom(curoct,icell,dx,rin);
+			      if((flagzoom)&&(curoct->cell[icell].marked==0)) {
 				curoct->cell[icell].marked=marker;
 				nmark++;stati[2]++;
 			      }
@@ -1212,19 +1212,22 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 #else
-			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
+
+			    // --------------- MAIN AMR COSMO
+
+			    int refarea=1;
+#ifdef ZOOM
+			    refarea=(curoct->level>=param->lmaxzoom);
+#endif
+
+			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
   			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-/* #ifdef WRADHYD */
-/* 			    else if((curoct->cell[icell].rfield.src>0)&&(curoct->cell[icell].marked==0)) { */
-/* 			      // sources are refined too */
-/*  			      curoct->cell[icell].marked=marker; */
-/* 			      nmark++;stati[2]++; */
-/* 			    } */
-/* #endif */
+
+			    // --------------- MAIN AMR COSMO
 #endif
 #endif
 #else

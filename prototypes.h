@@ -425,7 +425,15 @@ struct Utype1D{
 };
 
 
+
 //=======================================
+
+// in fact I think there is a bug in the particle assignement scheme
+// unitl now DFACT was set (incorrectly I think) to 2 but never encountered somthing massive
+// in principle should be 1.
+// lets try
+
+#define DFACT (1.) 
 
 struct PART
 {

@@ -8,11 +8,7 @@
 #include <string.h>
 #include <mpi.h>
 #include "atomic_data/Atomic.h"
-
-
-#ifdef STARS
 #include "stars.h"
-#endif
 
 // ============================================================================================
 int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur, struct OCT *curoct,  struct CPUINFO *cpu){

@@ -3076,7 +3076,7 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
     }while((nextoct!=NULL)&&(nread>0));
   }
   
-  printf("CPU %d | tgat=%e tcal=%e tup=%e tscat=%e\n",cpu->rank,tg,th,tu,ts);
+  //  printf("CPU %d | tgat=%e tcal=%e tup=%e tscat=%e\n",cpu->rank,tg,th,tu,ts);
   //if(cpu->rank==0) 
 
   return nreadtot;

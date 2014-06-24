@@ -327,6 +327,33 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
       
       // the reception cell 
       struct CELL *newcell=&(curoct->cell[ip]);
+      struct OCT *newoct;
+      REAL dxcur2;
+
+      // if refined we assign the particle to a refined cell
+      if(newcell->child!=NULL){
+	newoct=newcell->child;
+	dxcur2=1./pow(2.,newoct->level);
+
+	// new cell coordinates
+	xp=(int)(DFACT*(part[i].x-newoct->x)/dxcur2);
+
+	/* if(xp>1){ */
+	/*   printf("WEIRDA !!\n"); */
+	/*   printf("px=%e ox=%e dxcur2=%e xp=%d\n",part[i].x,newoct->x,dxcur2,xp); */
+	/*   abort(); */
+	/* } */
+	xp=(xp>1?1:xp);
+	xp=(xp<0?0:xp);
+	yp=(int)(DFACT*(part[i].y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+	zp=(int)(DFACT*(part[i].z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+	ip=xp+yp*2+zp*4;
+	
+	newcell=&(newoct->cell[ip]);
+
+      }
+      // ready to assign part to cell
+
       curp=findlastpart(newcell->phead);
       if(curp!=NULL){
 	curp->next=part+i;
