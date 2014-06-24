@@ -319,7 +319,7 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	  
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
+	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
@@ -403,8 +403,10 @@ void chemrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride,
 	  // HEATING
 
 
-#ifdef STARS
+#ifdef STARS	// For supernovae feedback
+
 		REAL SN 	 = R.snfb;
+
 	  	if (R.snfb) Cool = 0;
 
 //		if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt);

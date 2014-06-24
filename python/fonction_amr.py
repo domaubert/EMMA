@@ -71,7 +71,9 @@ def denoct2grid(data,args,silo):
 		f=" 707 "
 	if args.field[0]=="field.u" : 
 		f=" 102 "
-	if args.field[0]=="rfield.snfb" : 
+#	if args.field[0]=="rfield.snfb" : 
+#		f=" 706 "
+	if args.field[0]=="rfield.xion" : 
 		f=" 706 "
 	
 	if f=="0 ":

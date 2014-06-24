@@ -102,7 +102,7 @@ def getN(filename):
 def getNtot(filename, args):
 
 	Ntot=0
-	for proc in range(args.nproc):
+	for proc in range( getNp(filename)):
 		Ntot += getN(filename + ".p" + str(proc).zfill(5))
 
 	return Ntot
@@ -122,7 +122,8 @@ def readPart(filename,args):
 	print  Ntot, "Particles"
 
 	i = 0
-	for proc in range(args.nproc):	
+	nproc = getNp(filename)
+	for proc in range(nproc):	
 
 		file = open(filename + ".p"+ str(proc).zfill(5)	, "rb")	
 

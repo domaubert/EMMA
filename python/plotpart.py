@@ -11,10 +11,8 @@ from fonction_physique import *
 
 def spectre(N,t,parts) :
 
-	M=[]
-	for i in range (0,N):
-		M.append(m2mo(parts[i].mass, t, 10))
-		#M.append(parts[i].mass)
+
+	M = m2mo(parts.mass,1)
 
 	lab =  r'$Z = $' + str(a2z(t)).zfill(4) 
 #	plt.hist(M, 100,  log=True, label = lab )	
@@ -37,8 +35,8 @@ if __name__ == "__main__":
 
 	N,t, parts=readPart(file, args)		
 
-	plotpart(args,N,t,parts)
-#	spectre(N,t,parts)	
+#	plotpart(args,N,t,parts)
+	spectre(N,t,parts)	
 
 	plt.show()
 

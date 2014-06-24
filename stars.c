@@ -134,7 +134,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx ) {
 
 	star->next  = NULL;
-	star->idx   = idx;
+	star->idx   = -1;
 	star->level = level;
 	star->is    = is;
 
@@ -221,8 +221,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL M_in_cell 	= cell->field.d * pow(2.0,-3.0*level);
 
-	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
-
+	REAL lambda 	= gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
 
 	int N 		= gpoiss(lambda);
 	
@@ -295,17 +294,22 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	struct OCT  *curoct;
 	struct OCT  *nextoct=firstoct[level-1];
 	struct CELL *curcell;
+	struct PART *nexp;
+	struct PART *curp;
 
 	REAL xc, yc, zc;
 	REAL dx = pow(2.0,-level);
 	REAL mmax = 0;
 	REAL mmin = 1e9;
 
-	int l,icell, ipart;
+	int l,icell, ipart, icpu;
 	int nstars = 0;
 	int nsl = 0;
 	int N;
 	int Nsn=0;
+
+
+	int *nStarCpu = (int *)calloc(cpu->nproc, sizeof(int));
 
 
 	initThresh(param, aexp);
@@ -337,7 +341,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 			//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 				for (ipart=0;ipart< N; ipart++){
-						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
+						addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is, ++nstars );	
 				}
 			}
 
@@ -345,31 +349,62 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 			mmax = fmax(curcell->field.d, mmax);
 		}
 	  }while(nextoct!=NULL);
-	
+
+
+#ifdef WMPI
+	MPI_Allgather(&nstars, 1, MPI_INT, nStarCpu, 1, MPI_INT,cpu->comm);
+#endif
+
+	// set IDX
+	int nbefore = 0;	for(icpu=0; icpu<cpu->rank; icpu++) nbefore += nStarCpu[icpu];
+	int istar   = 0;
+
+	nextoct=firstoct[level-1];
+	do {	if(nextoct==NULL) 		continue;
+		curoct=nextoct;
+		nextoct=curoct->next;
+		if(curoct->cpu != cpu->rank) 	continue;
+	      	for(icell=0;icell<8;icell++) {
+			curcell = &curoct->cell[icell];
+			nexp=curoct->cell[icell].phead;
+			do{	if(nexp==NULL) continue;
+				curp=nexp;
+				nexp=curp->next;
+				if(curp->isStar && curp->idx==-1){
+					curp->idx = param->stars->n + nbefore +  istar;
+				//	printf("\t param->stars->n = %d\tnbefore = %d\tistar = %d\tIDX = %d\n",param->stars->n,nbefore,istar,curp->idx);
+					istar++;
+				}
+			}while(nexp!=NULL);
+		}
+	}while(nextoct!=NULL);
+
+
+
+
 
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_DOUBLE,MPI_MAX,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
+
+	for (l = param->lcoarse; l<=param->lmax;l++){
+	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
+	  MPI_Barrier(cpu->comm);
+	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
+	}
 #endif
 
 	param->stars->n += nstars ;
 	if(cpu->rank==0) {
+		printf("STARS.......................................\n");
 		printf("Mmax_thresh\t%e\t%e\n", mmax, param->stars->thresh );
-		printf("%d stars added on level %d \n", nstars, level);
-		printf("%d stars in total\n",param->stars->n);
-		printf("\n");
-	}
-	
-	for (l = param->lcoarse; l<=param->lmax;l++){
-#ifdef WMPI
-	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
-	  MPI_Barrier(cpu->comm);
-#endif
-	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
+		printf("\t%d\tstars added on level %d \n", nstars, level);
+		printf("\t%d\tstars in total\n",param->stars->n);
+		printf("\t%d\tActive SN\n",Nsn);
 	}
 
-	if(cpu->rank==0) {	printf("%d\tActive SN\n",Nsn);}
-	if(cpu->rank==0) {	printf("\n");}
+
+
 }
 #endif

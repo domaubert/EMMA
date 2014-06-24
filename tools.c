@@ -37,6 +37,10 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   struct PART *curp;
   REAL mtot;
   REAL Mtot=0;
+  REAL Xion =0;
+  REAL Ncell =0;
+  REAL e = 0;
+  int igrp;
   
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -101,14 +105,22 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		  }	
 #endif
 
-#ifdef PIC
-	     
+#ifdef PIC	
+	   
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
 		  if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		    printf("check: split cell with particles !\n");
 		    printf("curoct->cpu = %d curoct->level=%d\n",curoct->cpu,curoct->level);
 		    abort();
 		  }
+
+
+		if (curoct->cell[icell].child==NULL){
+			Xion += curoct->cell[icell].rfield.xion;
+			for (igrp=0;igrp<NGRP;igrp++) e += curoct->cell[icell].rfield.e[igrp];
+			Ncell += 1;
+		}
+
 
 		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 		  if(nexp==NULL)continue;
@@ -140,7 +152,16 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #ifdef STARS
       vnstar[level-1]=slev;
 #endif
-    }
+
+	if (level == levelcoarse && label == 2){
+		MPI_Allreduce(MPI_IN_PLACE,&Ncell,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+		MPI_Allreduce(MPI_IN_PLACE,&Xion, 1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+		MPI_Allreduce(MPI_IN_PLACE,&e,    1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+
+		if (cpu->rank==0) {printf("XION\t%e\tz\t%e\n",1.-Xion/Ncell, 1./param->cosmo->aexp -1.);}
+		if (cpu->rank==0) {printf("EDEN\t%e\tz\t%e\n",      e/Ncell, 1./param->cosmo->aexp -1.);}
+	}
+   }
 
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 

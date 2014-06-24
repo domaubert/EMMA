@@ -13,16 +13,17 @@ from plotpart import *
 
 
 
-def plothisto(args,field):
+def plothisto(args):
 	
-	filename = args.files[0][:-7]
+	filename = args.files[0]
 	filename = filename[:-10] +  "grid" +  filename[-6:] 
-	denoct2grid(filename, args, field,0)
 
-	a=array("cube")
-#	data =  np.log10(a.getData())
-	data =  a.getData()
-	n, bins, patches = plt.hist(data, 100, normed=0, histtype='stepfilled', log=True)
+	args.field = ["field.d"] 
+	denoct2grid(filename, args,0)
+
+	data = array(args.files[0] + ".cube").getData()
+
+	n, bins, patches = plt.hist(np.log10(data), 100, normed=0, histtype='stepfilled', log=True)
 	plt.show()
 
 
@@ -68,9 +69,10 @@ def plotdiffslice(args):
 def plotslice(args):
 
 #	args.field = ["rfield.src"]
-	args.field = ["rfield.snfb"]
+#	args.field = ["rfield.snfb"]
 #	args.field = ["rfield.temp"]
-#	args.field = ["field.d"]
+	args.field = ["field.d"]
+	args.field = ["rfield.xion"]
 
 	filename = args.files[0][:-7]
 	filename = args.files[0]
@@ -79,7 +81,9 @@ def plotslice(args):
 	print filename
 
 	denoct2grid(filename, args,0)
-	data = np.log10(np.sum( cube(filename + ".cube").getData()  ,axis=0))
+	data = cube(filename + ".cube").getData()
+	print np.mean(data)
+	data = np.log10(np.mean( data  ,axis=0))
 
 
 	plt.grid(True)
@@ -95,6 +99,56 @@ def plotslice(args):
 
 	plt.show()
 
+def plotBande(args):
+
+ 
+#	args.field = ["rfield.temp"]
+	args.field = ["field.d"]
+	args.field = ["rfield.xion"]
+
+	filename = args.files[0]
+	filename = filename[:-10] +  "grid" +  filename[-6:] 
+
+	print filename
+
+#	denoct2grid(filename, args,0)
+	data0 = np.log10(cube(filename + ".cube").getData())
+
+	N = pow(2,args.level)
+	Nst = 20
+	data = np.zeros((N,N*Nst))
+	for z in range(Nst):
+		for y in range(N):
+			for x in range (N):	
+				data[y, x+N*z] = data0[z,y,x]
+
+
+
+	plt.imshow( data, interpolation='nearest')
+	plt.savefig("test.jpg", dpi =300)
+#	plt.show()
+
+
+def plotAllSlices(args):
+
+	args.field = ["field.d"]
+#	args.field = ["rfield.xion"]
+
+	filename = args.files[0]
+	filename = filename[:-10] +  "grid" +  filename[-6:] 
+
+	print filename
+
+	denoct2grid(filename, args,0)
+	data = np.log10(cube(filename + ".cube").getData())
+	
+
+
+	N = pow(2,args.level)
+	for i in range(N):
+		print "Image %d/%d"%(i,N)
+		plt.imshow( data[:,:,i], interpolation='nearest')
+		plt.savefig("img/test"+ str(i).zfill(5))		
 
 def plotv(args):
 
@@ -220,9 +274,12 @@ if __name__ == "__main__":
 	print "redshift" , getZ(filename + ".p00000"  )
 
 
-#	plothisto(args, field)
+#	plothisto(args)
 	plotslice(args)
 
+#	plotBande(args)
+#	plotAllSlices(args)	
+	
 #	plotdiffslice(args)
 #	plotv(args)
 #	plotdiag(args)

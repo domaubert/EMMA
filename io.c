@@ -1204,10 +1204,11 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
 		  val=curp->fz;			fwrite(&val,1,sizeof(float),fp);
 #endif
-		  val=(REAL)(curp->idx);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->mass);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
+		  vali=curp->idx;		fwrite(&vali,1,sizeof(int  ),fp);
+
+		  val=curp->mass;		fwrite(&val,1,sizeof(float),fp);
+		  val=curp->epot;		fwrite(&val,1,sizeof(float),fp);
+		  val=curp->ekin;		fwrite(&val,1,sizeof(float),fp);
 #ifdef STARS
 		  if(curp->isStar) {
 			  val = curp->age;		fwrite(&val,1,sizeof(float),fp);
@@ -2596,7 +2597,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("Dumping .......");
 	    printf("%s\n",filename);
 	  }
-	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
+	//  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
 	  // backups for restart
 

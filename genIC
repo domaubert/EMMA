@@ -51,7 +51,7 @@ def inputplanck(size,folder):
 	f.write("1\n")
 	f.write("-0.8344\n")
 	f.write("1e-3 1e3\n")
-	f.write("-" +str(size)+ ".\n")
+	f.write("-" +str(size)+ "\n")
 	f.write("1\n")
 	f.write("0\n")
 	f.write("\n")
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Grafic')
 
 	parser.add_argument('N', 	default=-1, type=int,  help = "Resolution of IC ")
-	parser.add_argument('size',     default=-1, type=int,  help = "Physical size of IC")
+	parser.add_argument('size',     default=-1, type=float,  help = "Physical size of IC")
 
 	args = parser.parse_args()
 
