@@ -63,6 +63,7 @@ typedef double REAL;
 #endif
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
 
+
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -262,6 +263,7 @@ struct CPUINFO{
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
   int *noct; // the number of octs per levels
+  int *locNoct; // the local number of octs per levels
   int *npart; // the number of particles per levels
 #ifdef STARS
   int *nstar;// the number of stars per levels

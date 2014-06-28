@@ -294,7 +294,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 //========================================================================================================================
 //========================================================================================================================
 
-struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit, REAL aexp)
+struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT*** octList, struct OCT **firstoct, struct OCT ** lastoct, struct OCT * freeoct, struct CPUINFO *cpu, struct OCT *limit, REAL aexp)
 {
   int nref,ndes;
   struct OCT *newoct;
@@ -520,7 +520,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifndef TRANSZP
 #ifndef TRANSZM
 			// here we refine too much
-			printf("ERROR ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
+			printf("ERROR ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 			abort();
 #endif
 #endif
@@ -736,6 +736,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
     printf("octs destroyed = %d freeoctorg=%ld freeoct=%ld\n",ndes,dorg,freeoct-firstoct[0]);
   }
 
+
+  setOctList(octList[level], firstoct[level-1], cpu, param, level) ;
   return freeoct;
 
 }

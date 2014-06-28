@@ -2734,10 +2734,13 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 
   nextoct=octstart;
   if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;
 
+  do{
+ //   for(iread=0 ;iread<stride; iread++){ 
+
+      if (nextoct==NULL) continue;
+      curoct  = nextoct;
+      nextoct = curoct->next;
       if(curoct->cpu!=cpu->rank) continue;
 
       memset(visit,0,27*sizeof(char));
@@ -2778,6 +2781,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       /* 	  } */
       /* 	} */
       /* } */
+
 
 
       iread++;
@@ -2874,9 +2878,9 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
   if(nextoct!=NULL){
     do{ //sweeping levels
       curoct=nextoct;
-      nextoct=curoct->next;
-      
+      nextoct=curoct->next;      
       if(curoct->cpu!=cpu->rank) continue;
+
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){

@@ -323,7 +323,9 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("================================\n");	
 	}
 */
-	do {	if(nextoct==NULL) 		continue;
+
+	if(nextoct==NULL)
+	do {	 		
 		curoct=nextoct;
 		nextoct=curoct->next;
 		if(curoct->cpu != cpu->rank) 	continue;
@@ -360,10 +362,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int istar   = 0;
 
 	nextoct=firstoct[level-1];
-	do {	if(nextoct==NULL) 		continue;
+	if(nextoct!=NULL)
+	do {	
 		curoct=nextoct;
 		nextoct=curoct->next;
 		if(curoct->cpu != cpu->rank) 	continue;
+
 	      	for(icell=0;icell<8;icell++) {
 			curcell = &curoct->cell[icell];
 			nexp=curoct->cell[icell].phead;

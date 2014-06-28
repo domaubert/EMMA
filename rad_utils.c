@@ -7,6 +7,8 @@
 #include "oct.h"
 #include <string.h>
 
+
+ #include <omp.h>
 #include <mpi.h>
 
 #ifdef WCHEM
@@ -967,12 +969,12 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   REAL dxcur;
   int igrp;
 
-  struct Rtype Ri[8];
+
   char child[8];
 
   struct OCT *oct;
   struct OCT *neioct;
-  struct CELL *neicell;
+  struct CELL*neicell;
 
   ineiloc=inei;
   
@@ -1222,27 +1224,30 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   }
 
 
+  struct Rtype Ri[8];
+  struct Rtype *Rii[8];
+
   if(neicell->child!=NULL){
     // optimal case
     for(icell=0;icell<8;icell++){
-      memcpy(Ri+icell,&(neicell->child->cell[icell].rfield),sizeof(struct Rtype));
-      child[icell]=(neicell->child->cell[icell].child!=NULL);
+	Rii  [icell] = &neicell->child->cell[icell].rfield;
+        child[icell] = (neicell->child->cell[icell].child!=NULL);
     }
-
   }
   else{
-     /* coarse2fine_radlin(neicell,Ri);  */
-    int il;
-    for(il=0;il<8;il++) memcpy(&Ri[il],&neicell->rfield,sizeof(struct Rtype));
-
-    for(icell=0;icell<8;icell++){
-      child[icell]=0;
+    // coarse2fine_radlin(neicell,Ri);
+    
+    for(icell=0;icell<8;icell++) {
+	Rii  [icell] = &neicell->rfield;
+	child[icell] = 0;
     }
   }
 
 
   for(icell=0;icell<8;icell++){
-    memcpy(&(stencil->oct[ioct].cell[icell].rfield),Ri+face[icell],sizeof(struct Rtype)); //
+
+    memcpy(&(stencil->oct[ioct].cell[icell].rfield),Rii[face[icell]],sizeof(struct Rtype)); //
+
 #ifdef TRANSXM
 #ifdef REFXM
     if(tflag[0]){
@@ -1275,43 +1280,43 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 // ===================================================================================================
 // ===================================================================================================
 
-struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
+
+
+struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread,struct RUNPARAMS *param, struct OCT **octList)
 {
-  struct OCT* nextoct;
-  struct OCT* curoct;
-  struct CELL *cell;
+
 
   int inei;
-  int iread=0;
   int icell;
-  //int ioct[7]={12,14,10,16,4,22,13};
-  char visit[27]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
-  static int ix[6]={-1,1,0,0,0,0};
-  static int iy[6]={0,0,-1,1,0,0};
-  static int iz[6]={0,0,0,0,-1,1};
   int ioct;
+  int iread=0;
 
-  nextoct=octstart;
-  if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;
+  int i =0;
 
-      if(curoct->cpu!=cpu->rank) continue;
+  //int ioct[7]={12,14,10,16,4,22,13};
+  static char visit[27] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  const static int ix[6]={-1,1,0,0,0,0};
+  const static int iy[6]={0,0,-1,1,0,0};
+  const static int iz[6]={0,0,0,0,-1,1};
 
-      //memset(visit,0,27*sizeof(char));
+  struct OCT  *curoct = octstart;
+  struct CELL *cell;
+
+  if(curoct!=NULL) 
+    do{
+      curoct  = octList[i++];
       // filling the values in the central oct
+
       for(icell=0;icell<8;icell++){
-	memcpy(&(stencil[iread].oct[6].cell[icell].rfield),&(curoct->cell[icell].rfield),sizeof(struct Rtype)); // for calculations
-	memcpy(&(stencil[iread].New.cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
+	memcpy(&(stencil[iread].oct[6].cell[icell].rfield   ),&(curoct->cell[icell].rfield   ),sizeof(struct Rtype)); // for calculations
+	memcpy(&(stencil[iread].New   .cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
 	stencil[iread].oct[6].cell[icell].split=(curoct->cell[icell].child!=NULL);
-
-
       }
 
       cell=curoct->parent;
       
-      //start recursive fill
+      //start recursive fill	
+
       for(inei=0;inei<6;inei++)
 	{
 	  //ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
@@ -1319,11 +1324,15 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	  //visit[ioct]=1;
 	  recursive_neighbor_gather_oct_rad(ioct, inei, -1, -1, 1, cell, stencil+iread,visit);
 	}
+
       iread++;
-    }while((nextoct!=NULL)&&(iread<stride));
-  }
+      
+
+    }while((curoct!=NULL)&&(iread<stride));
+
+
   (*nread)=iread;
-  return nextoct;
+  return curoct;
 }
 
 
@@ -1431,7 +1440,6 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 
   struct Rtype R,deltaR;
   REAL dtsurdx=dtnew/dxcur;
-
 
   int one;
   REAL F[NVAR_R*NGRP];
@@ -1548,11 +1556,13 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 
 // ====================================================================================================================
 
-int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param){
+
+
+int advancerad(struct OCT **firstoct, struct OCT **octList, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param){
 
   struct OCT *nextoct;
   struct OCT *curoct;
-  int nreadtot,nread;
+  int nreadtot=0,nread;
   double t[10];
   double tg=0.,th=0.,tu=0.,ts=0.,tfu=0.,ttot=0.;
   REAL cloc; // the speed of light in code units
@@ -1560,17 +1570,17 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
   if(cpu->rank==0) printf("cloc=%e aexp=%e\n",cloc,aexp);
   // --------------- setting the first oct of the level
+
+
   nextoct=firstoct[level-1];
-  nreadtot=0;
-  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    do {
+  while(nextoct!=NULL){
       curoct=nextoct;
       nextoct=curoct->next; 
 
       t[0]=MPI_Wtime();
   
       // ------------ gathering the stencil value values
-      nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread);
+      nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread, param, octList);
       
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
@@ -1609,8 +1619,8 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       th+=(t[4]-t[2]);
       tg+=(t[2]-t[0]);
 
-    }while(nextoct!=NULL);
-  }
+
+    }
   
   if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
 
@@ -1623,7 +1633,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 // =================================================================================================
 
 
-void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp){
+void RadSolver(int level,struct RUNPARAMS *param, struct OCT *** octList, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp){
   
   int nread,nreadtot;;
   struct OCT *curoct;
@@ -1646,7 +1656,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
+  nreadtot=advancerad(firstoct,octList[level-1],level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #else
   //nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
   nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);

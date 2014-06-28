@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
   struct OCT *grid;
   struct OCT **firstoct;
   struct OCT **lastoct;
+  struct OCT ***octList;	
 
   int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
@@ -492,7 +493,14 @@ blockcounts[0]++; // For SN feedback
   //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
 
   int memsize=0.;
-  grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
+  grid       = (struct OCT*  )calloc(ngridmax,sizeof(struct OCT  )); memsize+=ngridmax*sizeof(struct OCT );// the oct grid
+
+  octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
+  int iLev;
+  for(iLev = 0; iLev<= levelmax; iLev++)
+	octList[iLev] = (struct OCT**)calloc(ngridmax,     sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+
+
 
   int ncellscoarse = pow(2,3*param.lcoarse)/8; // number of cells before refinement 
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
@@ -519,7 +527,6 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef STARS
   nopn *= 2;					// you can create as many stars as initial DM particles
-
 #endif
 
   if (npartmax < nopn && cpu.rank==0 ){
@@ -544,6 +551,7 @@ blockcounts[0]++; // For SN feedback
   lastoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
   cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));	memsize+=cpu.maxhash*sizeof(struct OCT *);	// the htable keys->oct address
   cpu.noct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of octs per level
+  cpu.locNoct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the local number of octs per level
   cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles* per level	*(DM+stars ifdef STARS)
 #ifdef STARS
   cpu.nstar=	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of stars per level
@@ -584,9 +592,9 @@ blockcounts[0]++; // For SN feedback
   struct GGRID *grav_stencil;
   grav_stencil=(struct GGRID*)calloc(gstride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
-  gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
+  gstencil.res  =(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.pnew =(REAL *)calloc(gstride*8,sizeof(REAL));
+  gstencil.resLR=(REAL *)calloc(gstride  ,sizeof(REAL));
   
 
 #else
@@ -805,7 +813,13 @@ blockcounts[0]++; // For SN feedback
 	  }
  	}
       }while(nextoct!=NULL);
+ 
+
     if(cpu.rank==0) printf("level=%d noct=%d\n",level,noct2);
+  }
+
+  for(level=1;level<=levelcoarse;level++){ 
+    setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
   }
 
   if(cpu.rank==0) printf("Initial Mesh done \n");
@@ -1563,6 +1577,7 @@ blockcounts[0]++; // For SN feedback
 	if(cpu.rank==0) printf("Esnfb set to %e\n",param.stars->Esnfb);
 #endif
 
+
   //================================================================================
   //================================================================================
   //================================================================================
@@ -1647,7 +1662,7 @@ blockcounts[0]++; // For SN feedback
       double tg1,tg2;
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
-      Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
+      Advance_level(levelcoarse,adt,&cpu,&param,octList,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
       if(cpu.rank==0) printf("GLOBAL TIME = %e\n",tg2-tg1);

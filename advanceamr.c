@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
@@ -191,7 +192,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,int *ndt, int nsteps,REAL tloc){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT ***octList, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,int *ndt, int nsteps,REAL tloc){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -302,7 +303,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 #endif
       // refining (and destroying) octs
-      curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+      curoct=L_refine_cells(level,param,octList,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
       cpu->freeoct=curoct;
     }
     // ==================================== Check the number of particles and octs
@@ -331,6 +332,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
 #endif
   }
+
   
     // =============================== cleaning 
 #ifdef WHYDRO2
@@ -394,13 +396,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
     L_levpart(level,firstoct,is); // assigning all the particles to the current level
 #endif
-
-
-
-
-
-
-
 
 
     /* //====================================  I/O======= ========================== */
@@ -652,7 +647,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(level<param->lmax){
       if(nlevel>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
+	dtfine=Advance_level(level+1,adt,cpu,param,octList,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -806,7 +801,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
 #endif
-    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+//    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+    RadSolver(level,param,octList,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
 #endif
