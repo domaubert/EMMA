@@ -335,21 +335,18 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   
     // =============================== cleaning 
+
 #ifdef WHYDRO2
     clean_new_hydro(level,param,firstoct,cpu);
 #endif
-
 
 #ifdef PIC
     L_clean_dens(level,param,firstoct,cpu);
 #endif
 
 #ifdef WRAD
-    clean_new_rad(level,param,firstoct,cpu,aexp);
+    clean_new_rad(octList, level,param,firstoct,cpu,aexp);
 #endif
-
- 
-
 
  // ================= IV advance solution at the current level
 
@@ -373,19 +370,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //==================================== Getting Density ==================================== */
 #ifdef WGRAV
 
-    FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
+    FillDens(octList[level-1],level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp); 
-
-
-
+    PoissonSolver(octList,level,param,firstoct,cpu,gstencil,gstride,aexp); 
 
     /* //====================================  Force Field ========================== */
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
 #endif 
-    PoissonForce(level,param,firstoct,cpu,gstencil,gstride,aexp);
+    PoissonForce(octList[level-1], level,param,firstoct,cpu,gstencil,gstride,aexp);
 #endif
 
 #ifdef PIC
@@ -802,6 +796,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
 #endif
 //    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+
     RadSolver(level,param,octList,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
 #ifdef WMPI
     MPI_Barrier(cpu->comm);

@@ -18,7 +18,7 @@ typedef double REAL;
 #define PMIN 1e-11
 #endif
 
-#define NCOSMOTAB (262144)
+#define NCOSMOTAB (1024)
 
 
 #ifdef DUAL_E

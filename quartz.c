@@ -818,10 +818,6 @@ blockcounts[0]++; // For SN feedback
     if(cpu.rank==0) printf("level=%d noct=%d\n",level,noct2);
   }
 
-  for(level=1;level<=levelcoarse;level++){ 
-    setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
-  }
-
   if(cpu.rank==0) printf("Initial Mesh done \n");
   
 
@@ -839,6 +835,7 @@ blockcounts[0]++; // For SN feedback
   cpu.Rsendbuffer=NULL;
   cpu.Rrecvbuffer=NULL;
 #endif
+
 
   int newloadb=1;
   setup_mpi(&cpu,firstoct,levelmax,levelcoarse,ngridmax,newloadb); // out of WMPI to compute the hash table
@@ -1577,6 +1574,10 @@ blockcounts[0]++; // For SN feedback
 	if(cpu.rank==0) printf("Esnfb set to %e\n",param.stars->Esnfb);
 #endif
 
+//setting up the oct list
+  for(level=1;level<=levelcoarse;level++){ 
+    setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
+  }
 
   //================================================================================
   //================================================================================

@@ -2724,13 +2724,13 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
   int iread=0;
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
-  char visit[27];
+  char visit[27];	memset(visit,0,27*sizeof(char));
   static int ix[6]={-1,1,0,0,0,0};
   static int iy[6]={0,0,-1,1,0,0};
   static int iz[6]={0,0,0,0,-1,1};
   int ioct;
   
-  memset(visit,0,27*sizeof(char));
+
 
   nextoct=octstart;
   if(nextoct!=NULL){

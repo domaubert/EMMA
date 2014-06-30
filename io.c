@@ -1542,6 +1542,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&ov,1,4,fx);
     outf=fread(&h0,1,4,fx);
     outf=fread(&dummy,1,sizeof(dummy),fx);
+
     outf=fread(&dummy,1,sizeof(dummy),fy);
     outf=fread(&np1,1,4,fy);
     outf=fread(&np2,1,4,fy);
