@@ -50,6 +50,17 @@ void getfcell(int idx, int *fcell){
   }
 }
 
+void setcellnei(){
+    NEIGHBORS_CELL      =  (int**)calloc(8  ,sizeof(int*));
+    NEIGHBORS_NEIP      =  (int**)calloc(8  ,sizeof(int*));
+    int i;
+    for(i=0;i<8;i++){  
+	NEIGHBORS_NEIP[i] = &NEIG_NEIP[i*6];
+	NEIGHBORS_CELL[i] = &NEIG_CELL[i*6];
+    }
+}
+
+
 
 ///------------------------------------------------------------------------
 // it flips the cell along a certain direction for transmissive boundary conditions
@@ -128,7 +139,8 @@ void getcellnei(int cindex, int *neip, int *cell)
     neip[3]=6;cell[3]=2;
     neip[4]=4;cell[4]=4;
     neip[5]=6;cell[5]=4;
-    break;
+
+  break;
   case 1:
     neip[0]=6;cell[0]=0;
     neip[1]=1;cell[1]=0;
@@ -188,6 +200,14 @@ void getcellnei(int cindex, int *neip, int *cell)
   }
 
 }
+
+/*
+void getcellnei(int cindex, int *neip, int *cell)
+{
+	*neip = *NEIGHBORS_NEIP[cindex];
+        *cell = *NEIGHBORS_CELL[cindex];
+}
+*/
 //==================================================================
 //------------------------------------------------------------------------
 
@@ -218,7 +238,7 @@ void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
 
 void setOctList(struct OCT ** octList, struct OCT *octstart, struct CPUINFO *cpu, struct RUNPARAMS *param,int level){
 
-  printf("Building octList\n");
+ // printf("Building octList\n");
 
   struct OCT  *nextoct = octstart;
   struct OCT  *curoct;
@@ -238,7 +258,7 @@ void setOctList(struct OCT ** octList, struct OCT *octstart, struct CPUINFO *cpu
 
   cpu->locNoct[level-1] = nOct;
 
-  printf("nOct = %d on level %d by cpu %d\n",nOct, level, cpu->rank);
+//  printf("nOct = %d on level %d by cpu %d\n",nOct, level, cpu->rank);
 }
 
 

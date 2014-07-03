@@ -63,6 +63,26 @@ typedef double REAL;
 #endif
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
 
+int**    NEIGHBORS_NEIP;
+int**    NEIGHBORS_CELL;
+
+static int NEIG_NEIP[48] = {	0,6,2,6,4,6,
+				6,1,2,6,4,6,
+				0,6,6,3,4,6,
+				6,1,6,3,4,6,
+				0,6,2,6,6,5,
+				6,1,2,6,6,5,
+				0,6,6,3,6,5,
+				6,1,6,3,6,5	};
+
+static int NEIG_CELL[48] = {	1,1,2,2,4,4,
+				0,0,3,3,5,5,
+				3,3,0,0,6,6,
+				2,2,1,1,7,7,
+				5,5,6,6,0,0,
+				4,4,7,7,1,1,
+				7,7,4,4,2,2,
+				6,6,5,5,3,3	};
 
 //=======================================
 #ifdef TESTCOSMO
@@ -675,6 +695,9 @@ struct OCT
   // the cell properties
   struct CELL cell[8]; // MUSTN'T BE MOVED !!
 
+  REAL GDATA_d[8];
+  REAL GDATA_p[8];
+
   struct CELL *nei[6];// neighbor cells at level - 1
   struct CELL *parent; // parent cell 
  
@@ -729,7 +752,9 @@ struct OCTGRAV
 // =======================================
 #ifndef FASTGRAV
 struct GGRID{
-  struct OCTGRAV oct[27];
+ // struct OCTGRAV oct[8];
+  REAL d[7][8];
+  REAL p[7][8];
 };
 
 // =======================================

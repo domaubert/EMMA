@@ -82,12 +82,10 @@ struct PART* modifpospart(struct PART* phead, REAL len, int dir)
 //=====================================================================
 //=====================================================================
 
-REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+REAL comptstep(int levelcoarse,int levelmax,struct OCT*** octList, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
   
   int level;
   REAL vmax,lmdisp;
-  struct OCT *nextoct;
-  struct OCT oct;
   REAL dxcur;
   int icell;
   struct PART *nexp;
@@ -101,24 +99,20 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
       dtlev=0.;
-      // setting the first oct
-      
-      nextoct=firstoct[level-1];
-      
-      if(nextoct==NULL) continue; // in case the level is empty
-      do // sweeping through the octs of level
-	{
-	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level+1); // +1 to protect level change
-	  nextoct=oct.next;
+      int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[level-1][iOct]; 
+
+
+	  dxcur=1./pow(2,curoct->level+1); // +1 to protect level change
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 
 #ifdef PIC
-	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	      nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
 
-		aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+		aa=sqrt(curoct->cell[icell].f[0]*curoct->cell[icell].f[0]+curoct->cell[icell].f[1]*curoct->cell[icell].f[1]+curoct->cell[icell].f[2]*curoct->cell[icell].f[2])*fa2;
 		
 		do{ 
 		  curp=nexp; 
@@ -154,7 +148,7 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 	      }
 #endif
 	    }
-	}while(nextoct!=NULL);
+        }
 
       /* if(vmax>0.){ */
       /* 	dtlev=FRACDX*dxcur/vmax;///fa; */
@@ -186,11 +180,9 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 // =================================================================================================================
 // =================================================================================================================
 
-REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+REAL L_comptstep(struct OCT** octList, int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
   
   REAL vmax,lmdisp;
-  struct OCT *nextoct;
-  struct OCT oct;
   REAL dxcur;
   int icell;
   struct PART *nexp;
@@ -202,23 +194,19 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 
   // Computing new timestep
   dtlev=0.;
-  // setting the first oct
-  
-  nextoct=firstoct[level-1];
-  
-  if(nextoct!=NULL){
-    do // sweeping through the octs of level
-      {
-	oct=(*nextoct);
-	dxcur=1./pow(2,oct.level+1); // +1 to protect level change
-	nextoct=oct.next;
+  int iOct;
+
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
+
+	dxcur=1./pow(2,curoct->level+1); // +1 to protect level change
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 #ifdef PIC
-	    nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	    nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 	    if(nexp!=NULL){
 	    
-	      aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+	      aa=sqrt(curoct->cell[icell].f[0]*curoct->cell[icell].f[0]+curoct->cell[icell].f[1]*curoct->cell[icell].f[1]+curoct->cell[icell].f[2]*curoct->cell[icell].f[2])*fa2;
 	      do{ 
 		curp=nexp; 
 		nexp=curp->next; 
@@ -239,7 +227,6 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 	    }
 #endif
 	  }
-      }while(nextoct!=NULL);
   }  
   // new tstep
   
@@ -258,11 +245,9 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 
 // ================================================================================================
 
-REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINFO* cpu){
+REAL L_movepart(int level,struct OCT** octList, REAL*adt, int is, struct CPUINFO* cpu){
   
   REAL mdisp,lmdisp;
-  struct OCT *nextoct;
-  struct OCT oct;
   REAL dxcur;
   int icell;
   struct PART *nexp;
@@ -271,22 +256,17 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   REAL dt;
   // === Moving particles
 
-  // setting the first oct
   mdisp=0.;
-  nextoct=firstoct[level-1];
-  
   dxcur=1./pow(2,level);
 
-  if(nextoct!=NULL){
-  do // sweeping through the octs of level
-    {
-      oct=(*nextoct);
-      nextoct=oct.next;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
 
       //if(oct.cpu!=cpu->rank) continue;
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
-	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 
 	  if(nexp!=NULL){
 	    do{ 
@@ -305,7 +285,6 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 	    }while(nexp!=NULL);
 	  }
 	}
-    }while(nextoct!=NULL);
   }
 
 #ifdef WMPI
@@ -322,26 +301,19 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 //===============================================
 //===============================================
 
-void L_levpart(int level,struct OCT** firstoct, int is){
+void L_levpart(int level,struct OCT** octList, int is, struct CPUINFO *cpu){
   
-  struct OCT *nextoct;
-  struct OCT oct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
-
   
-  // setting the first oct
-  nextoct=firstoct[level-1];
-  if(nextoct!=NULL){
-  do // sweeping through the octs of level
-    {
-      oct=(*nextoct);
-      nextoct=oct.next;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
 
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
-	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 
 	  if(nexp!=NULL){
 	    do{ 
@@ -352,7 +324,6 @@ void L_levpart(int level,struct OCT** firstoct, int is){
 	    }while(nexp!=NULL);
 	  }
 	}
-    }while(nextoct!=NULL);
   }
 }
 
@@ -360,27 +331,19 @@ void L_levpart(int level,struct OCT** firstoct, int is){
 
 
 
-void L_reset_is_part(int level,struct OCT** firstoct){
+void L_reset_is_part(int level,struct OCT** octList, struct CPUINFO *cpu){
   
-  struct OCT *nextoct;
-  struct OCT oct;
   int icell;
   struct PART *nexp;
   struct PART *curp;
 
-  
-  // setting the first oct
-  nextoct=firstoct[level-1];
-  
-  if(nextoct!=NULL){
-  do // sweeping through the octs of level
-    {
-      oct=(*nextoct);
-      nextoct=oct.next;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
 
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
-	  nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+	  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 
 	  if(nexp!=NULL){
 	    do{ 
@@ -391,20 +354,17 @@ void L_reset_is_part(int level,struct OCT** firstoct){
 	    }while(nexp!=NULL);
 	  }
 	}
-    }while(nextoct!=NULL);
   }
 }
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
-void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
+void partcellreorg(int levelcoarse,int levelmax,struct OCT ***octList, struct CPUINFO *cpu){
 
   int dir;
   char out;
   int level;
-  struct OCT *nextoct;
-  struct OCT *curoct;
   struct OCT *newoct;
   REAL dxcur,dxcur2;
   int icell;
@@ -422,15 +382,12 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
       for(level=levelcoarse;level<=levelmax;level++) // looping over levels
 	{
 	  //printf("dir=%d level=%d\n",dir,level);
-	  // setting the first oct
-	
-	  nextoct=firstoct[level-1];
-	  if(nextoct==NULL) continue; // in case the level is empty
 
-	  do{ // sweeping through the octs of level
-	    curoct=nextoct;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[level-1][iOct]; 
+
 	    dxcur=1./pow(2,curoct->level);
-	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
@@ -821,7 +778,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 		    }while(nexp!=NULL);
 		  }
 		}
-	  }while(nextoct!=NULL);
+	  }
 	}	
       
     }
@@ -831,13 +788,11 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 // =======================================================
 // =======================================================
 
-void L_partcellreorg(int level,struct OCT **firstoct){
+void L_partcellreorg(int level,struct OCT **octList, struct CPUINFO *cpu){
 
   int dir;
   char out;
- 
-  struct OCT *nextoct;
-  struct OCT *curoct;
+
   struct OCT *newoct;
   REAL dxcur,dxcur2;
   int icell;
@@ -855,13 +810,12 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 	  //printf("dir=%d level=%d\n",dir,level);
 	  // setting the first oct
 	
-      nextoct=firstoct[level-1];
-      if(nextoct==NULL) continue; // in case the level is empty
 
-      do{ // sweeping through the octs of level
-	curoct=nextoct;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
+
 	dxcur=1./pow(2,curoct->level);
-	nextoct=curoct->next;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
@@ -1262,18 +1216,16 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 	      }while(nexp!=NULL);
 	    }
 	  }
-      }while(nextoct!=NULL);
+      }
     }
 
 }    
 
-void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
+void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT ***octList, struct CPUINFO *cpu){
 
   int dir;
   char out;
   int level;
-  struct OCT *nextoct;
-  struct OCT *curoct;
   struct OCT *newoct;
   REAL dxcur,dxcur2;
   int icell;
@@ -1291,16 +1243,12 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
     { 
       for(level=levelcoarse;level<=levelmax;level++) // looping over levels
 	{
-	  //printf("dir=%d level=%d\n",dir,level);
-	  // setting the first oct
-	
-	  nextoct=firstoct[level-1];
-	  if(nextoct==NULL) continue; // in case the level is empty
+	//printf("dir=%d level=%d\n",dir,level);
+        int iOct;
+  	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+  	struct OCT *curoct=octList[level-1][iOct]; 
 
-	  do{ // sweeping through the octs of level
-	    curoct=nextoct;
 	    dxcur=1./pow(2,curoct->level);
-	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
 		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
@@ -1681,7 +1629,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 		    }while(nexp!=NULL);
 		  }
 		}
-	  }while(nextoct!=NULL);
+	  }
 	}	
       
     }
@@ -1692,10 +1640,9 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 //------------------------------------------------------------------------
 #ifdef PIC
 
-void L_accelpart(int level,struct OCT **firstoct, REAL *adt, int is, struct CPUINFO *cpu){
+void L_accelpart(struct OCT ** octList, int level,struct OCT **firstoct, REAL *adt, int is, struct CPUINFO *cpu){
 
-  struct OCT *nextoct;
-  struct OCT *curoct;
+
   int icomp,icell;
   struct PART *curp;
   struct PART *nexp;
@@ -1703,13 +1650,9 @@ void L_accelpart(int level,struct OCT **firstoct, REAL *adt, int is, struct CPUI
   // ==================================== Computing the Velocities
   // ==================================== performing the INVERSE CIC assignement
   
-  nextoct=firstoct[level-1];
-  if(nextoct!=NULL){ 
-    do // sweeping level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-      
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[iOct]; 
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell */
@@ -1721,7 +1664,6 @@ void L_accelpart(int level,struct OCT **firstoct, REAL *adt, int is, struct CPUI
 	      }while(nexp!=NULL); 
 	    }
 	  }
-      }while(nextoct!=NULL);
   }
   
 }

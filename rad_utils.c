@@ -137,12 +137,13 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	  struct Rtype D[3];
 	  struct Rtype *W;
 	  int inei2;
-	  int vcell[6],vnei[6];
+
 	  int dir;
 	  REAL dxcur;
 
 	  oct=cell2oct(cell);
-	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+    	  int *vnei  = NEIGHBORS_NEIP[cell->idx];
+	  int *vcell = NEIGHBORS_CELL[cell->idx];
 	  dxcur=pow(0.5,oct->level);
 
 	  W0=&(cell->rfield);
@@ -250,12 +251,12 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 	  struct Rtype D[6];
 	  
 	  int inei2;
-	  int vcell[6],vnei[6];
 	  int dir;
 	  REAL dxcur;
 
 	  oct=cell2oct(cell);
-	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+	  int *vnei  = NEIGHBORS_NEIP[cell->idx];
+	  int *vcell = NEIGHBORS_CELL[cell->idx];
 	  dxcur=pow(0.5,oct->level);
 
 	  W0=&(cell->rfield);
@@ -382,7 +383,7 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 
   int inei,icell,iface;
   int i,igrp;
-  int vnei[6],vcell[6];
+
 
   REAL FL[NVAR_R*NGRP],FR[NVAR_R*NGRP];
   struct Rtype Rold;
@@ -400,7 +401,8 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   REAL up,um;
 
   for(icell=0;icell<8;icell++){ // we scan the cells
-    getcellnei(icell, vnei, vcell); // we get the neighbors
+    int *vnei  = NEIGHBORS_NEIP[icell];
+    int *vcell = NEIGHBORS_CELL[icell];
       
     for(i=0;i<nread;i++){ // we scan the octs
       
@@ -568,7 +570,7 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 
   int inei,icell,iface;
   int i,igrp;
-  int vnei[6],vcell[6];
+
 
   REAL FL[NVAR_R*NGRP],FR[NVAR_R*NGRP];
   struct Rtype Rold;
@@ -586,7 +588,8 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   REAL up,um;
 
   for(icell=0;icell<8;icell++){ // we scan the cells
-    getcellnei(icell, vnei, vcell); // we get the neighbors
+    int *vnei  = NEIGHBORS_NEIP[icell];
+    int *vcell = NEIGHBORS_CELL[icell];
       
     for(i=0;i<nread;i++){ // we scan the octs
       
@@ -766,7 +769,7 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 
   int inei,icell,iface;
   int i,igrp;
-  int vnei[6],vcell[6];
+
 
   REAL FL[NVAR_R*NGRP],FR[NVAR_R*NGRP];
   struct Rtype Rold;
@@ -784,7 +787,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   REAL up,um;
 
   for(icell=0;icell<8;icell++){ // we scan the cells
-    getcellnei(icell, vnei, vcell); // we get the neighbors
+    int *vnei  = NEIGHBORS_NEIP[icell];
+    int *vcell = NEIGHBORS_CELL[icell];
       
     for(i=0;i<nread;i++){ // we scan the octs
       
@@ -949,14 +953,14 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 //==================================================================================
 //==================================================================================
 
-void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
+
+void recursive_neighbor_gather_oct_rad_2(int ioct, struct CELL *cell, struct RGRID *stencil){
 
   // =======================================
   // This function is pretty much an overkill
   // Could be simplified
 
   int icell, igrp;
-  int vnei[6],vcell[6];
   int face[8]={0,1,2,3,4,5,6,7};
   int tflag[6]={0,0,0,0,0,0};
 
@@ -1085,8 +1089,9 @@ void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID
 #endif
   }
   else{
-    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-    oct=cell2oct(cell);
+    int *vnei  = NEIGHBORS_NEIP[cell->idx];
+    int *vcell = NEIGHBORS_CELL[cell->idx];
+  //  oct=cell2oct(cell);
     dxcur=pow(0.5,oct->level);
     if(vnei[ioct]==6){
       neicell=&(oct->cell[vcell[ioct]]);
@@ -1262,12 +1267,79 @@ void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID
   
 }
 
+
+void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
+
+  // =======================================
+  // This function is pretty much an overkill
+  // Could be simplified
+
+  int icell, igrp;
+  int vnei[6],vcell[6];
+
+
+  struct OCT *oct;
+  struct OCT *neioct;
+  struct CELL*neicell;
+
+
+  if(cell->child!=NULL){
+    // the oct at the right level exists
+    neicell=cell->child->nei[ioct];
+    oct=cell->child;
+  }
+  else{
+    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+    oct=cell2oct(cell);
+
+    if(vnei[ioct]==6){
+      neicell=&(oct->cell[vcell[ioct]]);
+    }
+    else{
+      if(oct->nei[ioct]->child!=NULL){
+ neicell=&(oct->nei[ioct]->child->cell[vcell[ioct]]);
+      }
+      else{
+    printf("big problem\n");
+    abort();
+      }
+
+    }
+  }
+
+  if(neicell->child!=NULL){
+    // optimal case
+    for(icell=0;icell<8;icell++){
+      struct CELLLIGHT_R *c=&(stencil->oct[ioct].cell[icell]);
+      struct CELL *co=&neicell->child->cell[icell];
+      memcpy(&(c->rfield),&(co->rfield),sizeof(struct Rtype)); //
+      c->split=(co->child!=NULL);
+    }
+  }
+  else{
+    struct Rtype Ri[8];
+    struct Rtype *Rii[8];
+    char child[8];
+
+    // coarse2fine_radlin(neicell,Ri);
+    for(icell=0;icell<8;icell++) {
+    Rii  [icell] = &neicell->rfield;
+    child[icell] = 0;
+    }
+    for(icell=0;icell<8;icell++){
+memcpy(&(stencil->oct[ioct].cell[icell].rfield),Rii[icell],sizeof(struct Rtype)); //
+      stencil->oct[ioct].cell[icell].split=child[icell];
+    }
+  }
+
+
+}
 // ===================================================================================================
 // ===================================================================================================
 
 
 
-void gatherstencilrad(struct OCT **octList, int iOct , struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread,struct RUNPARAMS *param){
+void gatherstencilrad(struct OCT **octList, int iOct , struct RGRID *stencil, const int stride, struct CPUINFO *cpu, int *nread,struct RUNPARAMS *param){
 
   struct OCT  *curoct;
   int inei, iread, icell;
@@ -1360,8 +1432,8 @@ void updatefieldrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO
 
 	printf("Flux %e %e %e delta %e %e %e rflux=%e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],sqrt(pow(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
 
-	int vnei[6],vcell[6];
-	getcellnei(icell, vnei, vcell); // we get the neighbors
+    int *vnei  = NEIGHBORS_NEIP[icell];
+    int *vcell = NEIGHBORS_CELL[icell];
 
 	for(flx=0;flx<6;flx++){
 	  
@@ -1388,7 +1460,7 @@ void scatterstencilrad(struct OCT **octList, int IOCT, struct RGRID *stencil, in
   int ipos,iread;
   int icell;
   int ioct[7]={0,1,2,3,4,5,6};
-  int vnei[6],vcell[6],inei;
+  int inei;
   
   iread=0;
 
@@ -1420,7 +1492,8 @@ void scatterstencilrad(struct OCT **octList, int IOCT, struct RGRID *stencil, in
 	/*   if(icell==2)  */
 	/*     if(curoct->cell[0].rfieldnew.xion!=curoct->cell[2].rfieldnew.xion) abort(); */
 	// let us now deal with coarser neighbors
-	getcellnei(icell, vnei, vcell); // we get the neighbors
+    int *vnei  = NEIGHBORS_NEIP[icell];
+    int *vcell = NEIGHBORS_CELL[icell];
 	
 	for(inei=0;inei<6;inei++){
 
@@ -1718,23 +1791,16 @@ void clean_new_rad( struct OCT *** octList, int level,struct RUNPARAMS *param, s
 
 
 // ==============================================================
-void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
+void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **octList, struct CPUINFO *cpu, REAL aexp){
 
 //  printf("sanity rad on cpu %d\n", cpu->rank);
-  struct OCT *curoct;
-  struct OCT *nextoct;
+
   int icell;
 
   REAL cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
-
-  // --------------- setting the first oct of the level
-  nextoct=firstoct[level-1];
-  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
-       // sanity check
-
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *curoct=octList[iOct]; 
       REAL E;
       REAL F;
       for(icell=0;icell<8;icell++) {
@@ -1744,9 +1810,7 @@ void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct
 	  abort();
 	}
       }
-      
-    }while(nextoct!=NULL);
-  }
+    }
 }
 
 

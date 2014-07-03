@@ -492,12 +492,14 @@ blockcounts[0]++; // For SN feedback
   
   //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
 
+
+
   int memsize=0.;
   grid       = (struct OCT*  )calloc(ngridmax,sizeof(struct OCT  )); memsize+=ngridmax*sizeof(struct OCT );// the oct grid
 
   octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
   int iLev;
-  for(iLev = 0; iLev<= levelmax; iLev++)
+  for(iLev = 0; iLev< levelmax; iLev++)
 	octList[iLev] = (struct OCT**)calloc(ngridmax,     sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
 
 
@@ -559,8 +561,6 @@ blockcounts[0]++; // For SN feedback
   //  srand(time(NULL));
   srand(4569);
 #endif
-
-
 
   lastpart=part-1; // the last particle points before the first at the very beginning
 
@@ -689,6 +689,8 @@ blockcounts[0]++; // For SN feedback
 
     
   //========== building the initial meshes ===
+
+ setcellnei();
 
   if(cpu.rank==0) printf("building initial mesh\n");
 
@@ -1578,6 +1580,9 @@ blockcounts[0]++; // For SN feedback
   for(level=1;level<=levelcoarse;level++){ 
     setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
   }
+
+
+
 
   //================================================================================
   //================================================================================

@@ -2116,10 +2116,9 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 //============================================================================
 
 
-REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+REAL comptstep_hydro(struct OCT *** octList, int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
   
   int level;
-  struct OCT *nextoct;
   struct OCT *curoct;
   REAL dxcur;
   int icell;
@@ -2132,18 +2131,9 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
   dt=tmax;
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
-      // setting the first oct
-      
-      nextoct=firstoct[level-1];
-      
-      if(nextoct==NULL) continue; // in case the level is empty
-      dxcur=pow(0.5,level); // +1 to protect level change
-      do // sweeping through the octs of level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-
-	  if(curoct->cpu!=cpu->rank) continue;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      curoct=octList[level-1][iOct]; 
 
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
@@ -2155,7 +2145,7 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
 	       Smax=fmax(Smax,va+aa); 
 
 	    }
-	}while(nextoct!=NULL);
+	}
 
       //printf("thydro= %e Smax=%e dxcur=%e\n",dxcur*CFL/(Smax*3.),Smax,dxcur);
       //      abort();
@@ -2183,10 +2173,9 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
 //=================================================================================
 
 #ifdef WGRAV
-REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
+REAL comptstep_force(struct OCT*** octList, int levelcoarse,int levelmax,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
   int level;
-  struct OCT *nextoct;
   struct OCT *curoct;
   REAL dxcur;
   int icell;
@@ -2204,14 +2193,9 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
     {
       // setting the first oct
       
-      nextoct=firstoct[level-1];
-      
-      if(nextoct==NULL) continue; // in case the level is empty
-      dxcur=pow(0.5,level); // +1 to protect level change
-      do // sweeping through the octs of level
-	{
-	  curoct=nextoct;
-	  nextoct=curoct->next;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    curoct=octList[level-1][iOct]; 
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
 	      memcpy(&W,&curoct->cell[icell].field,sizeof(struct Wtype));
@@ -2238,9 +2222,8 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
 		  dt=dtloc;
 		}
 	      }
-
 	    }
-	}while(nextoct!=NULL);
+	}
     }
 
   // new tstep
@@ -2259,24 +2242,20 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
 // ==============================================================================================
 // ==============================================================================================
 #ifdef WGRAV
-void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, struct CPUINFO *cpu, REAL dt)
+void grav_correction(struct OCT ** octList, int level,struct RUNPARAMS *param, struct OCT ** firstoct, struct CPUINFO *cpu, REAL dt)
 {
   
   struct Utype U0,U;
   struct Wtype W;
   struct Wtype Wnew;
   struct OCT *curoct;
-  struct OCT *nextoct;
   int icell;
   struct CELL *curcell;
+ 
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    curoct=octList[iOct]; 
 
-  curoct=firstoct[level-1];
-  if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    nextoct=curoct;
-    do{
-      curoct=nextoct;
-      nextoct=curoct->next;
-      if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){
 	int ref=0;
 
@@ -2309,7 +2288,6 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
       }
-    }while(nextoct!=NULL);
   }
 }
 #endif
@@ -2331,12 +2309,11 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int icell;
   int i;
   int ioct2;
-  int vnei[6],vcell[6];
+//  int vnei[6],vcell[6];
   int ineiloc;
   int face[8]={0,1,2,3,4,5,6,7};
   int tflag[6]={0,0,0,0,0,0};
-  REAL dxcur;
-
+  
   struct Wtype Wi[8];
   char child[8];
 
@@ -2360,7 +2337,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     // the oct at the right level exists
     neicell=cell->child->nei[ineiloc];
     oct=cell->child;
-    dxcur=pow(0.5,oct->level);
+
 
 #ifdef TRANSXP
     if(ineiloc==1){
@@ -2471,9 +2448,13 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 #endif
   }
   else{
-    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+ //   getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+
+  const int *vnei  = NEIGHBORS_NEIP[cell->idx];
+  const int *vcell = NEIGHBORS_CELL[cell->idx];
+
     oct=cell2oct(cell);
-    dxcur=pow(0.5,oct->level);
+
 
     if(vnei[ineiloc]==6){
       neicell=&(oct->cell[vcell[ineiloc]]);
@@ -2713,42 +2694,30 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
 //=====================================================================================================================
 
+void gatherstencil(struct OCT ** octList, int iOct, struct OCT *octstart, struct HGRID *stencil, const int stride, struct CPUINFO *cpu, int *nread){
 
-struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
-{
-  struct OCT* nextoct;
-  struct OCT* curoct;
-  struct CELL *cell;
+
+
 
   int inei;
   int iread=0;
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
-  char visit[27];	memset(visit,0,27*sizeof(char));
+
   static int ix[6]={-1,1,0,0,0,0};
   static int iy[6]={0,0,-1,1,0,0};
   static int iz[6]={0,0,0,0,-1,1};
-  int ioct;
-  
+  int ioct;  
 
+  for(iread=0; iread<stride; iread++){
+    struct OCT  * curoct = octList[iOct++];
+    if(curoct==NULL) break;
+    char visit[27]; memset(visit,0,27*sizeof(char));
 
-  nextoct=octstart;
-  if(nextoct!=NULL){
-
-  do{
- //   for(iread=0 ;iread<stride; iread++){ 
-
-      if (nextoct==NULL) continue;
-      curoct  = nextoct;
-      nextoct = curoct->next;
-      if(curoct->cpu!=cpu->rank) continue;
-
-      memset(visit,0,27*sizeof(char));
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
 	//memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
-
 
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
@@ -2759,9 +2728,8 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 #endif 
 	stencil[iread].oct[13].cell[icell].split=(curoct->cell[icell].child!=NULL);
       }
-      visit[13]=1;
 
-      cell=curoct->parent;
+        struct CELL *cell = curoct->parent;
       
       //start recursive fill
       for(inei=0;inei<6;inei++)
@@ -2782,13 +2750,8 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       /* 	} */
       /* } */
 
-
-
-      iread++;
-    }while((nextoct!=NULL)&&(iread<stride));
   }
   (*nread)=iread;
-  return nextoct;
 }
 
 
@@ -2841,7 +2804,6 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
       memcpy(&(stencil[i].New.cell[icell].deltaU),&U,sizeof(struct Utype));
     }
   }
-
 }
 
 // ===========================================================================================================
@@ -2850,18 +2812,16 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
 
 
 
-struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
+void scatterstencil(struct OCT ** octList, int iOct, struct OCT *octstart, struct HGRID *stencil, const int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
 {
-  struct OCT* nextoct;
+
   struct OCT* curoct;
-  int ipos,iread;
+  int ipos,iread=0;
   int icell;
   int ioct[7]={12,14,10,16,4,22,13};
   int vnei[6],vcell[6],inei;
   
-  nextoct=octstart;
-  iread=0;
-
+  
   struct Wtype W,deltaW;
   struct Utype U,deltaU;
   REAL dtsurdx=dtnew/dxcur;
@@ -2875,12 +2835,9 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
   REAL F[NVAR];
 
   //printf("let's scatter\n");
-  if(nextoct!=NULL){
-    do{ //sweeping levels
-      curoct=nextoct;
-      nextoct=curoct->next;      
-      if(curoct->cpu!=cpu->rank) continue;
-
+  for(iread=0; iread<stride; iread++){
+      curoct = octList[iOct++];
+      if(curoct==NULL) break;
 
       // filling the values in the central oct
       for(icell=0;icell<8;icell++){
@@ -3023,13 +2980,8 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	    }
 	  }
 	}
-
       }
-
-      iread++;
-    }while((nextoct!=NULL)&&(iread<stride));
   }
-  return nextoct;
 }
 
 
@@ -3039,27 +2991,22 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 //=======================================================================
 //=======================================================================
 
-int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dxcur, REAL dtnew){
+int advancehydro(struct OCT **octList, struct OCT **firstoct, int level, struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dxcur, REAL dtnew){
 
-  struct OCT *nextoct;
   struct OCT *curoct;
-  int nreadtot,nread;
+  int nreadtot=0,nread;
   double t[10];
   double tg=0.,th=0.,tu=0.,ts=0.,tfu=0.,ttot=0.;
-  
-  
-  // --------------- setting the first oct of the level
-  nextoct=firstoct[level-1];
-  nreadtot=0;
-  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
+
+  int iOct;
+  const int nmax = cpu->locNoct[level-1];
+  for(iOct=0; iOct<nmax; iOct+=stride){
+      curoct=octList[iOct]; 
 
       t[0]=MPI_Wtime();
   
       // ------------ gathering the stencil value values
-      nextoct= gatherstencil(curoct,stencil,stride,cpu, &nread);
+      gatherstencil(octList, iOct, curoct,stencil,stride,cpu, &nread);
       
       t[2]=MPI_Wtime();
       // ------------ solving the hydro
@@ -3078,20 +3025,17 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
       
       t[6]=MPI_Wtime();
    
-      nextoct=scatterstencil(curoct,stencil, nread, cpu,dxcur,dtnew);
-
+      scatterstencil(octList, iOct, curoct,stencil, nread, cpu,dxcur,dtnew);
 
       t[8]=MPI_Wtime();
 
       nreadtot+=nread;
-
 
       ts+=(t[8]-t[6]);
       tu+=(t[6]-t[4]);
       th+=(t[4]-t[2]);
       tg+=(t[2]-t[0]);
 
-    }while(nextoct!=NULL);
   }
   
   if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
@@ -3102,19 +3046,18 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
 // =========================================================================================
 // =========================================================================================
 
-void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dtnew){
+void HydroSolver(struct OCT *** octList, int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dtnew){
 
   int nread,nreadtot;;
   struct OCT *curoct;
-  struct OCT *nextoct;
   
-  REAL dxcur=pow(0.5,level);
+  const REAL dxcur=pow(0.5,level);
   REAL one;
   struct Wtype W;
   struct Utype U;
   struct Wtype *Wloc;
   struct Utype *Uloc;
-  int icell;
+  int icell, iOct;
   int nocthydro=cpu->noct[level-1];
   double t[10];
 
@@ -3127,7 +3070,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
-  nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
+  nreadtot=advancehydro(octList[level-1], firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #else
   //nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
   nreadtot=advancehydroGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
@@ -3135,14 +3078,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 
   // FINAL UPDATE OF THE VALUES
   if(nreadtot>0){
-    nextoct=firstoct[level-1];
-    do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    curoct=octList[level-1][iOct]; 
 
-#ifdef WMPI
-      if(curoct->cpu!=cpu->rank) continue; // bnd octs are updated by transmission hence not required
-#endif
       for(icell=0;icell<8;icell++){
 	if(curoct->cell[icell].child==NULL){
 	  // unsplit case
@@ -3203,7 +3141,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 	//if(curoct->cell[icell].field.w <0.) abort();
 
       }
-    }while(nextoct!=NULL);
+    }
   }
 
   t[9]=MPI_Wtime();
@@ -3222,48 +3160,35 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 
 // ==============================================================
 // ==============================================================
-void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu){
-
-  struct OCT *curoct;
-  struct OCT *nextoct;
-  int icell;
+void clean_new_hydro(struct OCT *** octList, int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu){
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif
-  // --------------- setting the first oct of the level
-  nextoct=firstoct[level-1];
-  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    do {
-      curoct=nextoct;
-      nextoct=curoct->next; 
 
-      for(icell=0;icell<8;icell++) {
-	memcpy(&(curoct->cell[icell].fieldnew),&(curoct->cell[icell].field),sizeof(struct Wtype));
-      }
-     
-    }while(nextoct!=NULL);
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=octList[level-1][iOct]; 
+    int icell;
+    for(icell=0;icell<8;icell++) {
+      memcpy(&(curoct->cell[icell].fieldnew),&(curoct->cell[icell].field),sizeof(struct Wtype));
+    }
   }
 
 #ifdef WMPI
   // --------------- init for coarse octs in boundaries
   if(level>param->lcoarse){
-    nextoct=firstoct[level-2];
-    if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
-      do {
-	curoct=nextoct;
-	nextoct=curoct->next; 
-	if(curoct->cpu!=cpu->rank){
-	  for(icell=0;icell<8;icell++) {
-	    memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
-	    curoct->cell[icell].fieldnew.d=1e-13;
-	  }
-	}
-      }while(nextoct!=NULL);
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-2]; iOct++){
+      struct OCT *curoct=octList[level-2][iOct]; 
+      int icell;
+      for(icell=0;icell<8;icell++) {
+        memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
+	curoct->cell[icell].fieldnew.d=1e-13;
+      }
     }
   }
 #endif
-
 }
 
 

@@ -67,11 +67,10 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
 
 // ===============================================================
 #ifdef WHYDRO2
-REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
+REAL L_comptstep_hydro(struct OCT ** octList, int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL fa, REAL fa2, struct CPUINFO* cpu, REAL tmax){
   
-  struct OCT *nextoct;
   struct OCT *curoct;
-  REAL dxcur;
+  REAL  dxcur=pow(0.5,level);
   int icell;
   REAL aa;
   REAL va,vx,vy,vz;
@@ -83,15 +82,9 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   dt=tmax;
   // setting the first oct
   
-  nextoct=firstoct[level-1];
-  
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
-    do // sweeping through the octs of level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-	if(curoct->cpu!=cpu->rank) continue;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      curoct=octList[iOct]; 
 
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
@@ -103,9 +96,8 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 	    Smax=fmax(Smax,va+aa); 
 
 	  }
-      }while(nextoct!=NULL);
-  }
-
+      }
+  
   if(Smax>0.) dt=fmin(dxcur*CFL/(Smax*3.),dt);
 
   /* #ifdef WMPI */
@@ -119,11 +111,11 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 
 // ===============================================================
 #ifdef WGRAV
-REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
+REAL L_comptstep_ff(struct OCT ** octList, int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
-  struct OCT *nextoct;
+
   struct OCT *curoct;
-  REAL dxcur;
+  REAL dxcur = pow(0.5,level);;
   int icell;
   REAL dtloc;
   REAL dt;
@@ -131,15 +123,9 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
   dt=tmax;
   // setting the first oct
       
-  nextoct=firstoct[level-1];
-      
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
-    do // sweeping through the octs of level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-	if(curoct->cpu!=cpu->rank) continue;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      curoct=octList[iOct]; 
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    dtloc=0.1*sqrt(2.*M_PI/(3.*(curoct->cell[icell].gdata.d+1.)*aexp));
@@ -149,7 +135,6 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 	    /* } */
 	    dt=fmin(dt,dtloc);
 	  }
-      }while(nextoct!=NULL);
   }
   return dt;
 }
@@ -160,26 +145,20 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 #ifdef WRAD
 REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
-  struct OCT *nextoct;
-  struct OCT *curoct;
-  REAL dxcur;
+  REAL dxcur=pow(0.5,level);
   int icell;
   REAL dtloc;
-  REAL dt;
-  dt=tmax;
-  // setting the first oct
+  REAL dt=tmax;
+
+
 #ifdef STARS
 #ifdef ACCEL_RAD_STAR
   if(cpu->trigstar==0) return param->dt;
 #endif
 #endif
       
-  nextoct=firstoct[level-1];
-  
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
+
     dt=CFL*dxcur/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
-  }
 
   return dt;
 }
@@ -259,7 +238,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   is=0;
 #ifdef PIC
   //reset substep index of the particles
-  L_reset_is_part(level,firstoct);
+  L_reset_is_part(level,octList[level-1], cpu);
 #endif
 
   
@@ -337,7 +316,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // =============================== cleaning 
 
 #ifdef WHYDRO2
-    clean_new_hydro(level,param,firstoct,cpu);
+    clean_new_hydro(octList, level,param,firstoct,cpu);
 #endif
 
 #ifdef PIC
@@ -370,7 +349,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //==================================== Getting Density ==================================== */
 #ifdef WGRAV
 
-    FillDens(octList[level-1],level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
+    FillDens(octList[level-1],level,param,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
     PoissonSolver(octList,level,param,firstoct,cpu,gstencil,gstride,aexp); 
@@ -385,10 +364,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     // Mid point rule correction step
     if((is>0)||(cpu->nsteps>0)){
-      L_accelpart(level,firstoct,adt,-1,cpu); // computing the particle acceleration and velocity
+      L_accelpart(octList[level-1], level,firstoct,adt,-1,cpu); // computing the particle acceleration and velocity
       // here -1 forces the correction : all particles must be corrected
     }
-    L_levpart(level,firstoct,is); // assigning all the particles to the current level
+    L_levpart(level,octList[level-1],is, cpu); // assigning all the particles to the current level
 #endif
 
 
@@ -422,7 +401,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       /* /\* /\\* // lets try to compute the potential from the grid *\\/ *\/ */
       epp=0.;
       REAL potloc=0., einloc=0., ekploc=0.;
-      struct OCT *nextoct;
       int icell;
       REAL dx;
       int levelin;
@@ -430,14 +408,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       //      if(cpu->rank==0) printf("get pop\n");
 
       for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
-      	nextoct=firstoct[levelin-1];
-      	dx=1./pow(2,levelin);
-      	if(nextoct!=NULL){
-      	  do // sweeping level
-      	    {
-      	      curoct=nextoct;
-      	      nextoct=curoct->next;
-      	      if(curoct->cpu!=cpu->rank) continue;
+       	int iOct;
+	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    	curoct=octList[level-1][iOct]; 
       	      for(icell=0;icell<8;icell++) // looping over cells in oct
       		{
       		  if(curoct->cell[icell].child==NULL){
@@ -453,7 +426,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
       		  }
       		}
-      	    }while(nextoct!=NULL);
+      	    
       	}
       }
 
@@ -534,9 +507,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WGRAV
     REAL dtff;
 #ifdef TESTCOSMO
-    dtff=L_comptstep_ff(level,param,firstoct,aexp,cpu,1e9);
+    dtff=L_comptstep_ff(octList[level-1],level,param,firstoct,aexp,cpu,1e9);
 #else
-    dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
+    dtff=L_comptstep_ff(octList[level-1],level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
 //    printf("dtff= %e ",dtff);
@@ -557,7 +530,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // Courant Condition Hydro
 #ifdef WHYDRO2
     REAL dthydro;
-    dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
+    dthydro=L_comptstep_hydro(octList[level-1], level,param,firstoct,1.0,1.0,cpu,1e9);
 //    printf("dthydro= %e ",dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
 #endif
@@ -565,7 +538,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // Courant Condition Particle
 #ifdef PIC
     REAL dtpic;
-    dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
+    dtpic=L_comptstep(octList[level-1],level,param,firstoct,1.0,1.0,cpu,1e9);
 //    printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
@@ -684,13 +657,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // moving particles around
 
     // predictor step
-    L_accelpart(level,firstoct,adt,is,cpu); // computing the particle acceleration and velocity
+    L_accelpart(octList[level-1],level,firstoct,adt,is,cpu); // computing the particle acceleration and velocity
 
 #ifndef PARTN
-    L_movepart(level,firstoct,adt,is,cpu); // moving the particles
+    L_movepart(level,octList[level-1],adt,is,cpu); // moving the particles
 #endif
 
-    L_partcellreorg(level,firstoct); // reorganizing the particles of the level throughout the mesh
+    L_partcellreorg(level,octList[level-1],cpu); // reorganizing the particles of the level throughout the mesh
 
 #ifdef WMPI
     //reset the setup in case of refinement
@@ -736,7 +709,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     MPI_Barrier(cpu->comm);
     th[1]=MPI_Wtime();
-    HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
+    HydroSolver(octList,level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
     MPI_Barrier(cpu->comm);
     th[2]=MPI_Wtime();
@@ -745,7 +718,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef WGRAV
     // ================================= gravitational correction for Hydro
-    grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
+    grav_correction(octList[level-1],level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
     MPI_Barrier(cpu->comm);
@@ -801,7 +774,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
 #endif
-    //sanity_rad(level,param,firstoct,cpu,aexp);
+    //sanity_rad(level,param,octList[level-1],cpu,aexp);
 
 #ifdef WMPI
  //   printf("proc %d waiting\n",cpu->rank);
@@ -833,7 +806,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //===================================creating new stars=================================// 
 	need to be called before the dt computation because of the random speed component  */
 #ifdef STARS
-    createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+    createStars(octList[level-1],param,cpu, adt[level-1], aexp, level, is); 
 #endif
 
 

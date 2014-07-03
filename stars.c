@@ -289,10 +289,9 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+void createStars(struct OCT **octList, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 
 	struct OCT  *curoct;
-	struct OCT  *nextoct=firstoct[level-1];
 	struct CELL *curcell;
 	struct PART *nexp;
 	struct PART *curp;
@@ -309,27 +308,14 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int Nsn=0;
 
 
-	int *nStarCpu = (int *)calloc(cpu->nproc, sizeof(int));
 
 
 	initThresh(param, aexp);
 	param->cosmo->tphy	= a2t(param, aexp);
 
-
-/*	if(cpu->rank == 0){
-		printf("\n");
-		printf("================================\n");
-		printf("   Starting Add Stars routine   \n");
-		printf("================================\n");	
-	}
-*/
-
-	if(nextoct==NULL)
-	do {	 		
-		curoct=nextoct;
-		nextoct=curoct->next;
-		if(curoct->cpu != cpu->rank) 	continue;
-
+	int iOct;
+	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+		struct OCT *curoct=octList[iOct]; 
 	      	for(icell=0;icell<8;icell++) {
 			curcell = &curoct->cell[icell];
 
@@ -350,28 +336,26 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 			Nsn += feedback(curcell, param, cpu, aexp,level,dt);
 			mmax = fmax(curcell->field.d, mmax);
 		}
-	  }while(nextoct!=NULL);
+	  }
 
 
+	// set IDX
+
+	int *nStarCpu = (int *)calloc(cpu->nproc, sizeof(int));
 #ifdef WMPI
 	MPI_Allgather(&nstars, 1, MPI_INT, nStarCpu, 1, MPI_INT,cpu->comm);
 #endif
-
-	// set IDX
 	int nbefore = 0;	for(icpu=0; icpu<cpu->rank; icpu++) nbefore += nStarCpu[icpu];
 	int istar   = 0;
 
-	nextoct=firstoct[level-1];
-	if(nextoct!=NULL)
-	do {	
-		curoct=nextoct;
-		nextoct=curoct->next;
-		if(curoct->cpu != cpu->rank) 	continue;
 
+	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+		struct OCT *curoct=octList[iOct]; 
 	      	for(icell=0;icell<8;icell++) {
 			curcell = &curoct->cell[icell];
 			nexp=curoct->cell[icell].phead;
-			do{	if(nexp==NULL) continue;
+			if(nexp!=NULL) 
+			do{	
 				curp=nexp;
 				nexp=curp->next;
 				if(curp->isStar && curp->idx==-1){
@@ -381,7 +365,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 				}
 			}while(nexp!=NULL);
 		}
-	}while(nextoct!=NULL);
+	}
 
 
 
