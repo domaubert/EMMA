@@ -610,7 +610,8 @@ void gather_mpi(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 		  break;
 #endif
 		case 2:
-		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
+		  //pack->data[icell]=curoct->cell[icell].gdata.p; // potential
+		  pack->data[icell]=curoct->GDATA_p[icell]; // potential
 		  break;
 #endif
 		case 3:
@@ -706,7 +707,8 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 		  break;
 #endif
 		case 2:
-		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
+//		  pack->data[icell]=curoct->cell[icell].gdata.p; // potential
+		  pack->data[icell]=curoct->GDATA_p[icell]; // potential
 		  break;
 #endif
 		case 3:
@@ -787,7 +789,8 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 		break;
 #endif
 	      case 2:
-		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
+//		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
+		curoct->GDATA_p[icell]=pack->data[icell]; // potential
 		break;
 #endif
 	      case 3:
@@ -866,7 +869,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		break;
 #endif
 	      case 2:
-		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
+		curoct->GDATA_p[icell]=pack->data[icell]; // potential
 		break;
 #endif
 	      case 3:

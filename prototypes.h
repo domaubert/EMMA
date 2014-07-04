@@ -695,9 +695,6 @@ struct OCT
   // the cell properties
   struct CELL cell[8]; // MUSTN'T BE MOVED !!
 
-  REAL GDATA_d[8];
-  REAL GDATA_p[8];
-
   struct CELL *nei[6];// neighbor cells at level - 1
   struct CELL *parent; // parent cell 
  
@@ -721,6 +718,12 @@ struct OCT
   /* int vecpos; */
   /* int border; // equal to zero if not a border */
 
+
+  REAL GDATA_d[8];	// density
+  REAL GDATA_p[8];	// potential
+  REAL GDATA_pnew[8]; 	// new potential
+  REAL GDATA_res[8];  	// residual
+  REAL GDATA_f[8][3]; 	// the gravitational force component
 
 };
 
