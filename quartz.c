@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   int ngridmax,ngrid;
   int npartmax;
   int cur,curnext; // flat indexes with boundaries
-  int i,il,ichild,icell,inext,ii,ip,j;
+  int i,il,ichild,icell,inext,ii,ip,j,k;
   int xp,yp,zp;
   int NBND=1,NBND2=2*NBND;
   REAL dx;
@@ -535,7 +535,7 @@ blockcounts[0]++; // For SN feedback
 	printf("\n");
 	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE PARTICLE\n");
 	printf("%d part allocated per processor \n",npartmax);
-        printf("%d part approximately needed\n", nopn);
+  printf("%d part approximately needed\n", nopn);
 	printf("\n");
  }
 #endif
@@ -588,7 +588,6 @@ blockcounts[0]++; // For SN feedback
   rstencil=(struct RGRID*)calloc(hstride,sizeof(struct RGRID));
 #endif
 
-#ifndef FASTGRAV
   struct GGRID *grav_stencil;
   grav_stencil=(struct GGRID*)calloc(gstride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
@@ -596,21 +595,40 @@ blockcounts[0]++; // For SN feedback
   gstencil.pnew =(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride  ,sizeof(REAL));
   
-
-#else
-  gstencil.d=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.p=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
-
-  gstencil.nei=(int *)calloc(gstride*7,sizeof(int));
-  gstencil.level=(int *)calloc(gstride,sizeof(int));
-  gstencil.cpu=(int *)calloc(gstride,sizeof(int));
-  gstencil.valid=(char *)calloc(gstride,sizeof(char));
   
-  gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-#endif
-  
+/////////////////////////
+
+  const int deltaL  = param.gstride_grid;
+	const int bound		=	2;
+
+  const int ncell   = pow(2,1+deltaL) ;
+  const int n   		= ncell + 2*bound;
+  const int N       = pow(n,3);
+
+  struct GRID gstencil_grid;
+
+  gstencil_grid.p 		= (REAL*)calloc(N  ,sizeof(REAL));
+  gstencil_grid.pnew 	= (REAL*)calloc(N  ,sizeof(REAL));
+  gstencil_grid.d 		= (REAL*)calloc(N  ,sizeof(REAL));
+  gstencil_grid.res 	= (REAL*)calloc(N  ,sizeof(REAL));
+  gstencil_grid.resLR	= (REAL*)calloc(N/8,sizeof(REAL));
+
+/*	
+	gstencil_grid.d3D 	= (REAL****)calloc(N, sizeof(REAL***));
+  gstencil_grid.p3D 	= (REAL****)calloc(n,	sizeof(REAL***));
+	for(k=0;k<n;k++){
+ 		gstencil_grid.d3D[k] = (REAL***)calloc(n,	sizeof(REAL**));
+ 		gstencil_grid.p3D[k] = (REAL***)calloc(n,	sizeof(REAL**));
+		for(j=0;j<n;j++){
+	 		gstencil_grid.d3D[k][j] = (REAL**)calloc(n,	sizeof(REAL*));
+	 		gstencil_grid.p3D[k][j] = (REAL**)calloc(n,	sizeof(REAL*));
+			for(i=0;i<n;i++){
+				gstencil_grid.d3D[k][j][i] = &gstencil_grid.d[k*n*n+j*n*i];
+				gstencil_grid.p3D[k][j][i] = &gstencil_grid.p[k*n*n+j*n*i];
+			}
+		}
+	}
+*/
 #endif
 
   
@@ -1581,9 +1599,6 @@ blockcounts[0]++; // For SN feedback
     setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
   }
 
-
-
-
   //================================================================================
   //================================================================================
   //================================================================================
@@ -1668,7 +1683,7 @@ blockcounts[0]++; // For SN feedback
       double tg1,tg2;
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
-      Advance_level(levelcoarse,adt,&cpu,&param,octList,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
+      Advance_level(levelcoarse,adt,&cpu,&param,octList,firstoct,lastoct,stencil,&gstencil,&gstencil_grid,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
       if(cpu.rank==0) printf("GLOBAL TIME = %e\n",tg2-tg1);

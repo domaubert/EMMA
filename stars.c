@@ -147,6 +147,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
+// Random component
 /*	REAL r 		= rdm(0,1) * cell->field.a ;
 	REAL theta   	= acos(rdm(-1,1));
 	REAL phi 	= rdm(0,2*PI);
@@ -306,8 +307,6 @@ void createStars(struct OCT **octList, struct RUNPARAMS *param, struct CPUINFO *
 	int nsl = 0;
 	int N;
 	int Nsn=0;
-
-
 
 
 	initThresh(param, aexp);

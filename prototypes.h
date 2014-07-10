@@ -140,9 +140,10 @@ struct RUNPARAMS{
   int lmax; // the max level of refinement
   
   int niter; // the maximal number of iterations for the Poisson solver
-  
-  int gstride; // the size of the stencil for vector based computations (gravity)
-  int hstride; // the size of the stencil for vector based computations (hydro)
+
+  int gstride_grid; // the size of the stencil for vector based computations (gravity) in grid representation
+  int gstride; 	    // the size of the stencil for vector based computations (gravity)
+  int hstride;      // the size of the stencil for vector based computations (hydro)
 
   REAL dt; // the timsestep
   REAL tmax; // the simulation stops at tmax : corresponds to amax in cosmo
@@ -697,6 +698,7 @@ struct OCT
 
   struct CELL *nei[6];// neighbor cells at level - 1
   struct CELL *parent; // parent cell 
+
  
   // the next two pointers are required for sweeps through a single level
   struct OCT *next; // next oct on the same level
@@ -833,6 +835,20 @@ struct RGRID{
 };
 
 
+
+struct GRID{
+  REAL *p; 	// 512 REAL si DL=1
+  REAL *d; 	// 512 REAL si DL=1
+  REAL *res; 	// 512 REAL si DL=1
+  REAL *resLR; 	// seulement cellules centrales a resolution /2 (8 si DL=1)
+  REAL *pnew; 	// 512 REAL si DL=1
+
+/*
+	REAL **** p3D;
+	REAL **** d3D;
+*/
+
+};
 
 
 

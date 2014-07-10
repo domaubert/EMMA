@@ -14,7 +14,6 @@
 #include "cic.h"
 #include "particle.h"
 
-
 #include "communication.h"
 
 #ifdef STARS
@@ -171,7 +170,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT ***octList, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,int *ndt, int nsteps,REAL tloc){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT ***octList, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil,struct GRID *gstencil_grid,  struct RGRID *rstencil,int *ndt, int nsteps,REAL tloc){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -352,13 +351,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     FillDens(octList[level-1],level,param,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
-    PoissonSolver(octList,level,param,firstoct,cpu,gstencil,gstride,aexp); 
+    PoissonSolver(octList,level,param,firstoct,cpu,gstencil, gstencil_grid,gstride,aexp); 
 
     /* //====================================  Force Field ========================== */
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
 #endif 
-    PoissonForce(octList[level-1], level,param,firstoct,cpu,gstencil,gstride,aexp);
+    PoissonForce(octList, level,param,firstoct,cpu,gstencil,gstride,aexp);
 #endif
 
 #ifdef PIC
@@ -614,7 +613,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(level<param->lmax){
       if(nlevel>0){
-	dtfine=Advance_level(level+1,adt,cpu,param,octList,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
+	dtfine=Advance_level(level+1,adt,cpu,param,octList,firstoct,lastoct,stencil,gstencil,gstencil_grid,rstencil,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -848,6 +847,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // === Loop
 
   }while((dt<adt[level-2])&&(is<nsub));
+
+
+#ifdef MOVIE
+
+#endif
   
   
   if(cpu->rank==0){

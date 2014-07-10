@@ -1450,6 +1450,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
 
       rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %d",stream,&param->gstride_grid);
       rstat=fscanf(buf,"%s %d",stream,&param->gstride);
       rstat=fscanf(buf,"%s %d",stream,&param->hstride);
       rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);

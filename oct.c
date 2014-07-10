@@ -131,6 +131,12 @@ struct OCT* cell2oct(struct CELL* cell)
 
 void getcellnei(int cindex, int *neip, int *cell)
 {
+//  6 7
+//  4 5
+
+//  2 3  
+//  0 1
+
   switch(cindex){
   case 0:
     neip[0]=0;cell[0]=1;
