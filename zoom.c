@@ -101,7 +101,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
   aexp=1.0;
 #endif
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("\n === zooming level =%d\n",level);
   }
 
@@ -228,7 +228,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
     }
   
   
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("--\n");
     printf("exiting level =%d\n",level);
   }

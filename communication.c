@@ -46,7 +46,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
 
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==0) printf("Clenaing MPI Buffers\n");
+  //if(cpu->rank==RANK_DISP) printf("Clenaing MPI Buffers\n");
 
 #if 1
   // we clean the comm buffers
@@ -116,7 +116,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   // looking for neighbors
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==0) printf("Getting MPI Neigbourhs\n");
+  //if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
 
   for(level=1;level<=levelmax;level++)
     {
@@ -166,7 +166,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 	      nfromcpu[curoct->cpu]++;
 	      cpu->bndoct[nnei]=curoct; // contains the oct adresses for emission
 	      
-	      //if(cpu->rank==0) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
+	      //if(cpu->rank==RANK_DISP) printf("levl=%d nei=%d\n",curoct->level,curoct->cpu);
 	      nnei++;
  	      if(nfromcpu[curoct->cpu]==cpu->nbufforg) {
 		printf("ERROR on nbufforg being too small for octs on level =%d!\n",level);
@@ -196,7 +196,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   // =========================================== SETTING UP THE COMMUNICATIONS BETWEEN NEIGHBORS
 
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==0) printf("Set up MPI Comms\n");
+  //if(cpu->rank==RANK_DISP) printf("Set up MPI Comms\n");
 
 
   // computing the mpi neighbor list
@@ -256,16 +256,16 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int nvois_max;
   int nvois_maxpart;
   MPI_Allreduce(&nvois_loc,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
-  //if(cpu->rank==0) printf("Max total number of neighbors octs=%d\n",nvois_max);
+  //if(cpu->rank==RANK_DISP) printf("Max total number of neighbors octs=%d\n",nvois_max);
   MPI_Allreduce(&maxn,&nvois_max,1,MPI_INT,MPI_MAX,cpu->comm);
-  //if(cpu->rank==0) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
-  //if(cpu->rank==0) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
+  //if(cpu->rank==RANK_DISP) printf("Max number of neighbors octs from 1 nei=%d\n",nvois_max);
+  //if(cpu->rank==RANK_DISP) printf("Overriding param nbuff=%d with maxn =%d\n",cpu->nbuff,nvois_max);
   cpu->nbuff=nvois_max;
 
 #ifdef PIC
   MPI_Allreduce(&maxnpart,&nvois_maxpart,1,MPI_INT,MPI_MAX,cpu->comm);
-  //if(cpu->rank==0) printf("Max number of neighbors particles from 1 nei=%d\n",nvois_maxpart);
-  //if(cpu->rank==0) printf("Overriding param nbuffpart=%d with maxnpart =%d\n",cpu->nbuffpart,nvois_maxpart);
+  //if(cpu->rank==RANK_DISP) printf("Max number of neighbors particles from 1 nei=%d\n",nvois_maxpart);
+  //if(cpu->rank==RANK_DISP) printf("Overriding param nbuffpart=%d with maxnpart =%d\n",cpu->nbuffpart,nvois_maxpart);
   cpu->nbuffpart=nvois_maxpart;
 #endif
 
@@ -329,7 +329,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   }
 
 MPI_Barrier(cpu->comm);
- if(cpu->rank==0) printf("setup mpi Done\n");
+ if(cpu->rank==RANK_DISP) printf("setup mpi Done\n");
 
 }
 
@@ -1329,7 +1329,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   gather_mpi(cpu, sendbuffer, field);
   MPI_Barrier(cpu->comm);
 
-  //if(cpu->rank==0) printf("--- X ---\n");
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(cpu->comm);
@@ -1359,7 +1359,7 @@ void mpi_exchange(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET
   free(stat);
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+  //if(cpu->rank==RANK_DISP) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
 
@@ -1717,7 +1717,7 @@ void mpi_exchange_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, stru
   // ----------- III/ the server gather the data
   gather_mpi_hydro(cpu, sendbuffer);
 
-  //if(cpu->rank==0) printf("--- X ---\n");
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(cpu->comm);
@@ -1748,7 +1748,7 @@ void mpi_exchange_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, stru
   free(stat);
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+  //if(cpu->rank==RANK_DISP) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
 
@@ -1822,7 +1822,7 @@ void mpi_exchange_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer
   // ----------- III/ the server gather the data
   gather_mpi_hydro_level(cpu, sendbuffer,level);
 
-  //if(cpu->rank==0) printf("--- X ---\n");
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(cpu->comm);
@@ -1853,7 +1853,7 @@ void mpi_exchange_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer
   free(stat);
   t[7]=MPI_Wtime();
   tot=t[7]-t[0];
-  //if(cpu->rank==0) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
+  //if(cpu->rank==RANK_DISP) printf("clean=%e keys=%e sendkeys=%e gather=%e senddata=%e scatter=%e free=%e\n",(t[1]-t[0])/tot,(t[2]-t[1])/tot,(t[3]-t[2])/tot,(t[4]-t[3])/tot,(t[5]-t[4])/tot,(t[6]-t[5])/tot,(t[7]-t[6])/tot);
 
 }
 
@@ -2118,7 +2118,7 @@ void mpi_exchange_rad_level(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, st
   // ----------- III/ the server gather the data
   gather_mpi_rad_level(cpu, sendbuffer,level);
 
-  //if(cpu->rank==0) printf("--- X ---\n");
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(cpu->comm);
@@ -2218,7 +2218,7 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
   // ----------- III/ the server gather the data
   gather_mpi_level(cpu, sendbuffer, field,level);
 
-  //if(cpu->rank==0) printf("--- X ---\n");
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
   memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
   memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
   MPI_Barrier(cpu->comm);
@@ -2264,7 +2264,7 @@ void mpi_cic_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PAC
   MPI_Datatype MPI_PACKET=*(cpu->MPI_PACKET);
 
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==0) printf("correcting CIC on rank %d with %d\n",cpu->rank,cpu->nnei);
+  //if(cpu->rank==RANK_DISP) printf("correcting CIC on rank %d with %d\n",cpu->rank,cpu->nnei);
 
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
@@ -2317,7 +2317,7 @@ void mpi_hydro_correct(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, struc
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  if(cpu->rank==0) printf("correcting hydro CIC on rank %d\n",cpu->rank);
+  if(cpu->rank==RANK_DISP) printf("correcting hydro CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff_hydro(cpu,sendbuffer,recvbuffer);
@@ -2378,7 +2378,7 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  if(cpu->rank==0) printf("correcting Rad CIC on rank %d\n",cpu->rank);
+  if(cpu->rank==RANK_DISP) printf("correcting Rad CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff_rad(cpu,sendbuffer,recvbuffer);

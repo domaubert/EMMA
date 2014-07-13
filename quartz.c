@@ -503,7 +503,7 @@ blockcounts[0]++; // For SN feedback
   //breakmpi();
   //========== allocations ===================
   
-  //  if(cpu.rank==0) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
+  //  if(cpu.rank==RANK_DISP) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
@@ -512,7 +512,7 @@ blockcounts[0]++; // For SN feedback
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid
   int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
-  if (ngridmax < noon && cpu.rank==0 ) {
+  if (ngridmax < noon && cpu.rank==RANK_DISP ) {
 	printf("\n");
 	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE GRID\n");
 	printf("%d oct allocated per processor \n",ngridmax);
@@ -536,7 +536,7 @@ blockcounts[0]++; // For SN feedback
 
 #endif
 
-  if (npartmax < nopn && cpu.rank==0 ){
+  if (npartmax < nopn && cpu.rank==RANK_DISP ){
 	printf("\n");
 	printf("YOU MAY NEED MORE MEMORY SPACE TO COMPUTE THE PARTICLE\n");
 	printf("%d part allocated per processor \n",npartmax);
@@ -547,7 +547,7 @@ blockcounts[0]++; // For SN feedback
  
 
 
-  if(cpu.rank==0){
+  if(cpu.rank==RANK_DISP){
     printf(" === alloc Memory ===\n");
     printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);
     printf(" grid = %f MB\n",(ngridmax/(1024*1024.))*sizeof(struct OCT));
@@ -643,7 +643,7 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
-    if(cpu.rank==0) printf("gpu alloc Poisson done\n");
+    if(cpu.rank==RANK_DISP) printf("gpu alloc Poisson done\n");
 #endif
 
 #ifdef WHYDRO2 
@@ -656,7 +656,7 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
-    if(cpu.rank==0) printf("gpu alloc hydro done\n");
+    if(cpu.rank==RANK_DISP) printf("gpu alloc hydro done\n");
 #endif
 
 #ifdef WRAD
@@ -670,7 +670,7 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
-    if(cpu.rank==0) printf("gpu alloc rad done\n");
+    if(cpu.rank==RANK_DISP) printf("gpu alloc rad done\n");
 #endif
 
 
@@ -678,7 +678,7 @@ blockcounts[0]++; // For SN feedback
 #endif
     
 
-  if(cpu.rank==0) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
+  if(cpu.rank==RANK_DISP) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
 
   //========== setting up the parallel topology ===
 
@@ -714,7 +714,7 @@ blockcounts[0]++; // For SN feedback
     
   //========== building the initial meshes ===
 
-  if(cpu.rank==0) printf("building initial mesh\n");
+  if(cpu.rank==RANK_DISP) printf("building initial mesh\n");
 
   //breakmpi();
   // ZERO WE CREATE A ROOT CELL
@@ -837,16 +837,16 @@ blockcounts[0]++; // For SN feedback
 	  }
  	}
       }while(nextoct!=NULL);
-    if(cpu.rank==0) printf("level=%d noct=%d\n",level,noct2);
+    if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
   }
 
-  if(cpu.rank==0) printf("Initial Mesh done \n");
+  if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
   
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
   
 #ifdef WMPI
-  if(cpu.rank==0) printf("Set up MPI \n");
+  if(cpu.rank==RANK_DISP) printf("Set up MPI \n");
 
   cpu.sendbuffer=NULL;
   cpu.recvbuffer=NULL;
@@ -960,7 +960,7 @@ blockcounts[0]++; // For SN feedback
 
     // ==================================== assigning particles to cells
     //breakmpi();
-    if(cpu.rank==0) printf("==> starting part\n");
+    if(cpu.rank==RANK_DISP) printf("==> starting part\n");
  
     // initialisation of particles
   
@@ -1219,7 +1219,7 @@ blockcounts[0]++; // For SN feedback
     for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
     /// assigning PARTICLES TO COARSE GRID
-    if(cpu.rank==0) printf("start populating coarse grid with particles\n");
+    if(cpu.rank==RANK_DISP) printf("start populating coarse grid with particles\n");
       
     part2grid(part,&cpu,npart);
 
@@ -1254,7 +1254,7 @@ blockcounts[0]++; // For SN feedback
     int ncellhydro;
     ncellhydro=read_grafic_hydro(&cpu,&ainit, &param,param.lcoarse);
 
-    if(cpu.rank==0) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
+    if(cpu.rank==RANK_DISP) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
 #else
 
 #ifdef EVRARD
@@ -1456,7 +1456,7 @@ blockcounts[0]++; // For SN feedback
     ndumps+=1.;    // next timestep is n+1
 
 
-    if(cpu.rank==0){
+    if(cpu.rank==RANK_DISP){
       printf(" ... Restarting from file #%d with nstep=%d tsim=%e ndumps=%d\n",param.nrestart,nstepstart,tsim,ndumps);
     }
 
@@ -1503,32 +1503,32 @@ blockcounts[0]++; // For SN feedback
 #ifdef WMPI
       MPI_Barrier(cpu.comm);
 #endif
-      if(cpu.rank==0) printf("computing friedmann tables with ainit=%e amax=%e\n",ainit,amax);
+      if(cpu.rank==RANK_DISP) printf("computing friedmann tables with ainit=%e amax=%e\n",ainit,amax);
   compute_friedmann(ainit*0.95,amax,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
   
   tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
-  if(cpu.rank==0) printf("tmax=%e treal=%e\n",tmax,treal);
+  if(cpu.rank==RANK_DISP) printf("tmax=%e treal=%e\n",tmax,treal);
   cosmo.tab_aexp=tab_aexp;
   cosmo.tab_ttilde=tab_ttilde;
 #endif
 
   param.time_max=tmax;
 
-  if(cpu.rank==0) dumpHeader(&param,&cpu);
+  if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu);
 
 #ifdef STARS
 #ifndef ZOOM
- 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lcoarse);
+ 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmax)*param.stars->overdensity_cond;
 #else
 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmaxzoom);
 #endif
-	if(cpu.rank==0) printf("mstars set to %e\n",param.stars->mstars);
+	if(cpu.rank==RANK_DISP) printf("mstars set to %e\n",param.stars->mstars);
 
 	param.srcint *= param.stars->mstars * param.unit.unit_mass;
-	if(cpu.rank==0) printf("srcint set to %e\n",param.srcint);
+	if(cpu.rank==RANK_DISP) printf("srcint set to %e\n",param.srcint);
 
 	param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J]
-	if(cpu.rank==0) printf("Esnfb set to %e\n",param.stars->Esnfb);
+	if(cpu.rank==RANK_DISP) printf("Esnfb set to %e\n",param.stars->Esnfb);
 #endif
 
   //================================================================================
@@ -1572,7 +1572,7 @@ blockcounts[0]++; // For SN feedback
 
     // preparing energy stats
 
-    //if(cpu.rank==0) param.fpegy=fopen("energystat.txt","w");
+    //if(cpu.rank==RANK_DISP) param.fpegy=fopen("energystat.txt","w");
 #ifdef TESTCOSMO
     tdump=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
 #else
@@ -1595,7 +1595,7 @@ blockcounts[0]++; // For SN feedback
       zoom_level(levelcoarse,&cpu,&param,firstoct,lastoct);
     }
 
-    if(cpu.rank==0) printf("zoom amr ok\n");
+    if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
       
 #if 1
@@ -1606,7 +1606,7 @@ blockcounts[0]++; // For SN feedback
     
 
     for(izoom=levelcoarse+1;izoom<=(param.lmaxzoom);izoom++){
-      if(cpu.rank==0){
+      if(cpu.rank==RANK_DISP){
 	printf("------ ZOOM: filling data at l=%d\n",izoom);
       }
     // first PARTICLES
@@ -1638,7 +1638,7 @@ blockcounts[0]++; // For SN feedback
       int ncellhydro;
       ncellhydro=read_grafic_hydro(&cpu,&ainit, &param, izoom);
 
-      if(cpu.rank==0) printf("zoom level=%d %d hydro cell found in grafic file with aexp=%e\n",izoom, ncellhydro, ainit);
+      if(cpu.rank==RANK_DISP) printf("zoom level=%d %d hydro cell found in grafic file with aexp=%e\n",izoom, ncellhydro, ainit);
 
       mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
@@ -1664,12 +1664,12 @@ blockcounts[0]++; // For SN feedback
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
       cosmo.tsim=tsim;
-      if(cpu.rank==0) printf("\n============== STEP %d aexp=%e z=%lf tconf=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
+      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d aexp=%e z=%lf tconf=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
 #ifndef WRAD
-      if(cpu.rank==0) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
+      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #else 
-     if(cpu.rank==0) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+     if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
 
@@ -1686,7 +1686,7 @@ blockcounts[0]++; // For SN feedback
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
-      if(cpu.rank==0) printf("GLOBAL TIME = %e\n",tg2-tg1);
+      if(cpu.rank==RANK_DISP) printf("GLOBAL TIME = %e\n",tg2-tg1);
 
 
       // ==================================== dump
@@ -1698,7 +1698,7 @@ blockcounts[0]++; // For SN feedback
 	  // dumping fields only
 	  int idump;
 	  for(idump=0;idump<fdump;idump++){
-	    if(cpu.rank==0) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 	    sleep(1);
 	    MPI_Barrier(cpu.comm);
@@ -1729,7 +1729,7 @@ blockcounts[0]++; // For SN feedback
 
 	//printf("tdum=%f\n",tdump);
 	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
-	if(cpu.rank==0){
+	if(cpu.rank==RANK_DISP){
 	  printf("Dumping .......");
 	  printf("%s\n",filename);
 	}
@@ -1737,7 +1737,7 @@ blockcounts[0]++; // For SN feedback
 
 	#ifdef PIC
 		sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
-		if(cpu.rank==0){
+		if(cpu.rank==RANK_DISP){
 		  printf("Dumping .......");
 		  printf("%s\n",filename);
 		}
@@ -1770,7 +1770,7 @@ blockcounts[0]++; // For SN feedback
 	  // dumping fields only
 	  int idump;
 	  for(idump=0;idump<fdump;idump++){
-	    if(cpu.rank==0) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 	    sleep(1);
 	    MPI_Barrier(cpu.comm);
@@ -1806,7 +1806,7 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #endif
-    if(cpu.rank==0){
+    if(cpu.rank==RANK_DISP){
       //fclose(param.fpegy);
       printf("Done .....\n");
     }

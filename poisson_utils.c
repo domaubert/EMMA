@@ -1313,10 +1313,10 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #endif
 
   if(level>param->lcoarse){
-    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+    if(cpu->rank==RANK_DISP) printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==0) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
+    if(cpu->rank==RANK_DISP) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
   }
   return dres;
 }
@@ -1558,18 +1558,18 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 
   MPI_Barrier(cpu->comm);
  t[0]=MPI_Wtime();
-  if(cpu->rank==0) printf("Start Poisson Solver ");
+  if(cpu->rank==RANK_DISP) printf("Start Poisson Solver ");
 
 #ifndef GPUAXL
-  if(cpu->rank==0)  printf("on CPU\n");
+  if(cpu->rank==RANK_DISP)  printf("on CPU\n");
 #else
-  if(cpu->rank==0)  printf("on GPU\n");
+  if(cpu->rank==RANK_DISP)  printf("on GPU\n");
 #endif
   //breakmpi();
 
   if((level==param->lcoarse)&&(param->lcoarse!=param->mgridlmin)){
     for(igrid=0;igrid<param->nvcycles;igrid++){ // V-Cycles
-      if(cpu->rank==0) printf("----------------------------------------\n");
+      if(cpu->rank==RANK_DISP) printf("----------------------------------------\n");
       res=PoissonMgrid(level,param,firstoct,cpu,stencil,stride,aexp);
       if(res<param->poissonacc) break;
     }
@@ -1612,7 +1612,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 
   MPI_Barrier(cpu->comm);
  t[9]=MPI_Wtime();
- if(cpu->rank==0){  
+ if(cpu->rank==RANK_DISP){  
 #ifndef GPUAXL
    printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #else

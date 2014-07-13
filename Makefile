@@ -1,6 +1,6 @@
 ########################################## 
 ARCH = CPU
-C_LIBS =   -lstdc++ #-g #-fopenmp # -lstdc++ -g
+C_LIBS =   -lstdc++ -O2 #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o zoom.o
 DEFINES  =  
@@ -15,7 +15,7 @@ DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
 DEFINES  +=  -DSTARS
-DEFINES  +=  -DZOOM
+#DEFINES  +=  -DZOOM
 #DEFINES  +=  -DJUSTIC
 
 #------------ MPI OPTIONS ---------------------
@@ -60,12 +60,14 @@ DEFINES  +=  -DDUAL_E
 
 # ----------- RADIATION OPTIONS ------------
 DEFINES  += -DWCHEM 
-DEFINES  += -DS_100000
+DEFINES  += -DS_50000
 DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
 DEFINES  += -DSEMI_IMPLICIT 
 #DEFINES  += -DOLDCHEMRAD 
-#DEFINES  += -DACCEL_RAD_STAR
+DEFINES  += -DACCEL_RAD_STAR
+#DEFINES  += -DNOADX
+
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM

@@ -948,7 +948,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 //==================================================================================
 //==================================================================================
 
-void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
+//void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
+void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
 
 
   // =======================================
@@ -968,7 +969,12 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   REAL dxcur;
   int igrp;
 
+#ifndef ALTG
   struct Rtype Ri[8];
+#else
+  struct Rtype *Ri[8];
+#endif
+
   char child[8];
 
   struct OCT *oct;
@@ -1226,22 +1232,35 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   if(neicell->child!=NULL){
     // optimal case
     for(icell=0;icell<8;icell++){
+#ifndef ALTG
       memcpy(Ri+icell,&(neicell->child->cell[icell].rfield),sizeof(struct Rtype));
       child[icell]=(neicell->child->cell[icell].child!=NULL);
+#else
+      Ri[icell]=&(neicell->child->cell[icell].rfield);
+      child[icell]=(neicell->child->cell[icell].child!=NULL);
+#endif
     }
 
   }
   else{
      /* coarse2fine_radlin(neicell,Ri);  */
+#ifndef ALTG
     int il;
     for(il=0;il<8;il++) memcpy(&Ri[il],&neicell->rfield,sizeof(struct Rtype));
 
     for(icell=0;icell<8;icell++){
       child[icell]=0;
     }
+#else
+    int il;
+    for(il=0;il<8;il++){
+      Ri[il]=&(neicell->rfield);
+      child[il]=0.;
+    }
+#endif
   }
 
-
+#ifndef ALTG
   for(icell=0;icell<8;icell++){
     memcpy(&(stencil->oct[ioct].cell[icell].rfield),Ri+face[icell],sizeof(struct Rtype)); //
 #ifdef TRANSXM
@@ -1270,8 +1289,83 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 #endif
     stencil->oct[ioct].cell[icell].split=child[face[icell]];
   }
+#else
+  for(icell=0;icell<8;icell++){
+    memcpy(&(stencil->oct[ioct].cell[icell].rfield),Ri[face[icell]],sizeof(struct Rtype)); //
+    stencil->oct[ioct].cell[icell].split=child[face[icell]];
+  }
+#endif
   
 }
+
+//void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
+void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
+  // =======================================
+  // This function is pretty much an overkill
+  // Could be simplified
+
+  int icell, igrp;
+  int vnei[6],vcell[6];
+
+
+  struct OCT *oct;
+  struct OCT *neioct;
+  struct CELL*neicell;
+  
+
+  if(cell->child!=NULL){
+    // the oct at the right level exists
+    neicell=cell->child->nei[ioct];
+    oct=cell->child;
+  }
+  else{
+    getcellnei(cell->idx, vnei, vcell); // we get the neighbors
+    oct=cell2oct(cell);
+
+    if(vnei[ioct]==6){
+      neicell=&(oct->cell[vcell[ioct]]);
+    }
+    else{
+      if(oct->nei[ioct]->child!=NULL){
+	neicell=&(oct->nei[ioct]->child->cell[vcell[ioct]]);
+      }
+      else{
+	printf("big problem\n");
+	abort();
+      }
+    
+    }
+  }
+
+  if(neicell->child!=NULL){
+    // optimal case
+    for(icell=0;icell<8;icell++){
+      struct CELLLIGHT_R *c=&(stencil->oct[ioct].cell[icell]);
+      struct CELL *co=&neicell->child->cell[icell];
+      memcpy(&(c->rfield),&(co->rfield),sizeof(struct Rtype)); //
+      c->split=(co->child!=NULL);
+    }
+  }
+  else{
+    struct Rtype Ri[8];
+    struct Rtype *Rii[8];
+    char child[8];
+    
+    // coarse2fine_radlin(neicell,Ri); 
+    for(icell=0;icell<8;icell++) {
+	Rii  [icell] = &neicell->rfield;
+	child[icell] = 0;
+    }
+    for(icell=0;icell<8;icell++){
+      memcpy(&(stencil->oct[ioct].cell[icell].rfield),Rii[icell],sizeof(struct Rtype)); //
+      stencil->oct[ioct].cell[icell].split=child[icell];
+    }
+  }
+
+  
+}
+
+
 
 // ===================================================================================================
 // ===================================================================================================
@@ -1559,7 +1653,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   REAL cloc; // the speed of light in code units
 
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
-  if(cpu->rank==0) printf("cloc=%e aexp=%e\n",cloc,aexp);
+  if(cpu->rank==RANK_DISP) printf("cloc=%e aexp=%e\n",cloc,aexp);
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   nreadtot=0;
@@ -1615,7 +1709,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
     }while((nextoct!=NULL)&&(nread>0));
   }
   
-  if(cpu->rank==0) printf("CPU | tgat=%e tcal=%e tup=%e tscat=%e\n",tg,th,tu,ts);
+  if(cpu->rank==RANK_DISP) printf("CPU | tgat=%e tcal=%e tupchem=%e tscat=%e\n",tg,th,tu,ts);
 
   return nreadtot;
 }
@@ -1644,7 +1738,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&nocthydro,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
-  if(cpu->rank==0) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
+  if(cpu->rank==RANK_DISP) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
 
   // ===== COMPUTING THE FLUXES
   
@@ -1679,7 +1773,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.X=curoct->cell[icell].rfield.xion;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.xion*curoct->cell[icell].field.d;
 	  getE(&curoct->cell[icell].field);
 #endif
 
@@ -1719,7 +1813,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.X=curoct->cell[icell].rfield.xion;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.xion*curoct->cell[icell].field.d;
 	  getE(&curoct->cell[icell].field);
 #endif
 	}
@@ -1728,7 +1822,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   }
 
   t[9]=MPI_Wtime();
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
     printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else

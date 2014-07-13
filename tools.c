@@ -148,7 +148,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
   
-  /* if(  fabs(dm) > 1e-6 && cpu->rank==0){ */
+  /* if(  fabs(dm) > 1e-6 && cpu->rank==RANK_DISP){ */
   /*   printf("\n=================================================\n"); */
   /*   printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot); */
   /*   printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw); */
@@ -233,7 +233,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif
 
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("===============================================================\n");
   }
   for(level=2;level<=param->lmax;level++){
@@ -259,7 +259,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif
 
 
-    if(cpu->rank==0){
+    if(cpu->rank==RANK_DISP){
       if(ltot!=0) {printf("level=%2d noct=%9d min=%9d max=%9d npart=%9d",level,ltot,nomin,nomax,lpart);
 #ifdef STARS
 	printf(" nstar=%9d",lstar);
@@ -275,9 +275,9 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&gtot,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
-  if(cpu->rank==0) printf("\n");
+  if(cpu->rank==RANK_DISP) printf("\n");
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     int I;
     REAL frac=(gtot/(1.0*param->ngridmax))*100.;
     printf("grid occupancy=%6.1f [",frac);
@@ -286,7 +286,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
   }
 
 #ifdef PIC
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     int I;
     REAL frac=(ptot/(1.0*param->npartmax))*100.;
     printf("part occupancy=%6.1f [",frac);
@@ -298,7 +298,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif
 #endif
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     int I;
     REAL frac=(gtot/(1.0*pow(2,(param->lmax-1)*3)))*100.;
     printf("comp factor   =%6.1f [",frac);

@@ -349,7 +349,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
     break;
 #ifdef WGRAV
   case 1:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].d;
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].den;
     break;
 #ifdef PIC
   case -1:
@@ -357,7 +357,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
     break;
 #endif
   case 2:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].p;
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].pot;
     break;
   case 6:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]+=oct->cell[icell].res;
@@ -398,7 +398,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 
 #ifdef WRAD
   case 701:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].e[0];
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=log10(oct->cell[icell].e[0]+1e-6);
     break;
   case 702:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].fx[0];
@@ -445,6 +445,9 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 #ifdef WCHEM
   case 706:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].xion;
+    break;
+  case 1006:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].dX;
     break;
   case 707:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].temp;

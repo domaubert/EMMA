@@ -122,8 +122,8 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   
   // Compton Cooling
   
-  c5=1.017e-37*pow(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x;
-  
+  //c5=1.017e-37*pow(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x;
+  c5=5.406e-36*(temp-2.727/aexp)/pow(aexp,4)*x/(1.+x);
   // Overall Cooling
   
   *lambda=c1+c2+c3+c4+c5+c6;// ! erg*cm-3*s-1
@@ -177,6 +177,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL z=1./aexporg-1.;
 
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+  
 
 #ifdef S_X
   REAL E0overI[NGRP];
@@ -295,8 +296,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #ifdef TESTCOSMO
 	  REAL hubblet=param->cosmo->H0*sqrtf(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
 
-  	   srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3); 
-	   nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n; 
+  	   /* srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexp*aexp)+ebkg[0])/pow(aexp,3);  */
+	   /* nH[idloc]=R.nh/(aexp*aexp*aexp)/pow(param->unit.unit_l,3)*param->unit.unit_n;  */
 
 	   /* if (nH[idloc] <= 0) { */
 	   /*   printf("densité negative");		 */
@@ -322,7 +323,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
 	  
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
-	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
+	  alphab=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;// cancelling recomb rad
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
       
 	  //== Update
@@ -401,6 +402,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #else
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
 #endif
+	  Cool=0.;
 
 #ifdef COOLING
 	  // HEATING
@@ -409,8 +411,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #ifdef STARS
 		REAL SN 	 = R.snfb;
 	  	if (R.snfb) Cool = 0;
-
-//		if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt);
+		//		if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt);
 #else
 		REAL SN = 0;
 #endif
@@ -418,8 +419,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 #ifndef S_X
 	#ifdef SEMI_IMPLICIT
-		  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
-		  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
+		for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
+		eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
 	#else
 		  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0));}
 		  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);

@@ -81,15 +81,15 @@ int gpoiss(REAL lambda){
 
 void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt ){
 
-	REAL s8 	 = 2e7;		// life time of a 8 M0 star
-	     s8 	*= 31556926; 	// years en s
-
-	REAL dv 	= pow( pow(2.,-level) * aexp * param->cosmo->unit_l, 3.); 
-
-	REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac;
-	     E	       *= exp( -t0/s8 )/s8;
-
-	cell->rfield.snfb += E;	
+  REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
+  s8 	*= 31556926; 	// years en s
+  
+  REAL dv 	= pow( pow(2.,-level) * aexp * param->cosmo->unit_l, 3.); 
+  
+  REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac;
+  E	       *= exp( -t0/s8 )/s8;
+  
+  cell->rfield.snfb += E;	
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,11 +114,14 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 			if (curp->isStar && curp->isStar < 3){
 				t0 =  param->cosmo->tphy - curp->age;
 				if(t0>=0){ // for inter-level communications
-					if ( t0 >= param->stars->tlife 	)  	curp->isStar = 2; 
-					if ( t0 >= 2e8 			)  	curp->isStar = 3;
-	
-					thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
-					Nsn++;
+				  if ( t0 >= (param->stars->tlife*11)){
+				    curp->isStar = 3;
+				  }
+				  else if ( t0 >= param->stars->tlife){
+				    curp->isStar = 2; 
+				    thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
+				    Nsn++;
+				  }
 				}
 			}
 		}while(nexp!=NULL);
@@ -226,11 +229,8 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	int N 		= gpoiss(lambda);
 	
-	if(N * param->stars->mstars >= M_in_cell ) N = M_in_cell / param->stars->mstars ;
+	if(N * param->stars->mstars >= M_in_cell ) N = 0.9*M_in_cell / param->stars->mstars ; // 0.9 to prevent void cells
 
-	//if (N) printf("N %d \t M in cell %e \t Mstars %e \t dt %e\t dtt %e\t E %e \t l %e  \n",N,M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->rfieldnew.eint, lambda);
-	//if (N) printf("rfield.eint %e \t rfieldnew.eint %e \n ", cell->rfield.eint, cell->rfieldnew.eint);
-	//if(M_in_cell>1e3) printf("M in cell %e \t Mstars %e \t dt %e\t dtt %e\t d %e \t l %e  \n N=%e",M_in_cell, param->stars->mstars, dttilde, tstartilde, cell->field.d, lambda,N);
 	return N;
 }
 
@@ -241,7 +241,7 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	struct PART *star = cpu->freepart;
 
 	if (star==NULL){
-		if( cpu->rank==0){
+		if( cpu->rank==RANK_DISP){
 			printf("\n");
 			printf("----------------------------\n");
 			printf("No more memory for particles\n");
@@ -333,7 +333,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	      zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
 
 	      N = getNstars2create(curcell, param, dt, aexp, level);
-
+	      
 	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 	      for (ipart=0;ipart< N; ipart++){
@@ -354,7 +354,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #endif
 
 	param->stars->n += nstars ;
-	if(cpu->rank==0) {
+	if(cpu->rank==RANK_DISP) {
 		printf("Mmax_thresh\t%e\t%e\n", mmax, param->stars->thresh );
 		printf("%d stars added on level %d \n", nstars, level);
 		printf("%d stars in total\n",param->stars->n);
@@ -366,10 +366,10 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
 	  MPI_Barrier(cpu->comm);
 #endif
-	  //if(cpu->rank==0 && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
+	  //if(cpu->rank==RANK_DISP && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
 
-	if(cpu->rank==0) {	printf("%d\tActive SN\n",Nsn);}
-	if(cpu->rank==0) {	printf("\n");}
+	if(cpu->rank==RANK_DISP) {	printf("%d\tActive SN\n",Nsn);}
+	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
 #endif

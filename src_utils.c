@@ -165,7 +165,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   int flag;
   REAL tcur=a2t(param,aexp);
 
-  if(cpu->rank==0) printf("Building Source field\n");
+  if(cpu->rank==RANK_DISP) printf("Building Source field\n");
 
 
   curoct=firstoct[level-1];
@@ -203,8 +203,9 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
 	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
-	curoct->cell[icell].rfieldnew.xion=curoct->cell[icell].field.X;
-	curoct->cell[icell].rfield.xion=curoct->cell[icell].field.X;
+	curoct->cell[icell].rfieldnew.xion=curoct->cell[icell].field.dX/curoct->cell[icell].field.d;
+	curoct->cell[icell].rfield.xion=curoct->cell[icell].field.dX/curoct->cell[icell].field.d;
+	//printf("dX=%e d=%e x=%e\n",curoct->cell[icell].field.dX,curoct->cell[icell].field.d,curoct->cell[icell].rfield.xion);
 	/* if((curoct->cell[icell].rfieldnew.eint==0.)) { */
 	/*   printf("zero eint\n"); */
 	/*   abort(); */
@@ -271,7 +272,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 
 
-  if(cpu->rank==0) printf("== SRC STAT === > Found %d sources \n",nc);
+  if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
     
   return nc;
 }

@@ -30,7 +30,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
   int i,j,na;
   int nl;
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("\n");
     for(j=0;j<ndtmax;j++)printf("#");
     printf("\n");
@@ -46,7 +46,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
     nl=nlmax;
 #endif
 
-    if(cpu->rank==0){
+    if(cpu->rank==RANK_DISP){
       for(j=0;j<nl;j++){
       //one arrow
       for(i=0;i<(na-1);i++) printf("~");
@@ -58,7 +58,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
   }
   
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
   for(j=0;j<ndtmax;j++)printf("#");
   printf("\n \n");
   }  
@@ -169,16 +169,23 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   // setting the first oct
 #ifdef STARS
 #ifdef ACCEL_RAD_STAR
-  if(cpu->trigstar==0) return param->dt;
+  if((cpu->trigstar==0)){
+    param->clight=1e-3;
+  }
+  else{
+    param->clight=param->clightorg;
+    //printf("SWITCH VEL %e %e\n",param->clight,param->clightorg);
+  }
 #endif
 #endif
       
-  nextoct=firstoct[level-1];
+  //nextoct=firstoct[level-1];
   
-  if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
-    dt=CFL*dxcur/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
-  }
+  //if(nextoct!=NULL){
+    //dxcur=pow(0.5,level); // +1 to protect level change
+    //dt=CFL*dxcur/(aexp*cfact*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
+    dt=CFL/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0/(REAL)(1<<level); // UNITS OK
+    //}
 
   return dt;
 }
@@ -231,7 +238,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   aexp=1.0;
 #endif
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
   }
 
@@ -267,7 +274,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   do{
 
-    if(cpu->rank==0){
+    if(cpu->rank==RANK_DISP){
       printf("----\n");
       printf("subscyle #%d subt=%e nsub=%d\n",is,dt,nsub);
     }
@@ -352,20 +359,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
  // ================= IV advance solution at the current level
 
 
-    if(cpu->rank==0) printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
+    if(cpu->rank==RANK_DISP) printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
 
 
 #ifdef PIC
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
     MPI_Barrier(cpu->comm);
-    if(cpu->rank==0) printf("Local CIC done\n");
+    if(cpu->rank==RANK_DISP) printf("Local CIC done\n");
 #ifdef WMPI
     mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1); 
 #endif 
     MPI_Barrier(cpu->comm);
-    if(cpu->rank==0) printf("CIC done\n");
+    if(cpu->rank==RANK_DISP) printf("CIC done\n");
 #endif
     
     /* //==================================== Getting Density ==================================== */
@@ -411,7 +418,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifndef EDBERT
     if(level==param->lcoarse){
       if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
-	if(cpu->rank==0) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
+	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
       }
     }
@@ -419,7 +426,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 
-
+#if 0
     // =============== Computing Energy diagnostics
 
     ekp=0.;
@@ -437,7 +444,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       REAL dx;
       int levelin;
       REAL u,v,w;
-      //      if(cpu->rank==0) printf("get pop\n");
+      //      if(cpu->rank==RANK_DISP) printf("get pop\n");
 
       for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
       	nextoct=firstoct[levelin-1];
@@ -518,7 +525,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       param->egy_timelast=aexp;
       param->egy_totlast=ekp+epp+ein;
 
-      if(cpu->rank==0){
+      if(cpu->rank==RANK_DISP){
 	FILE *fpe;
 	fpe=fopen("energystat.txt","a");
 	fprintf(fpe,"%e %e %e %e %e %e %e %e %e %e %d\n",aexp,delta_e,drift_e,ekp,epp,RHS,ein,adt[level-1],param->egy_0,htilde,level);
@@ -527,7 +534,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
     }
 
-
+#endif
 
     // ================= II We compute the timestep of the current level
 
@@ -549,7 +556,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
-//    printf("dtff= %e ",dtff);
+    if(cpu->rank==RANK_DISP) printf("dtff= %e ",dtff);
 #endif
 
 
@@ -558,7 +565,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dtcosmo;
     dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-//    printf("dtcosmo= %e ",dtcosmo);
+    if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",dtcosmo);
 #endif
 
 
@@ -568,7 +575,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WHYDRO2
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
-//    printf("dthydro= %e ",dthydro);
+    if(cpu->rank==RANK_DISP) printf("dthydro= %e ",dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
 #endif
 
@@ -576,7 +583,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-//    printf("dtpic= %e ",dtpic);
+    if(cpu->rank==RANK_DISP) printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
 #endif
 
@@ -585,7 +592,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //#ifndef UVBKG
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-    if(cpu->rank==0) printf("dt default=%e dtrad= %e ",param->dt,dtrad);
+    if(cpu->rank==RANK_DISP) printf("dt default=%e dtrad= %e ",param->dt,dtrad);
     dtnew=(dtrad<dtnew?dtrad:dtnew);
     //#endif
 #endif
@@ -671,7 +678,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
     
-    if(cpu->rank==0) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
+    if(cpu->rank==RANK_DISP) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
 #ifdef STARS
@@ -687,7 +694,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     int maxnpart;
     MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
-    if(cpu->rank==0) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
+    if(cpu->rank==RANK_DISP) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
     //printf("1 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
 
@@ -777,7 +784,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     th[4]=MPI_Wtime();
 
-    if(cpu->rank==0) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
+    if(cpu->rank==RANK_DISP) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
 #endif
 
@@ -828,11 +835,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-    if(cpu->rank==0) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
+    if(cpu->rank==RANK_DISP) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
 
 #ifdef WRADHYD
-    if(cpu->rank==0) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
+    if(cpu->rank==RANK_DISP) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
 #endif
 
 #endif
@@ -841,7 +848,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //===================================creating new stars=================================// 
 	need to be called before the dt computation because of the random speed component  */
 #ifdef STARS
-    createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#ifdef ZOOM
+    if(level>=param->lmaxzoom)
+#endif
+      createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
 #endif
 
 
@@ -855,7 +865,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifndef ZOOM
       if((ndt[level-1]%2==1)||(level==param->lcoarse)){
 #else
-	if(level>=param->lmaxzoom){
+	if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
 #endif
 	L_clean_marks(level,firstoct);
 	// marking the cells of the current level
@@ -870,7 +880,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     is++;
     ndt[level-1]++;
 
-    if(cpu->rank==0) printf("is=%d ndt=%d dt=%le tloc=%le %le\n",is,ndt[level-1],dt,tloc,adt[level-2]);
+    if(cpu->rank==RANK_DISP) printf("is=%d ndt=%d dt=%le tloc=%le %le\n",is,ndt[level-1],dt,tloc,adt[level-2]);
 
     // Some Eye candy for timesteps display
 
@@ -881,7 +891,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   }while((dt<adt[level-2])&&(is<nsub));
   
   
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("--\n");
     printf("exiting level =%d\n",level);
   }

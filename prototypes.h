@@ -4,6 +4,7 @@ typedef double REAL;
 #include <mpi.h>
 #endif
 
+#define RANK_DISP 3
 
 #define GAMMA (5./3.)
 #define CFL (0.85)
@@ -154,6 +155,7 @@ struct RUNPARAMS{
 
 #ifdef WRAD
   REAL clight; // speed of light in units of the real one
+  REAL clightorg; // speed of light in units of the real one // saving the original value
   struct UNITS unit; // contains the units
   REAL fudgecool; // cooling fraction
   int ncvgcool; // cooling max iterations
@@ -360,7 +362,7 @@ struct Wtype{
   REAL E;
 
 #ifdef WRADHYD
-  REAL X;
+  REAL dX;
 #endif
 };
 
@@ -374,7 +376,7 @@ struct Wtype_MPI{
   REAL a;   // sound speed
   REAL E; 
 #ifdef WRADHYD
-  REAL X;
+  REAL dX;
 #endif
 };
 
@@ -403,7 +405,7 @@ struct Wtype1D{
   REAL p;   // pressure
   REAL a;   // sound speed
 #ifdef WRADHYD
-  REAL X;
+  REAL dX;
 #endif
 };
 
@@ -596,19 +598,20 @@ struct LCELL
   float v;
   float w;
   float p;
+  float dX;
 #endif
 
 
 #ifdef WRAD 
   //  struct Rtype rfield;
-  float e[NGRP];
+  double e[NGRP];
   float fx[NGRP];
   float fy[NGRP];
   float fz[NGRP];
   float src;
   float snfb;
-  float xion;
-  float temp; // is a direct function of eint, nh and xion but stored for conveniency
+  double xion;
+  double temp; // is a direct function of eint, nh and xion but stored for conveniency
 
 #endif 
 };

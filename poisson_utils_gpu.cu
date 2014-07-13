@@ -454,10 +454,10 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
   if(level>param->lcoarse){
-    if(cpu->rank==0) printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
+    if(cpu->rank==RANK_DISP) printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==0) printf("GPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
+    if(cpu->rank==RANK_DISP) printf("GPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
   }
 
 

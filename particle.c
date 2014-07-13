@@ -314,7 +314,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   //  mdisp=mmdisp;
 #endif
 
-  if(cpu->rank==0) printf("level=%d maxdisp=%e or %e dx\n",level,mmdisp,mmdisp/dxcur);
+  if(cpu->rank==RANK_DISP) printf("level=%d maxdisp=%e or %e dx\n",level,mmdisp,mmdisp/dxcur);
 
   return dt;
 }
@@ -1295,7 +1295,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
   struct CELL *newcell;
   int ip;
 
-  //if(cpu->rank==0) printf("particles exchange\n");
+  //if(cpu->rank==RANK_DISP) printf("particles exchange\n");
   for(dir=0;dir<3;dir++) 
     { 
       for(level=levelcoarse;level<=levelmax;level++) // looping over levels

@@ -339,7 +339,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
   newoct=freeoct; // the new oct will be the first freeoct
 
-  if(cpu->rank==0) printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
+  if(cpu->rank==RANK_DISP) printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
   long int dorg=freeoct-firstoct[0];
 
   dxcur=1./pow(2,level);
@@ -533,9 +533,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
 		  //for(il=0;il<8;il++) memcpy(&Wi[il],&curoct->cell[icell].field,sizeof(struct Wtype));
 
-#ifdef WRADHYD
-		  for(il=0;il<8;il++) Wi[il].X=curoct->cell[icell].field.X;
-#endif
+/* #ifdef WRADHYD */
+/* 		  for(il=0;il<8;il++) Wi[il].X=curoct->cell[icell].field.X; */
+/* #endif */
 		}
 #endif
 
@@ -711,7 +711,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   ndes=ndestot;
 #endif
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("octs created   = %d ",nref);
     printf("octs destroyed = %d freeoctorg=%ld freeoct=%ld\n",ndes,dorg,freeoct-firstoct[0]);
   }
@@ -886,7 +886,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   int stati[3]={0,0,0};
   REAL rin;
   
-  if(cpu->rank==0) printf("==> start marking\n");
+  if(cpu->rank==RANK_DISP) printf("==> start marking\n");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
   marker=0;
   nmark=0;
@@ -1335,7 +1335,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   mmax=MMAX;
 #endif
 
-  if(cpu->rank==0) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
+  if(cpu->rank==RANK_DISP) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
 
 }
 

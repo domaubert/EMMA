@@ -32,6 +32,9 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
   lcell->v=cell->field.v;
   lcell->w=cell->field.w;
   lcell->p=cell->field.p;
+#ifdef WRADHYD
+  lcell->dX=cell->field.dX;
+#endif
 #endif
 
 #ifdef WRAD
@@ -413,7 +416,7 @@ printf( "REFZM\t");
   printf( "unit_\t%e\n",(param->unit.unit_n) );			// unit number [moles typically]
   printf( "unit_mass\t%e\n",(param->unit.unit_mass) );		// unit mass [in kg, total mass is equal to one in unit codes]
 
-  printf( "clight\t%e\n",(param->clight) ); 			// speed of light in units of the real one
+  printf( "clight\t%e\n",(param->clightorg) ); 			// speed of light in units of the real one
   printf( "fudgecool\t%e\n",(param->fudgecool) ); 		// cooling fraction
   printf( "ncvgcool\t%d\n",(param->ncvgcool) ); 		// cooling max iterations
   
@@ -795,7 +798,7 @@ fprintf(fp, "REFZM\t");
   fprintf(fp, "unit_\t%e\n",(param->unit.unit_n) );		// unit number [moles typically]
   fprintf(fp, "unit_mass\t%e\n",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
 
-  fprintf(fp, "clight\t%e\n",(param->clight) ); 		// speed of light in units of the real one
+  fprintf(fp, "clight\t%e\n",(param->clightorg) ); 		// speed of light in units of the real one
   fprintf(fp, "fudgecool\t%e\n",(param->fudgecool) ); 		// cooling fraction
   fprintf(fp, "ncvgcool\t%d\n",(param->ncvgcool) ); 		// cooling max iterations
   
@@ -988,7 +991,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   outf=fread(&rootpart_sna,sizeof(struct PART*),1,fp);
   
   
-  //if(cpu->rank==0) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
+  //if(cpu->rank==RANK_DISP) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
   // reading the octs sequence
    
   outf=fread(&oct_ad,sizeof(struct OCT *),1,fp);
@@ -1002,7 +1005,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     curoct=root_mem+(oct_ad-root_sna);
     memcpy(curoct,&oct,sizeof(struct OCT));
 
-    //if(cpu->rank==0) printf("le=%d ic=%d\n",curoct->level,ic);
+    //if(cpu->rank==RANK_DISP) printf("le=%d ic=%d\n",curoct->level,ic);
     // 2.a modify the oct pointers within curoct
  
     curoct->next=(curoct->next==NULL?NULL:(curoct->next-root_sna)+root_mem);
@@ -1407,7 +1410,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   while(!feof(fp)){
 
-    /* if(cpu->rank==0){ */
+    /* if(cpu->rank==RANK_DISP){ */
     /*   printf("ipart=%d\n",ipart); */
     /* } */
     // do stuff
@@ -1455,7 +1458,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 	lpart=curp;
       }
     }
-    /* else if(cpu->rank==0){ */
+    /* else if(cpu->rank==RANK_DISP){ */
     /*   printf("%e\n",curp->mass); */
     /* } */
   }
@@ -1528,12 +1531,12 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 #ifdef WRAD
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;param->clightorg=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->denthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
       param->fudgecool=1.0;
-      param->ncvgcool=1;
+      param->ncvgcool=0;
 #else
 	int i;
 				rstat=fscanf(buf,"%s",stream);
@@ -1834,7 +1837,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   MPI_Barrier(cpu->comm);
 #endif
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("Grafic Particle Read ok\n");
   }
   return lastpart;
@@ -1998,7 +2001,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
   //param->cosmo->Hubble=h0;
   *npart=ip;
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("Zeldovich Particle Read ok\n");
   }
 
@@ -2149,7 +2152,7 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   //param->cosmo->Hubble=h0;
   *npart=iploc;
 
-  if(cpu->rank==0){
+  if(cpu->rank==RANK_DISP){
     printf("Edbert Particle Read ok\n");
   }
 
@@ -2231,7 +2234,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 
 
   struct Wtype WL, WR;
-  if(cpu->rank==0) printf("Init Hydro\n");
+  if(cpu->rank==RANK_DISP) printf("Init Hydro\n");
   
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
   
@@ -2299,7 +2302,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   REAL estar=M/R; //assuming G=1
   REAL pstar=rhostar*estar;
   REAL tstar=sqrt(M_PI*M_PI/8.)*pow(R,1.5)/pow(M,0.5);
-  if(cpu->rank==0) printf("Generating Evrard Test Case ts=%e, rhostar=%e\n",tstar,rhostar);
+  if(cpu->rank==RANK_DISP) printf("Generating Evrard Test Case ts=%e, rhostar=%e\n",tstar,rhostar);
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
@@ -2508,16 +2511,19 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   //double temp=170.*(1.+zstart)*(1.+zstart)/10000.;
 
   //double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
+#ifdef COOLING
   if(om==1.) {
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
-    if(cpu->rank==0) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
+    if(cpu->rank==RANK_DISP) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
-    if(cpu->rank==0) printf("No temperature law for cosmologies other than SCDM -> F** it\n");
+    if(cpu->rank==RANK_DISP) printf("No temperature law for cosmologies other than SCDM -> F** it\n");
     temp=33.64/pow(41.,2)*pow(1.+zstart,2);
     //    abort();
   }
-
+#else
+  temp=1e4;
+#endif
 
   // supercomoving unit values
   double rhostar;
@@ -2535,7 +2541,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   vstar=rstar/tstar; //m/s
   pstar=rhostar*vstar*vstar;
   
-  if(cpu->rank==0) printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
+  if(cpu->rank==RANK_DISP) printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
 
   for(i3=0;i3<np3;i3++){
 
@@ -2617,7 +2623,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef WRADHYD
 	  // Testing ADVECTION
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
-	  W.X=0.2e-3;
+	  W.dX=0.2e-3*W.d;
 #endif
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
@@ -2665,7 +2671,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif
-  if(cpu->rank==0) printf("Grafic hydro read ok\n");
+  if(cpu->rank==RANK_DISP) printf("Grafic hydro read ok\n");
   return ifound;
 }
 #endif
@@ -2697,7 +2703,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  // === particle dump
 #ifdef PIC
 	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
-	  if(cpu->rank==0){
+	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
 	    printf("%s %p\n",filename,cpu->part);
 	  }
@@ -2709,7 +2715,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  // === Hydro dump
     
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-	  if(cpu->rank==0){
+	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
 	    printf("%s\n",filename);
 	  }

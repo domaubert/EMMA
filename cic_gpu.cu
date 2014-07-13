@@ -430,7 +430,7 @@ void call_cic_GPU(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPU
   float *mass_d;
   float *mass2_d;
 
-  if(cpu->rank==0) printf("==> start CIC on GPU\n");
+  if(cpu->rank==RANK_DISP) printf("==> start CIC on GPU\n");
 
  // alloc 2
 

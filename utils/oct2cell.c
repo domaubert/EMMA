@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
 
 #ifdef WRAD
 		case 701:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.e[0];
+		  map[ic*NREAL+4]=log10(oct.cell[icell].rfield.e[0]);
 		  break;
 		case 702:
 		  map[ic*NREAL+4]=oct.cell[icell].rfield.fx[0];
