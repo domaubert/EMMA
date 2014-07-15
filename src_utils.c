@@ -116,7 +116,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
       //printf("star found ! t=%e age=%e agelim=%e idx=%d\n",tcur,curp->age,param->stars->tlife,curp->idx);
       if(tcur>= curp->age){ // for inter-level communications
 	if ( (tcur - curp->age) < param->stars->tlife  ) {
-	  cell->rfield.src +=  srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+	  cell->rfield.src +=  (curp->mass*param->unit.unit_mass)*srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
 	  flag=1;
 	  
 	}

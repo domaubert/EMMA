@@ -8,8 +8,8 @@ max_nuber_of_steps 10000000
 time_step_max  1e0
 tmax_or_amax 0.15
 ##==AMRGrid==================
-level_coarse 6
-level_max 10
+level_coarse 7
+level_max 12
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============
@@ -33,9 +33,9 @@ dens_threshold 5e20
 temp_threshold 1e5
 src_int 1e18
 ##==StarFormation=========
-overdensity_cond 50
+overdensity_cond 150
 density_cond -500
-tcar 6e9   
+tcar 4e9   
 tlife 2e7
 feedback_eff 1.
 feedback_frac 1.

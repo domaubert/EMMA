@@ -79,14 +79,14 @@ int gpoiss(REAL lambda){
 //		FEEDBACK
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt ){
+void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt, REAL mstar){
 
   REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
   s8 	*= 31556926; 	// years en s
   
   REAL dv 	= pow( pow(2.,-level) * aexp * param->cosmo->unit_l, 3.); 
   
-  REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac;
+  REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac *mstar;
   E	       *= exp( -t0/s8 )/s8;
   
   cell->rfield.snfb += E;	
@@ -119,7 +119,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 				  }
 				  else if ( t0 >= param->stars->tlife){
 				    curp->isStar = 2; 
-				    thermalFeedback(cell, param, t0*31556926, aexp, level, dt );
+				    thermalFeedback(cell, param, t0*31556926, aexp, level, dt,curp->mass);
 				    Nsn++;
 				  }
 				}
@@ -134,7 +134,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 //		STARS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx ) {
+void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx, REAL mlevel) {
 
 	star->next  = NULL;
 	star->idx   = idx;
@@ -158,7 +158,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
 */
-	star->mass  = param->stars->mstars;
+	star->mass  = mlevel;
 
 	star->epot = 0.0;
 	star->ekin = 0.5 * star->mass * (pow(star->vx,2) + pow(star->vy,2) + pow(star->vz,2));
@@ -182,9 +182,9 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *star, REAL dx, REAL aexp){
+void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *star, REAL dx, REAL aexp, REAL mlevel){
 
-	REAL drho = param->stars->mstars / pow(dx,3.);
+	REAL drho = mlevel / pow(dx,3.);
 	struct Utype U;
 	struct Wtype W;
 
@@ -215,7 +215,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL aexp, int level){
+int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL aexp, int level, REAL mlevel){
 	
 	REAL gas_efficiency = 1.;	// maybe need to be passed in param??
 
@@ -224,19 +224,19 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL M_in_cell 	= cell->field.d * pow(2.0,-3.0*level);
 
-	REAL lambda =  gas_efficiency * M_in_cell / param->stars->mstars * dttilde/ tstartilde; // Average number of stars created
+	REAL lambda =  gas_efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
 
 
 	int N 		= gpoiss(lambda);
 	
-	if(N * param->stars->mstars >= M_in_cell ) N = 0.9*M_in_cell / param->stars->mstars ; // 0.9 to prevent void cells
+	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
 	return N;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars){
+void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars, REAL mlevel){
 
 	struct PART *star = cpu->freepart;
 
@@ -269,10 +269,10 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	
 		REAL dx = pow(2.0,-level);
 
-		initStar(cell, star, param, level, xc, yc, zc, param->stars->n+nstars, aexp, is, dttilde, dx);	
+		initStar(cell, star, param, level, xc, yc, zc, param->stars->n+nstars, aexp, is, dttilde, dx,mlevel);	
 
-		conserveField(&(cell->field   ), param, star,  dx, aexp);
-		conserveField(&(cell->fieldnew), param, star,  dx, aexp);
+		conserveField(&(cell->field   ), param, star,  dx, aexp,mlevel);
+		conserveField(&(cell->fieldnew), param, star,  dx, aexp,mlevel);
 	}
 }
 
@@ -306,11 +306,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int nsl = 0;
 	int N;
 	int Nsn=0;
+	REAL mstars_level; // mass of stars at level
 
-
+	
 	initThresh(param, aexp);
 	param->cosmo->tphy	= a2t(param, aexp);
-
+	mstars_level=(param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*level)*param->stars->overdensity_cond;
 
 /*	if(cpu->rank == 0){
 		printf("\n");
@@ -332,12 +333,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	      yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	      zc=curoct->z+( icell>>2    )*dx+dx*0.5; 										
 
-	      N = getNstars2create(curcell, param, dt, aexp, level);
+	      N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 	      
 	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 	      for (ipart=0;ipart< N; ipart++){
-		addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++);						
+		addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++,mstars_level);						
 	      }
 	    }
 	    

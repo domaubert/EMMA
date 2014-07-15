@@ -89,7 +89,7 @@ struct STARSPARAM{
   REAL feedback_eff;	// feedback efficiency
   REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
 	
-  REAL mstars;		// Mass of a stellar particle
+  //REAL mstars;		// Mass of a stellar particle (PLUS BESOIN)
   int  n;		// total number of stars
   REAL thresh;		// density threshold to allow star formation
 

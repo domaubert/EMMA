@@ -1516,20 +1516,20 @@ blockcounts[0]++; // For SN feedback
 
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu);
 
-#ifdef STARS
-#ifndef ZOOM
- 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmax)*param.stars->overdensity_cond;
-#else
-	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmaxzoom);
-#endif
-	if(cpu.rank==RANK_DISP) printf("mstars set to %e\n",param.stars->mstars);
+  //#ifdef STARS
+/* #ifndef ZOOM */
+/*  	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmax)*param.stars->overdensity_cond; */
+/* #else */
+/* 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmaxzoom); */
+/* #endif */
+  //if(cpu.rank==RANK_DISP) printf("mstars set to %e\n",param.stars->mstars);
 
-	param.srcint *= param.stars->mstars * param.unit.unit_mass;
-	if(cpu.rank==RANK_DISP) printf("srcint set to %e\n",param.srcint);
+	/* param.srcint *= param.stars->mstars * param.unit.unit_mass; */
+	/* if(cpu.rank==RANK_DISP) printf("srcint set to %e\n",param.srcint); */
 
-	param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J]
-	if(cpu.rank==RANK_DISP) printf("Esnfb set to %e\n",param.stars->Esnfb);
-#endif
+	/* param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J] */
+	/* if(cpu.rank==RANK_DISP) printf("Esnfb set to %e\n",param.stars->Esnfb); */
+  //#endif
 
   //================================================================================
   //================================================================================
