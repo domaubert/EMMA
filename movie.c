@@ -11,7 +11,7 @@
 
 int MOVIE_SNAP_NUMBER = 0;
 
-int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
+void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
 
 	if(cpu->rank==0)  printf("dump movie file ");
 
