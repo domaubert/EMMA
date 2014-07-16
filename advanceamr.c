@@ -892,8 +892,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef MOVIE
-	if (level<=param->movie->lmap);
-	dumpMovie(firstoct, param, cpu, level, (float)aexp);
+	if (level<=param->movie->lmap)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
 #endif
 
   }while((dt<adt[level-2])&&(is<nsub));

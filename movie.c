@@ -11,7 +11,7 @@
 
 int MOVIE_SNAP_NUMBER = 0;
 
-int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
+void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
 
 	if(cpu->rank==0)  printf("dump movie file ");
 
@@ -91,7 +91,7 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
 
 								m1[id] += (float)cell->gdata.p;
 								m2[id] += (float)cell->field.d;
-								m3[id] += (float)cell->rfield.nhplus/(float)cell->rfield.nh;
+								m3[id] += (float)cell->field.dX/(float)cell->field.d;
 								m4[id] += (float)cell->rfield.temp;
 							}
 						}
