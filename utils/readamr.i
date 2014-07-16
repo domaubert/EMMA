@@ -7,6 +7,29 @@
 // close,fp;
 //dens=reform(dens,[3,128,128,128]);
 
+func readmap(fname,&time){
+  fp=open(fname,"rb");
+  adress=0;
+  nmapx=array(int);
+  nmapy=array(int);
+  aexp=array(float);
+
+  _read,fp,adress,nmapx;adress+=sizeof(nmapx);
+  _read,fp,adress,nmapy;adress+=sizeof(nmapy);
+  _read,fp,adress,aexp;adress+=sizeof(aexp);
+
+  ntot=nmapx*nmapy;
+  res=array(float,ntot*4);
+  
+  _read,fp,adress,res;adress+=sizeof(res);
+  
+  close,fp;  
+
+  res=reform(res,[3,nmapx,nmapy,4]);
+  return res;
+
+}
+
 
 func readcube(fname,&time){
   fp=open(fname,"rb");
