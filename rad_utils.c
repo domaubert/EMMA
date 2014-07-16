@@ -1299,10 +1299,10 @@ void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int in
       child[icell]=0;
     }
 #else
-    coarse2fine_rad2(neicell,Ri,cloc);
+    //coarse2fine_rad2(neicell,Ri,cloc);
     int il;
     for(il=0;il<8;il++){
-      //Ri[il]=&(neicell->rfield);
+      Ri[il]=&(neicell->rfield);
       child[il]=0.;
     }
 #endif
@@ -1399,10 +1399,10 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
     struct Rtype *Rii[8];
     char child[8];
     
-    coarse2fine_rad2(neicell,Ri,cloc); 
+    //coarse2fine_rad2(neicell,Ri,cloc); 
     for(icell=0;icell<8;icell++) {
-      //Rii  [icell] = &neicell->rfield;
-	child[icell] = 0;
+      Rii  [icell] = &neicell->rfield;
+      child[icell] = 0;
     }
     for(icell=0;icell<8;icell++){
       memcpy(&(stencil->oct[ioct].cell[icell].rfield),&Ri[icell],sizeof(struct Rtype)); //
