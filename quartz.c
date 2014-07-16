@@ -199,6 +199,11 @@ int main(int argc, char *argv[])
   param.stars=&stars;
 #endif
 
+#ifdef MOVIE
+	struct MOVIEPARAM movie;
+	param.movie=&movie;
+#endif
+
 #ifdef WDBG
   gdb_debug();
 #endif

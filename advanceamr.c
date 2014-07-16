@@ -20,6 +20,8 @@
 #include "stars.h"
 #endif
 
+#include "movie.h"
+
 // ===============================================================
 // ===============================================================
 
@@ -887,6 +889,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //dispndt(param,cpu,ndt);
     
     // === Loop
+
+
+#ifdef MOVIE
+	if (level<=param->movie->lmap);
+	dumpMovie(firstoct, param, cpu, level, (float)aexp);
+#endif
 
   }while((dt<adt[level-2])&&(is<nsub));
   
