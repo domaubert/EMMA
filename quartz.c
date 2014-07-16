@@ -1406,7 +1406,7 @@ blockcounts[0]++; // For SN feedback
 		  curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
 		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
 		  curoct->cell[icell].rfield.eint=eint; 
-		  curoct->cell[icell].rfield.xion=xion; 
+		  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
 		  E2T(&curoct->cell[icell].rfield,1.0,&param);
 
 		

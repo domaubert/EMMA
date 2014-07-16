@@ -4,7 +4,7 @@ typedef double REAL;
 #include <mpi.h>
 #endif
 
-#define RANK_DISP 3
+#define RANK_DISP 0
 
 #define GAMMA (5./3.)
 #define CFL (0.85)
@@ -342,7 +342,7 @@ struct Rtype{
 
 
 #ifdef WCHEM
-  REAL xion;
+  REAL nhplus;
   REAL eint;
   REAL nh;
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
@@ -612,7 +612,6 @@ struct LCELL
   float snfb;
   double xion;
   double temp; // is a direct function of eint, nh and xion but stored for conveniency
-
 #endif 
 };
 

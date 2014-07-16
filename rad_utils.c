@@ -26,8 +26,11 @@ void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->fz[igrp]=W2->fz[igrp]- W1->fz[igrp];
   }
     WR->src=W2->src- W1->src;
+#ifdef STARS
+    WR->snfb=W2->snfb- W1->snfb;
+#endif
 #ifdef WCHEM
-    WR->xion=W2->xion-W1->xion;
+    WR->nhplus=W2->nhplus-W1->nhplus;
     WR->eint=W2->eint-W1->eint;
     WR->nh=W2->nh-W1->nh;
 #endif
@@ -80,12 +83,23 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
     else{
       Wr->src=fmin(fmin(0.,fmax(beta*Wm->src,Wp->src)),fmax(Wm->src,beta*Wp->src));
     }
+
+
+#ifdef STARS
+  if(Wp->snfb>0){
+      Wr->snfb=fmax(fmax(0.,fmin(beta*Wm->snfb,Wp->snfb)),fmin(Wm->snfb,beta*Wp->snfb));
+    }
+    else{
+      Wr->snfb=fmin(fmin(0.,fmax(beta*Wm->snfb,Wp->snfb)),fmax(Wm->snfb,beta*Wp->snfb));
+    }
+#endif
+
 #ifdef WCHEM
-  if(Wp->xion>0){
-    Wr->xion=fmax(fmax(0.,fmin(beta*Wm->xion,Wp->xion)),fmin(Wm->xion,beta*Wp->xion));
+  if(Wp->nhplus>0){
+    Wr->nhplus=fmax(fmax(0.,fmin(beta*Wm->nhplus,Wp->nhplus)),fmin(Wm->nhplus,beta*Wp->nhplus));
   }
   else{
-    Wr->xion=fmin(fmin(0.,fmax(beta*Wm->xion,Wp->xion)),fmax(Wm->xion,beta*Wp->xion));
+    Wr->nhplus=fmin(fmin(0.,fmax(beta*Wm->nhplus,Wp->nhplus)),fmax(Wm->nhplus,beta*Wp->nhplus));
   }
 
   if(Wp->eint>0){
@@ -117,15 +131,18 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
     Wp->src =W0->src +dx*Dx->src +dy*Dy->src +dz*Dz->src;
 
 #ifdef WCHEM
-    Wp->xion =W0->xion +dx*Dx->xion +dy*Dy->xion +dz*Dz->xion;
+    Wp->nhplus =W0->nhplus + dx*Dx->nhplus + dy*Dy->nhplus + dz*Dz->nhplus;
     Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
+#endif
+#ifdef STARS
+    Wp->snfb =W0->snfb +dx*Dx->snfb +dy*Dy->snfb +dz*Dz->snfb;
 #endif
 }
 
 //================================================================================
 
-void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){ 
+void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){ 
 
 	  struct OCT * oct;
 	  struct Rtype *W0;
@@ -154,8 +171,8 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	    }
 	    else{
 	      Wm=&(oct->nei[vnei[inei2]]->child->cell[vcell[inei2]].rfield);
-	      
 	    }
+
 #ifdef TRANSXM
 	      if((oct->x==0.)&&(inei2==0)){
 		Wm=&(cell->rfield);
@@ -220,15 +237,46 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi){
 	  // =================================================
 	  // =================================================
 
+	  int tag=0;
 	  for(iz=0;iz<2;iz++){
 	    for(iy=0;iy<2;iy++){
 	      for(ix=0;ix<2;ix++){
 		icell=ix+iy*2+iz*4;
 		interpminmod_R(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
-		memcpy(Wi+icell,&Wint,sizeof(struct Rtype));
+		
+		REAL F=sqrt(Wint.fx[0]*Wint.fx[0]+Wint.fy[0]*Wint.fy[0]+Wint.fz[0]*Wint.fz[0]);
+		REAL E=Wint.e[0];
+		REAL f=F/cloc/E;
+		REAL F0=sqrt(W0->fx[0]*W0->fx[0]+W0->fy[0]*W0->fy[0]+W0->fz[0]*W0->fz[0]);
+		REAL E0=W0->e[0];
+		REAL f0=F0/cloc/E0;
+		if(f>1.){
+		  //printf("flux error f=%e F=%e E=%e c=%e/ f0=%e F0=%e E0=%e CORRECTION\n",f,F,E,cloc,f0,F0,E0);
+		  //tag=1;
+		  /* Wint.fx[0]/=1.02*f; */
+		  /* Wint.fy[0]/=1.02*f; */
+		  /* Wint.fz[0]/=1.02*f; */
+		  
+		  memcpy(Wi+icell,W0,sizeof(struct Rtype));
+		}
+		else{
+		  memcpy(Wi+icell,&Wint,sizeof(struct Rtype));
+		}
 	      }
 	    }
 	  }
+
+	  /* if(tag){ */
+	  /*   for(iz=0;iz<8;iz++){ */
+	  /*     REAL F0=sqrt(Wi[iz].fx[0]*Wi[iz].fx[0]+Wi[iz].fy[0]*Wi[iz].fy[0]+Wi[iz].fz[0]*Wi[iz].fz[0]); */
+	  /*     REAL E0=Wi[iz].e[0]; */
+	  /*     REAL f0=F0/cloc/E0; */
+	  /*     printf("i=%d  f=%e F=%e E=%e\n",iz,f0,F0,E0); */
+	  /*   } */
+	  /*   abort(); */
+	  /* } */
+
+
 }
 
 
@@ -948,8 +996,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 //==================================================================================
 //==================================================================================
 
-//void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
-void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
+ 
+void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
 
 
   // =======================================
@@ -1243,7 +1291,6 @@ void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int in
 
   }
   else{
-     /* coarse2fine_radlin(neicell,Ri);  */
 #ifndef ALTG
     int il;
     for(il=0;il<8;il++) memcpy(&Ri[il],&neicell->rfield,sizeof(struct Rtype));
@@ -1252,9 +1299,10 @@ void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int in
       child[icell]=0;
     }
 #else
+    coarse2fine_rad2(neicell,Ri,cloc);
     int il;
     for(il=0;il<8;il++){
-      Ri[il]=&(neicell->rfield);
+      //Ri[il]=&(neicell->rfield);
       child[il]=0.;
     }
 #endif
@@ -1299,7 +1347,7 @@ void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int in
 }
 
 //void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
-void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil){
+void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
   // =======================================
   // This function is pretty much an overkill
   // Could be simplified
@@ -1351,13 +1399,13 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
     struct Rtype *Rii[8];
     char child[8];
     
-    // coarse2fine_radlin(neicell,Ri); 
+    coarse2fine_rad2(neicell,Ri,cloc); 
     for(icell=0;icell<8;icell++) {
-	Rii  [icell] = &neicell->rfield;
+      //Rii  [icell] = &neicell->rfield;
 	child[icell] = 0;
     }
     for(icell=0;icell<8;icell++){
-      memcpy(&(stencil->oct[ioct].cell[icell].rfield),Rii[icell],sizeof(struct Rtype)); //
+      memcpy(&(stencil->oct[ioct].cell[icell].rfield),&Ri[icell],sizeof(struct Rtype)); //
       stencil->oct[ioct].cell[icell].split=child[icell];
     }
   }
@@ -1370,7 +1418,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 // ===================================================================================================
 // ===================================================================================================
 
-struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread)
+struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread, REAL cloc)
 {
   struct OCT* nextoct;
   struct OCT* curoct;
@@ -1412,7 +1460,7 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	  //ioct=ix[inei]+iy[inei]*3+iz[inei]*9+13; // oct position in stencil
 	  ioct=inei;
 	  //visit[ioct]=1;
-	  recursive_neighbor_gather_oct_rad(ioct, inei, -1, -1, 1, cell, stencil+iread);
+	  recursive_neighbor_gather_oct_rad(ioct, inei, -1, -1, 1, cell, stencil+iread,cloc);
 	}
       iread++;
     }while((nextoct!=NULL)&&(iread<stride));
@@ -1478,10 +1526,10 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 	Rupdate.fz[igrp]  +=R.fz[igrp];
       }
       
-#if 0
+#if 1
       // ================================ START MEGA DIAGNOSE =========================
       if(Rupdate.e[0]<0){
-	printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.xion,stencil[i].oct[6].cell[icell].rfield.e[0],stencil[i].oct[6].cell[icell].rfield.temp);
+	printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,stencil[i].oct[6].cell[icell].rfield.e[0],stencil[i].oct[6].cell[icell].rfield.temp);
 	one=1.;
 	for(flx=0;flx<6;flx++){
 	  printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
@@ -1495,7 +1543,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
 	for(flx=0;flx<6;flx++){
 	  
-	  printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[0],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.xion,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
+	  printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[0],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nhplus/stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nh,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
 	}
 
 	//abort();
@@ -1665,7 +1713,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       t[0]=MPI_Wtime();
   
       // ------------ gathering the stencil value values
-      nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread);
+      nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread,cloc);
 
 
       if(nread>0){
@@ -1773,7 +1821,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.xion*curoct->cell[icell].field.d;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
 	  getE(&curoct->cell[icell].field);
 #endif
 
@@ -1795,7 +1843,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    R.src+=child->cell[i].rfield.src*0.125;
 #ifdef WCHEM
 	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
-	    R.xion+=child->cell[i].rfield.xion*0.125;
+	    R.nhplus+=child->cell[i].rfield.nhplus*0.125;
 	    R.eint+=child->cell[i].rfield.eint*0.125;
 	    R.nh+=child->cell[i].rfield.nh*0.125;
 #endif
@@ -1813,7 +1861,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.xion*curoct->cell[icell].field.d;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
 	  getE(&curoct->cell[icell].field);
 #endif
 	}

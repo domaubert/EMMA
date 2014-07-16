@@ -49,7 +49,7 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 #ifdef STARS
   lcell->snfb=cell->rfield.snfb;
 #endif
-  lcell->xion=cell->rfield.xion;
+  lcell->xion=cell->rfield.nhplus/cell->rfield.nh;
   lcell->temp=cell->rfield.temp;
 #endif
 

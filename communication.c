@@ -1905,7 +1905,6 @@ void scatter_mpi_rad_ext(struct CPUINFO *cpu, struct RAD_MPI **recvbuffer,int le
 		R->fz[igrp]+= Re->fz[igrp];
 	      }
 
-	      /* R->xion=curoct->cell[icell].rfield.xion; */
 	      /* R->nh=curoct->cell[icell].rfield.nh; */
 	      /* R->eint=curoct->cell[icell].rfield.eint; */
 	      /* R->src=curoct->cell[icell].rfield.src; */

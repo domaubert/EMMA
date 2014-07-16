@@ -203,8 +203,8 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
 	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
-	curoct->cell[icell].rfieldnew.xion=curoct->cell[icell].field.dX/curoct->cell[icell].field.d;
-	curoct->cell[icell].rfield.xion=curoct->cell[icell].field.dX/curoct->cell[icell].field.d;
+	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
+	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
 	//printf("dX=%e d=%e x=%e\n",curoct->cell[icell].field.dX,curoct->cell[icell].field.d,curoct->cell[icell].rfield.xion);
 	/* if((curoct->cell[icell].rfieldnew.eint==0.)) { */
 	/*   printf("zero eint\n"); */
@@ -225,8 +225,8 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #endif
 	  REAL eint;
 
-	  curoct->cell[icell].rfield.xion=xion; 
-	  curoct->cell[icell].rfieldnew.xion=xion; 
+	  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
+	  curoct->cell[icell].rfieldnew.nhplus=xion*curoct->cell[icell].rfieldnew.nh; 
 	  
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density

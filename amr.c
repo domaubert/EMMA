@@ -175,7 +175,6 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
     if(vnei[ii]==6){
       memcpy(&W,&(curoct->cell[vcell[ii]].rfield),sizeof(struct Rtype));
-
     }
     else{
       // Note that the neibourgh cell may not exist therefore we have to check
@@ -255,20 +254,16 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
       
     }
     
-    //if((curoct->x==0.)&&(curoct->level==6)) printf("l=%d ii=%d  We=%e\n",curoct->level,ii,W.xion);
-
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-    gradd[ax]+=(W.xion*fact);   
-    avgd[ax]+=W.xion*0.5;
+    gradd[ax]+=(W.nhplus*fact);   
+    avgd[ax]+=W.nhplus*0.5;
     gradn[ax]+=(W.nh*fact);   
     avgn[ax]+=W.nh*0.5;
     grade[ax]+=(W.e[0]*fact);   
     avge[ax]+=W.e[0]*0.5;
-    val[ii]=W.xion;
   }
 
-  //  ratiox=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].rfield.xion+1e-10);
 
   ratiox=fmax(fabs(gradd[0]/(avgd[0]+1e-10)),fmax(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
   ration=fmax(fabs(gradn[0]/(avgn[0]+1e-10)),fmax(fabs(gradn[1]/(avgn[1]+1e-10)),fabs(gradn[2]/(avgn[2]+1e-10))))*0.;
@@ -531,11 +526,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		if(cpu->rank==curoct->cpu){
 		  int il;
 		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
-		  //for(il=0;il<8;il++) memcpy(&Wi[il],&curoct->cell[icell].field,sizeof(struct Wtype));
-
-/* #ifdef WRADHYD */
-/* 		  for(il=0;il<8;il++) Wi[il].X=curoct->cell[icell].field.X; */
-/* #endif */
 		}
 #endif
 
@@ -545,10 +535,15 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    REAL E;
 		    REAL F;
 		    int il;
-		  
-		    //coarse2fine_radlin(&(curoct->cell[icell]),Ri);
+		    //curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
+
+		    //coarse2fine_rad2(&(curoct->cell[icell]),Ri);
+  		     for(il=0;il<8;il++){ 
+		    /*   Ri[il].snfb=0.; */
+		    //   Ri[il].src=0.; */
+ 		       memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
+		     }
 		    
- 		    for(il=0;il<8;il++) memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
 		}
 		
 #endif
@@ -590,8 +585,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
-		    //curoct->cell[icell].rfield.src=0.;
-		    //printf("xion=%e %e\n",curoct->cell[icell].rfield.xion,Ri[ii].xion);
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].rfield),0,sizeof(struct Rtype));
@@ -1226,6 +1219,17 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+/* #ifdef WRAD */
+/* 			    // testing refinement around sources */
+/* 			    REAL src; */
+/* 			    //printf("check\n"); */
+/* 			    src=curoct->cell[icell].rfield.src; */
+/* 			    if((src>0)&&(curoct->cell[icell].marked==0)) { */
+/*   			      curoct->cell[icell].marked=marker; */
+/* 			      nmark++;stati[2]++; */
+/* 			    } */
+
+/* #endif */
 
 			    // --------------- MAIN AMR COSMO
 #endif
@@ -1261,7 +1265,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    
 #else
 			    mcell=0.;
-			    den=curoct->cell[icell].rfield.xion;
+			    den=curoct->cell[icell].rfield.nhplus;
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
@@ -1277,7 +1281,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #else
 #ifdef WCHEM
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
-			    //mcell=(curoct->cell[icell].rfield.xion>1e-2)*(curoct->cell[icell].rfield.xion<0.98);//+(curoct->cell[icell].rfield.src>0.);
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;

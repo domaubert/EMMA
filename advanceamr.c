@@ -816,7 +816,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
 #endif
-    //sanity_rad(level,param,firstoct,cpu,aexp);
+    sanity_rad(level,param,firstoct,cpu,aexp);
 
 #ifdef WMPI
  //   printf("proc %d waiting\n",cpu->rank);
