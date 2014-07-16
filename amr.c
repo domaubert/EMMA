@@ -539,9 +539,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		    //coarse2fine_rad2(&(curoct->cell[icell]),Ri);
   		     for(il=0;il<8;il++){ 
-		    /*   Ri[il].snfb=0.; */
-		    //   Ri[il].src=0.; */
+		       //   Ri[il].src=0.; */
  		       memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
+		       Ri[il].snfb=0.;
 		     }
 		    
 		}

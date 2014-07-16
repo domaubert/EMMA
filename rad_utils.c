@@ -1405,7 +1405,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
       child[icell] = 0;
     }
     for(icell=0;icell<8;icell++){
-      memcpy(&(stencil->oct[ioct].cell[icell].rfield),&Ri[icell],sizeof(struct Rtype)); //
+      memcpy(&(stencil->oct[ioct].cell[icell].rfield),Rii[icell],sizeof(struct Rtype)); //
       stencil->oct[ioct].cell[icell].split=child[icell];
     }
   }
