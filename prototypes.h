@@ -109,6 +109,9 @@ struct MOVIEPARAM{
 	REAL ymax;
 	REAL zmin;
 	REAL zmax;
+
+	float* map;
+	float* map_reduce;
 };
 #endif
 

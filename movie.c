@@ -41,7 +41,7 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
 
 	const int ntot = 	nmapx*nmapy;
 
-	float * map = calloc(4*ntot,sizeof(float));	
+	float * map = param->movie->map;
 
 	float * m1 = map + 0*ntot;
 	float * m2 = map + 1*ntot;
@@ -49,7 +49,7 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
 	float * m4 = map + 3*ntot;
 
 	int ilev;
-	for(ilev=param->lcoarse; ilev<lmap; ilev++){
+	for(ilev=param->lcoarse; ilev<=lmap; ilev++){
 
 		const REAL dxcur = pow(2.,    -ilev);
 		const int  locN  = pow(2 ,lmap-ilev);
@@ -65,33 +65,35 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
 			int icell;
 			for(icell=0;icell<8;icell++){
 				struct CELL *cell = &oct->cell[icell];
+				if( cell->child==NULL || ilev==lmap ){
 
-				const REAL xc=oct->x+( icell   %2)*dxcur;
-				const REAL yc=oct->y+((icell/2)%2)*dxcur;
-				const REAL zc=oct->z+( icell/4   )*dxcur;
+					const REAL xc=oct->x+( icell   %2)*dxcur;
+					const REAL yc=oct->y+((icell/2)%2)*dxcur;
+					const REAL zc=oct->z+( icell/4   )*dxcur;
 
-				if( cell->child!=NULL ) 		continue;
-				if((zc<zmin)||(zc>zmax))	  continue;
-				if((yc<ymin)||(yc>ymax))	  continue;
-				if((xc<xmin)||(xc>xmax))	  continue;
 
-				const int imap=xc/dxmap;
-				const int jmap=yc/dxmap;
-				const int kmap=zc/dxmap;
+					if((zc<zmin)||(zc>zmax))	  continue;
+					if((yc<ymin)||(yc>ymax))	  continue;
+					if((xc<xmin)||(xc>xmax))	  continue;
 
-				int ii,jj,kk;
-				for(kk=0;kk<locN;kk++){							if((kmap+kk)>=(nmapz+k0)) continue;
-					for(jj=0;jj<locN;jj++){						if((jmap+jj)>=(nmapy+j0))	continue;				
-						for(ii=0;ii<locN;ii++){					if((imap+ii)>=(nmapx+i0)) continue;
+					const int imap=xc/dxmap;
+					const int jmap=yc/dxmap;
+					const int kmap=zc/dxmap;
 
-							const int x  = imap+ii-i0;
-							const int y  = jmap+jj-j0;
-							const int id = x+y*nmapx;
+					int ii,jj,kk;
+					for(kk=0;kk<locN;kk++){							if((kmap+kk)>=(nmapz+k0)) continue;
+						for(jj=0;jj<locN;jj++){						if((jmap+jj)>=(nmapy+j0))	continue;				
+							for(ii=0;ii<locN;ii++){					if((imap+ii)>=(nmapx+i0)) continue;
 
-							m1[id] += (float)cell->gdata.p;
-							m2[id] += (float)cell->field.d;
-							m3[id] += (float)cell->rfield.nhplus/(float)cell->rfield.nh;
-							m4[id] += (float)cell->rfield.temp;
+								const int x  = imap+ii-i0;
+								const int y  = jmap+jj-j0;
+								const int id = x+y*nmapx;
+
+								m1[id] += (float)cell->gdata.p;
+								m2[id] += (float)cell->field.d;
+								m3[id] += (float)cell->rfield.nhplus/(float)cell->rfield.nh;
+								m4[id] += (float)cell->rfield.temp;
+							}
 						}
 					}
 				}
@@ -106,7 +108,7 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
   //============= dump ====================
   //=======================================
 	
-	float* mapred = calloc(4*nmapx*nmapy, sizeof(float));
+	float* mapred = param->movie->map_reduce;
 	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
 	if(cpu->rank==0){
 
@@ -124,8 +126,7 @@ int dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cp
 		fclose(fp);
 	}
 
-	free(map);
-	free(mapred);
+
 
   if(cpu->rank==0) printf("done\n");
 }

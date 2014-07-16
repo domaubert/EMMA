@@ -248,6 +248,12 @@ int main(int argc, char *argv[])
   param.lmaxzoom=param.lcoarse+2;
 #endif
 
+
+#ifdef MOVIE
+	const int n    = pow (2, param.movie->lmap);
+	param.movie->map = (float*)calloc(4*n*n,sizeof(float));
+	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));		
+#endif
   //omp_set_num_threads(param.ompthread);
 
 #ifndef TESTCOSMO
