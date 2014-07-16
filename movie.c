@@ -91,7 +91,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 								m1[id] += (float)cell->gdata.p;
 								m2[id] += (float)cell->field.d;
-								m3[id] += (float)cell->rfield.nhplus/(float)cell->rfield.nh;
+								m3[id] += (float)cell->field.dX/(float)cell->field.d;
 								m4[id] += (float)cell->rfield.temp;
 							}
 						}
