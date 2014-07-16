@@ -1486,6 +1486,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   size_t rstat;
   REAL dummyf;
 
+
   buf=fopen(fparam,"r");
   if(buf==NULL)
     {
@@ -1546,12 +1547,25 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef STARS
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar		=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife		=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_eff	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_frac	=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond			=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar							=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife							=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_eff			=dummyf;
+      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_frac			=dummyf;
 #endif
+
+#ifdef MOVIE
+      rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %d", stream,&param->movie->lmap);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->xmin);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->xmax);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->ymin);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->ymax);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->zmin);
+      rstat=fscanf(buf,"%s %lf",stream,&param->movie->zmax);
+
+#endif
+
       fclose(buf);
     }
 
@@ -1595,11 +1609,11 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
   if(cpu->rank==0){
 
-    sprintf(filename,"./level_%03d/ic_velcx",level); 
+    sprintf(filename,"./level_%03d/ic_velbx",level); 
     fx=fopen(filename,"rb");
-    sprintf(filename,"./level_%03d/ic_velcy",level); 
+    sprintf(filename,"./level_%03d/ic_velby",level); 
     fy=fopen(filename,"rb");
-    sprintf(filename,"./level_%03d/ic_velcz",level); 
+    sprintf(filename,"./level_%03d/ic_velbz",level); 
     fz=fopen(filename,"rb");
     
 
@@ -2367,11 +2381,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 
     sprintf(filename,"./level_%03d/ic_deltab",level); 
     fdx=fopen(filename,"rb");
-    sprintf(filename,"./level_%03d/ic_velcx",level); 
+    sprintf(filename,"./level_%03d/ic_velbx",level); 
     fx=fopen(filename,"rb");
-    sprintf(filename,"./level_%03d/ic_velcy",level); 
+    sprintf(filename,"./level_%03d/ic_velby",level); 
     fy=fopen(filename,"rb");
-    sprintf(filename,"./level_%03d/ic_velcz",level); 
+    sprintf(filename,"./level_%03d/ic_velbz",level); 
     fz=fopen(filename,"rb");
 
     /* fdx=fopen("./ic_deltab","rb"); */

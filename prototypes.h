@@ -99,6 +99,19 @@ struct STARSPARAM{
 #endif
 
 
+#ifdef MOVIE
+struct MOVIEPARAM{
+	char* folder;
+	int lmap;
+	REAL xmin;
+	REAL xmax;
+	REAL ymin;
+	REAL ymax;
+	REAL zmin;
+	REAL zmax;
+};
+#endif
+
 struct UNITS{
   REAL unit_l; // comoving length size of the box [meters]
   REAL unit_v; // unit velocity
@@ -176,6 +189,9 @@ struct RUNPARAMS{
   REAL fzoom; // the scale factor for zoom radii (>1.)
   REAL lmaxzoom; // the maximal zoom level
 
+#ifdef MOVIE
+	struct MOVIEPARAM *movie;
+#endif
 };
 
 

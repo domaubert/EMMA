@@ -27,15 +27,23 @@ max_subcycles 2
 nthread 16
 nstream 1
 ompthreads 1
-##==RadTransfert======
+##==RadTransfert============
 clight 5e-2
 dens_threshold 5e20
 temp_threshold 1e5
 src_int 1e18
-##==StarFormation=========
+##==StarFormation============
 overdensity_cond 150
 density_cond -500
 tcar 4e9   
 tlife 2e7
 feedback_eff 0.
 feedback_frac 1.
+##==Movie====================
+lmap 8
+xmin 0
+xmax 1
+ymin 0
+ymax 1
+zmin 0
+zmax 1

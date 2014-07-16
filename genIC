@@ -67,17 +67,18 @@ def inputplanck(size,folder):
 
 if __name__ == "__main__":
 
-
 	folder = "utils/grafic_src/"
 
 	parser = argparse.ArgumentParser(description='Grafic')
 
-	parser.add_argument('N', 	default=-1, type=int,  help = "Resolution of IC ")
+	parser.add_argument('L', 	default=-1, type=int,  help = "Initial level of IC ")
 	parser.add_argument('size',     default=-1, type=int,  help = "Physical size of IC")
 
 	args = parser.parse_args()
 
-	graficinc(args.N,folder)
+	N = pow(2,args.L)	
+
+	graficinc(N,folder)
 	inputplanck(args.size,folder)
 
 	commande = "make -C " +folder+ " clean"
@@ -87,7 +88,7 @@ if __name__ == "__main__":
 	os.system(commande)
 
 	commande = "./" +folder+ "grafic1 <" +folder+ "Input.planck"
-	os.system(commande)
+ 	os.system(commande)
 
-
-
+	commande = "mv ic_* level_%03d"%args.L
+ 	os.system(commande)
