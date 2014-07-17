@@ -227,6 +227,8 @@ for(iz=0;iz<2;iz++){
 //void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){ 
 void coarse2fine_gravlin(struct CELL *cell, REAL *Wid, REAL *Wip ){ 
 
+
+
   struct OCT * oct=cell2oct(cell);
 
   struct Gtype W;
@@ -364,9 +366,6 @@ for(iz=0;iz<2;iz++){
       }
     }
   }
-
-
-
 }
 
 
@@ -1051,6 +1050,9 @@ REAL PoissonMgrid_grid(struct OCT *** octList, int level,struct RUNPARAMS *param
     curoct->parent->gdata.d=0.;
     curoct->parent->gdata.p=0.;
 
+		cell2oct(curoct->parent)->GDATA_d[curoct->parent->idx] = 0;
+		cell2oct(curoct->parent)->GDATA_p[curoct->parent->idx] = 0;
+
     REAL tmp=0;
     for(icell=0;icell<8;icell++){
      tmp += curoct->res[icell]*0.125; // we average the residual and store it as the new density
@@ -1077,19 +1079,19 @@ REAL PoissonMgrid_grid(struct OCT *** octList, int level,struct RUNPARAMS *param
     PoissonMgrid_grid(octList, level-1,param,firstoct,cpu,stencil,stride,tsim, grid);
   }
   
+
+
   // prolongation + correction
  
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-
     curoct=octList[level-1][iOct]; 
 
 //    REAL tmp[8];
 //    coarse2fine_gravlin(curoct->parent, curoct->GDATA_d, tmp );
 
-    for(icell=0;icell<8;icell++){ // looping over cells in oct 
-        curoct->GDATA_p[icell] -=  cell2oct(curoct->parent)->GDATA_p[curoct->parent->idx] ;
-
-//        curoct->GDATA_p[icell] -= tmp[icell];// we propagate the error and correct the evaluation
+    for(icell=0;icell<8;icell++){
+        curoct->GDATA_p[icell] -= cell2oct(curoct->parent)->GDATA_p[curoct->parent->idx] ;
+//      curoct->GDATA_p[icell] -= tmp[icell];// we propagate the error and correct the evaluation
     }
   }
 
@@ -1967,8 +1969,8 @@ int PoissonSolver(struct OCT *** octList, int level,struct RUNPARAMS *param, str
   if((level==param->lcoarse)&&(param->lcoarse!=param->mgridlmin)){
     for(igrid=0;igrid<param->nvcycles;igrid++){ // V-Cycles
       if(cpu->rank==0) printf("----------------------------------------\n");
-  //   res=PoissonMgrid(octList, level,param,firstoct,cpu,stencil,stride,aexp, gstencil_grid);
-      res=PoissonMgrid_grid(octList, level,param,firstoct,cpu,stencil,stride,aexp, gstencil_grid);
+//     res=PoissonMgrid(octList, level,param,firstoct,cpu,stencil,stride,aexp, gstencil_grid);
+       res=PoissonMgrid_grid(octList, level,param,firstoct,cpu,stencil,stride,aexp, gstencil_grid);
       if(res<param->poissonacc) break;
     }
   }
@@ -1990,7 +1992,11 @@ int PoissonSolver(struct OCT *** octList, int level,struct RUNPARAMS *param, str
       curcell=&(curoct->cell[icell]);
       if(curcell->child!=NULL){    
   
-	coarse2fine_gravlin(curcell,curcell->child->GDATA_d,curcell->child->GDATA_p);
+//	coarse2fine_gravlin(curcell,curcell->child->GDATA_d,curcell->child->GDATA_p);
+
+  //  for(icell=0;icell<8;icell++){ // looping over cells in oct 
+        curoct->GDATA_p[icell] -=  cell2oct(curoct->parent)->GDATA_p[curoct->parent->idx] ;
+	//	}
 /*
 	for(icell2=0;icell2<8;icell2++){
 	//Wi[icell2].p=0.;

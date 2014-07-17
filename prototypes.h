@@ -334,6 +334,11 @@ struct CPUINFO{
   REAL * gresB;
   unsigned long cuparam;
 #endif
+
+#ifdef MOVIE
+  float *map;
+#endif
+
 };
 
 
@@ -579,6 +584,49 @@ struct CELL
 #endif
 };
 
+struct LCELL
+{
+  REAL marked; // REAL for consistency with physical quantities during communications
+  //int idx; //index of the cell within the oct
+  int child; 
+
+#ifdef PIC 
+   // the physical quantities */
+  float density; // total density */
+ #endif 
+  
+#ifdef WGRAV 
+  //struct Gtype gdata; 
+  float den;
+  float pot;
+  float res;  // residual */
+  float f[3]; // the gravitational force component */
+#endif 
+
+
+#ifdef WHYDRO2 
+  //struct Wtype field;
+  float d;
+  float u;
+  float v;
+  float w;
+  float p;
+#endif
+
+
+#ifdef WRAD 
+  //  struct Rtype rfield;
+  float e[NGRP];
+  float fx[NGRP];
+  float fy[NGRP];
+  float fz[NGRP];
+  float src;
+  float snfb;
+  float xion;
+  float temp; // is a direct function of eint, nh and xion but stored for conveniency
+
+#endif 
+};
 
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
@@ -721,14 +769,29 @@ struct OCT
   /* int border; // equal to zero if not a border */
 
 
-  REAL GDATA_d[8];	// density
-  REAL GDATA_p[8];	// potential
+  REAL GDATA_d[8];			// density
+  REAL GDATA_p[8];			// potential
   REAL GDATA_pnew[8]; 	// new potential
   REAL GDATA_res[8];  	// residual
   REAL GDATA_f[8][3]; 	// the gravitational force component
 
 };
 
+struct LOCT
+{
+/*   // the cell properties */
+   struct LCELL cell[8]; // MUSTN'T BE MOVED !! */
+
+   // the oct position (lowest left corner) */
+   float x; 
+   float y; 
+   float z; 
+
+  // parallel data
+  int cpu; 
+  int level;// level of the cells in the oct
+
+};
 
 struct OCT *SOCT;
 

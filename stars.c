@@ -315,7 +315,7 @@ void createStars(struct OCT **octList, struct RUNPARAMS *param, struct CPUINFO *
 	int iOct;
 	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
 		struct OCT *curoct=octList[iOct]; 
-	      	for(icell=0;icell<8;icell++) {
+	  for(icell=0;icell<8;icell++) {
 			curcell = &curoct->cell[icell];
 
 			if( testCond(curcell, dt, dx, param, aexp, level) ) {
@@ -350,7 +350,7 @@ void createStars(struct OCT **octList, struct RUNPARAMS *param, struct CPUINFO *
 
 	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
 		struct OCT *curoct=octList[iOct]; 
-	      	for(icell=0;icell<8;icell++) {
+  	for(icell=0;icell<8;icell++) {
 			curcell = &curoct->cell[icell];
 			nexp=curoct->cell[icell].phead;
 			if(nexp!=NULL) 

@@ -72,7 +72,7 @@ def plotslice(args):
 #	args.field = ["rfield.snfb"]
 #	args.field = ["rfield.temp"]
 	args.field = ["field.d"]
-	args.field = ["rfield.xion"]
+#	args.field = ["rfield.xion"]
 
 	filename = args.files[0][:-7]
 	filename = args.files[0]

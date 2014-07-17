@@ -35,8 +35,8 @@ if __name__ == "__main__":
 
 	N,t, parts=readPart(file, args)		
 
-#	plotpart(args,N,t,parts)
-	spectre(N,t,parts)	
+	plotpart(args,N,t,parts)
+#	spectre(N,t,parts)	
 
 	plt.show()
 

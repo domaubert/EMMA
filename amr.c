@@ -721,7 +721,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT*** oc
 	}while(nextoct!=NULL);
     }  //printf("level=%d done\n",level);
 
-  setOctList(octList[level-1], firstoct[level-1], cpu, param, level);
+ //setOctList(octList[level-1], firstoct[level-1], cpu, param, level);
 
 #ifdef WMPI
   int nreftot;

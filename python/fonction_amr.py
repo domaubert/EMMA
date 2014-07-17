@@ -75,7 +75,10 @@ def denoct2grid(data,args,silo):
 #		f=" 706 "
 	if args.field[0]=="rfield.xion" : 
 		f=" 706 "
+	if args.field[0]=="f0" : 
+		f=" 201 "
 	
+
 	if f=="0 ":
 		print "entrez un champ"
 		sys.exit()

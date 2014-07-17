@@ -2259,9 +2259,9 @@ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param
  
   if(cpu->rank==0){
     fdx=fopen("./ic_deltab","rb");
-    fx=fopen("./ic_velcx","rb");
-    fy=fopen("./ic_velcy","rb");
-    fz=fopen("./ic_velcz","rb");
+    fx =fopen("./ic_velcx","rb");
+    fy =fopen("./ic_velcy","rb");
+    fz =fopen("./ic_velcz","rb");
   
     // reading the headers
 
@@ -2599,7 +2599,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("Dumping .......");
 	    printf("%s\n",filename);
 	  }
-	//  dumpgrid(param->lmax,firstoct,filename,adump,param); 
+	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
 	  // backups for restart
 

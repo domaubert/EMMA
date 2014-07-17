@@ -3,7 +3,7 @@ ARCH = CPU
 C_LIBS = -lm -g -fopenmp # -lstdc++ -g
 
 C_FLAGS =
-C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o 
+C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o movie.o
 DEFINES  =  
 #=========================================== CODE PARAMETERS =====================
 
@@ -16,7 +16,6 @@ DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 #DEFINES  +=  -DWDBG
 DEFINES  +=  -DSTARS
-DEFINES  +=  -DMOVIE
 
 #------------ MPI OPTIONS ---------------------
 
@@ -77,7 +76,8 @@ DEFINES  += -DSEMI_IMPLICIT
 #DEFINES  +=  -DREFYM # TRANS must be turned on too
 #DEFINES  +=  -DREFZM # TRANS must be turned on too
 
-
+#------------ MOVIE MODE ---------------------
+DEFINES  +=  -DMOVIE
 
 
 #=================================================================================
@@ -108,7 +108,7 @@ all:$(C_OBJS) $(CUDA_OBJS)
 	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
 
 oct2grid:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2grid utils/oct2grid.c utils/silo/lib/libsilo.a	-lm
 oct2cell:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2cell utils/oct2cell.c utils/silo/lib/libsilo.a	
 

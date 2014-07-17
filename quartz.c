@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   REAL xc,yc,zc;
   int hstride; 
   int rstride;
- int gstride;
+  int gstride;
   int ncomp;
   REAL acc;
   REAL dt;
@@ -613,25 +613,27 @@ blockcounts[0]++; // For SN feedback
   gstencil_grid.res 	= (REAL*)calloc(N  ,sizeof(REAL));
   gstencil_grid.resLR	= (REAL*)calloc(N/8,sizeof(REAL));
 
-/*	
-	gstencil_grid.d3D 	= (REAL****)calloc(N, sizeof(REAL***));
-  gstencil_grid.p3D 	= (REAL****)calloc(n,	sizeof(REAL***));
-	for(k=0;k<n;k++){
- 		gstencil_grid.d3D[k] = (REAL***)calloc(n,	sizeof(REAL**));
- 		gstencil_grid.p3D[k] = (REAL***)calloc(n,	sizeof(REAL**));
-		for(j=0;j<n;j++){
-	 		gstencil_grid.d3D[k][j] = (REAL**)calloc(n,	sizeof(REAL*));
-	 		gstencil_grid.p3D[k][j] = (REAL**)calloc(n,	sizeof(REAL*));
-			for(i=0;i<n;i++){
-				gstencil_grid.d3D[k][j][i] = &gstencil_grid.d[k*n*n+j*n*i];
-				gstencil_grid.p3D[k][j][i] = &gstencil_grid.p[k*n*n+j*n*i];
-			}
-		}
-	}
-*/
+
 #endif
 
-  
+#ifdef MOVIE
+	REAL xmin  = 0.;
+	REAL xmax  = 1.;
+	REAL ymin  = 0.; 
+	REAL ymax  = 1.; 
+	REAL zmin  = 0.; 
+	REAL zmax  = 1.;
+
+	int  lMap  = param.lmax;
+  int  nmap  = pow(2,lMap);
+  REAL dxmap = 1./nmap;
+
+  int nmapx=(xmax-xmin)/dxmap;
+  int nmapy=(ymax-ymin)/dxmap;
+  int nmapz=(zmax-zmin)/dxmap;
+
+  cpu.map = (float *)calloc(nmapx*nmapy*4, sizeof(float)); 
+#endif  
 
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
@@ -1595,7 +1597,7 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 //setting up the oct list
-  for(level=1;level<=levelcoarse;level++){ 
+  for(level=1;level<levelcoarse;level++){ 
     setOctList(octList[level-1], firstoct[level-1], &cpu, &param, level) ;
   }
 

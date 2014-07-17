@@ -3,17 +3,17 @@ max_number_of_octs 500000
 max_number_of_part 3000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency   1000
-max_nuber_of_steps 0
+output_frequency   20
+max_nuber_of_steps 2000
 time_step_max  1e-0
-tmax_or_amax 0.5 
+tmax_or_amax 1
 ##==AMRGrid==================
-level_coarse 6
+level_coarse 5
 level_max 6
-amr_thresh 8
+amr_thresh 2
 n_smooth 2
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 1000
+max_number_of_relaxation_poisson 50
 poisson_accuracy 1e-3
 mgrid_lmin 4
 mgrid_nvcycles 3

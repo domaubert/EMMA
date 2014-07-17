@@ -167,6 +167,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 
 
 
+
 // ===============================================================
 // ===============================================================
 
@@ -209,6 +210,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #else
   aexp=1.0;
 #endif
+
+
+/*
+#ifdef MOVIE
+	double tt2=MPI_Wtime();
+	dumpMovie(octList, param, cpu);
+	printf("Time to dump movie = %e\n", MPI_Wtime() - tt2 );
+	exit(0);
+#endif
+*/
 
   if(cpu->rank==0){
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
@@ -284,6 +295,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       curoct=L_refine_cells(level,param,octList,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
       cpu->freeoct=curoct;
     }
+
     // ==================================== Check the number of particles and octs
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
@@ -292,7 +304,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef STARS
   ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
 #endif
-
 
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
 
@@ -309,10 +320,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
     MPI_Barrier(cpu->comm);
 #endif
-  }
 
-  
-    // =============================== cleaning 
+
+  }
+  setOctList(octList[level-1],firstoct[level-1], cpu, param, level) ;
+
+  // =============================== cleaning 
 
 #ifdef WHYDRO2
     clean_new_hydro(octList, level,param,firstoct,cpu);
@@ -408,9 +421,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
        	int iOct;
-	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-    	curoct=octList[level-1][iOct]; 
-      	      for(icell=0;icell<8;icell++) // looping over cells in oct
+				for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    			curoct=octList[level-1][iOct]; 
+   	      for(icell=0;icell<8;icell++) // looping over cells in oct
       		{
       		  if(curoct->cell[icell].child==NULL){
       		    potloc+=aexp*dx*dx*dx*(curoct->cell[icell].gdata.d)*(curoct->cell[icell].gdata.p)*0.5;
@@ -833,7 +846,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     // ====================== VI Some bookkeeping ==========
-    dt+=adt[level-1]; // advance local time
+    dt  +=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time
     is++;
     ndt[level-1]++;
@@ -844,16 +857,18 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     //dispndt(param,cpu,ndt);
     
-    // === Loop
+#ifdef MOVIE
+//  double tt=MPI_Wtime();
+	dumpMovie(octList, param, cpu, level);
+//	printf("Time to dump movie = %e\n", MPI_Wtime() - tt );
+#endif
 
+    // === Loop
   }while((dt<adt[level-2])&&(is<nsub));
 
 
-#ifdef MOVIE
 
-#endif
-  
-  
+ 
   if(cpu->rank==0){
     printf("--\n");
     printf("exiting level =%d\n",level);
