@@ -1,7 +1,7 @@
 rep="../data";
 
-nsnap=14;
-level=7;
+nsnap=81;
+level=6;
 
 MPC=3.08e22; // m
 H=67; // km/s/Mpc

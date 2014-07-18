@@ -315,7 +315,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
 	  if(fudgecool<1e-4){
-	    printf("eint[idloc]=%e (emin=%e E0=%e) nH[idloc]=%e X0[idloc=%e ai=%e Cool=%e tcool=%e, t2=%e fudge=%e\n",eint[idloc],emin,E0,nH[idloc],x0[idloc],ai_tmp1,Cool,fudgecool*tcool,dt-currentcool_t,fudgecool);
+	    /* printf("eint[idloc]=%e (emin=%e E0=%e) nH[idloc]=%e X0[idloc=%e ai=%e Cool=%e tcool=%e, t2=%e fudge=%e\n",eint[idloc],emin,E0,nH[idloc],x0[idloc],ai_tmp1,Cool,fudgecool*tcool,dt-currentcool_t,fudgecool); */
 	    if(fudgecool<1e-25){
 	      printf("lack of convergence abort() fudgecool=%e\n",fudgecool);
 	      abort();

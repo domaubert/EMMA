@@ -167,7 +167,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
   if(cpu->rank==RANK_DISP) printf("Building Source field\n");
 
-
   curoct=firstoct[level-1];
   if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
     nextoct=curoct;
@@ -273,7 +272,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 
   if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
-    
   return nc;
 }
 

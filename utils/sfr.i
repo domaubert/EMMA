@@ -1,8 +1,8 @@
 rep="../data";
 
-nsnap=14;
+nsnap=81;
 
-lmax=10.;
+lcoarse=6.;
 delta=50.;
 MPC=3.08e22; // m
 H=67; // km/s/Mpc
@@ -10,20 +10,17 @@ Hor=H;
 G=6.67e-11; // S.I.
 omegam=0.3175;
 omegab=0.045;
-n=2^(3*lmax);
-lbox=12./(H/100.)*MPC;// m
+n=2^(3*lcoarse);
+lbox=6./(H/100.)*MPC;// m
 lorg=lbox/MPC;
 msol=2e30;
 
 // DM particle mass
 H=H*1e3/MPC; // s^-1
 rhoc=3.*H^2/(8.*pi*G);
-mdm=((omegam-omegab)*rhoc*lbox^3)/n/msol*delta;
+mdm=((omegam-omegab)*rhoc*lbox^3)/n/msol;
 munit=((omegam)*rhoc*lbox^3)/msol;
-mdm;
-
-// stellar particle mass
-ms=((omegab)*rhoc*lbox^3)/n/msol*delta;
+munit;
 
 #if 1
 s=mergepart(swrite(format=rep+"/star.%05d",nsnap),8,a,star=1);

@@ -81,7 +81,7 @@ DEFINES  += -DACCEL_RAD_STAR
 #DEFINES  +=  -DREFZM # TRANS must be turned on too
 
 # ---- MOVIE--------------
-DEFINES += -DMOVIE
+#DEFINES += -DMOVIE
 
 
 #=================================================================================

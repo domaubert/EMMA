@@ -228,8 +228,10 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 
 	int N 		= gpoiss(lambda);
+
+	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 	
-	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
+	if(N * mlevel >= M_in_cell ) N = M_in_cell / mlevel ; // 0.9 to prevent void cells
 
 	return N;
 }
@@ -311,7 +313,9 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	
 	initThresh(param, aexp);
 	param->cosmo->tphy	= a2t(param, aexp);
-	mstars_level=(param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*level)*param->stars->overdensity_cond;
+	mstars_level=(param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
+	//mstars_level=(param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
+	//mstars_level=(param->cosmo->ob/param->cosmo->om) * pow(2.0,-3.0*param->lcoarse); // coarse mass
 
 /*	if(cpu->rank == 0){
 		printf("\n");
