@@ -1,7 +1,7 @@
 rep="../data";
 
-nsnap=81;
-level=6;
+nsnap=19;
+level=7;
 
 MPC=3.08e22; // m
 H=67; // km/s/Mpc
@@ -10,7 +10,7 @@ G=6.67e-11; // S.I.
 omegam=0.3175;
 omegab=0.045;
 n=128^3;
-lbox=6./(H/100.)*MPC;// m
+lbox=12./(H/100.)*MPC;// m
 lorg=lbox/MPC;
 
 

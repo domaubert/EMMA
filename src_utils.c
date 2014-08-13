@@ -13,6 +13,7 @@
 // ============================================================================================
 int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur, struct OCT *curoct,  struct CPUINFO *cpu){
   REAL X0=1./pow(2,param->lcoarse);
+  REAL  dxcur=pow(0.5,curoct->level);
   int flag;
 
 #ifdef WRADTEST
@@ -20,7 +21,6 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   // =================================================================
 
   int igrp;
-  REAL  dxcur=pow(0.5,curoct->level);
   int icell=cell->idx;
   REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
   REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
@@ -116,7 +116,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
       //printf("star found ! t=%e age=%e agelim=%e idx=%d\n",tcur,curp->age,param->stars->tlife,curp->idx);
       if(tcur>= curp->age){ // for inter-level communications
 	if ( (tcur - curp->age) < param->stars->tlife  ) {
-	  cell->rfield.src +=  (curp->mass*param->unit.unit_mass)*srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+	  cell->rfield.src +=  (curp->mass*param->unit.unit_mass)*srcint/pow(dxcur,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
 	  flag=1;
 	  
 	}
