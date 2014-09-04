@@ -159,6 +159,7 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 // ===============================================================
 
 #ifdef WRAD
+
 REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
   
   struct OCT *nextoct;
@@ -176,7 +177,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   }
   else{
     param->clight=param->clightorg;
-    //printf("SWITCH VEL %e %e\n",param->clight,param->clightorg);
+    //    printf("SWITCH VEL %e %e\n",param->clight,param->clightorg);
   }
 #endif
 #endif
@@ -191,6 +192,117 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 
   return dt;
 }
+
+#if 0
+REAL L_comptstep_radfront(int level, struct RUNPARAMS *param,struct OCT** firstoct, REAL aexp, struct CPUINFO* cpu, REAL tmax){
+  
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  REAL dxcur;
+  int icell;
+  REAL aa;
+  REAL vf;
+  REAL dt;
+  REAL Smax;
+
+  
+  
+  if(level==param->lcoarse){
+    Smax=1e-3*aexp*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v; // initial velocity is c=1e-3
+    // Computing new timestep
+    //dt=tmax;
+
+    dxcur=pow(0.5,level); 
+  
+    // setting the first oct
+    nextoct=firstoct[level-1];
+    REAL clight=(aexp*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v);  
+    
+    if(nextoct!=NULL){
+      do // sweeping through the octs of level
+	{
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  if(curoct->cpu!=cpu->rank) continue;
+	  
+	  for(icell=0;icell<8;icell++) // looping over cells in oct
+	    {
+	      
+	      REAL deltaX;
+	      int ip=icell+(icell%2?-1:1);
+	      REAL XP=curoct->cell[ip].rfield.nhplus/curoct->cell[ip].rfield.nh;
+	      REAL X0=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh;
+	      if(XP<=X0) {
+		deltaX=curoct->cell[ip].rfield.deltaX; 
+	      }
+	      else{
+		deltaX=curoct->cell[icell].rfield.deltaX; 
+	      }
+	      
+	      REAL alpha= fabs(XP-X0)/dxcur;
+	      REAL contrast= fabs(XP-X0)/(XP+X0)*2.;
+	      if(contrast>0.1){
+	      if((fabs(XP-0.5)<0.4)||(fabs(X0-0.5)<0.4))
+		{
+		  vf=deltaX/alpha*1.;
+		  
+		  if(vf>clight) printf("vf/c=%3.1f deltaX=%e XP=%e X0=%e alpha=%e c=%e contrast=%e\n",vf/clight,deltaX,XP,X0,alpha,clight,contrast);
+		  Smax=fmax(Smax,fmin(clight,vf)); 
+		}
+	    }
+	    
+	  }
+	}while(nextoct!=NULL);
+    }
+    
+    dt=CFL*dxcur/(Smax*3.);
+    Smax=Smax/(aexp*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v); // switch back to natural units for speed of light
+
+#ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&Smax,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+    if(cpu->rank==RANK_DISP) printf("Smax=%f\n",Smax);
+#endif
+    param->clightorg=Smax;
+  }
+
+
+  if(NGRP>1) printf("ERROR NGRP>1\n");
+
+  Smax=param->clightorg*(aexp*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v); // switch back to natural units for speed of light;
+  // Check
+  nextoct=firstoct[level-1];
+  if(nextoct!=NULL){
+    do // sweeping through the octs of level
+      {
+	curoct=nextoct;
+	nextoct=curoct->next;
+	if(curoct->cpu!=cpu->rank) continue;
+	
+	for(icell=0;icell<8;icell++) // looping over cells in oct
+	  {
+	    struct Rtype *R;
+	    R=&curoct->cell[icell].rfield;
+	    
+	    REAL F=sqrt(pow(R->fx[0],2)+pow(R->fy[0],2)+pow(R->fz[0],2));
+	    REAL E=R->e[0];
+	    
+	    if(F>(Smax*E)) {
+	      REAL corg=F/E;
+	      R->fx[0]*=Smax/corg;
+	      R->fy[0]*=Smax/corg;
+	      R->fz[0]*=Smax/corg;
+	      //printf("SOL VIOLATION ABORT F=%e E=%e C=%e CE=%e\n",F,E,Smax,Smax*E);
+	      //abort();
+	    }
+	  }
+      }while(nextoct!=NULL);
+  }
+  
+
+
+  return dt;
+}
+#endif
 #endif
 
 
@@ -200,7 +312,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 // ===============================================================
 // ===============================================================
 
-REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,int *ndt, int nsteps,REAL tloc){
+REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil,int *ndt, int nsteps, REAL tloc){
  
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -546,8 +658,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Overshoot tmax
     dtnew=((param->time_max-tloc)<dtnew?(param->time_max-tloc):dtnew);
-//    printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
-//    printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
+    //printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
+    //printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
 
     // Free Fall
 #ifdef WGRAV
@@ -591,12 +703,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Courant Condition Radiation
 #ifdef WRAD
-    //#ifndef UVBKG
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-    if(cpu->rank==RANK_DISP) printf("dt default=%e dtrad= %e ",param->dt,dtrad);
-    dtnew=(dtrad<dtnew?dtrad:dtnew);
-    //#endif
+    if(cpu->rank==RANK_DISP) printf("dtnew=%e dtrad= %e\n",dtnew,dtrad);
+#ifndef COARSERAD
+    dtnew=(dtrad<dtnew?dtrad:dtnew); 
+#endif
 #endif
 
 #ifdef FLOORDT
@@ -616,6 +728,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* } */
 
 
+    printf("dtnew %e before\n",dtnew);
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
@@ -624,6 +737,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       printf("WARNING NULL dt rank %d n %d dt %e\n",cpu->rank,cpu->noct[level-1],dtnew);
       //abort();
     }
+
     if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
 
     // the coarser level may be shorter than the finer one
@@ -643,7 +757,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-2]=tdum2;
 #endif
 
-//printf("dtnew %e\n",tdum);
+    printf("dtnew %e\n",tdum);
 
 
    // ================= III Recursive call to finer level
@@ -680,6 +794,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
     
+    /* if(param->lcoarse==level){ */
+    /*   if(cpu->rank==RANK_DISP){ */
+    /* 	int lev; */
+    /* 	for(lev=7;lev<=10;lev++){ */
+    /* 	  printf("lev %d dt=%e\n",lev,adt[lev-1]); */
+    /* 	} */
+    /*   } */
+    /* } */
+
     if(cpu->rank==RANK_DISP) printf("SUBLEVEL TIME lev=%d %e\n",level,tt2-tt1);
     // ==================================== Check the number of particles and octs
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
@@ -791,6 +914,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
+    // ===================================== RADIATION
+#ifndef COARSERAD
 #ifdef WRAD
     double tcomp[10];
     MPI_Barrier(cpu->comm);
@@ -798,44 +923,41 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
  
+    
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcomp[1]=MPI_Wtime();
     mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
-    //mpi_exchange_rad(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,(nsteps==0),level);
     MPI_Barrier(cpu->comm);
     tcomp[2]=MPI_Wtime();
 #endif
-
-
-
+    
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+#endif
 
     //=============== Radiation Update ======================
-#ifdef WMPI
-    MPI_Barrier(cpu->comm);
-#endif
     RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
-#ifdef WMPI
-    MPI_Barrier(cpu->comm);
-#endif
-    //sanity_rad(level,param,firstoct,cpu,aexp);
 
 #ifdef WMPI
- //   printf("proc %d waiting\n",cpu->rank);
+    MPI_Barrier(cpu->comm);
+#endif
+
+#ifdef WMPI
+    //printf("proc %d waiting\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
       mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
-
+      
       MPI_Barrier(cpu->comm);
       tcomp[5]=MPI_Wtime();
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
-
+      
     }
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
 #endif
-
 
     if(cpu->rank==RANK_DISP) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
@@ -845,7 +967,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 #endif
-
+#else
+    if(cpu->rank==RANK_DISP) printf("COARSERAD SKIPPING RADIATION\n");
+#endif
 
     /* //===================================creating new stars=================================// 
 	need to be called before the dt computation because of the random speed component  */
@@ -906,3 +1030,223 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   return dt;
 
 }
+
+  // ============================================================================================================
+  // ============================================================================================================
+
+#ifdef WRAD
+#ifdef COARSERAD
+
+  REAL Advance_level_RAD(int level,REAL dtmax, REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int nsteps, REAL tloc){
+ 
+#ifdef TESTCOSMO
+  struct COSMOPARAM *cosmo;
+  cosmo=param->cosmo;
+#endif
+   struct OCT *curoct;
+  REAL dtnew;
+  REAL dt=0.;
+  int npart=0;
+  int mtot;
+  int is;
+  REAL aexp;
+  int nsource;
+  int hstride=param->hstride;
+  int gstride=param->gstride;
+  int nsub=param->nsubcycles;
+  int ip;
+  int ptot[2];
+  int deltan[2];
+  ptot[0]=0;
+  ptot[1]=0;
+
+  REAL ekp,epp,ein;
+  REAL RHS;
+  REAL delta_e;
+  REAL drift_e;
+  REAL htilde;
+
+  is=0;
+ 
+  do{
+
+    /* if(cpu->rank==RANK_DISP){ */
+    /*   printf("----\n"); */
+    /*   printf("subscyle #%d subt=%e nsub=%d\n",is,dt,nsub); */
+    /* } */
+
+#ifdef TESTCOSMO
+    aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    //aexp=cosmo->aexp;
+#endif
+
+
+    
+    // == Ready to advance
+
+#ifdef WRAD
+    clean_new_rad(level,param,firstoct,cpu,aexp);
+#endif
+
+    // ================= II We compute the timestep of the current level
+
+    dtnew=param->dt;//*(cpu->nsteps>2);
+
+
+    // Overshoot tmax
+    dtnew=((param->time_max-tloc)<dtnew?(param->time_max-tloc):dtnew);
+
+
+    // Courant Condition Radiation
+    REAL dtrad;
+    dtrad=L_comptstep_rad(param->lcoarse,param,firstoct,aexp,cpu,1e9);
+    //if(cpu->rank==RANK_DISP) printf("dtmax=%e dtrad= %e\n",dtmax,dtrad);
+    
+    dtnew=(dtrad<dtmax?dtrad:dtmax); // we cannot go further than the outer timestep
+
+
+    /// ================= Assigning a new timestep for the current level
+    adt[level-1]=dtnew;
+
+    if(dtnew==0.){
+      printf("WARNING NULL dt rank %d n %d dt %e\n",cpu->rank,cpu->noct[level-1],dtnew);
+      //abort();
+    }
+
+    if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
+
+    // the coarser level may be shorter than the finer one
+    if(adt[level-2]<adt[level-1]){
+      adt[level-1]=adt[level-2];
+    }
+    else{ // otherwise standard case
+      adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
+    }
+
+#ifdef WMPI
+    REAL tdum=0.;
+    REAL tdum2=0.;
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    adt[level-1]=tdum;
+    adt[level-2]=tdum2;
+#endif
+
+    // ================= III Recursive call to finer level
+    
+    double tt2,tt1;
+    MPI_Barrier(cpu->comm);
+    tt1=MPI_Wtime();
+    
+    int nlevel=cpu->noct[level]; // number at next level
+#ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+
+    
+    if(level<param->lmax){
+      if(nlevel>0){
+	REAL dtfine;
+	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc);
+	// coarse and finer level must be synchronized now
+	adt[level-1]=dtfine;
+	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
+      }
+    }
+
+
+#ifdef WMPI
+    tdum=0.;
+    tdum2=0.;
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    adt[level-1]=tdum;
+    adt[level-2]=tdum2;
+#endif
+
+    MPI_Barrier(cpu->comm);
+    tt2=MPI_Wtime();
+    
+    /* if(param->lcoarse==level){ */
+    /*   if(cpu->rank==RANK_DISP){ */
+    /* 	int lev; */
+    /* 	for(lev=7;lev<=10;lev++){ */
+    /* 	  printf("lev %d dt=%e\n",lev,adt[lev-1]); */
+    /* 	} */
+    /*   } */
+    /* } */
+    
+    // ===================================== RADIATION
+
+    double tcomp[10];
+    MPI_Barrier(cpu->comm);
+    tcomp[0]=MPI_Wtime();
+
+    //=============== Building Sources and counting them ======================
+    nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
+    
+
+#ifdef WMPI
+      MPI_Barrier(cpu->comm);
+      tcomp[1]=MPI_Wtime();
+      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+      MPI_Barrier(cpu->comm);
+      tcomp[2]=MPI_Wtime();
+#endif
+
+#ifdef WMPI
+      MPI_Barrier(cpu->comm);
+#endif
+
+      //=============== Radiation Update ======================
+      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+      
+#ifdef WMPI
+      MPI_Barrier(cpu->comm);
+#endif
+
+#ifdef WMPI
+      //printf("proc %d waiting\n",cpu->rank);
+      MPI_Barrier(cpu->comm);
+      tcomp[3]=MPI_Wtime();
+      if(level>param->lcoarse){
+	mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
+
+	MPI_Barrier(cpu->comm);
+	tcomp[5]=MPI_Wtime();
+	mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+
+      }
+      MPI_Barrier(cpu->comm);
+      tcomp[4]=MPI_Wtime();
+
+#endif
+
+
+    // ====================== VI Some bookkeeping ==========
+    dt+=adt[level-1]; // advance local time
+    tloc+=adt[level-1]; // advance local time
+    is++;
+    
+    //if(cpu->rank==RANK_DISP) printf("is=%d dt=%le tloc=%le %le\n",is,dt,tloc,adt[level-2]);
+
+    // Some Eye candy for timesteps display
+
+    //dispndt(param,cpu,ndt);
+    
+    // === Loop
+
+
+  }while((dt<adt[level-2])&&(is<nsub));
+  
+  
+  /* if(cpu->rank==RANK_DISP){ */
+  /*   printf("--\n"); */
+  /*   printf("RAD exiting level =%d\n",level); */
+  /* } */
+
+  return dt;
+
+}
+#endif
+#endif

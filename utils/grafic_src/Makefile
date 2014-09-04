@@ -1,6 +1,6 @@
 
 CC = gcc
-F77 = gfortran -mcmodel=large -O2
+F77 = ifort
 
 #DEBUG = -W -Wall -O2 -fbounds-check
 #DEBUG = -DEBUG:div_check=3:subscript_check=ON:trap_uninitialized=ON:verbose_runtime=ON -g

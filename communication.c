@@ -2377,7 +2377,7 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
   stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
   req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
 
-  if(cpu->rank==RANK_DISP) printf("correcting Rad CIC on rank %d\n",cpu->rank);
+  //if(cpu->rank==RANK_DISP) printf("correcting Rad CIC on rank %d\n",cpu->rank);
 
   // ----------- 0  / we clean the mpi buffers
   clean_mpibuff_rad(cpu,sendbuffer,recvbuffer);

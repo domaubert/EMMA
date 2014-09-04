@@ -5,6 +5,7 @@ typedef double REAL;
 #endif
 
 #define RANK_DISP 0
+#define FBKP 1
 
 #define GAMMA (5./3.)
 #define CFL (0.85)
@@ -15,8 +16,8 @@ typedef double REAL;
 #ifndef WHYDRO2 
 #define OMEGAB (0.0)
 #else
-#define OMEGAB (0.049);
-#define PMIN 1e-11
+#define OMEGAB (0.049); // 0.049 for PLANCK
+#define PMIN 1e-11 
 #endif
 
 #define NCOSMOTAB (262144)
@@ -42,7 +43,7 @@ typedef double REAL;
 #ifdef WRAD
 #define NVAR_R (5)
 #define NGRP (1)
-#define EMIN (0.)
+#define EMIN (1e-20)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 
@@ -365,6 +366,7 @@ struct Rtype{
   REAL eint;
   REAL nh;
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
+  //  REAL deltaX; // the ionization variation (to track fronts)
 #endif
 
 };
@@ -624,8 +626,8 @@ struct LCELL
 #ifdef WRAD 
   //  struct Rtype rfield;
   double e[NGRP];
-  float fx[NGRP];
-  float fy[NGRP];
+  double fx[NGRP];
+  double fy[NGRP];
   float fz[NGRP];
   float src;
   float snfb;

@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
   //getting the resolution
   sscanf(argv[2],"%d",&lmap);
   nmap=pow(2,lmap);
+  printf("nmap=%d\n",nmap);
   dxmap=1./nmap;
 
   // getting the number of CPUs
@@ -100,7 +101,7 @@ int main(int argc, char *argv[])
     zmax=1.;
   }
 
-  int proj;
+  int proj=0;
   if(argc>14) {
     sscanf(argv[14],"%d",&proj);
   }
@@ -116,6 +117,7 @@ int main(int argc, char *argv[])
   /// allocating the cube or the map
   if(proj==0){
     map=(float *)calloc(nmapx*nmapy*nmapz,sizeof(float));
+    printf("nmapx=%d nmapy=%d nmapz=%d\n",nmapx,nmapy,nmapz);
   }
   else if(proj==3){
     map=(float *)calloc(nmapx*nmapy,sizeof(float));
@@ -272,6 +274,7 @@ int main(int argc, char *argv[])
       }
       //dummy=fread(&oct,sizeof(struct LOCT),1,fp); //reading next oct
     }
+    printf("icpu=%d ic=%d\n",icpu,ic);
     fclose(fp);
     free(boct);
   }

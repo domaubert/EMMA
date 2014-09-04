@@ -10,6 +10,122 @@
 #include "atomic_data/Atomic.h"
 #include "stars.h"
 
+
+#ifdef COARSERAD
+#ifdef STARS
+
+void collectstars(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param, REAL dxcoarse, REAL aexp, REAL tcur, int *ns){
+
+  REAL srcint = param->srcint;
+  struct PART *nexp;
+  struct PART *curp;
+  
+  // found a root
+  if(cell->child==NULL){
+    nexp=cell->phead;
+    if(nexp!=NULL){
+      do{ 	
+	curp=nexp;
+	nexp=curp->next;
+	
+	if ((curp->isStar)){
+	  (*ns)++;
+	  //printf("coucou %e %e %e\n",tcur,curp->age,param->stars->tlife);
+	  if(tcur>= curp->age){ // for inter-level communications
+	    //printf("hehey\n");
+	    if ( (tcur - curp->age) < param->stars->tlife  ) {
+	      //printf("hihi %e\n",dxcoarse);
+	      cellcoarse->rfield.src +=  (curp->mass*param->unit.unit_mass)*srcint/pow(dxcoarse,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
+	    }
+	  }
+	}
+      }while(nexp!=NULL);
+	
+    }
+  }
+  else{
+    // recursive call
+    int icell;
+    for(icell=0;icell<8;icell++){
+      collectstars(cellcoarse,&(cell->child->cell[icell]),param,dxcoarse,aexp,tcur,ns);
+    }
+  }
+}
+
+
+void collectE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param,int level, REAL aexp, REAL tcur, int *ns){
+
+  REAL fact=pow(2.,3*(param->lcoarse-level));
+  // found a root
+  if(cell->child==NULL){
+    int igrp;
+    for(igrp=0;igrp<NGRP;igrp++){
+      cellcoarse->rfield.e[igrp]   +=cell->rfield.e[igrp] *fact;
+      cellcoarse->rfield.fx[igrp]  +=cell->rfield.fx[igrp]*fact;
+      cellcoarse->rfield.fy[igrp]  +=cell->rfield.fy[igrp]*fact;
+      cellcoarse->rfield.fz[igrp]  +=cell->rfield.fz[igrp]*fact;
+    }
+  }
+  else{
+    // recursive call
+    int icell;
+    for(icell=0;icell<8;icell++){
+      collectE(cellcoarse,&(cell->child->cell[icell]),param,level+1,aexp,tcur,ns);
+      (*ns)++;
+    }
+  }
+}
+
+
+// --------------------------------------------------------------------
+
+int putsource2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur){
+  
+  
+  cell->rfield.src   =0.;
+  cell->rfieldnew.src=0.;
+  
+
+  REAL dxcoarse=pow(0.5,level);
+  int ns=0;
+  collectstars(cell,cell,param,dxcoarse,aexp,tcur,&ns);
+
+  cell->rfieldnew.src=cell->rfield.src;
+
+  return ns;
+}
+
+// --------------------------------------------------------------------
+
+int putE2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur){
+  
+  
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfield.e[igrp]   =0.;
+    cell->rfield.fx[igrp]   =0.;
+    cell->rfield.fy[igrp]   =0.;
+    cell->rfield.fz[igrp]   =0.;
+  }
+  
+  int ns=0;
+  collectE(cell,cell,param,level,aexp,tcur,&ns);
+
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfieldnew.e[igrp]    =cell->rfield.e[igrp]  ;
+    cell->rfieldnew.fx[igrp]   =cell->rfield.fx[igrp] ;
+    cell->rfieldnew.fy[igrp]   =cell->rfield.fy[igrp] ;
+    cell->rfieldnew.fz[igrp]   =cell->rfield.fz[igrp] ;
+
+  }
+
+  return ns;
+}
+
+
+#endif
+#endif
+
 // ============================================================================================
 int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur, struct OCT *curoct,  struct CPUINFO *cpu){
   REAL X0=1./pow(2,param->lcoarse);
@@ -72,29 +188,6 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
 
 #ifdef STARS
-/*
-<<<<<<< HEAD
-	struct PART *nexp;
-	struct PART *curp;
-
-	cell->rfield.src   =0.;
-	cell->rfieldnew.src=0.;
-	flag=0;
-
-	nexp=cell->phead;
-	if(nexp==NULL) return 0;
- 	do{ 	curp=nexp;
-		nexp=curp->next;
-
-		if (curp->isStar){
-			if ( (param->cosmo->tphy - curp->age) < param->stars->tlife  ) {
-				cell->rfield.src +=  param->srcint/pow(X0,3)*param->unit.unit_t/param->unit.unit_n*pow(aexp,2); // switch to code units 
-				flag++;
-			}
-		}
-	}while(nexp!=NULL);
-=======
-*/
 
   REAL srcint = param->srcint;
   
@@ -125,7 +218,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   }while(nexp!=NULL);
 	
   cell->rfieldnew.src=cell->rfield.src;
-  //if(nss>0) printf("src=%e %e\n",cell->rfield.src,cell->rfieldnew.src);
+
 #else
 #ifdef WHYDRO2
   if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
@@ -165,7 +258,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   int flag;
   REAL tcur=a2t(param,aexp);
 
-  if(cpu->rank==RANK_DISP) printf("Building Source field\n");
+  //if(cpu->rank==RANK_DISP) printf("Building Source field\n");
 
   curoct=firstoct[level-1];
   if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
@@ -176,6 +269,57 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
       if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
       for(icell=0;icell<8;icell++){	
 
+
+#ifdef COARSERAD
+	// if RT is restricted to coarse grid
+	// gather E and F from the mother cell
+	/* if(level>param->lcoarse){ */
+
+	/*   putcoarse2E(&(curoct->cell[icell]),param,level,aexp,tcur); */
+	/*   for(igrp=0;igrp<NGRP;igrp++){ */
+	/*     curoct->cell[icell].rfield.e[igrp]=curoct->parent->rfield.e[igrp]; */
+	/*     curoct->cell[icell].rfield.fx[igrp]=curoct->parent->rfield.fx[igrp]; */
+	/*     curoct->cell[icell].rfield.fy[igrp]=curoct->parent->rfield.fy[igrp]; */
+	/*     curoct->cell[icell].rfield.fz[igrp]=curoct->parent->rfield.fz[igrp]; */
+	/*     curoct->cell[icell].rfieldnew.e[igrp]=curoct->parent->rfield.e[igrp]; */
+	/*     curoct->cell[icell].rfieldnew.fx[igrp]=curoct->parent->rfield.fx[igrp]; */
+	/*     curoct->cell[icell].rfieldnew.fy[igrp]=curoct->parent->rfield.fy[igrp]; */
+	/*     curoct->cell[icell].rfieldnew.fz[igrp]=curoct->parent->rfield.fz[igrp]; */
+	/*   } */
+	/* } */
+	
+	if(level==param->lcoarse){
+	  // WE pump up the high resolution conserved RT quantities (if the cell is split)
+	  if(curoct->cell[icell].child!=NULL){
+	    int nE;
+	    nE=putE2coarse(&(curoct->cell[icell]),param,level,aexp,tcur);
+	    /* if(isnan(curoct->cell[icell].rfieldnew.e[0])) */
+	    /*   { */
+	    /* 	printf("WTF\n"); */
+	    /* 	abort(); */
+	    /*   } */
+	    //printf("PUMPING UP FROM %d CELLs\n",nE);
+	  }
+	}
+#endif
+
+
+	// filling the temperature, nh, and xion
+#ifdef WCHEM
+#ifdef WRADHYD
+	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
+	curoct->cell[icell].rfield.nh=d/(PROTON_MASS/param->unit.unit_mass); // switch to atom/unit_length^3
+	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
+	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
+	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
+	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
+	/* if(curoct->cell[icell].rfield.nhplus>curoct->cell[icell].rfield.nh){ */
+	/*   printf("MEGA WTF \n"); */
+	/* } */
+#endif
+#endif
+
 #ifndef TESTCLUMP
 	if(curoct->cell[icell].child!=NULL){
 	  curoct->cell[icell].rfield.src=0.;
@@ -185,33 +329,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
         flag=putsource(&(curoct->cell[icell]),param,level,aexp,tcur,curoct,cpu); // creating sources if required
 	
-	// filling the temperature, nh, and xion
-#ifdef WCHEM
-
-#ifdef WRADHYD
-	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
-	curoct->cell[icell].rfield.nh=d/(PROTON_MASS/param->unit.unit_mass); // switch to atom/unit_length^3
-
-	
-	/* if (curoct->cell[icell].rfield.nh <= 0) { */
-	/* 	printf("densité negative FILLRAD"); */
-	/* 	printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);		 */
-	/* 	abort();	 */
-	/* } */
-
-	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
-	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
-	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
-	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
-	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
-	//printf("dX=%e d=%e x=%e\n",curoct->cell[icell].field.dX,curoct->cell[icell].field.d,curoct->cell[icell].rfield.xion);
-	/* if((curoct->cell[icell].rfieldnew.eint==0.)) { */
-	/*   printf("zero eint\n"); */
-	/*   abort(); */
-	/* } */
-#endif
-
-#endif
 	if(init==1){
 #ifdef WCHEM
 
@@ -222,6 +339,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  REAL temperature=1e2;
 	  REAL xion=1e-5;
 #endif
+
 	  REAL eint;
 
 	  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
@@ -271,7 +389,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 
 
-  if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
+  //if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
   return nc;
 }
 

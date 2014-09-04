@@ -977,6 +977,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
   outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
 #endif
+  //printf("UNIT L=%e\n",param->unit.unit_l);
 
 #ifdef TESTCOSMO
   outf=fread(&(param->cosmo->om),sizeof(REAL),1,fp);
@@ -991,7 +992,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   outf=fread(&rootpart_sna,sizeof(struct PART*),1,fp);
   
   
-  //if(cpu->rank==RANK_DISP) printf(" %p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
+  if(cpu->rank==RANK_DISP) printf(" STARTING OCT READ%p %p %p\n",root_sna,rootcell_sna,rootpart_sna);
   // reading the octs sequence
    
   outf=fread(&oct_ad,sizeof(struct OCT *),1,fp);
@@ -1003,6 +1004,8 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     ioct++;
     // 1 copy the content of the oct at the right location
     curoct=root_mem+(oct_ad-root_sna);
+    //printf("cpu=%d ioct=%d curoct=%p  oct-ad=%p root_sna=%p dif=%ld lev=%d chi=%p\n",cpu->rank,ioct,curoct,oct_ad,root_sna,(unsigned long int) (oct_ad-root_sna),oct.level,oct.cell[0].child);
+    //if(curoct-root_mem>param->ngridmax) printf("ERROR BKP\n");
     memcpy(curoct,&oct,sizeof(struct OCT));
 
     //if(cpu->rank==RANK_DISP) printf("le=%d ic=%d\n",curoct->level,ic);
@@ -1029,19 +1032,6 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
       
 
     }
-    
-    // Ugly fix
-    /* if(curoct->cpu!=cpu->rank){ */
-    /*   for(ic=0;ic<6;ic++){ */
-    /* 	if(curoct->nei[ic]!=NULL){ */
-    /* 	  if(curoct->nei[ic]->gdata.p==0 &&curoct->nei[ic]->gdata.d==0){ */
-    /* 	      curoct->nei[ic]=NULL; */
-    /* 	      //printf("fix\n"); */
-    /* 	  } */
-    /* 	} */
-    /*   } */
-    /* } */
- 
 
     if(curoct->parent!=NULL){
 
@@ -1365,6 +1355,9 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 
 }
 
+
+
+
 // ===================================================================================================
 // ===================================================================================================
 // ===================================================================================================
@@ -1386,6 +1379,10 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
   struct PART part;
   struct PART *part_ad;
   struct PART *curp;
+
+#ifdef STARS
+  int nstar=0;
+#endif
 
   rootpart_mem=proot; // the root cell of the grid in memory
 
@@ -1421,6 +1418,11 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
     curp=(part_ad-rootpart_sna)+rootpart_mem;
 
     memcpy(curp,&part,sizeof(struct PART));
+
+#ifdef STARS
+    if(curp->isStar)  nstar++;
+#endif
+
  //   printf("memcpy OK \n");
 
     // 2.a modify the particle pointers 
@@ -1467,6 +1469,14 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   // done
   fclose(fp);
+
+#ifdef STARS
+#ifdef WMPI
+	MPI_Allreduce(MPI_IN_PLACE,&nstar,1,MPI_INT,   MPI_SUM,cpu->comm);
+#endif
+	//printf("nstar=%d\n",nstar);
+  param->stars->n=nstar;
+#endif
 
   return freepart;
 }
@@ -2737,12 +2747,19 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  // backups for restart
 
-	  sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-//	  save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
+	  if(*(cpu->ndumps)%FBKP==0){
 
-	  // backups for restart
-	  sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps),cpu->rank); 
-//	  save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
+	    if(cpu->rank==RANK_DISP){
+	      printf("BACKUP .......#%d\n",*cpu->ndumps%2);
+	    }
 
+	    
+	    sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
+	    save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
+	    
+	    // backups for restart
+	    sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
+	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
+	  }
 	}	
 }

@@ -15,6 +15,28 @@
 
 #include <omp.h>
 
+//================================================================================
+void distribE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param,int level){
+
+  // found a root
+  if(cell->child==NULL){
+    int igrp;
+    for(igrp=0;igrp<NGRP;igrp++){
+      cell->rfield.e[igrp] =cellcoarse->rfield.e[igrp];
+      cell->rfield.fx[igrp]=cellcoarse->rfield.fx[igrp];
+      cell->rfield.fy[igrp]=cellcoarse->rfield.fy[igrp];
+      cell->rfield.fz[igrp]=cellcoarse->rfield.fz[igrp];
+    }
+  }
+  else{
+    // recursive call
+    int icell;
+    for(icell=0;icell<8;icell++){
+      distribE(cellcoarse,&(cell->child->cell[icell]),param,level+1);
+    }
+  }
+}
+
 
 //================================================================================
 void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
@@ -144,8 +166,8 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
 
 void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){ 
 
-	  struct OCT * oct;
-	  struct Rtype *W0;
+  struct OCT * oct;
+  struct Rtype *W0;
 	  struct Rtype *Wp;
 	  struct Rtype *Wm;
 	  struct Rtype Wint;
@@ -468,8 +490,14 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
       for(iface=0;iface<2;iface++){
 	inei=iface;
 	memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
-
-	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+	
+	int condsplit;
+#ifdef COARSERAD
+	condsplit=1;
+#else
+	condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+	if(condsplit){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 
@@ -479,6 +507,7 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
       
       // --------- solving the Riemann Problems LEFT
 
+      //int fg=0;
       for(igrp=0;igrp<NGRP;igrp++){
 	
 	// E
@@ -490,6 +519,12 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	fm=RN[0].fx[igrp];
 
 	FL[0+igrp*NVAR_R]=0.5*(fp+fm)+0.5*c*(um-up);
+
+	
+	/* if((um>0.)&&(up==0.)){ */
+	/*   printf("coucou %e %e %e\n",um,up,FL[0+igrp*NVAR_R]); */
+	/*   fg=1; */
+	/* } */
 	
  	/* if((RN[0].e[0]>1.0101e60)&&(RN[0].e[0]<1.0102e60)){ */
 	/*   printf("XM up=%e um=%e fp=%e fm=%e FL=%e ,ffact=%d c=%e\n",up,um,fp,fm,FL[0+igrp*NVAR_R]*dt/dx,ffact[0],c); */
@@ -547,6 +582,10 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	/*   printf("XP up=%e um=%e fp=%e fm=%e FL=%e ,ffact=%d c=%e\n",up,um,fp,fm,FR[0+igrp*NVAR_R]*dt/dx,ffact[1],c); */
 	/* } */
 
+	/* if(fg){ */
+	/*   printf("coucou %e %e %e\n",um,up,FR[0+igrp*NVAR_R]); */
+
+	/* } */
 
 	//FX
 
@@ -595,6 +634,9 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	for(iface=0;iface<NVAR_R;iface++) FL[iface+igrp*NVAR_R]*=ffact[0]; 
 	for(iface=0;iface<NVAR_R;iface++) FR[iface+igrp*NVAR_R]*=ffact[1]; 
       }
+      /* if(fg){ */
+      /* 	printf("FF %e %e %d %d\n", FL[0+0*NVAR_R], FR[0+0*NVAR_R],stencil[i].oct[ioct[vnei[0]]].cell[vcell[0]].split,stencil[i].oct[ioct[vnei[1]]].cell[vcell[1]].split); */
+      /* } */
 
       memcpy(stencil[i].New.cell[icell].rflux+0*NVAR_R*NGRP,FL,sizeof(REAL)*NVAR_R*NGRP);
       memcpy(stencil[i].New.cell[icell].rflux+1*NVAR_R*NGRP,FR,sizeof(REAL)*NVAR_R*NGRP);
@@ -655,7 +697,13 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	inei=iface+2;
 	memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
 
-	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+	int condsplit;
+#ifdef COARSERAD
+	condsplit=1;
+#else
+	condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+	if(condsplit){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 
@@ -852,9 +900,15 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
       for(iface=0;iface<2;iface++){
 	inei=iface+4;
 	memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
-
-	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
-	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
+	
+	int condsplit;
+#ifdef COARSERAD
+	condsplit=1;
+#else
+	condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+	if(condsplit){
+	  ffact[iface]=1; // we consider the contriubtion of split neighbors
 	}
 
       }
@@ -1390,7 +1444,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
     for(icell=0;icell<8;icell++){
       struct CELLLIGHT_R *c=&(stencil->oct[ioct].cell[icell]);
       struct CELL *co=&neicell->child->cell[icell];
-      memcpy(&(c->rfield),&(co->rfield),sizeof(struct Rtype)); //
+      memcpy(&(c->rfield),&(co->rfield),sizeof(struct Rtype)); // UU
       c->split=(co->child!=NULL);
     }
   }
@@ -1485,8 +1539,15 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
   REAL SRC;
   for(i=0;i<nread;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
-      
-      if(stencil[i].oct[6].cell[icell].split) continue;
+
+
+      int condsplit;
+#ifdef COARSERAD
+      condsplit=0;
+#else
+      condsplit=(stencil[i].oct[6].cell[icell].split);
+#endif
+      if(condsplit) continue;
       memcpy(F,stencil[i].New.cell[icell].rflux,sizeof(REAL)*NFLUX_R);// New fluxes from the stencil
       
       
@@ -1517,41 +1578,50 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
       // TESTING FULL UPDATE IN STENCIL APPROACH
       
+
       memcpy(&Rupdate,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));
       
+
       for(igrp=0;igrp<NGRP;igrp++){
 	Rupdate.e[igrp]   +=R.e[igrp];
 	Rupdate.fx[igrp]  +=R.fx[igrp];
 	Rupdate.fy[igrp]  +=R.fy[igrp];
 	Rupdate.fz[igrp]  +=R.fz[igrp];
       }
+
       
 #if 1
-      // ================================ START MEGA DIAGNOSE =========================
-      if(Rupdate.e[0]<0){
-	printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,stencil[i].oct[6].cell[icell].rfield.e[0],stencil[i].oct[6].cell[icell].rfield.temp);
-	one=1.;
-	for(flx=0;flx<6;flx++){
-	  printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
-	  one*=-1.;
-	}
 
-	printf("Flux %e %e %e delta %e %e %e rflux=%e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],sqrt(pow(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
 
-	int vnei[6],vcell[6];
-	getcellnei(icell, vnei, vcell); // we get the neighbors
-
-	for(flx=0;flx<6;flx++){
+	// ================================ START MEGA DIAGNOSE =========================
+      if((Rupdate.e[0]<0||isnan(Rupdate.e[0]))){
+	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[0],stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,stencil[i].oct[6].cell[icell].rfield.e[0],stencil[i].oct[6].cell[icell].rfield.temp);
+	  one=1.;
+	  for(flx=0;flx<6;flx++){
+	    printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
+	    one*=-1.;
+	  }
 	  
-	  printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[0],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nhplus/stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nh,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
+	  printf("Flux %e %e %e delta %e %e %e rflux=%e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],sqrt(pow(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
+	  
+	  int vnei[6],vcell[6];
+	  getcellnei(icell, vnei, vcell); // we get the neighbors
+	  
+	  for(flx=0;flx<6;flx++){
+	    
+	    printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[0],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nhplus/stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nh,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
+	  }
+	  
+	  abort();
 	}
-
-	//abort();
-      }
       // ================================ END MEGA DIAGNOSE =========================
 #endif
       //memcpy(&(curoct->cell[icell].rfieldnew),&Rupdate,sizeof(struct Rtype));
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&Rupdate,sizeof(struct Rtype));
+
+      if(isnan(stencil[i].New.cell[icell].rfieldnew.e[0])){
+	printf(" WTFFFF %e %e %e %e ||%e\n",stencil[i].New.cell[icell].rfieldnew.e[0],stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],Rupdate.e[0]);
+      }
 
     }
   }
@@ -1593,15 +1663,11 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 	//we scatter the values in the central cell
 	
 	memcpy(&(curoct->cell[icell].rfieldnew),&(stencil[iread].New.cell[icell].rfieldnew),sizeof(struct Rtype)); 
-	
-	/* if(curoct->cell[icell].rfieldnew.e[0]<0){ */
-	/*   printf("criritical neg egy %e\n",curoct->cell[icell].rfieldnew.e[0]); */
-	/*   abort(); */
-	/* } */
 
-	/* if(curoct->x<1./32.) */
-	/*   if(icell==2)  */
-	/*     if(curoct->cell[0].rfieldnew.xion!=curoct->cell[2].rfieldnew.xion) abort(); */
+	/* if(curoct->level==7) */
+	/*   if(curoct->cell[icell].rfieldnew.e[0]>0.) printf("Hey N=%e S=%p\n",curoct->cell[icell].rfieldnew.e[0],curoct->cell[icell].child); */
+
+
 	// let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
 	
@@ -1644,6 +1710,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 #endif
 
 
+#ifndef COARSERAD
 	  if(vnei[inei]!=6){
 	    if(curoct->nei[vnei[inei]]->child==NULL){
 	      // the neighbor cell is unsplit, we update its value with fluxes
@@ -1664,21 +1731,11 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 		R.fy[igrp]+= F[2+igrp*NVAR_R]*dtsurdx*one*0.125;
 		R.fz[igrp]+= F[3+igrp*NVAR_R]*dtsurdx*one*0.125;
 	      }
- 	      
-	      /* if(R.e[0]<-2e60){ */
-	      /* 	printf("NEG E ! R2=%e F=%e srcloc=%e dtsurdx=%e\n",R.e[0],F[0],curoct->cell[icell].rfieldnew.src,dtsurdx); */
-	      /* 	printf(" Pos= %e %e %e lvl=%d\n",curoct->x,curoct->y,curoct->z,curoct->level); */
-	      /* 	printf(" HR E=%e F=%e / %e / %e \n",curoct->cell[icell].rfield.e[0],curoct->cell[icell].rfield.fx[0],curoct->cell[icell].rfield.fy[0],curoct->cell[icell].rfield.fz[0]); */
-	      /* 	printf(" LR E=%e F=%e / %e / %e \n",curoct->nei[vnei[inei]]->rfield.e[0],curoct->nei[vnei[inei]]->rfield.fx[0],curoct->nei[vnei[inei]]->rfield.fy[0],curoct->nei[vnei[inei]]->rfield.fz[0]); */
-
-
-	      /* } */
-	      //printf("bnd oct eorg=%e forg=%e/%e/%e einter=%e enew=%e F=%e eloc=%e floc=%e/%e/%e elocnew=%e nei=%d src=%e cloc=%e\n",curoct->nei[vnei[inei]]->rfield.e[0],curoct->nei[vnei[inei]]->rfield.fx[0],curoct->nei[vnei[inei]]->rfield.fy[0],curoct->nei[vnei[inei]]->rfield.fz[0],curoct->nei[vnei[inei]]->rfieldnew.e[0],R.e[0],F[0]*dtsurdx*one*0.125,curoct->cell[icell].rfield.e[0],curoct->cell[icell].rfield.fx[0],curoct->cell[icell].rfield.fy[0],curoct->cell[icell].rfield.fz[0],curoct->cell[icell].rfieldnew.e[0],inei,curoct->cell[icell].rfieldnew.src,cloc);
 
 	      memcpy(&(curoct->nei[vnei[inei]]->rfieldnew),&R,sizeof(struct Rtype));
-	     
 	    }
 	  }
+#endif
 	}
 
       }
@@ -1701,10 +1758,11 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   REAL cloc; // the speed of light in code units
 
   cloc=aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v;
-  if(cpu->rank==RANK_DISP) printf("cloc=%e aexp=%e\n",cloc,aexp);
+  //if(cpu->rank==RANK_DISP) printf("cloc=%e aexp=%e\n",cloc,aexp);
   // --------------- setting the first oct of the level
   nextoct=firstoct[level-1];
   nreadtot=0;
+  //printf("rank %d nextoct=%p noct=%d\n",cpu->rank, firstoct[level-1],cpu->noct[level-1]);
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
     do {
       curoct=nextoct;
@@ -1715,49 +1773,60 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
       // ------------ gathering the stencil value values
       nextoct= gatherstencilrad(curoct,stencil,stride,cpu, &nread,cloc);
 
+      //printf("nreadtot=%d on CPU=%d\n",nread,cpu->rank);
+
 
       if(nread>0){
-      t[2]=MPI_Wtime();
-      // ------------ solving the hydro
-      rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
-      rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
-      rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
-      
-      // ------------ updating values within the stencil
-      
-      t[4]=MPI_Wtime();
-      
-      updatefieldrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,cloc);
+	t[2]=MPI_Wtime();
+	// ------------ solving the hydro
 
-      // ----------- perform physical cooling and ionisation 
+#ifndef COARSERAD
+	int condadvec=1;
+#else
+	int condadvec=(level==param->lcoarse);
+#endif
+	if(condadvec){
+	  rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
+	  rad_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
+	  rad_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc); 
+	}
+	else{
+	  //printf("SKIP RAD TRANSPORT on level=%d\n on cpu %d",level,cpu->rank);
+	}
+	// ------------ updating values within the stencil
+      
+	t[4]=MPI_Wtime();
+      
+	if(condadvec) updatefieldrad(curoct,stencil,nread,stride,cpu,dxcur,dtnew,cloc);
+
+	// ----------- perform physical cooling and ionisation 
+
 #ifdef WCHEM
-      int nitcool=0;
-      int nitmin,nitmax,nitsum;
-      chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
+	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
 #endif
 
 
-      // ------------ scatter back the FLUXES
+	// ------------ scatter back the FLUXES
       
-      t[6]=MPI_Wtime();
+	t[6]=MPI_Wtime();
    
-      nextoct=scatterstencilrad(curoct,stencil, nread, cpu,dxcur,dtnew,cloc);
+	nextoct=scatterstencilrad(curoct,stencil, nread, cpu,dxcur,dtnew,cloc);
 
 
-      t[8]=MPI_Wtime();
+	t[8]=MPI_Wtime();
 
-      nreadtot+=nread;
-      ts+=(t[8]-t[6]);
-      tu+=(t[6]-t[4]);
-      th+=(t[4]-t[2]);
-      tg+=(t[2]-t[0]);
+	nreadtot+=nread;
+	ts+=(t[8]-t[6]);
+	tu+=(t[6]-t[4]);
+	th+=(t[4]-t[2]);
+	tg+=(t[2]-t[0]);
       }
       
 
     }while((nextoct!=NULL)&&(nread>0));
   }
   
-  if(cpu->rank==RANK_DISP) printf("CPU | tgat=%e tcal=%e tupchem=%e tscat=%e\n",tg,th,tu,ts);
+  //if(cpu->rank==RANK_DISP) printf("CPU %d| tgat=%e tcal=%e tupchem=%e tscat=%e\n",cpu->rank,tg,th,tu,ts);
 
   return nreadtot;
 }
@@ -1786,8 +1855,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&nocthydro,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
-  if(cpu->rank==RANK_DISP) printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
-
+  //if(cpu->rank==RANK_DISP)
+    //printf("Start Radiation on %d octs with dt=%e on level %d with stride=%d and aexp=%e\n",nocthydro,dtnew,level,stride,aexp);
+  
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
@@ -1795,7 +1865,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #else
   nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
 #endif
-
+  
   // FINAL UPDATE OF THE VALUES
   if(nreadtot>0){
     nextoct=firstoct[level-1];
@@ -1806,7 +1876,16 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
       if(curoct->cpu!=cpu->rank) continue; // bnd octs are updated by transmission hence not required
 #endif    
       for(icell=0;icell<8;icell++){
-	if(curoct->cell[icell].child==NULL){
+
+	int is_unsplit;
+
+#ifdef COARSERAD
+	is_unsplit=(((curoct->cell[icell].child==NULL))||(level==param->lcoarse));
+#else
+	is_unsplit=(curoct->cell[icell].child==NULL);
+#endif
+
+	if(is_unsplit){
 	  // unsplit case
 
 	  curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src;
@@ -1815,14 +1894,20 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 #endif
 
-	  //if(curoct->cell[icell].rfieldnew.temp!=curoct->cell[icell].rfield.temp) abort();
+	  // Update
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
+
+
+	  if((curoct->cell[icell].rfield.e[0]<1e-40)&&(curoct->cell[icell].rfield.e[0]>0)){
+	    printf("OUHLALALA\n");
+	  }
+
 
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
-	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
-	  getE(&curoct->cell[icell].field);
+	    curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
+	    getE(&curoct->cell[icell].field);
 #endif
 
 	}
@@ -1832,7 +1917,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  int i;
 	  child=curoct->cell[icell].child;
 	  memset(&R,0,sizeof(struct Rtype));
-	  REAL nh0=0.;
+
 	  for(i=0;i<8;i++){
 	    for(igrp=0;igrp<NGRP;igrp++){
 	      R.e[igrp] +=child->cell[i].rfield.e[igrp]*0.125;
@@ -1849,30 +1934,36 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #endif
 	  }
 
-/* #ifdef WCHEM */
-/* 	  R.xion=nh0/R.nh; */
-/* #endif */
-
 #ifdef WCHEM
 	  E2T(&R,aexp,param);
 #endif
 	  memcpy(&curoct->cell[icell].rfield,&R,sizeof(struct Rtype));
 
 #ifdef WRADHYD
-	  // inject back thermal energy into the hydro
-	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
-	  getE(&curoct->cell[icell].field);
+	    // inject back thermal energy into the hydro
+	    curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
+	    getE(&curoct->cell[icell].field);
 #endif
 	}
+      
+
+#ifdef COARSERAD
+	if(((curoct->cell[icell].child!=NULL))&&(level==param->lcoarse)){
+	  //if at levelcoarse and cell is splitted we propagate the data to the leaves
+	  distribE(&curoct->cell[icell],&curoct->cell[icell],param,level);
+	  }
+#endif
+
       }
+
     }while(nextoct!=NULL);
   }
 
   t[9]=MPI_Wtime();
   if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
-    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    //printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
     printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
@@ -1880,6 +1971,29 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 }
 
 
+// ==============================================================
+void set_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
+
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
+
+  // --------------- setting the first oct of the level
+  nextoct=firstoct[level-1];
+  if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
+    do {
+      curoct=nextoct;
+      nextoct=curoct->next; 
+      
+      for(icell=0;icell<8;icell++) memcpy(&(curoct->cell[icell].rfieldnew),&(curoct->cell[icell].rfield),sizeof(struct Rtype));
+      
+    }while(nextoct!=NULL);
+  }
+}
 // ==============================================================
 void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -1897,8 +2011,7 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
     do {
       curoct=nextoct;
       nextoct=curoct->next; 
-
-      //for(icell=0;icell<8;icell++) memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
+      
       for(icell=0;icell<8;icell++) memcpy(&(curoct->cell[icell].rfieldnew),&(curoct->cell[icell].rfield),sizeof(struct Rtype));
       
     }while(nextoct!=NULL);
@@ -1916,10 +2029,6 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 	  // Note: only boundary coarse octs are set to zero
 	  for(icell=0;icell<8;icell++) {
 	    memset(&(curoct->cell[icell].rfieldnew),0,sizeof(struct Rtype));
-	    /* curoct->cell[icell].rfieldnew.xion=curoct->cell[icell].rfield.xion; */
-	    /* curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh; */
-	    /* curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src; */
-	    /* curoct->cell[icell].rfieldnew.temp=curoct->cell[icell].rfield.temp; */
 	  }
 	}
       }while(nextoct!=NULL);
@@ -1955,6 +2064,7 @@ void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct
 	E=curoct->cell[icell].rfield.e[0]*cloc;
 	F=sqrt(pow(curoct->cell[icell].rfield.fx[0],2)+pow(curoct->cell[icell].rfield.fy[0],2)+pow(curoct->cell[icell].rfield.fz[0],2));
 	if(F/E>1.0){
+	  printf("E=%e F=%e cloc=%e cE=%e\n",E/cloc,F,cloc,E);
 	  abort();
 	}
       }

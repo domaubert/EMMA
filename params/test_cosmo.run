@@ -1,12 +1,12 @@
 ##==MemoryManagement=========
 max_number_of_octs 500000
-max_number_of_part 5000000
+max_number_of_part 10000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 25
-max_nuber_of_steps 30001
+output_frequency 100
+max_nuber_of_steps 300000001
 time_step_max  1e0
-tmax_or_amax 0.15
+tmax_or_amax 0.2
 ##==AMRGrid==================
 level_coarse 7
 level_max 10
@@ -19,7 +19,7 @@ mgrid_lmin 4
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 0
+restart_snap 2
 ##==ThreadManagement======
 grav_stencil_size 16
 cons_stencil_size 16
@@ -28,14 +28,14 @@ nthread 16
 nstream 1
 ompthreads 1
 ##==RadTransfert============
-clight 5e-2
+clight 1e0
 dens_threshold 5e20
 temp_threshold 1e5
-src_int 1e17
+src_int 1e15
 ##==StarFormation============
 overdensity_cond 150
 density_cond -500
-tcar 2e9   
+tcar 4e9   
 tlife 2e7
 feedback_eff 1.
 feedback_frac 1.

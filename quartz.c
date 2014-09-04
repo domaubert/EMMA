@@ -465,6 +465,14 @@ blockcounts[0]++; // For SN feedback
   cpu.nproc=1;
 #endif
 
+  if(cpu.rank==RANK_DISP){
+    printf("================================\n");
+    printf("            EMMA V1.0           \n");
+    printf("      Engines Are Running on    \n");
+    printf("             %d process         \n",cpu.nproc);
+    printf("================================\n");
+  }
+
   //=========== assigning values =============
   levelcoarse=param.lcoarse;
   levelmax=param.lmax;
@@ -951,6 +959,12 @@ blockcounts[0]++; // For SN feedback
   adt=(REAL *)malloc(sizeof(REAL)*levelmax);
   for(level=1;level<=levelmax;level++) adt[level-1]=param.dt;
   
+#ifdef COARSERAD
+  REAL *adt_rad;
+  adt_rad=(REAL *)malloc(sizeof(REAL)*levelmax);
+  for(level=1;level<=levelmax;level++) adt_rad[level-1]=param.dt;
+#endif
+
   int *ndt;
   ndt=(int *)malloc(sizeof(int)*levelmax);
 
@@ -1694,8 +1708,29 @@ blockcounts[0]++; // For SN feedback
       double tg1,tg2;
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
+
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
+
+#ifdef COARSERAD
+      // inner loop on radiation
+      REAL trad=0.;
+      REAL tsimrad=tsim;
+      int nrad=0.;
+      if(cpu.rank==RANK_DISP) printf("START COARSE RAD\n");
+      while(trad<adt[levelcoarse-1]){
+	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad);
+	MPI_Barrier(cpu.comm);
+	trad+=adt_rad[levelcoarse-1];
+	tsimrad+=adt_rad[levelcoarse-1];
+	nrad++;
+	if(nrad%10 ==0) if(cpu.rank==RANK_DISP) printf("rad iter=%d trad=%e tsimrad=%e tmax=%e\n",nrad,trad,tsimrad,adt[levelcoarse-1]);
+      }
+      
+      if(cpu.rank==RANK_DISP) printf("COARSE RAD DONE with %d steps\n",nrad);
+#endif
+
+
       tg2=MPI_Wtime();
       if(cpu.rank==RANK_DISP) printf("GLOBAL TIME = %e\n",tg2-tg1);
 
@@ -1720,21 +1755,21 @@ blockcounts[0]++; // For SN feedback
 	}
 #else
 	
-	#ifndef TESTCOSMO
-		#ifdef WRAD
-			tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
-		#else
-			tdump=(tsim+adt[levelcoarse-1]);
-		#endif
-	#else
-		tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
-		adump=tdump;
-		printf("tdump=%e tsim=%e adt=%e\n",tdump,tsim,adt[levelcoarse-1]);
-		#ifdef EDBERT
-			treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
-			tdump=(treal-trealBB)/(treal0-trealBB);
-		#endif
-	#endif
+#ifndef TESTCOSMO
+#ifdef WRAD
+	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
+#else
+	tdump=(tsim+adt[levelcoarse-1]);
+#endif
+#else
+	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
+	adump=tdump;
+	printf("tdump=%e tsim=%e adt=%e\n",tdump,tsim,adt[levelcoarse-1]);
+#ifdef EDBERT
+	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
+	tdump=(treal-trealBB)/(treal0-trealBB);
+#endif
+#endif
 
 	// === Hydro dump
 

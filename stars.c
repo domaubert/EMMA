@@ -84,12 +84,13 @@ void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL a
   REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
   s8 	*= 31556926; 	// years en s
   
-  REAL dv 	= pow( pow(2.,-level) * aexp * param->cosmo->unit_l, 3.); 
+  REAL dv 	= pow( pow(2.,-level) * aexp * param->unit.unit_l, 3.); 
   
-  REAL E 		= param->stars->Esnfb/dv  * param->stars->feedback_frac *mstar;
+  REAL E 		= param->stars->feedback_frac *mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
   E	       *= exp( -t0/s8 )/s8;
   
   cell->rfield.snfb += E;	
+  //printf("E=%e SN=%e v=%e mstar=%e\n",E,SN_EGY,param->unit.unit_l,mstar);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -195,6 +196,11 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 //	density
 	U.d    -= drho;
 
+#ifdef WRADHYD
+	REAL xion=W.dX/W.d;
+	U.dX = U.d*xion;
+#endif
+
 //	momentum
 	U.du -= star->vx * drho;		
 	U.dv -= star->vy * drho;		
@@ -202,6 +208,9 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 
 //	internal energy
 //	???????????????
+	
+	U.eint=U.eint*(1.-drho/W.d);
+
 
 	U2W(&U, &W);
 
@@ -231,7 +240,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 	
-	if(N * mlevel >= M_in_cell ) N = M_in_cell / mlevel ; // 0.9 to prevent void cells
+	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
 	return N;
 }
@@ -363,6 +372,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("Mmax_thresh\t%e\t%e\n", mmax, param->stars->thresh );
 		printf("%d stars added on level %d \n", nstars, level);
 		printf("%d stars in total\n",param->stars->n);
+		if(param->stars->n>0) cpu->trigstar=1;
 		printf("\n");
 	}
 	

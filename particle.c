@@ -246,10 +246,10 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
   dt=dtnew;
 
 
-#ifdef WMPI
-  // reducing by taking the smallest time step
-  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-#endif  
+/* #ifdef WMPI */
+/*   // reducing by taking the smallest time step */
+/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+/* #endif   */
 
   dt=(dt>tmax?tmax:dt);
   return dt;

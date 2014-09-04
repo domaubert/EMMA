@@ -42,6 +42,9 @@ func readcube(fname,&time){
   _read,fp,adress,nmapy;adress+=sizeof(nmapy);
   _read,fp,adress,nmapz;adress+=sizeof(nmapz);
   _read,fp,adress,time;adress+=sizeof(time);
+  nmapx;
+  nmapy;
+  nmapz;
   
   map=array(float,nmapx,nmapy,nmapz);
   dummy=array(float,nmapx*nmapy);
