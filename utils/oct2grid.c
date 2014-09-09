@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "silo.h"
+//#include "silo.h"
 #include "prototypes.h"
 //=================================================================================================
 
@@ -298,6 +298,7 @@ int main(int argc, char *argv[])
     status=ferror(fp);
     fclose(fp);
   }
+#if 0
   else{
     // silo style
       
@@ -335,6 +336,7 @@ int main(int argc, char *argv[])
 
     DBClose(dbfile);
   }
+#endif
 
   printf("status=%d\n",status);
   free(map);

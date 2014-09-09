@@ -167,7 +167,7 @@ func ext_amr1D(levmap,field,color=,lmin=)
 }
 
 
-func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,ymax=,mono=,proj=,fout=){
+func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,ymax=,mono=,proj=,fout=,cen=,dcen=){
   if(is_void(execut)) execut="../utils/oct2grid ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(zmin)) zmin=0.;
@@ -179,6 +179,17 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,
   if(is_void(mono)) mono=-1;
   if(is_void(proj)) proj=0;
   if(is_void(fout)) fout=fname+".f"+pr1(field);
+  if(!is_void(cen)){
+    cen=cen(,1);
+    if(is_void(dcen)) dcen=0.05;
+    xmin=cen(1)-dcen;
+    xmax=cen(1)+dcen;
+    ymin=cen(2)-dcen;
+    ymax=cen(2)+dcen;
+    zmin=cen(3)-dcen;
+    zmax=cen(3)+dcen;
+  }
+
   time=array(double);
   commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fout+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(xmin)+" "+pr1(xmax)+" "+pr1(ymin)+" "+pr1(ymax)+" "+pr1(zmin)+" "+pr1(zmax)+" "+pr1(proj);
   //commande;

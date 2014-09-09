@@ -728,7 +728,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* } */
 
 
-    printf("dtnew %e before\n",dtnew);
+    //printf("dtnew %e before\n",dtnew);
 
     /// ================= Assigning a new timestep for the current level
     dtold=adt[level-1];
@@ -757,7 +757,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-2]=tdum2;
 #endif
 
-    printf("dtnew %e\n",tdum);
+    //printf("dtnew %e\n",tdum);
 
 
    // ================= III Recursive call to finer level
@@ -915,14 +915,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     // ===================================== RADIATION
-#ifndef COARSERAD
 #ifdef WRAD
     double tcomp[10];
+    int chemonly;
     MPI_Barrier(cpu->comm);
     tcomp[0]=MPI_Wtime();
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
- 
+
+#ifndef COARSERAD
+    chemonly=0;
+#else
+    chemonly=1;
+    if(cpu->rank==RANK_DISP) printf("Dynamical Cooling\n");
+#endif 
     
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -937,7 +943,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
     //=============== Radiation Update ======================
-    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -966,9 +972,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     if(cpu->rank==RANK_DISP) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
 #endif
 
-#endif
-#else
-    if(cpu->rank==RANK_DISP) printf("COARSERAD SKIPPING RADIATION\n");
 #endif
 
     /* //===================================creating new stars=================================// 
@@ -1199,7 +1202,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
       //=============== Radiation Update ======================
-      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp);
+      int chemonly=0;
+      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
       
 #ifdef WMPI
       MPI_Barrier(cpu->comm);

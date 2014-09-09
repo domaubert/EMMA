@@ -5,9 +5,9 @@
 rep="./data";ncpu=16; srcint=5e15; tlife=20e6; // years
 //rep="./dataref";ncpu=16; srcint=5e15; tlife=20e6; // years
 
-nsnap=13;
+nsnap=4;
 lcoarse=8.;
-bint=spanl(1e8,1e9,128);
+bint=spanl(1e8,1e9,32);
 
 delta=150.;
 MPC=3.08e22; // m
@@ -42,7 +42,7 @@ ts=s(11,); // Myrs
 
 SFR=histo1d(s(11,),bint,wght=s(8,))*munit/bint(dif)/lorg^3;
 
-vt=(univAge(10000.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam)-univAge(span(90,4,256),h0=Hor,Omega_m=omegam,lambda0=1.-omegam))/(3600.*24.*365);
+vt=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(span(90,4,256),h0=Hor,Omega_m=omegam,Omega_l=1.-omegam))/(3600.*24.*365);
 zSFR=interp(span(90,4,256),vt,bint(zcen));
 
 // emissivity of photons

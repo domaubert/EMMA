@@ -1,6 +1,6 @@
 
 CC = gcc
-F77 = ifort
+F77 = gfortran
 
 #DEBUG = -W -Wall -O2 -fbounds-check
 #DEBUG = -DEBUG:div_check=3:subscript_check=ON:trap_uninitialized=ON:verbose_runtime=ON -g

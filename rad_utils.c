@@ -1748,7 +1748,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 
 // ====================================================================================================================
 
-int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param){
+int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param, int chemonly){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -1783,7 +1783,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 #ifndef COARSERAD
 	int condadvec=1;
 #else
-	int condadvec=(level==param->lcoarse);
+	int condadvec=((level==param->lcoarse)&&(!chemonly));
 #endif
 	if(condadvec){
 	  rad_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew,cloc);   
@@ -1802,7 +1802,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 	// ----------- perform physical cooling and ionisation 
 
 #ifdef WCHEM
-	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp);
+	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
 #endif
 
 
@@ -1837,7 +1837,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 // =================================================================================================
 
 
-void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp){
+void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp, int chemonly){
   
   int nread,nreadtot;;
   struct OCT *curoct;
@@ -1861,9 +1861,9 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   // ===== COMPUTING THE FLUXES
   
 #ifndef GPUAXL
-  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
+  nreadtot=advancerad(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param,chemonly);
 #else
-  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param);
+  nreadtot=advanceradGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew,aexp,param,chemonly);
 #endif
   
   // FINAL UPDATE OF THE VALUES
@@ -1880,7 +1880,12 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	int is_unsplit;
 
 #ifdef COARSERAD
-	is_unsplit=(((curoct->cell[icell].child==NULL))||(level==param->lcoarse));
+	if(chemonly){
+	  is_unsplit=(curoct->cell[icell].child==NULL);
+	}
+	else{
+	  is_unsplit=(((curoct->cell[icell].child==NULL))||(level==param->lcoarse));
+	}
 #else
 	is_unsplit=(curoct->cell[icell].child==NULL);
 #endif

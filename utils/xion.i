@@ -1,10 +1,10 @@
-rep="../q/data";ncpu=256;
+rep="./data";ncpu=16;
 //rep="./dataref";ncpu=16;
 
 
-nsnap=190;
+nsnap=19;
 level=7;
-nsamp=5;
+nsamp=1;
 
 MPC=3.08e22; // m
 H=67; // km/s/Mpc
@@ -40,7 +40,7 @@ for(i=1;i<=nsnap;i+=nsamp){
   ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut="./utils/oct2grid ")(avg,avg,avg);
   ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut="./utils/oct2grid "))(avg,avg,avg);
   va(i)=a;
-  vt(i)=(univAge(10000.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam)-univAge(1./a-1.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam));
+  vt(i)=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(1./a-1.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam));
 
   
  }
@@ -59,7 +59,7 @@ vz=1./va-1.;
 ze=array(float,2*numberof(va));
 ze(:numberof(va)+1)=span(0,vz(0),numberof(va)+1);
 ze(numberof(va)+2:2*numberof(va))=vz(1:-1)(::-1);
-te=univAge(ze,h0=Hor,Omega_m=omegam,lambda0=1.-omegam);
+te=univAge(ze,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam);
 
 
 // tab electron density
