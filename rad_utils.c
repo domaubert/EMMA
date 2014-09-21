@@ -1050,8 +1050,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 //==================================================================================
 //==================================================================================
 
- 
-void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
+#ifdef WRADTEST 
+void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
 
 
   // =======================================
@@ -1400,6 +1400,7 @@ void bkp_recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int in
   
 }
 
+#else
 //void recursive_neighbor_gather_oct_rad(int ioct, struct CELL *cell, struct RGRID *stencil){
 void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
   // =======================================
@@ -1466,7 +1467,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 
   
 }
-
+#endif
 
 
 // ===================================================================================================
@@ -1777,6 +1778,10 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 
 
       if(nread>0){
+	if(chemonly)
+	  if(level==10)
+	    printf(" leve 10 on cpu %d with nread=%d\n",cpu->rank,nread);
+
 	t[2]=MPI_Wtime();
 	// ------------ solving the hydro
 
@@ -1903,16 +1908,17 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
 
 
-	  if((curoct->cell[icell].rfield.e[0]<1e-40)&&(curoct->cell[icell].rfield.e[0]>0)){
-	    printf("OUHLALALA\n");
-	  }
+	  /* if((curoct->cell[icell].rfield.e[0]<1e-40)&&(curoct->cell[icell].rfield.e[0]>0)){ */
+	  /*   printf("OUHLALALA\n"); */
+	  /* } */
 
 
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
-	    curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
-	    getE(&curoct->cell[icell].field);
+	  //if(curoct->cell[icell].rfield.src>0) printf("CLA eint=%e p=%e\n",curoct->cell[icell].rfield.eint,curoct->cell[icell].field.p);
+	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
+	  getE(&curoct->cell[icell].field);
 #endif
 
 	}

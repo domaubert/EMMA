@@ -404,7 +404,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		desoct->level=0;
 
-		// we fix the freeoct list
+		// we fixMak the freeoct list
 		desoct->prev=NULL;
 		freeoct->prev=desoct;
 		desoct->next=freeoct;
@@ -535,13 +535,27 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    REAL E;
 		    REAL F;
 		    int il;
-		    //curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS/param->unit.unit_mass);
+		    //curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
 
 		    //coarse2fine_rad2(&(curoct->cell[icell]),Ri);
   		     for(il=0;il<8;il++){ 
 		       //   Ri[il].src=0.; */
  		       memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
+		       
+		       
+#ifdef STARS
 		       Ri[il].snfb=0.;
+#endif
+
+#ifdef WRADHYD
+		       // some fix here for RHD values
+		       REAL xion=Ri[il].nhplus/Ri[il].nh;
+		       Wi[il].dX=Wi[il].d*xion;
+		       Ri[il].nh= Wi[il].d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
+		       Ri[il].nhplus= Wi[il].dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
+		       Ri[il].eint= Wi[il].p/(GAMMA-1.);
+#endif	       
+
 		     }
 		    
 		}
@@ -1250,7 +1264,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WRAD
 
 #ifdef WRADTEST
-			    //mcell=(curoct->cell[icell].rfield.e[0]>1e74) +(curoct->cell[icell].rfield.src>0.);
+			    // == START AMR STRATEGY FOR RAD TESTS
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 #ifdef TESTCLUMP
 			    REAL den2;
@@ -1264,13 +1278,20 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    } 
 			    
 #else
-			    mcell=0.;
-			    den=curoct->cell[icell].rfield.nhplus;
-			    //mcell=(curoct->cell[icell].rfield.src>0.);
+			    //mcell=0.;
+			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
+			    //mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
+			    //if(curoct->cell[icell].rfield.src>0.) printf("den=%e\n",den);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
-			    } 
+			    }
+			    /* mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//\*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05); */
+			    /* if(mcell>mmax) mmax=mcell; */
+			    /* if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) { */
+			    /*   curoct->cell[icell].marked=marker; */
+			    /*   nmark++;stati[2]++; */
+			    /* } */
 #endif
  			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
@@ -1278,6 +1299,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    } 
 			    
+			    // == END AMR STRATEGY FOR RAD TESTS
 #else
 #ifdef WCHEM
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);

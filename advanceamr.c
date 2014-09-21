@@ -78,6 +78,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   REAL va,vx,vy,vz;
   REAL dt;
   REAL Smax=0.,S1;
+  REAL amax=0.;
 
   //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
   // Computing new timestep
@@ -101,6 +102,8 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 	    vz=curoct->cell[icell].field.w; 
 	    va=sqrt(vx*vx+vy*vy+vz*vz); 
 	    aa=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
+	    amax=fmax(aa,amax);
+	    //if(level==7) printf("v=%e\n",va+aa);
 	    Smax=fmax(Smax,va+aa); 
 
 	  }
@@ -108,7 +111,9 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   }
 
   if(Smax>0.) dt=fmin(dxcur*CFL/(Smax*3.),dt);
+  //printf("Smax=%e amax=%e dt=%e\n",Smax,amax,dt);
 
+  //if(level==7) printf("DT HY=%e\n",dt);
   /* #ifdef WMPI */
   /*   // reducing by taking the smallest time step */
   /*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm); */
@@ -189,7 +194,9 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
     //dt=CFL*dxcur/(aexp*cfact*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
     dt=CFL/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0/(REAL)(1<<level); // UNITS OK
     //}
-
+    
+    //    printf("dxcur=%e aexp=%e CFL=%e\n",1./(REAL)(1<<level),aexp,CFL);
+    //abort();
   return dt;
 }
 
@@ -709,6 +716,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifndef COARSERAD
     dtnew=(dtrad<dtnew?dtrad:dtnew); 
 #endif
+
+#ifdef WRADTEST
+#ifndef TESTCLUMP
+#ifndef WRADHYD
+    dtnew=(dtrad<dtnew?dtrad:dtnew); 
+#endif
+#endif
+#endif
+
 #endif
 
 #ifdef FLOORDT
@@ -771,7 +787,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
-
+#if 1
     if(level<param->lmax){
       if(nlevel>0){
 	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
@@ -780,7 +796,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
       }
     }
-
+#endif
 
 #ifdef WMPI
     tdum=0.;
@@ -931,19 +947,24 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif 
     
 #ifdef WMPI
+    //printf("cpu #%d ready 1\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[1]=MPI_Wtime();
     mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+    //printf("cpu #%d ready 2\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[2]=MPI_Wtime();
 #endif
     
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
+    //printf("cpu #%d ready 3\n",cpu->rank);
 #endif
 
     //=============== Radiation Update ======================
-    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+    //RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+
+    //printf("cpu #%d ready 4\n",cpu->rank);
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -987,21 +1008,29 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
   // ================= V Computing the new refinement map
-    
-
-    if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-
-#ifndef ZOOM
-      if((ndt[level-1]%2==1)||(level==param->lcoarse)){
-#else
-	if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
+    REAL dxkpc=0.;
+    REAL dxnext=pow(0.5,level+1)*aexp;
+#ifdef KPCLIMIT
+    dxkpc=1e3*PARSEC/param->unit.unit_l;
 #endif
-	L_clean_marks(level,firstoct);
-	// marking the cells of the current level
-	L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
-      }
-    }
 
+    if(dxnext>dxkpc){ // ENFORCE Kennicut scale
+      if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
+      
+#ifndef ZOOM
+	if((ndt[level-1]%2==1)||(level==param->lcoarse)){
+#else
+	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
+#endif
+	    L_clean_marks(level,firstoct);
+	    // marking the cells of the current level
+	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
+	  }
+	}
+    }
+    else{
+      if(cpu->rank==RANK_DISP) printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+    }
 
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
@@ -1081,6 +1110,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
+#else
+    aexp=1.0;
 #endif
 
 
@@ -1186,8 +1217,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     tcomp[0]=MPI_Wtime();
 
     //=============== Building Sources and counting them ======================
+
+    
+
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
     
+#ifdef HOMOSOURCE
+    homosource(param,firstoct,cpu,level); // FOR HOMOGENOUS SRC
+#endif
 
 #ifdef WMPI
       MPI_Barrier(cpu->comm);

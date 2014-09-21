@@ -1,7 +1,7 @@
 
 rep="data/";execut="./utils/oct2grid ";
 
-imax=490;
+imax=523;
 imin=imax;
 lvl=7;
 dxcur=1./pow(2,lvl+1);

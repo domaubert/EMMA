@@ -90,8 +90,11 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 //		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
 //		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
 
+#ifdef WGRAV
 		  ntotd+=curoct->cell[icell].density*dv;
 		  nlevd+=curoct->cell[icell].density*dv;
+#endif
+
 #ifdef WHYDRO2
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 

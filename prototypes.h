@@ -17,8 +17,9 @@ typedef double REAL;
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049); // 0.049 for PLANCK
-#define PMIN 1e-11 
 #endif
+
+#define PMIN 1e-11
 
 #define NCOSMOTAB (262144)
 
@@ -58,11 +59,7 @@ typedef double REAL;
 #define PROTON_MASS (1.67262158e-27) //kg
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
-#ifdef WRADTEST
 #define MOLECULAR_MU (1.0)
-#else
-#define MOLECULAR_MU (0.59)
-#endif
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
 
 //=======================================
@@ -180,6 +177,10 @@ struct RUNPARAMS{
   REAL denthresh; // density threshold to turn the sources on
   REAL tmpthresh; // temperature threshold to turn the sources on
   REAL srcint; // intensity of the sources
+#ifdef HOMOSOURCE
+  REAL bkg; // the uniform background intensity
+#endif
+
 #endif
 
   REAL egy_rhs; // the right hand side of the energy conservation equation (0 in non cosmological case);
@@ -629,7 +630,7 @@ struct LCELL
   double fx[NGRP];
   double fy[NGRP];
   float fz[NGRP];
-  float src;
+  double src;
   float snfb;
   double xion;
   double temp; // is a direct function of eint, nh and xion but stored for conveniency

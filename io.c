@@ -2629,7 +2629,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  icell=icx+icy*2+icz*4;
 	
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/pow(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS))*KBOLTZ*temp; // physical pressure
+	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
 	  
 	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values
@@ -2757,9 +2757,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
 	    save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 	    
+#ifdef PIC
 	    // backups for restart
 	    sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
 	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
+#endif
 	  }
 	}	
 }

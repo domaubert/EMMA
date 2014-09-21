@@ -1137,9 +1137,9 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    getE(Wi+idir);
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
 
-/* #ifdef WRADHYD */
+#ifdef WRADHYD
  	    Wi[idir].dX=W0->dX; 
-/* #endif */
+#endif 
 
 	   
 	  }
@@ -2342,7 +2342,8 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 
 // Structure de base
 
-void bkp_recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
+#ifdef WRADTEST
+void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
   int ix[6]={-1,1,0,0,0,0};
   int iy[6]={0,0,-1,1,0,0};
@@ -2713,7 +2714,7 @@ void bkp_recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3,
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
       if(visit[ioct2]) continue;
       visit[ioct2]=1;
-      bkp_recursive_neighbor_gather_oct(ioct2, inei, i, -1, 2, neicell, stencil,visit);
+      recursive_neighbor_gather_oct(ioct2, inei, i, -1, 2, neicell, stencil,visit);
     }
   }
   else if(order==2) {
@@ -2722,11 +2723,12 @@ void bkp_recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3,
       ioct2=ioct+ix[i]+iy[i]*3+iz[i]*9; // oct position in stencil
       if(visit[ioct2]) continue;
       visit[ioct2]=1;
-      bkp_recursive_neighbor_gather_oct(ioct2, inei, inei2, i, 3, neicell, stencil,visit);
+      recursive_neighbor_gather_oct(ioct2, inei, inei2, i, 3, neicell, stencil,visit);
     }
   }
 }
 
+#else
 
 void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct HGRID *stencil,char *visit){
 
@@ -2856,6 +2858,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   }
 }
 
+#endif
 //=====================================================================================================================
 
 
@@ -2891,7 +2894,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
 	//memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
-	
+
 	
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
@@ -3023,8 +3026,12 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
 	
-	
-
+	/* if(curoct->cell[icell].rfield.src>0){ */
+	/*   printf("dd=%e d=%e p=%e\n",deltaU.d,curoct->cell[icell].fieldnew.d,curoct->cell[icell].field.p);  */
+	/*   abort(); */
+	/* } */
+	/* printf("dd=%e d=%e p=%e\n",deltaU.d,curoct->cell[icell].fieldnew.d,curoct->cell[icell].field.p); */
+	/* abort(); */
 	//if(U.eint+deltaU.eint<0) abort();
 
 	U.d  +=deltaU.d;
@@ -3034,7 +3041,12 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	U.E  +=deltaU.E;
 
 #ifdef WRADHYD
+#ifdef NOADX
+	REAL xion=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh;
+	U.dX=U.d*xion;
+#else
 	U.dX  +=deltaU.dX;
+#endif
 	//printf("d=%e deltaX=%e dX=%e X=%e\n",U.d,deltaU.dX,U.dX,U.dX/U.d);
 #endif
 

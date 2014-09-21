@@ -1336,7 +1336,7 @@ blockcounts[0]++; // For SN feedback
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
-    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS;
+    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
 #endif
@@ -1423,7 +1423,7 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifndef TESTCLUMP		
-		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS;
+		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
@@ -1437,13 +1437,15 @@ blockcounts[0]++; // For SN feedback
 		
 		
 #ifdef WRADHYD
-		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS/param.unit.unit_mass;
+		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
 		  curoct->cell[icell].field.v=0.0;
 		  curoct->cell[icell].field.w=0.0;
 		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
 		  curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		  getE(&(curoct->cell[icell].field));
+		  /* printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar); */
+		  /* abort(); */
 #endif
 
 #endif
@@ -1717,8 +1719,9 @@ blockcounts[0]++; // For SN feedback
       REAL trad=0.;
       REAL tsimrad=tsim;
       int nrad=0.;
-      if(cpu.rank==RANK_DISP) printf("START COARSE RAD\n");
+      if(cpu.rank==RANK_DISP) printf("START COARSE RAD with dt=%e\n",adt[levelcoarse-1]);
       while(trad<adt[levelcoarse-1]){
+	//if(cpu.rank==RANK_DISP) printf("step\n");
 	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad);
 	MPI_Barrier(cpu.comm);
 	trad+=adt_rad[levelcoarse-1];

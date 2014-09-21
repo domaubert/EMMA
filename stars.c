@@ -17,6 +17,9 @@
 #include <mpi.h>
 #endif
 
+
+#ifdef STARS
+
 /*
 known t_car :
  2.1 Gyr (Kennicutt 1998)
@@ -294,7 +297,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 	REAL k =(param->stars->density_cond >0)? 1 : -pow(aexp,3.0);
 	
 	REAL rhostar		= param->unit.unit_mass/pow(param->unit.unit_l,3) ;
-	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
+	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS*MOLECULAR_MU;
 
 	param->stars->thresh    = fmax( k * rhocrittilde / rhostar, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
 }
@@ -387,4 +390,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	if(cpu->rank==RANK_DISP) {	printf("%d\tActive SN\n",Nsn);}
 	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
+#endif
+
+
+
 #endif

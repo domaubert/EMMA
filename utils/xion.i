@@ -1,9 +1,12 @@
-rep="./data";ncpu=16;
+#include "Bastien/cosmo.i"
+
+//rep="./data0_dyncool";ncpu=32;
+rep="./data0_dyncoll_nosrc";ncpu=32;
 //rep="./dataref";ncpu=16;
 
-
+execut="./utils/oct2grid_cosmo ";
 nsnap=19;
-level=7;
+level=8;
 nsamp=1;
 
 MPC=3.08e22; // m
@@ -35,10 +38,10 @@ va=array(double,nsnap);
 vt=array(double,nsnap);
 
 for(i=1;i<=nsnap;i+=nsamp){
-  xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut="./utils/oct2grid ");
+  xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut=execut);
   xa(i)=xion(avg,avg,avg,);
-  ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut="./utils/oct2grid ")(avg,avg,avg);
-  ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut="./utils/oct2grid "))(avg,avg,avg);
+  ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut=execut)(avg,avg,avg);
+  ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut=execut))(avg,avg,avg);
   va(i)=a;
   vt(i)=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(1./a-1.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam));
 
@@ -74,7 +77,7 @@ sigmat=6.65e-29; //m^2;
 itau=te(dif)/ze(dif)*ne(zcen)*clight*sigmat;
 tau=integ(itau,ze(zcen),ze(zcen));
 
-WS,0;
+window,0;
 plg,1.-xa,vz;
 logxy,0,1;
 limits,4,12,1e-6,2;
@@ -87,7 +90,7 @@ xF2=1e-5*[7.1,9,9.5,13.,100000.,100000.];
 plshade,[xF1,xF2],zF,color=__rgb(,30);
 plg,1.-xa,vz;
 
-WS,1;
+window,1;
 tauP=[array(0.097-0.038,numberof(tau)),array(0.097+0.038,numberof(tau))];
 plshade,tauP,ze(zcen),color=__rgb(,30);
 plg,tau,ze(zcen),color="red",width=5;
