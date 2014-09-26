@@ -231,7 +231,23 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	
 	REAL gas_efficiency = 1.;	// maybe need to be passed in param??
 
+
+#ifdef SCHAYE
+	REAL A=1.515e-4; // Ms/yr/kpc2
+	A=A*(2e30)/(3600.*24.*365)/pow(1e3*PARSEC,2.); // kg/sec/m2
+	REAL E=1.; // Ms/pc2
+	E=E*2e30/pow(PARSEC,2.);
+
+	REAL P=cell->field.p/pow(aexp,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // Physical Pressure (S.I)
+	REAL geff=5./3.;
+
+	REAL tstars 	= 1./(A*pow(E,-1.4)*pow(geff/NEWTON_G*P,(1.4-1.)/2.));
+	printf("tstars=%e\n",tstars/(3600.*24*265*1e9));
+#else
+
 	REAL tstars 	= param->stars->tcar * 31556926 / sqrt(cell->field.d / param->stars->thresh );
+#endif
+
 	REAL tstartilde = tstars / pow(aexp,2)/param->unit.unit_t;
 
 	REAL M_in_cell 	= cell->field.d * pow(2.0,-3.0*level);
@@ -297,7 +313,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 	REAL k =(param->stars->density_cond >0)? 1 : -pow(aexp,3.0);
 	
 	REAL rhostar		= param->unit.unit_mass/pow(param->unit.unit_l,3) ;
-	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS*MOLECULAR_MU;
+	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
 
 	param->stars->thresh    = fmax( k * rhocrittilde / rhostar, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
 }

@@ -495,13 +495,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  ai_tmp1=0;
 
 	  
-#ifdef POLYTROP
+#ifdef SCHAYE
 	  if(nH[idloc]>1e5){
-	    REAL tpol=1e4*pow(nH[idloc]/1e5,GAMMA-1.);
-	    if(R.temp<tpol){
-	      eintt=tpol*1.5*nH[idloc]*KBOLTZ*(1.+xt);
-	      //printf("POLY %e %e\n",R.temp,tpol);
-	    }
+	    eintt=(1.08e9*KBOLTZ)*pow(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
 	  }
 #endif
 

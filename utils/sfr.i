@@ -3,13 +3,17 @@
 #include "utils/readpart.i"
 
 //rep="./data0_dyncool";ncpu=32; srcint=5e15; tlife=20e6; // years
-//rep="./data0_dyncoll_nosrc";ncpu=32; srcint=0e15; tlife=20e6; // years
-//rep="./data0_dyncool_homo";ncpu=32; srcint=5e15; tlife=20e6; // years
-rep="./data_coarse_c0";ncpu=32; srcint=5e15; tlife=20e6; // years
+//rep="./data0_dyncoll_nosrc";ncpu=32; srcint=0e15; tlife=20e6; sbox=12.;// years
+//rep="./data0_dyncool_homo";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.;// years
+//rep="./data_coarse_c0";ncpu=32; srcint=5e15; tlife=20e6;sbox=12.; // years
+//rep="./data_coarse_256_24MPC/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
+//rep="./data_coarse_256_24MPC_alt_th/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
+//rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
+rep="./data/";ncpu=32; srcint=1e15; tlife=20e6; sbox=12.; // years
 
-nsnap=21;
-lcoarse=8.;
-bint=spanl(1e8,1e9,32);
+nsnap=16;
+lcoarse=7.;
+bint=spanl(1e8,1e9,128);
 
 delta=150.;
 MPC=3.08e22; // m
@@ -20,7 +24,7 @@ mp=1.6e-27; // proton mass kg
 omegam=0.3175;
 omegab=0.049;
 n=2^(3*lcoarse);
-lbox=12./(H/100.)*MPC;// m
+lbox=sbox/(H/100.)*MPC;// m
 lorg=lbox/MPC;
 msol=2e30;
 
@@ -69,8 +73,8 @@ eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 
 // DISPLAY
 window,2;
-//plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
-col="blue";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
+plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
+col="black";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
 logxy,0,1;
 limits,2,12,5e-5,1;
 xytitles,"redshift z","SFR [MS/yr/Mpc^3^]";

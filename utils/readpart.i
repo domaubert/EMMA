@@ -1,6 +1,6 @@
 
 
-func readpart(fname,&time,star=){
+func readpart(fname,&time,star=,cen=,dcen=){
   //fname=exec("ls -d data/part.*")
   //x=y=[];for(i=1;i<=numberof(fname);i++){phase=readpart(fname(i));www=where(phase(7,)==1);grow,x,phase(1,www);grow,y,phase(2,www);}
   nvar=array(int);
@@ -23,6 +23,22 @@ func readpart(fname,&time,star=){
   _read,fp,adress,phase;adress+=sizeof(phase);
   write,"found "+pr1(npart)+" particles";
   close,fp;
+
+  if(!is_void(cen)){
+    if(is_void(dcen)) dcen=0.1;
+    wws=where((abs(phase(1,)-cen(1))<dcen)*(abs(phase(2,)-cen(2))<dcen)*(abs(phase(3,)-cen(3))<dcen));
+    if(numberof(wws)>0) {
+      write,"found "+pr1(numberof(wws))+" particles in region";
+      phase=phase(,wws);
+      return phase;
+    }
+    else{
+      write,"No particles in region !";
+      return 0;
+    }
+  }
+
+  
   return phase;
   }
   else{
@@ -33,12 +49,12 @@ func readpart(fname,&time,star=){
 
 
 
-func mergepart(fname,ncpu,&time,star=){
+func mergepart(fname,ncpu,&time,star=,cen=,dcen=){
   pf=[];
   time=array(float);
   for(i=0;i<ncpu;i++){
     fname2=swrite(format=fname+".p%05d",i);
-    p=readpart(fname2,time,star=star);
+    p=readpart(fname2,time,star=star,cen=cen,dcen=dcen);
     if(numberof(p)!=1) grow,pf,p;
   }
   return pf;

@@ -756,7 +756,7 @@ int ReadQuartz(KD kd,char *inputfile, int nfile)
     strcpy(tempi,inputfile);
     strcat(tempi,".p%05d");
     sprintf(currfile,tempi,ifile);
-    printf("%s\n",currfile);
+    //printf("%s\n",currfile);
     fp=fopen(currfile,"r");
     fread(&npart,sizeof(int),1,fp);
     fclose(fp);
@@ -772,7 +772,7 @@ int ReadQuartz(KD kd,char *inputfile, int nfile)
     strcat(tempi,".p%05d");
     sprintf(currfile,tempi,ifile);
     fp=fopen(currfile,"r");
-    printf("Reading %s\n",currfile);
+    //printf("Reading %s\n",currfile);
     fread(&npart,sizeof(int),1,fp);
     fread(&time,sizeof(float),1,fp);
 
