@@ -76,7 +76,7 @@ REAL cucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   // temperature in Kelvin
   REAL beta,T5;
   T5=temp/1e5;
-  beta=5.85e-11*sqrt(temp)/(1+sqrt(T5))*expf(-(157809e0/temp)); //cm3/s
+  beta=5.85e-11*sqrt(temp)/(1+sqrt(T5))*exp(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
   beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
 #else
