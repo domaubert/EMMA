@@ -25,7 +25,6 @@ extern "C" void destroy_pinned_stencil(struct HGRID **stencil, int stride);
 void create_hydstencil_GPU(struct CPUINFO *cpu, int stride){
   printf("start %d\n",sizeof(struct HGRID)*stride/1024/1024);
   cudaMalloc((void **)&(cpu->hyd_stencil),sizeof(struct HGRID)*stride);
-  //cudaMalloc(&(cpu->hyd_stencil),11*1024*1024);
   printf("done\n");
 }
 
@@ -128,6 +127,7 @@ __device__ void getcellnei_gpu_hydro(int cindex, int *neip, int *cell)
 // ==================== converts U -> W
 __device__ void dU2W(struct Utype *U, struct Wtype *W)
 {
+  
   W->d=U->d;
   W->u=U->du/U->d;
   W->v=U->dv/U->d;
@@ -137,7 +137,7 @@ __device__ void dU2W(struct Utype *U, struct Wtype *W)
   W->p=U->eint*(GAMMA-1.);
   W->E=U->E;
 #ifdef WRADHYD
-  W->X=U->dX/U->d;
+  W->dX=U->dX;
 #endif
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
@@ -156,8 +156,9 @@ __device__ void dW2U(struct Wtype *W, struct Utype *U)
 #ifdef DUAL_E
   U->eint=W->p/(GAMMA-1.);
   U->E=W->E;
+
 #ifdef WRADHYD
-  U->dX=W->d*W->X;
+  U->dX=W->dX;
 #endif
 #endif
 
@@ -231,6 +232,9 @@ __device__ void ddiffW(struct Wtype *W2, struct Wtype *W1, struct Wtype *WR){
   WR->v=W2->v- W1->v;
   WR->w=W2->w- W1->w;
   WR->p=W2->p- W1->p;
+#ifdef WRADHYD
+  WR->dX=W2->dX- W1->dX;
+#endif
 }
 
 
@@ -359,6 +363,9 @@ __device__ void dinterpminmod_W(struct Wtype *W0, struct Wtype *Wp, struct Wtype
   Wp->v =W0->v +dx*Dx->v +dy*Dy->v +dz*Dz->v;
   Wp->w =W0->w +dx*Dx->w +dy*Dy->w +dz*Dz->w;
   Wp->p =W0->p +dx*Dx->p +dy*Dy->p +dz*Dz->p;
+#ifdef WRADHYD
+  Wp->dX =W0->dX +dx*Dx->dX +dy*Dy->dX +dz*Dz->dX;
+#endif
 
 }
 
@@ -368,9 +375,12 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
 
 
   REAL M[25];
-  REAL W[5]={0.,0.,0.,0.,0.};
+  REAL W[6]={0.,0.,0.,0.,0.,0.};
   REAL d[5];
   int i,j;
+#ifdef WRADHYD
+  REAL X;
+#endif
 
 
   // =====  building the A matrix
@@ -402,6 +412,9 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
       }
   }
 
+#ifdef WRADHYD
+  W[5]+=W0->u*Dx->dX+W0->dX*Dx->u;
+#endif
   // =====  building the B matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -430,7 +443,9 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
       W[i]+=M[i+j*5]*d[j];
       }
   }
-
+#ifdef WRADHYD
+  W[5]+=W0->v*Dx->dX+W0->dX*Dx->v;
+#endif
   // =====  building the C matrix
 
   memset(M,0,25*sizeof(REAL));
@@ -457,6 +472,9 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
       W[i]+=M[i+j*5]*d[j];
       }
   }
+#ifdef WRADHYD
+  W[5]+=W0->w*Dx->dX+W0->w*Dx->dX;
+#endif
   
   // ==== Final correction
   for(i=0;i<5;i++){
@@ -468,7 +486,10 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
   Wt->v=W[2];
   Wt->w=W[3];
   Wt->p=W[4];
-  
+#ifdef WRADHYD
+  Wt->dX=W[5];
+#endif
+
 }
 
 // ==============================================
@@ -538,9 +559,7 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 
 #ifdef WGRAV
 #ifndef NOCOUPLE
-	  f[0]=stencil->oct[ioct].cell[icell].f[0];
-	  f[1]=stencil->oct[ioct].cell[icell].f[1];
-	  f[2]=stencil->oct[ioct].cell[icell].f[2];
+	  memcpy(f,stencil->oct[ioct].cell[icell].f,sizeof(REAL)*3);
 #ifdef CONSERVATIVE
 	  S.d =0.;
 	  S.du=-W0->d*f[0]*0.5*dt;
@@ -557,9 +576,12 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
 	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
 	    Wi[idir].p = fmax(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
+#ifdef WRADHYD
+	    Wi[idir].dX = W0->dX+ix[idir]*D[0].dX+iy[idir]*D[1].dX+iz[idir]*D[2].dX+Wt.dX;
+	    //printf("%e %e %e | %e %e\n",D[0].dX,D[1].dX,D[2].dX,W0->dX,Wt.dX);
+#endif
 
-
-	    /* if(Wi[idir].p<0) abort(); */
+	     /* if(Wi[idir].p<0) abort(); */
 	    /* if(Wi[idir].d<0) abort(); */
 
 
@@ -586,10 +608,9 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 #endif
 	    dgetE(Wi+idir);
 	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
-
 #ifdef WRADHYD
-	    Wi[idir].X=W0->X;
-#endif
+ 	    Wi[idir].dX=W0->dX; 
+#endif 
 	  }
 
 
@@ -967,9 +988,9 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
       Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
 
-#ifdef WRADHYD
-      Wold.X=curcell->X;
-#endif
+/* #ifdef WRADHYD */
+/*       Wold.X=curcell->X; */
+/* #endif */
 
       dW2U(&Wold,&Uold); // primitive -> conservative
 
@@ -1041,10 +1062,11 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	Us.dw=(fact*ustar);
 	Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].w)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].w)))));
 #endif
-	
+
 #ifdef WRADHYD
-	FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+	FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
 #endif
+	
 
       }
       else if((ustar<=0.)&&(SR>0.)){
@@ -1065,8 +1087,9 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
 #endif
 
 #ifdef WRADHYD
-	FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+	FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
 #endif
+
       }
 
 #ifdef DUAL_E
@@ -1122,7 +1145,7 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].w)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].w)))));
 #endif
 #ifdef WRADHYD
-	FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+	FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
 #endif
       }
       else if((ustar<=0.)&&(SR>0.)){
@@ -1141,9 +1164,8 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	Us.dw=(fact*ustar);
 	Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].w)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].w)))));
 #endif
-	
 #ifdef WRADHYD
-	FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
+	FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
 #endif
       }
 
@@ -1242,9 +1264,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
       Wold.w=curcell->w;
       Wold.p=curcell->p;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
-#ifdef WRADHYD
-      Wold.X=curcell->X;
-#endif
+/* #ifdef WRADHYD */
+/*       Wold.X=curcell->X; */
+/* #endif */
       dW2U(&Wold,&Uold); // primitive -> conservative
 
       REAL eold=Uold.eint;
@@ -1321,8 +1343,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
 	  Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].v)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].v)))));
 #endif
 #ifdef WRADHYD
-	  FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+	  FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
 #endif
+
 	}
 	else if((ustar<=0.)&&(SR>0.)){
 	  dgetflux_Y(&UC[0],FL);
@@ -1341,8 +1364,9 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
 	  Us.E =(fact*(UC[0].E/UC[0].d+(ustar-WC[0].v)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].v)))));
 #endif
 #ifdef WRADHYD
-	  FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+	  FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
 #endif
+
 	}
 
 
@@ -1401,7 +1425,7 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
 	  Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].v)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].v)))));
 #endif
 #ifdef WRADHYD
-	  FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+	  FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
 #endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
@@ -1421,7 +1445,7 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
 	  Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].v)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].v)))));
 #endif
 #ifdef WRADHYD
-	  FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
+	  FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
 #endif
 	}
 
@@ -1515,9 +1539,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
       Wold.w=curcell->w;;
       Wold.p=curcell->p;;
       Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
-#ifdef WRADHYD
-      Wold.X=curcell->X;
-#endif
+/* #ifdef WRADHYD */
+/*       Wold.X=curcell->X; */
+/* #endif */
       dW2U(&Wold,&Uold); // primitive -> conservative
       REAL eold=Uold.eint;
 
@@ -1586,7 +1610,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	  Us.E =(fact*(UN[0].E/UN[0].d+(ustar-WN[0].u)*(ustar+WN[0].p/(WN[0].d*(SL-WN[0].u)))));
 #endif
 #ifdef WRADHYD
-	 FL[6]+=(fact*WN[0].X                                                                 -UN[0].dX)*SL;
+	 FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
 #endif
 	}
       else if((ustar<=0.)&&(SR>0.)){
@@ -1606,8 +1630,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	  Us.E =(fact*(UC[0].E/UC[0].d+(ustar-WC[0].u)*(ustar+WC[0].p/(WC[0].d*(SR-WC[0].u)))));
 #endif
 #ifdef WRADHYD
-	  FL[6]+=(fact*WC[0].X                                                                 -UC[0].dX)*SR;
+	  FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
 #endif
+
 	}
 
 
@@ -1668,7 +1693,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	  Us.E =(fact*(UC[1].E/UC[1].d+(ustar-WC[1].u)*(ustar+WC[1].p/(WC[1].d*(SL-WC[1].u)))));
 #endif
 #ifdef WRADHYD
-	  FR[6]+=(fact*WC[1].X                                                                 -UC[1].dX)*SL;
+	  FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
 #endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
@@ -1688,7 +1713,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
 	  Us.E =(fact*(UN[1].E/UN[1].d+(ustar-WN[1].u)*(ustar+WN[1].p/(WN[1].d*(SR-WN[1].u)))));
 #endif
 #ifdef WRADHYD
-	  FR[6]+=(fact*WN[1].X                                                                 -UN[1].dX)*SR;
+	  FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
 #endif
 	}
 
@@ -1733,6 +1758,9 @@ __global__ void dupdatefield(struct HGRID *stencil, int nread, int stride, struc
   REAL one;
   int flx;
   REAL dtsurdx=dtnew/dxcur;
+  REAL F[NFLUX];
+
+
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
   i=bx*blockDim.x+tx;
@@ -1740,22 +1768,28 @@ __global__ void dupdatefield(struct HGRID *stencil, int nread, int stride, struc
   for(icell=0;icell<8;icell++){ // we scan the cells
       
     if(stencil[i].oct[13].cell[icell].split) continue;
-    
+    memcpy(F,stencil[i].New.cell[icell].flux,sizeof(REAL)*NFLUX);// New fluxes from the stencil
+
     // ==== updating
     // actually we compute and store the delta U only
     one=1.;
     memset(&U,0,sizeof(struct Utype)); // setting delta U
     for(flx=0;flx<6;flx++){
-      U.d +=stencil[i].New.cell[icell].flux[0+flx*NVAR]*dtsurdx*one;
-      U.du+=stencil[i].New.cell[icell].flux[1+flx*NVAR]*dtsurdx*one;
-      U.dv+=stencil[i].New.cell[icell].flux[2+flx*NVAR]*dtsurdx*one;
-      U.dw+=stencil[i].New.cell[icell].flux[3+flx*NVAR]*dtsurdx*one;
-      U.E +=stencil[i].New.cell[icell].flux[4+flx*NVAR]*dtsurdx*one;
+      U.d +=F[0+flx*NVAR]*dtsurdx*one;
+      U.du+=F[1+flx*NVAR]*dtsurdx*one;
+      U.dv+=F[2+flx*NVAR]*dtsurdx*one;
+      U.dw+=F[3+flx*NVAR]*dtsurdx*one;
+      U.E +=F[4+flx*NVAR]*dtsurdx*one;
 #ifdef DUAL_E
-      U.eint+=stencil[i].New.cell[icell].flux[5+flx*NVAR]*dtsurdx*one;
+      U.eint+=F[5+flx*NVAR]*dtsurdx*one;
 #endif
+      
 #ifdef WRADHYD
-      U.dX+=stencil[i].New.cell[icell].flux[6+flx*NVAR]*dtsurdx*one;
+#ifndef NOADX
+      U.dX+=F[6+flx*NVAR]*dtsurdx*one;
+#else
+      U.dX+=0.;
+#endif
 #endif
       one*=-1.;
     }

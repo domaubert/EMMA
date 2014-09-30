@@ -15,9 +15,11 @@
 
 #include "gpu_type.h"
 
-extern "C" struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread);
-extern "C" struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew);
-extern "C" int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param);
+extern "C" struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread, REAL cloc);
+extern "C" struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, REAL cloc);
+extern "C" int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param, int chemonly);
+
+
 extern "C" void create_radstencil_GPU(struct CPUINFO *cpu, int stride);
 extern "C" void create_pinned_stencil_rad(struct RGRID **stencil, int stride);
 extern "C" void destroy_radstencil_GPU(struct CPUINFO *cpu, int stride);
@@ -155,17 +157,19 @@ __device__ void ddiffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->fy[igrp]=W2->fy[igrp]- W1->fy[igrp];
     WR->fz[igrp]=W2->fz[igrp]- W1->fz[igrp];
   }
-    WR->src=W2->src- W1->src;
+  WR->src=W2->src- W1->src;
+#ifdef STARS
+  WR->snfb=W2->snfb- W1->snfb;
+#endif
 #ifdef WCHEM
-    WR->xion=W2->xion-W1->xion;
-    WR->eint=W2->eint-W1->eint;
-    WR->nh=W2->nh-W1->nh;
+  WR->nhplus=W2->nhplus-W1->nhplus;
+  WR->eint=W2->eint-W1->eint;
+  WR->nh=W2->nh-W1->nh;
 #endif
 }
 
 //================================================================================
 __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
-
   REAL beta=1.; // 1. for MINBEE 2. for SUPERBEE
   // FLUX LIMITER
   int igrp;
@@ -210,12 +214,23 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
     else{
       Wr->src=fmin(fmin(0.,fmax(beta*Wm->src,Wp->src)),fmax(Wm->src,beta*Wp->src));
     }
+
+
+#ifdef STARS
+  if(Wp->snfb>0){
+      Wr->snfb=fmax(fmax(0.,fmin(beta*Wm->snfb,Wp->snfb)),fmin(Wm->snfb,beta*Wp->snfb));
+    }
+    else{
+      Wr->snfb=fmin(fmin(0.,fmax(beta*Wm->snfb,Wp->snfb)),fmax(Wm->snfb,beta*Wp->snfb));
+    }
+#endif
+
 #ifdef WCHEM
-  if(Wp->xion>0){
-    Wr->xion=fmax(fmax(0.,fmin(beta*Wm->xion,Wp->xion)),fmin(Wm->xion,beta*Wp->xion));
+  if(Wp->nhplus>0){
+    Wr->nhplus=fmax(fmax(0.,fmin(beta*Wm->nhplus,Wp->nhplus)),fmin(Wm->nhplus,beta*Wp->nhplus));
   }
   else{
-    Wr->xion=fmin(fmin(0.,fmax(beta*Wm->xion,Wp->xion)),fmax(Wm->xion,beta*Wp->xion));
+    Wr->nhplus=fmin(fmin(0.,fmax(beta*Wm->nhplus,Wp->nhplus)),fmax(Wm->nhplus,beta*Wp->nhplus));
   }
 
   if(Wp->eint>0){
@@ -233,11 +248,13 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   }
 #endif
 
+
 }
 
 //================================================================================
 __device__ void dinterpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct Rtype *Dy, struct Rtype *Dz,REAL dx,REAL dy,REAL dz){
   int igrp;
+  
   for(igrp=0;igrp<NGRP;igrp++){
     Wp->e[igrp] =W0->e[igrp] +dx*Dx->e[igrp] +dy*Dy->e[igrp] +dz*Dz->e[igrp];
     Wp->fx[igrp] =W0->fx[igrp] +dx*Dx->fx[igrp] +dy*Dy->fx[igrp] +dz*Dz->fx[igrp];
@@ -247,10 +264,14 @@ __device__ void dinterpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype
     Wp->src =W0->src +dx*Dx->src +dy*Dy->src +dz*Dz->src;
 
 #ifdef WCHEM
-    Wp->xion =W0->xion +dx*Dx->xion +dy*Dy->xion +dz*Dz->xion;
+    Wp->nhplus =W0->nhplus + dx*Dx->nhplus + dy*Dy->nhplus + dz*Dz->nhplus;
     Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
 #endif
+#ifdef STARS
+    Wp->snfb =W0->snfb +dx*Dx->snfb +dy*Dy->snfb +dz*Dz->snfb;
+#endif
+
 }
 
 
@@ -335,10 +356,15 @@ __global__ void drad_sweepX(struct RGRID *stencil, int level, int curcpu, int nr
       inei=iface;
       memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
 
-      if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+      int condsplit;
+#ifdef COARSERAD
+      condsplit=1;
+#else
+      condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+      if(condsplit){
 	ffact[iface]=1; // we cancel the contriubtion of split neighbors
       }
-
     }
 
     // X DIRECTION =========================================================================
@@ -504,10 +530,16 @@ __global__ void drad_sweepY(struct RGRID *stencil, int level, int curcpu, int nr
 	inei=iface+2;
 	memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
 
-	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
+	int condsplit;
+#ifdef COARSERAD
+	condsplit=1;
+#else
+	condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+	if(condsplit){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
-
+	
       }
 
 
@@ -682,10 +714,15 @@ __global__ void drad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nr
 	inei=iface+4;
 	memcpy(RN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].rfield),sizeof(struct Rtype));
 
-	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
-	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
+	int condsplit;
+#ifdef COARSERAD
+	condsplit=1;
+#else
+	condsplit=(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split);
+#endif
+	if(condsplit){
+	  ffact[iface]=1; // we consider the contriubtion of split neighbors
 	}
-
       }
 
 
@@ -812,7 +849,7 @@ __global__ void drad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nr
 // ===================================================================================================
 // ===================================================================================================
 
-__global__ void dupdatefieldrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew)
+__global__ void dupdatefieldrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, REAL cloc)
 {
   int i,icell,igrp;
   struct Rtype R;
@@ -827,32 +864,37 @@ __global__ void dupdatefieldrad(struct RGRID *stencil, int nread, int stride, st
   i=bx*blockDim.x+tx;
   if(i<nread){
     for(icell=0;icell<8;icell++){ // we scan the cells
-      
-    if(stencil[i].oct[6].cell[icell].split) continue;
-    memcpy(F,stencil[i].New.cell[icell].rflux,sizeof(REAL)*NFLUX_R);// New fluxes from the stencil
+      int condsplit;
+#ifdef COARSERAD
+      condsplit=0;
+#else
+      condsplit=(stencil[i].oct[6].cell[icell].split);
+#endif
+      if(condsplit) continue;
+      memcpy(F,stencil[i].New.cell[icell].rflux,sizeof(REAL)*NFLUX_R);// New fluxes from the stencil
     
     // ==== updating
     
     // actually we compute and store the delta U only
-    one=1.;
-    memset(&R,0,sizeof(struct Rtype)); // setting delta U
-    for(flx=0;flx<6;flx++){
-      for(igrp=0;igrp<NGRP;igrp++){
-	R.e[igrp]  +=F[0+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
-	R.fx[igrp] +=F[1+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
-	R.fy[igrp] +=F[2+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
-	R.fz[igrp] +=F[3+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
+      one=1.;
+      memset(&R,0,sizeof(struct Rtype)); // setting delta U
+      for(flx=0;flx<6;flx++){
+	for(igrp=0;igrp<NGRP;igrp++){
+	  R.e[igrp]  +=F[0+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
+	  R.fx[igrp] +=F[1+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
+	  R.fy[igrp] +=F[2+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
+	  R.fz[igrp] +=F[3+igrp*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one;
+	}
+	one*=-1.;
       }
-      one*=-1.;
-    }
     
 #ifndef WCHEM
-    // adding the source contribution
-    REAL SRC;
-    for(igrp=0;igrp<NGRP;igrp++){
-      SRC=stencil[i].oct[6].cell[icell].rfield.src;
-      R.e[igrp]  +=SRC*dtnew+EMIN;
-    }
+      // adding the source contribution
+      REAL SRC;
+      for(igrp=0;igrp<NGRP;igrp++){
+	SRC=stencil[i].oct[6].cell[icell].rfield.src;
+	R.e[igrp]  +=SRC*dtnew+EMIN;
+      }
 #endif
     
     // scatter back the delta Uwithin the stencil
@@ -878,7 +920,7 @@ __global__ void dupdatefieldrad(struct RGRID *stencil, int nread, int stride, st
 
 // ====================================================================================================================
 
-int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param){
+int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param, int chemonly){
 
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -920,55 +962,66 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	// ------------ gathering the stencil value values
 	curoct=nextoct;
 	if(curoct!=NULL){
-	nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is);
-	if(vnread[is]!=0){
-	ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
-	if(ng==1){
-	  nt=vnread[is];
-	}
-	else{
-	  nt=cpu->nthread;
-	}
+	  nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is,cloc);
+	  if(vnread[is]!=0){
 
-	dim3 gridoct(ng);
-	dim3 blockoct(nt);
-	
+	    ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
+	    if(ng==1){
+	      nt=vnread[is];
+	    }
+	    else{
+	      nt=cpu->nthread;
+	    }
+	  
+	    dim3 gridoct(ng);
+	    dim3 blockoct(nt);
+	  
 #ifdef WCHEM
-	dim3 gridoct_chem(ng);
-	dim3 blockoct_chem(nt);
+	    dim3 gridoct_chem(ng);
+	    dim3 blockoct_chem(nt);
 #endif      
 
-	//t[2]=MPI_Wtime();
-
-	cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
-	
-	//	printf("Start Error  1=%s\n",cudaGetErrorString(cudaGetLastError()));
+	    //t[2]=MPI_Wtime();
+	  
+	    cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
+	  
+	    //	printf("Start Error  1=%s\n",cudaGetErrorString(cudaGetLastError()));
+	  
+#ifndef COARSERAD
+	    int condadvec=1;
+#else
+	    int condadvec=((level==param->lcoarse)&&(!chemonly));
+#endif
+	    
 
 #ifndef NOCOMP
-	/* // ------------ solving the hydro */
-	drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);   
-	drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
-	drad_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
-	
-	//printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
-      // ------------ updating values within the stencil
-	
-	//t[4]=MPI_Wtime();
-	
-	dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew); 
-	
-      // ----------- perform physical cooling and ionisation 
-	//printf("Start Error  3=%s\n",cudaGetErrorString(cudaGetLastError()));
-	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
+	    if(condadvec){
+/* // ------------ solving the hydro */
+	      drad_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);   
+	      drad_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
+	      drad_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,level,cpu->rank,vnread[is],stride,dxcur,dtnew,cloc);  
+	    }
+	  
+	    //printf("Start Error  2=%s\n",cudaGetErrorString(cudaGetLastError()));
+	    // ------------ updating values within the stencil
+	  
+	    //t[4]=MPI_Wtime();
+	  
+	    if(condadvec) dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cloc); 
+	  
+	    // ----------- perform physical cooling and ionisation 
+	    //printf("Start Error  3=%s\n",cudaGetErrorString(cudaGetLastError()));
+	    //	    cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 #ifdef WCHEM
-	dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp); 
+	    dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp,chemonly); 
 #endif
-#endif
-	cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
-	//printf("Start Error  4=%s\n",cudaGetErrorString(cudaGetLastError()));
 
-  	offset+=vnread[is];
-	}
+#endif
+	    cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
+	    //printf("Start Error  4=%s\n",cudaGetErrorString(cudaGetLastError()));
+
+	    offset+=vnread[is];
+	  }
 	}
       }
       
@@ -977,7 +1030,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
       //t[6]=MPI_Wtime();
    
       nread=offset;
-      nextoct=scatterstencilrad(curoct0,stencil, nread, cpu,dxcur,dtnew);
+      nextoct=scatterstencilrad(curoct0,stencil, nread, cpu,dxcur,dtnew,cloc);
 
 
       //t[8]=MPI_Wtime();
