@@ -521,15 +521,6 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
 	FL[0+igrp*NVAR_R]=0.5*(fp+fm)+0.5*c*(um-up);
 
 	
-	/* if((um>0.)&&(up==0.)){ */
-	/*   printf("coucou %e %e %e\n",um,up,FL[0+igrp*NVAR_R]); */
-	/*   fg=1; */
-	/* } */
-	
- 	/* if((RN[0].e[0]>1.0101e60)&&(RN[0].e[0]<1.0102e60)){ */
-	/*   printf("XM up=%e um=%e fp=%e fm=%e FL=%e ,ffact=%d c=%e\n",up,um,fp,fm,FL[0+igrp*NVAR_R]*dt/dx,ffact[0],c); */
-	/* } */
-
 	//FX
 
 	up=RC[0].fx[igrp];
@@ -1778,9 +1769,6 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 
 
       if(nread>0){
-	if(chemonly)
-	  if(level==10)
-	    printf(" leve 10 on cpu %d with nread=%d\n",cpu->rank,nread);
 
 	t[2]=MPI_Wtime();
 	// ------------ solving the hydro
@@ -1974,7 +1962,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   t[9]=MPI_Wtime();
   if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
-    //printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
     printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
