@@ -2567,6 +2567,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   
   if(cpu->rank==RANK_DISP) printf("rhoc=%e temperature=%lf rstar=%e(%e) pstar=%e tstar=%e vstar=%e rhostar=%e\n",rhoc,temp,rstar,np1*dx,pstar,tstar,vstar,rhostar);
 
+
   for(i3=0;i3<np3;i3++){
 
     if(cpu->rank==0){
@@ -2690,7 +2691,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   param->unit.unit_n=1.;
   param->unit.unit_mass=rhostar*pow(param->unit.unit_l,3);
 #endif
-
+  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/pow(param->unit.unit_l,3);
+ 
+  if(cpu->rank==RANK_DISP) printf("navg=%e\n",navg);
   
 #ifdef WMPI
   MPI_Barrier(cpu->comm);

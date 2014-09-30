@@ -9,7 +9,7 @@
 //rep="./data_coarse_256_24MPC/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_th/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
-rep="./data/";ncpu=32; srcint=1e15; tlife=20e6; sbox=12.; // years
+rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
 
 nsnap=16;
 lcoarse=7.;
@@ -74,7 +74,7 @@ eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 // DISPLAY
 window,2;
 plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
-col="black";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
+col="green";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
 logxy,0,1;
 limits,2,12,5e-5,1;
 xytitles,"redshift z","SFR [MS/yr/Mpc^3^]";

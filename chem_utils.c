@@ -211,7 +211,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL fudgecool=param->fudgecool;
   int ncvgcool=param->ncvgcool;
   REAL E0;
-
+#ifdef SCHAYE
+  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/pow(param->unit.unit_l,3);
+#endif
   REAL xorg;
   for(i=0;i<nread;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
@@ -496,7 +498,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  
 #ifdef SCHAYE
-	  if(nH[idloc]>1e5){
+	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
 	    eintt=(1.08e9*KBOLTZ)*pow(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
 	  }
 #endif
