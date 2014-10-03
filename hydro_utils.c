@@ -16,7 +16,10 @@
 
 
 // ===================================================
-
+//
+// Note: Pressure estimates are kept in double precision for better accuracy
+//
+// ===================================================
 
 // ===================================================
 
@@ -42,7 +45,7 @@ void U2W(struct Utype *U, struct Wtype *W)
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
 #endif
-  W->a=sqrt(GAMMA*W->p/W->d);
+  W->a=SQRT(GAMMA*W->p/W->d);
 }
 
 // ==================== converts W -> U
@@ -102,42 +105,42 @@ void minmod(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
   // FLUX LIMITER
 
   if(Up->d>0){
-    Ur->d=fmax(fmax(0.,fmin(beta*Um->d,Up->d)),fmin(Um->d,beta*Up->d));
+    Ur->d=FMAX(FMAX(0.,FMIN(beta*Um->d,Up->d)),FMIN(Um->d,beta*Up->d));
   }
   else{
-    Ur->d=fmin(fmin(0.,fmax(beta*Um->d,Up->d)),fmax(Um->d,beta*Up->d));
+    Ur->d=FMIN(FMIN(0.,FMAX(beta*Um->d,Up->d)),FMAX(Um->d,beta*Up->d));
   }
 
 
   if(Up->du>0){
-    Ur->du=fmax(fmax(0.,fmin(beta*Um->du,Up->du)),fmin(Um->du,beta*Up->du));
+    Ur->du=FMAX(FMAX(0.,FMIN(beta*Um->du,Up->du)),FMIN(Um->du,beta*Up->du));
   }
   else{
-    Ur->du=fmin(fmin(0.,fmax(beta*Um->du,Up->du)),fmax(Um->du,beta*Up->du));
+    Ur->du=FMIN(FMIN(0.,FMAX(beta*Um->du,Up->du)),FMAX(Um->du,beta*Up->du));
   }
 
 
   if(Up->dv>0){
-    Ur->dv=fmax(fmax(0.,fmin(beta*Um->dv,Up->dv)),fmin(Um->dv,beta*Up->dv));
+    Ur->dv=FMAX(FMAX(0.,FMIN(beta*Um->dv,Up->dv)),FMIN(Um->dv,beta*Up->dv));
   }
   else{
-    Ur->dv=fmin(fmin(0.,fmax(beta*Um->dv,Up->dv)),fmax(Um->dv,beta*Up->dv));
+    Ur->dv=FMIN(FMIN(0.,FMAX(beta*Um->dv,Up->dv)),FMAX(Um->dv,beta*Up->dv));
   }
 
 
   if(Up->dw>0){
-    Ur->dw=fmax(fmax(0.,fmin(beta*Um->dw,Up->dw)),fmin(Um->dw,beta*Up->dw));
+    Ur->dw=FMAX(FMAX(0.,FMIN(beta*Um->dw,Up->dw)),FMIN(Um->dw,beta*Up->dw));
   }
   else{
-    Ur->dw=fmin(fmin(0.,fmax(beta*Um->dw,Up->dw)),fmax(Um->dw,beta*Up->dw));
+    Ur->dw=FMIN(FMIN(0.,FMAX(beta*Um->dw,Up->dw)),FMAX(Um->dw,beta*Up->dw));
   }
 
 
   if(Up->E>0){
-    Ur->E=fmax(fmax(0.,fmin(beta*Um->E,Up->E)),fmin(Um->E,beta*Up->E));
+    Ur->E=FMAX(FMAX(0.,FMIN(beta*Um->E,Up->E)),FMIN(Um->E,beta*Up->E));
   }
   else{
-    Ur->E=fmin(fmin(0.,fmax(beta*Um->E,Up->E)),fmax(Um->E,beta*Up->E));
+    Ur->E=FMIN(FMIN(0.,FMAX(beta*Um->E,Up->E)),FMAX(Um->E,beta*Up->E));
   }
 
 
@@ -154,50 +157,50 @@ void minmod_W(struct Wtype *Wm, struct Wtype *Wp, struct Wtype *Wr){
   // FLUX LIMITER
 
   if(Wp->d>0){
-    Wr->d=fmax(fmax(0.,fmin(beta*Wm->d,Wp->d)),fmin(Wm->d,beta*Wp->d));
+    Wr->d=FMAX(FMAX(0.,FMIN(beta*Wm->d,Wp->d)),FMIN(Wm->d,beta*Wp->d));
   }
   else{
-    Wr->d=fmin(fmin(0.,fmax(beta*Wm->d,Wp->d)),fmax(Wm->d,beta*Wp->d));
+    Wr->d=FMIN(FMIN(0.,FMAX(beta*Wm->d,Wp->d)),FMAX(Wm->d,beta*Wp->d));
   }
 
 #ifdef WRADHYD
   if(Wp->dX>0){
-    Wr->dX=fmax(fmax(0.,fmin(beta*Wm->dX,Wp->dX)),fmin(Wm->dX,beta*Wp->dX));
+    Wr->dX=FMAX(FMAX(0.,FMIN(beta*Wm->dX,Wp->dX)),FMIN(Wm->dX,beta*Wp->dX));
   }
   else{
-    Wr->dX=fmin(fmin(0.,fmax(beta*Wm->dX,Wp->dX)),fmax(Wm->dX,beta*Wp->dX));
+    Wr->dX=FMIN(FMIN(0.,FMAX(beta*Wm->dX,Wp->dX)),FMAX(Wm->dX,beta*Wp->dX));
   }
 #endif
 
   if(Wp->u>0){
-    Wr->u=fmax(fmax(0.,fmin(beta*Wm->u,Wp->u)),fmin(Wm->u,beta*Wp->u));
+    Wr->u=FMAX(FMAX(0.,FMIN(beta*Wm->u,Wp->u)),FMIN(Wm->u,beta*Wp->u));
   }
   else{
-    Wr->u=fmin(fmin(0.,fmax(beta*Wm->u,Wp->u)),fmax(Wm->u,beta*Wp->u));
+    Wr->u=FMIN(FMIN(0.,FMAX(beta*Wm->u,Wp->u)),FMAX(Wm->u,beta*Wp->u));
   }
 
 
   if(Wp->v>0){
-    Wr->v=fmax(fmax(0.,fmin(beta*Wm->v,Wp->v)),fmin(Wm->v,beta*Wp->v));
+    Wr->v=FMAX(FMAX(0.,FMIN(beta*Wm->v,Wp->v)),FMIN(Wm->v,beta*Wp->v));
   }
   else{
-    Wr->v=fmin(fmin(0.,fmax(beta*Wm->v,Wp->v)),fmax(Wm->v,beta*Wp->v));
+    Wr->v=FMIN(FMIN(0.,FMAX(beta*Wm->v,Wp->v)),FMAX(Wm->v,beta*Wp->v));
   }
 
 
   if(Wp->w>0){
-    Wr->w=fmax(fmax(0.,fmin(beta*Wm->w,Wp->w)),fmin(Wm->w,beta*Wp->w));
+    Wr->w=FMAX(FMAX(0.,FMIN(beta*Wm->w,Wp->w)),FMIN(Wm->w,beta*Wp->w));
   }
   else{
-    Wr->w=fmin(fmin(0.,fmax(beta*Wm->w,Wp->w)),fmax(Wm->w,beta*Wp->w));
+    Wr->w=FMIN(FMIN(0.,FMAX(beta*Wm->w,Wp->w)),FMAX(Wm->w,beta*Wp->w));
   }
 
 
   if(Wp->p>0){
-    Wr->p=fmax(fmax(0.,fmin(beta*Wm->p,Wp->p)),fmin(Wm->p,beta*Wp->p));
+    Wr->p=FMAX(FMAX(0.,FMIN(beta*Wm->p,Wp->p)),FMIN(Wm->p,beta*Wp->p));
   }
   else{
-    Wr->p=fmin(fmin(0.,fmax(beta*Wm->p,Wp->p)),fmax(Wm->p,beta*Wp->p));
+    Wr->p=FMIN(FMIN(0.,FMAX(beta*Wm->p,Wp->p)),FMAX(Wm->p,beta*Wp->p));
   }
 
 
@@ -260,7 +263,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  dxcur=pow(0.5,oct->level);
+	  dxcur=POW(0.5,oct->level);
 
 	  W0=&(cell->field);
 	  // Limited Slopes
@@ -350,7 +353,7 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 		icell=ix+iy*2+iz*4;
 		interpminmod_W(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
 		getE(&Wint);
-		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
+		Wint.a=SQRT(GAMMA*Wint.p/Wint.d);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 
 	      }
@@ -393,7 +396,7 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  dxcur=pow(0.5,oct->level);
+	  dxcur=POW(0.5,oct->level);
 
 	  W0=&(cell->field);
 	  // Limited Slopes
@@ -496,7 +499,7 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 
 
 		getE(&Wint);
-		Wint.a=sqrt(GAMMA*Wint.p/Wint.d);
+		Wint.a=SQRT(GAMMA*Wint.p/Wint.d);
 		memcpy(Wi+icell,&Wint,sizeof(struct Wtype));
 
 	      }
@@ -523,8 +526,8 @@ double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?sqrt(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):pow(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
-  fR=(p>WR->p?sqrt(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):pow(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
+  fL=(p>WL->p?SQRT(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):POW(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
+  fR=(p>WR->p?SQRT(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):POW(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
 
   return fL+fR;
 }
@@ -545,8 +548,8 @@ double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?(p-WL->p)*sqrt(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(pow(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
-  fR=(p>WR->p?(p-WR->p)*sqrt(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(pow(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fL=(p>WL->p?(p-WL->p)*SQRT(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(POW(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fR=(p>WR->p?(p-WR->p)*SQRT(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(POW(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
   
   Deltau=WR->u-WL->u;
   *u=0.5*(WL->u+WR->u)+0.5*(fR-fL);
@@ -565,8 +568,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
-  pmax=fmax(WL->p,WR->p);
-  pmin=fmin(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
   pstar=ppvrs;
   
   if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
@@ -580,14 +583,14 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
       //TRRS CASE
       double z=(GAMMA-1.)/(2.*GAMMA);
       double iz=(2.*GAMMA)/(GAMMA-1.);
-      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),iz);
-      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
+      pstar=POW((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/POW(WL->p,z)+WR->a/POW(WR->p,z)),iz);
+      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(POW(pstar/WL->p,z)-1.);
       cas=1;
     }
     else{
       //TSRS CASE
       double p0;
-      p0=fmax(0.,ppvrs);
+      p0=FMAX(0.,ppvrs);
       
       AL=2./((GAMMA+1.)*WL->d);
       AR=2./((GAMMA+1.)*WR->d);
@@ -595,8 +598,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
       BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
       BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-      GL=sqrt(AL/(p0+BL));
-      GR=sqrt(AR/(p0+BR));
+      GL=SQRT(AL/(p0+BL));
+      GR=SQRT(AR/(p0+BR));
 
       pstar=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
       *ustar=0.5*((WL->u+WR->u)+(pstar-WR->p)*GR-(pstar-WL->p)*GL);
@@ -625,8 +628,8 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
   int tag;
   double u2;
 
-  pmin=fmin(WL->p,WR->p);
-  pmax=fmax(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
   
   // EXACT SOLVER
 
@@ -639,16 +642,16 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
   ppv0=0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a);
-  ptr0=pow((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/pow(WL->p,1./unsurz)+WR->a/pow(WR->p,1./unsurz)),unsurz);
+  ptr0=POW((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/POW(WL->p,1./unsurz)+WR->a/POW(WR->p,1./unsurz)),unsurz);
 
-  ppv=fmax(ERRTOL,ppv0);
-  ptr=fmax(ERRTOL,ptr0);
+  ppv=FMAX(ERRTOL,ppv0);
+  ptr=FMAX(ERRTOL,ptr0);
   
-  GL=sqrt(AL/(ppv+BL));
-  GR=sqrt(AR/(ppv+BR));
+  GL=SQRT(AL/(ppv+BL));
+  GR=SQRT(AR/(ppv+BR));
 
   pts0=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
-  pts=fmax(ERRTOL,pts0);
+  pts=FMAX(ERRTOL,pts0);
 
 
   if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
@@ -668,19 +671,19 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 
 
   //p=0.5*(WL->p+WR->p);
-  //p=fmax(p,ERRTOL);
+  //p=FMAX(p,ERRTOL);
 
   REAL  p0=p;
   *niter=0;
   for(i=0;i<NITERMAX;i++)
     {
-      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///fmax(0.8,fmin(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
+      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///FMAX(0.8,FMIN(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
       if((isnan(dp))){
       	printf("froot=%e frootprime=%e\n",froot(p,WL,WR,&u2),frootprime(p,WL,WR));
       	abort();
       }
       
-      if(fabs(dp)<ERRTOL) break;
+      if(FABS(dp)<ERRTOL) break;
       while((p-dp)<0){ 
        	dp=dp*0.5; 
       } 
@@ -688,7 +691,7 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
       porg=p;
       p=p-dp;
       //if(frootprime(p,WL,WR)==0) abort();//printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
-      err=2.*fabs(p-porg)/(fabs(p+porg));
+      err=2.*FABS(p-porg)/(FABS(p+porg));
       *niter=*niter+1;
       //if(p<=0) p=ERRTOL;
       if(err<ERRTOL) break;
@@ -728,7 +731,7 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
       if(pstar>WL->p)
 	{
 	  // left Shock with shock speed SL
-	  SL=WL->u-WL->a*sqrt((GAMMA+1.)/(2.*GAMMA)*pstar/WL->p+(GAMMA-1.)/(2.*GAMMA)); 
+	  SL=WL->u-WL->a*SQRT((GAMMA+1.)/(2.*GAMMA)*pstar/WL->p+(GAMMA-1.)/(2.*GAMMA)); 
 	  
 	  if(S<SL)
 	    {
@@ -743,13 +746,13 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
 	      W->d=WL->d*((pstar/WL->p+(GAMMA-1.)/(GAMMA+1.))/((GAMMA-1.)/(GAMMA+1.)*pstar/WL->p+1.));
 	      W->u=ustar;
 	      W->p=pstar;
-	      W->a=sqrt(GAMMA*W->p/W->d);
+	      W->a=SQRT(GAMMA*W->p/W->d);
 	    }
 	}
       else
 	{
 	  // left fan
-	  astar=WL->a*pow(pstar/WL->p,(GAMMA-1.)/(2.*GAMMA)); // sound speed behind the fan
+	  astar=WL->a*POW(pstar/WL->p,(GAMMA-1.)/(2.*GAMMA)); // sound speed behind the fan
 	  SHL=WL->u-WL->a;
 	  STL=ustar-astar;
 
@@ -765,17 +768,17 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
 	    {
 	      if(S>STL)
 		{
-		  W->d=WL->d*pow(pstar/WL->p,1./GAMMA);
+		  W->d=WL->d*POW(pstar/WL->p,1./GAMMA);
 		  W->u=ustar;
 		  W->p=pstar;
-		  W->a=sqrt(GAMMA*W->p/W->d);
+		  W->a=SQRT(GAMMA*W->p/W->d);
 		}
 	      else
 		{
-		  W->d=WL->d*pow(2./(GAMMA+1.)+(GAMMA-1.)/((GAMMA+1.)*WL->a)*(WL->u-S),2./(GAMMA-1.));
+		  W->d=WL->d*POW(2./(GAMMA+1.)+(GAMMA-1.)/((GAMMA+1.)*WL->a)*(WL->u-S),2./(GAMMA-1.));
 		  W->u=2./(GAMMA+1.)*(WL->a+(GAMMA-1.)/2.*WL->u+S);
-		  W->p=WL->p*pow(2./(GAMMA+1.)+(GAMMA-1.)/((GAMMA+1.)*WL->a)*(WL->u-S),2.*GAMMA/(GAMMA-1.));
-		  W->a=sqrt(GAMMA*W->p/W->d);
+		  W->p=WL->p*POW(2./(GAMMA+1.)+(GAMMA-1.)/((GAMMA+1.)*WL->a)*(WL->u-S),2.*GAMMA/(GAMMA-1.));
+		  W->a=SQRT(GAMMA*W->p/W->d);
 		}
 	    }
 	}
@@ -786,7 +789,7 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
       if(pstar>WR->p)
 	{
 	  // Right Shock with shock speed SR
-	  SR=WR->u+WR->a*sqrt((GAMMA+1.)/(2.*GAMMA)*pstar/WR->p+(GAMMA-1.)/(2.*GAMMA)); 
+	  SR=WR->u+WR->a*SQRT((GAMMA+1.)/(2.*GAMMA)*pstar/WR->p+(GAMMA-1.)/(2.*GAMMA)); 
 	  
 	  if(S>SR)
 	    {
@@ -801,13 +804,13 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
 	      W->d=WR->d*((pstar/WR->p+(GAMMA-1.)/(GAMMA+1.))/((GAMMA-1.)/(GAMMA+1.)*pstar/WR->p+1.));
 	      W->u=ustar;
 	      W->p=pstar;
-	      W->a=sqrt(GAMMA*W->p/W->d);
+	      W->a=SQRT(GAMMA*W->p/W->d);
 	    }
 	}
       else
 	{
 	  // Right fan
-	  astar=WR->a*pow(pstar/WR->p,(GAMMA-1.)/(2.*GAMMA)); // sound speed behind the fan
+	  astar=WR->a*POW(pstar/WR->p,(GAMMA-1.)/(2.*GAMMA)); // sound speed behind the fan
 	  SHR=WR->u+WR->a;
 	  STR=ustar+astar;
 
@@ -823,17 +826,17 @@ void getW(struct Wtype1D *W, REAL S, struct Wtype1D_double *WL, struct Wtype1D_d
 	    {
 	      if(S<STR)
 		{
-		  W->d=WR->d*pow(pstar/WR->p,1./GAMMA);
+		  W->d=WR->d*POW(pstar/WR->p,1./GAMMA);
 		  W->u=ustar;
 		  W->p=pstar;
-		  W->a=sqrt(GAMMA*W->p/W->d);
+		  W->a=SQRT(GAMMA*W->p/W->d);
 		}
 	      else
 		{
-		  W->d=WR->d*pow(2./(GAMMA+1.)-(GAMMA-1.)/((GAMMA+1.)*WR->a)*(WR->u-S),2./(GAMMA-1.));
+		  W->d=WR->d*POW(2./(GAMMA+1.)-(GAMMA-1.)/((GAMMA+1.)*WR->a)*(WR->u-S),2./(GAMMA-1.));
 		  W->u=2./(GAMMA+1.)*(-WR->a+(GAMMA-1.)/2.*WR->u+S);
-		  W->p=WR->p*pow(2./(GAMMA+1.)-(GAMMA-1.)/((GAMMA+1.)*WR->a)*(WR->u-S),2.*GAMMA/(GAMMA-1.));
-		  W->a=sqrt(GAMMA*W->p/W->d);
+		  W->p=WR->p*POW(2./(GAMMA+1.)-(GAMMA-1.)/((GAMMA+1.)*WR->a)*(WR->u-S),2.*GAMMA/(GAMMA-1.));
+		  W->a=SQRT(GAMMA*W->p/W->d);
 		}
 	    }
 	}
@@ -1055,7 +1058,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	      Wm=&(stencil->oct[ioct].cell[vcell[inei2]].field);
 	    }
 	    else{
-	      Wm=&(stencil->oct[ioct-(int)pow(3,dir)].cell[vcell[inei2]].field);
+	      Wm=&(stencil->oct[ioct-(int)POW(3,dir)].cell[vcell[inei2]].field);
 	    }
 
 	    inei2=2*dir+1;
@@ -1063,7 +1066,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	      Wp=&(stencil->oct[ioct].cell[vcell[inei2]].field);
 	    }
 	    else{
-	      Wp=&(stencil->oct[ioct+(int)pow(3,dir)].cell[vcell[inei2]].field);
+	      Wp=&(stencil->oct[ioct+(int)POW(3,dir)].cell[vcell[inei2]].field);
 	    }
 
 	    diffW(Wp,W0,&Dp); 
@@ -1102,7 +1105,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;
 	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
 	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
-	    Wi[idir].p = fmax(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
+	    Wi[idir].p = FMAX(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
 #ifdef WRADHYD
 	    Wi[idir].dX = W0->dX+ix[idir]*D[0].dX+iy[idir]*D[1].dX+iz[idir]*D[2].dX+Wt.dX;
 	    //printf("%e %e %e | %e %e\n",D[0].dX,D[1].dX,D[2].dX,W0->dX,Wt.dX);
@@ -1135,7 +1138,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    //if(Wi[idir].p<0) abort();
 	    //Wi[idir].E=Wi[idir].p/(GAMMA-1.)+0.5*Wi[idir].d*(Wi[idir].u*Wi[idir].u+Wi[idir].v*Wi[idir].v+Wi[idir].w*Wi[idir].w);
 	    getE(Wi+idir);
-	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
+	    Wi[idir].a=SQRT(GAMMA*Wi[idir].p/Wi[idir].d);
 
 #ifdef WRADHYD
  	    Wi[idir].dX=W0->dX; 
@@ -1162,12 +1165,12 @@ void speedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   WLloc.d=WL->d;
   WLloc.u=WL->u;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->u;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
@@ -1176,14 +1179,14 @@ void speedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     abort();
   }
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)){
@@ -1206,25 +1209,25 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   WLloc.d=WL->d;
   WLloc.u=WL->v;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->v;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) abort();
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)) abort();
@@ -1244,25 +1247,25 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
   WLloc.d=WL->d;
   WLloc.u=WL->w;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->w;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) abort();
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fmin(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmax(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   if((*SL)>(*SR)) abort();
@@ -1331,7 +1334,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.v=curcell->v;
       Wold.w=curcell->w;
       Wold.p=curcell->p;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 
 /* #ifdef WRADHYD */
 /*       Wold.dX=curcell->dX; */
@@ -1610,7 +1613,7 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.v=curcell->v;
       Wold.w=curcell->w;
       Wold.p=curcell->p;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 
 /* #ifdef WRADHYD */
 /*       Wold.X=curcell->X; */
@@ -1900,7 +1903,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.v=curcell->v;
       Wold.w=curcell->w;
       Wold.p=curcell->p;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
       getE(&Wold);
 
 /* #ifdef WRADHYD */
@@ -2156,7 +2159,7 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
       nextoct=firstoct[level-1];
       
       if(nextoct==NULL) continue; // in case the level is empty
-      dxcur=pow(0.5,level); // +1 to protect level change
+      dxcur=POW(0.5,level); // +1 to protect level change
       do // sweeping through the octs of level
 	{
 	  curoct=nextoct;
@@ -2169,16 +2172,16 @@ REAL comptstep_hydro(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa
 	       vx=curoct->cell[icell].field.u; 
 	       vy=curoct->cell[icell].field.v; 
 	       vz=curoct->cell[icell].field.w; 
-	       va=sqrt(vx*vx+vy*vy+vz*vz); 
-	       aa=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
-	       Smax=fmax(Smax,va+aa); 
+	       va=SQRT(vx*vx+vy*vy+vz*vz); 
+	       aa=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
+	       Smax=FMAX(Smax,va+aa); 
 
 	    }
 	}while(nextoct!=NULL);
 
       //printf("thydro= %e Smax=%e dxcur=%e\n",dxcur*CFL/(Smax*3.),Smax,dxcur);
       //      abort();
-      dt=fmin(dxcur*CFL/(Smax*3.),dt);
+      dt=FMIN(dxcur*CFL/(Smax*3.),dt);
     }
 
   // new tstep
@@ -2215,7 +2218,7 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
   struct Wtype W;
   REAL f[3];
   REAL DE,V,DV;
-  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
+  //Smax=FMAX(Smax,SQRT(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
 
   // Computing new timestep
   dt=tmax;
@@ -2226,7 +2229,7 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
       nextoct=firstoct[level-1];
       
       if(nextoct==NULL) continue; // in case the level is empty
-      dxcur=pow(0.5,level); // +1 to protect level change
+      dxcur=POW(0.5,level); // +1 to protect level change
       do // sweeping through the octs of level
 	{
 	  curoct=nextoct;
@@ -2236,14 +2239,14 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
 	      memcpy(&W,&curoct->cell[icell].field,sizeof(struct Wtype));
 	      W2U(&W,&U);
 	      memcpy(f,curoct->cell[icell].f,sizeof(REAL)*3);
-	      V=sqrt(pow(U.du,2.)+pow(U.dv,2.)+pow(U.dw,2.));
-	      DV=sqrt(pow(U.d*f[0],2.)+pow(U.d*f[1],2.)+pow(U.d*f[2],2.));
-	      DE=sqrt(pow(U.du*f[0],2.)+pow(U.dv*f[1],2.)+pow(U.dw*f[2],2.));
+	      V=SQRT(POW(U.du,2.)+POW(U.dv,2.)+POW(U.dw,2.));
+	      DV=SQRT(POW(U.d*f[0],2.)+POW(U.d*f[1],2.)+POW(U.d*f[2],2.));
+	      DE=SQRT(POW(U.du*f[0],2.)+POW(U.dv*f[1],2.)+POW(U.dw*f[2],2.));
 									       
 	      if((DE>0.)&&(U.E>0.)){
 		dtloc=0.5*U.E/DE;
 		if(dt!=tmax){
-		  dt=fmin(dt,dtloc);
+		  dt=FMIN(dt,dtloc);
 		}else{
 		  dt=dtloc;
 		}
@@ -2252,7 +2255,7 @@ REAL comptstep_force(int levelcoarse,int levelmax,struct OCT** firstoct, REAL ae
 	      if((DV>0.)&&(V>0.)){
 		dtloc=0.5*V/DV;
 		if(dt!=tmax){
-		  dt=fmin(dt,dtloc);
+		  dt=FMIN(dt,dtloc);
 		}else{
 		  dt=dtloc;
 		}
@@ -2380,7 +2383,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     // the oct at the right level exists
     neicell=cell->child->nei[ineiloc];
     oct=cell->child;
-    dxcur=pow(0.5,oct->level);
+    dxcur=POW(0.5,oct->level);
 
 #ifdef TRANSXP
     if(ineiloc==1){
@@ -2493,7 +2496,7 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   else{
     getcellnei(cell->idx, vnei, vcell); // we get the neighbors
     oct=cell2oct(cell);
-    dxcur=pow(0.5,oct->level);
+    dxcur=POW(0.5,oct->level);
 
     if(vnei[ineiloc]==6){
       neicell=&(oct->cell[vcell[ineiloc]]);
@@ -3059,11 +3062,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	REAL eint=U.eint;
 	REAL ekin=0.5*(U.du*U.du+U.dv*U.dv+U.dw*U.dw)/U.d;
 	
-	if((U.E-ekin)>0.5*pow(stencil[iread].New.cell[icell].divu,2)){ 
+	if((U.E-ekin)>0.5*POW(stencil[iread].New.cell[icell].divu,2)){ 
 	  U.eint=U.E-ekin; 
 	} 
 
-	U.eint=fmax(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
+	U.eint=FMAX(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 
 	if(U.eint<0) abort();
 
@@ -3145,7 +3148,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
 	      
 	      // update
-	      one=pow(-1.,inei+1);
+	      one=POW(-1.,inei+1);
 	      U.d +=F[0]*dtsurdx*one*0.125;
 	      U.du+=F[1]*dtsurdx*one*0.125;
 	      U.dv+=F[2]*dtsurdx*one*0.125;
@@ -3256,7 +3259,7 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
   struct OCT *curoct;
   struct OCT *nextoct;
   
-  REAL dxcur=pow(0.5,level);
+  REAL dxcur=POW(0.5,level);
   REAL one;
   struct Wtype W;
   struct Utype U;

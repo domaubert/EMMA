@@ -67,75 +67,75 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   for(igrp=0;igrp<NGRP;igrp++){
 
     if(Wp->e[igrp]>0){
-      Wr->e[igrp]=fmax(fmax(0.,fmin(beta*Wm->e[igrp],Wp->e[igrp])),fmin(Wm->e[igrp],beta*Wp->e[igrp]));
+      Wr->e[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->e[igrp],Wp->e[igrp])),FMIN(Wm->e[igrp],beta*Wp->e[igrp]));
     }
     else{
-      Wr->e[igrp]=fmin(fmin(0.,fmax(beta*Wm->e[igrp],Wp->e[igrp])),fmax(Wm->e[igrp],beta*Wp->e[igrp]));
+      Wr->e[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->e[igrp],Wp->e[igrp])),FMAX(Wm->e[igrp],beta*Wp->e[igrp]));
     }
 
 
     if(Wp->fx[igrp]>0){
-      Wr->fx[igrp]=fmax(fmax(0.,fmin(beta*Wm->fx[igrp],Wp->fx[igrp])),fmin(Wm->fx[igrp],beta*Wp->fx[igrp]));
+      Wr->fx[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fx[igrp],Wp->fx[igrp])),FMIN(Wm->fx[igrp],beta*Wp->fx[igrp]));
     }
     else{
-      Wr->fx[igrp]=fmin(fmin(0.,fmax(beta*Wm->fx[igrp],Wp->fx[igrp])),fmax(Wm->fx[igrp],beta*Wp->fx[igrp]));
+      Wr->fx[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fx[igrp],Wp->fx[igrp])),FMAX(Wm->fx[igrp],beta*Wp->fx[igrp]));
     }
 
 
     if(Wp->fy[igrp]>0){
-      Wr->fy[igrp]=fmax(fmax(0.,fmin(beta*Wm->fy[igrp],Wp->fy[igrp])),fmin(Wm->fy[igrp],beta*Wp->fy[igrp]));
+      Wr->fy[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fy[igrp],Wp->fy[igrp])),FMIN(Wm->fy[igrp],beta*Wp->fy[igrp]));
     }
     else{
-      Wr->fy[igrp]=fmin(fmin(0.,fmax(beta*Wm->fy[igrp],Wp->fy[igrp])),fmax(Wm->fy[igrp],beta*Wp->fy[igrp]));
+      Wr->fy[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fy[igrp],Wp->fy[igrp])),FMAX(Wm->fy[igrp],beta*Wp->fy[igrp]));
     }
 
 
     if(Wp->fz[igrp]>0){
-      Wr->fz[igrp]=fmax(fmax(0.,fmin(beta*Wm->fz[igrp],Wp->fz[igrp])),fmin(Wm->fz[igrp],beta*Wp->fz[igrp]));
+      Wr->fz[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fz[igrp],Wp->fz[igrp])),FMIN(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
     else{
-      Wr->fz[igrp]=fmin(fmin(0.,fmax(beta*Wm->fz[igrp],Wp->fz[igrp])),fmax(Wm->fz[igrp],beta*Wp->fz[igrp]));
+      Wr->fz[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fz[igrp],Wp->fz[igrp])),FMAX(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
 
   }
 
   if(Wp->src>0){
-      Wr->src=fmax(fmax(0.,fmin(beta*Wm->src,Wp->src)),fmin(Wm->src,beta*Wp->src));
+      Wr->src=FMAX(FMAX(0.,FMIN(beta*Wm->src,Wp->src)),FMIN(Wm->src,beta*Wp->src));
     }
     else{
-      Wr->src=fmin(fmin(0.,fmax(beta*Wm->src,Wp->src)),fmax(Wm->src,beta*Wp->src));
+      Wr->src=FMIN(FMIN(0.,FMAX(beta*Wm->src,Wp->src)),FMAX(Wm->src,beta*Wp->src));
     }
 
 
 #ifdef STARS
   if(Wp->snfb>0){
-      Wr->snfb=fmax(fmax(0.,fmin(beta*Wm->snfb,Wp->snfb)),fmin(Wm->snfb,beta*Wp->snfb));
+      Wr->snfb=FMAX(FMAX(0.,FMIN(beta*Wm->snfb,Wp->snfb)),FMIN(Wm->snfb,beta*Wp->snfb));
     }
     else{
-      Wr->snfb=fmin(fmin(0.,fmax(beta*Wm->snfb,Wp->snfb)),fmax(Wm->snfb,beta*Wp->snfb));
+      Wr->snfb=FMIN(FMIN(0.,FMAX(beta*Wm->snfb,Wp->snfb)),FMAX(Wm->snfb,beta*Wp->snfb));
     }
 #endif
 
 #ifdef WCHEM
   if(Wp->nhplus>0){
-    Wr->nhplus=fmax(fmax(0.,fmin(beta*Wm->nhplus,Wp->nhplus)),fmin(Wm->nhplus,beta*Wp->nhplus));
+    Wr->nhplus=FMAX(FMAX(0.,FMIN(beta*Wm->nhplus,Wp->nhplus)),FMIN(Wm->nhplus,beta*Wp->nhplus));
   }
   else{
-    Wr->nhplus=fmin(fmin(0.,fmax(beta*Wm->nhplus,Wp->nhplus)),fmax(Wm->nhplus,beta*Wp->nhplus));
+    Wr->nhplus=FMIN(FMIN(0.,FMAX(beta*Wm->nhplus,Wp->nhplus)),FMAX(Wm->nhplus,beta*Wp->nhplus));
   }
 
   if(Wp->eint>0){
-    Wr->eint=fmax(fmax(0.,fmin(beta*Wm->eint,Wp->eint)),fmin(Wm->eint,beta*Wp->eint));
+    Wr->eint=FMAX(FMAX(0.,FMIN(beta*Wm->eint,Wp->eint)),FMIN(Wm->eint,beta*Wp->eint));
   }
   else{
-    Wr->eint=fmin(fmin(0.,fmax(beta*Wm->eint,Wp->eint)),fmax(Wm->eint,beta*Wp->eint));
+    Wr->eint=FMIN(FMIN(0.,FMAX(beta*Wm->eint,Wp->eint)),FMAX(Wm->eint,beta*Wp->eint));
   }
 
   if(Wp->nh>0){
-    Wr->nh=fmax(fmax(0.,fmin(beta*Wm->nh,Wp->nh)),fmin(Wm->nh,beta*Wp->nh));
+    Wr->nh=FMAX(FMAX(0.,FMIN(beta*Wm->nh,Wp->nh)),FMIN(Wm->nh,beta*Wp->nh));
   }
   else{
-    Wr->nh=fmin(fmin(0.,fmax(beta*Wm->nh,Wp->nh)),fmax(Wm->nh,beta*Wp->nh));
+    Wr->nh=FMIN(FMIN(0.,FMAX(beta*Wm->nh,Wp->nh)),FMAX(Wm->nh,beta*Wp->nh));
   }
 #endif
 
@@ -181,7 +181,7 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  dxcur=pow(0.5,oct->level);
+	  dxcur=POW(0.5,oct->level);
 
 	  W0=&(cell->rfield);
 	  // Limited Slopes
@@ -266,10 +266,10 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 		icell=ix+iy*2+iz*4;
 		interpminmod_R(W0,&Wint,D,D+1,D+2,-0.25+ix*0.5,-0.25+iy*0.5,-0.25+iz*0.5); // Wp contains the interpolation
 		
-		REAL F=sqrt(Wint.fx[0]*Wint.fx[0]+Wint.fy[0]*Wint.fy[0]+Wint.fz[0]*Wint.fz[0]);
+		REAL F=SQRT(Wint.fx[0]*Wint.fx[0]+Wint.fy[0]*Wint.fy[0]+Wint.fz[0]*Wint.fz[0]);
 		REAL E=Wint.e[0];
 		REAL f=F/cloc/E;
-		REAL F0=sqrt(W0->fx[0]*W0->fx[0]+W0->fy[0]*W0->fy[0]+W0->fz[0]*W0->fz[0]);
+		REAL F0=SQRT(W0->fx[0]*W0->fx[0]+W0->fy[0]*W0->fy[0]+W0->fz[0]*W0->fz[0]);
 		REAL E0=W0->e[0];
 		REAL f0=F0/cloc/E0;
 		if(f>1.){
@@ -290,7 +290,7 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
 	  /* if(tag){ */
 	  /*   for(iz=0;iz<8;iz++){ */
-	  /*     REAL F0=sqrt(Wi[iz].fx[0]*Wi[iz].fx[0]+Wi[iz].fy[0]*Wi[iz].fy[0]+Wi[iz].fz[0]*Wi[iz].fz[0]); */
+	  /*     REAL F0=SQRT(Wi[iz].fx[0]*Wi[iz].fx[0]+Wi[iz].fy[0]*Wi[iz].fy[0]+Wi[iz].fz[0]*Wi[iz].fz[0]); */
 	  /*     REAL E0=Wi[iz].e[0]; */
 	  /*     REAL f0=F0/cloc/E0; */
 	  /*     printf("i=%d  f=%e F=%e E=%e\n",iz,f0,F0,E0); */
@@ -325,7 +325,7 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 
 	  oct=cell2oct(cell);
 	  getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-	  dxcur=pow(0.5,oct->level);
+	  dxcur=POW(0.5,oct->level);
 
 	  W0=&(cell->rfield);
 	  // Limited Slopes
@@ -423,7 +423,7 @@ REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
 
   if(ee>0)
     {
-      ff=sqrt(fx*fx+fy*fy+fz*fz); // 6 flop
+      ff=SQRT(fx*fx+fy*fy+fz*fz); // 6 flop
       if(ff>0)
 	{
 	  n[0]=fx/ff; 
@@ -433,8 +433,8 @@ REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
       ff=ff/(c*ee); // 2flop
     }
   
-  arg=fmax(4.-3.*ff*ff,0.); // 4 flop
-  chi=(3.+4.*ff*ff)/(5.+2.*sqrt(arg)); // 7 flops
+  arg=FMAX(4.-3.*ff*ff,0.); // 4 flop
+  chi=(3.+4.*ff*ff)/(5.+2.*SQRT(arg)); // 7 flops
 
   if(i==j) res=(1.-chi)/2.*c2e; // 1 flops on average
   arg=(3.*chi-1.)/2.*c2e;
@@ -1081,7 +1081,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
     // the oct at the right level exists
     neicell=cell->child->nei[ineiloc];
     oct=cell->child;
-    dxcur=pow(0.5,oct->level);
+    dxcur=POW(0.5,oct->level);
 
 #ifdef TRANSXP
     if(ineiloc==1){
@@ -1195,7 +1195,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
   else{
     getcellnei(cell->idx, vnei, vcell); // we get the neighbors
     oct=cell2oct(cell);
-    dxcur=pow(0.5,oct->level);
+    dxcur=POW(0.5,oct->level);
     if(vnei[ineiloc]==6){
       neicell=&(oct->cell[vcell[ineiloc]]);
     }
@@ -1594,7 +1594,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 	    one*=-1.;
 	  }
 	  
-	  printf("Flux %e %e %e delta %e %e %e rflux=%e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],sqrt(pow(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+pow(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
+	  printf("Flux %e %e %e delta %e %e %e rflux=%e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],SQRT(POW(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+POW(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+POW(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
 	  
 	  int vnei[6],vcell[6];
 	  getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -1717,7 +1717,7 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
  	      
 	      for(igrp=0;igrp<NGRP;igrp++){
 		// update
-		one=pow(-1.,inei+1);
+		one=POW(-1.,inei+1);
 		R.e[igrp] += F[0+igrp*NVAR_R]*dtsurdx*one*0.125;
 		R.fx[igrp]+= F[1+igrp*NVAR_R]*dtsurdx*one*0.125;
 		R.fy[igrp]+= F[2+igrp*NVAR_R]*dtsurdx*one*0.125;
@@ -1836,7 +1836,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   struct OCT *curoct;
   struct OCT *nextoct;
   
-  REAL dxcur=pow(0.5,level);
+  REAL dxcur=POW(0.5,level);
   REAL one;
   struct Rtype R;
   int icell;
@@ -1962,7 +1962,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   t[9]=MPI_Wtime();
   if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
-    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    //printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
     printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
@@ -2061,7 +2061,7 @@ void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct
       REAL F;
       for(icell=0;icell<8;icell++) {
 	E=curoct->cell[icell].rfield.e[0]*cloc;
-	F=sqrt(pow(curoct->cell[icell].rfield.fx[0],2)+pow(curoct->cell[icell].rfield.fy[0],2)+pow(curoct->cell[icell].rfield.fz[0],2));
+	F=SQRT(POW(curoct->cell[icell].rfield.fx[0],2)+POW(curoct->cell[icell].rfield.fy[0],2)+POW(curoct->cell[icell].rfield.fz[0],2));
 	if(F/E>1.0){
 	  printf("E=%e F=%e cloc=%e cE=%e\n",E/cloc,F,cloc,E);
 	  abort();

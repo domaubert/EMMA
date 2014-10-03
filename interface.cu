@@ -99,7 +99,7 @@ unsigned long int GPUallocScanPlan(int nmem){
   cudppCreate(&(cuparam->theCudpp));
     
   cuparam->config.algorithm = CUDPP_SCAN;
-  cuparam->config.datatype = CUDPP_DOUBLE;
+  cuparam->config.datatype = CUDPP_REAL; // homemade type
   cuparam->config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE;
   cuparam->config.op=CUDPP_ADD;
 

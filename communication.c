@@ -782,7 +782,7 @@ void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 		break;
 #endif
 	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
+		curoct->cell[icell].marked=FMAX(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 #ifdef WGRAV
 	      case 5:
@@ -861,7 +861,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		break;
 #endif
 	      case 3:
-		curoct->cell[icell].marked=fmax(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
+		curoct->cell[icell].marked=FMAX(pack->data[icell],(REAL)curoct->cell[icell].marked); // refinement mark
 		break;
 #ifdef WGRAV
 	      case 5:
@@ -996,7 +996,7 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
 
 	    if(newcell->child!=NULL){
 	      struct OCT *newoct=newcell->child;
-	      REAL dxcur2=1./pow(2.,newoct->level);
+	      REAL dxcur2=1./POW(2.,newoct->level);
 				
 	      int xp=(int)(DFACT*(part->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 	      int yp=(int)(DFACT*(part->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);

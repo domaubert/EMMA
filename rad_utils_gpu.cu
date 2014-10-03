@@ -176,75 +176,75 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   for(igrp=0;igrp<NGRP;igrp++){
 
     if(Wp->e[igrp]>0){
-      Wr->e[igrp]=fmax(fmax(0.,fmin(beta*Wm->e[igrp],Wp->e[igrp])),fmin(Wm->e[igrp],beta*Wp->e[igrp]));
+      Wr->e[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->e[igrp],Wp->e[igrp])),FMIN(Wm->e[igrp],beta*Wp->e[igrp]));
     }
     else{
-      Wr->e[igrp]=fmin(fmin(0.,fmax(beta*Wm->e[igrp],Wp->e[igrp])),fmax(Wm->e[igrp],beta*Wp->e[igrp]));
+      Wr->e[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->e[igrp],Wp->e[igrp])),FMAX(Wm->e[igrp],beta*Wp->e[igrp]));
     }
 
 
     if(Wp->fx[igrp]>0){
-      Wr->fx[igrp]=fmax(fmax(0.,fmin(beta*Wm->fx[igrp],Wp->fx[igrp])),fmin(Wm->fx[igrp],beta*Wp->fx[igrp]));
+      Wr->fx[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fx[igrp],Wp->fx[igrp])),FMIN(Wm->fx[igrp],beta*Wp->fx[igrp]));
     }
     else{
-      Wr->fx[igrp]=fmin(fmin(0.,fmax(beta*Wm->fx[igrp],Wp->fx[igrp])),fmax(Wm->fx[igrp],beta*Wp->fx[igrp]));
+      Wr->fx[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fx[igrp],Wp->fx[igrp])),FMAX(Wm->fx[igrp],beta*Wp->fx[igrp]));
     }
 
 
     if(Wp->fy[igrp]>0){
-      Wr->fy[igrp]=fmax(fmax(0.,fmin(beta*Wm->fy[igrp],Wp->fy[igrp])),fmin(Wm->fy[igrp],beta*Wp->fy[igrp]));
+      Wr->fy[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fy[igrp],Wp->fy[igrp])),FMIN(Wm->fy[igrp],beta*Wp->fy[igrp]));
     }
     else{
-      Wr->fy[igrp]=fmin(fmin(0.,fmax(beta*Wm->fy[igrp],Wp->fy[igrp])),fmax(Wm->fy[igrp],beta*Wp->fy[igrp]));
+      Wr->fy[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fy[igrp],Wp->fy[igrp])),FMAX(Wm->fy[igrp],beta*Wp->fy[igrp]));
     }
 
 
     if(Wp->fz[igrp]>0){
-      Wr->fz[igrp]=fmax(fmax(0.,fmin(beta*Wm->fz[igrp],Wp->fz[igrp])),fmin(Wm->fz[igrp],beta*Wp->fz[igrp]));
+      Wr->fz[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->fz[igrp],Wp->fz[igrp])),FMIN(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
     else{
-      Wr->fz[igrp]=fmin(fmin(0.,fmax(beta*Wm->fz[igrp],Wp->fz[igrp])),fmax(Wm->fz[igrp],beta*Wp->fz[igrp]));
+      Wr->fz[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fz[igrp],Wp->fz[igrp])),FMAX(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
 
   }
 
   if(Wp->src>0){
-      Wr->src=fmax(fmax(0.,fmin(beta*Wm->src,Wp->src)),fmin(Wm->src,beta*Wp->src));
+      Wr->src=FMAX(FMAX(0.,FMIN(beta*Wm->src,Wp->src)),FMIN(Wm->src,beta*Wp->src));
     }
     else{
-      Wr->src=fmin(fmin(0.,fmax(beta*Wm->src,Wp->src)),fmax(Wm->src,beta*Wp->src));
+      Wr->src=FMIN(FMIN(0.,FMAX(beta*Wm->src,Wp->src)),FMAX(Wm->src,beta*Wp->src));
     }
 
 
 #ifdef STARS
   if(Wp->snfb>0){
-      Wr->snfb=fmax(fmax(0.,fmin(beta*Wm->snfb,Wp->snfb)),fmin(Wm->snfb,beta*Wp->snfb));
+      Wr->snfb=FMAX(FMAX(0.,FMIN(beta*Wm->snfb,Wp->snfb)),FMIN(Wm->snfb,beta*Wp->snfb));
     }
     else{
-      Wr->snfb=fmin(fmin(0.,fmax(beta*Wm->snfb,Wp->snfb)),fmax(Wm->snfb,beta*Wp->snfb));
+      Wr->snfb=FMIN(FMIN(0.,FMAX(beta*Wm->snfb,Wp->snfb)),FMAX(Wm->snfb,beta*Wp->snfb));
     }
 #endif
 
 #ifdef WCHEM
   if(Wp->nhplus>0){
-    Wr->nhplus=fmax(fmax(0.,fmin(beta*Wm->nhplus,Wp->nhplus)),fmin(Wm->nhplus,beta*Wp->nhplus));
+    Wr->nhplus=FMAX(FMAX(0.,FMIN(beta*Wm->nhplus,Wp->nhplus)),FMIN(Wm->nhplus,beta*Wp->nhplus));
   }
   else{
-    Wr->nhplus=fmin(fmin(0.,fmax(beta*Wm->nhplus,Wp->nhplus)),fmax(Wm->nhplus,beta*Wp->nhplus));
+    Wr->nhplus=FMIN(FMIN(0.,FMAX(beta*Wm->nhplus,Wp->nhplus)),FMAX(Wm->nhplus,beta*Wp->nhplus));
   }
 
   if(Wp->eint>0){
-    Wr->eint=fmax(fmax(0.,fmin(beta*Wm->eint,Wp->eint)),fmin(Wm->eint,beta*Wp->eint));
+    Wr->eint=FMAX(FMAX(0.,FMIN(beta*Wm->eint,Wp->eint)),FMIN(Wm->eint,beta*Wp->eint));
   }
   else{
-    Wr->eint=fmin(fmin(0.,fmax(beta*Wm->eint,Wp->eint)),fmax(Wm->eint,beta*Wp->eint));
+    Wr->eint=FMIN(FMIN(0.,FMAX(beta*Wm->eint,Wp->eint)),FMAX(Wm->eint,beta*Wp->eint));
   }
 
   if(Wp->nh>0){
-    Wr->nh=fmax(fmax(0.,fmin(beta*Wm->nh,Wp->nh)),fmin(Wm->nh,beta*Wp->nh));
+    Wr->nh=FMAX(FMAX(0.,FMIN(beta*Wm->nh,Wp->nh)),FMIN(Wm->nh,beta*Wp->nh));
   }
   else{
-    Wr->nh=fmin(fmin(0.,fmax(beta*Wm->nh,Wp->nh)),fmax(Wm->nh,beta*Wp->nh));
+    Wr->nh=FMIN(FMIN(0.,FMAX(beta*Wm->nh,Wp->nh)),FMAX(Wm->nh,beta*Wp->nh));
   }
 #endif
 
@@ -287,7 +287,7 @@ __device__ REAL dEddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int 
 
   if(ee>0)
     {
-      ff=sqrt(fx*fx+fy*fy+fz*fz); // 6 flop
+      ff=SQRT(fx*fx+fy*fy+fz*fz); // 6 flop
       if(ff>0)
 	{
 	  n[0]=fx/ff; 
@@ -297,8 +297,8 @@ __device__ REAL dEddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int 
       ff=ff/(c*ee); // 2flop
     }
   
-  arg=fmax(4.-3.*ff*ff,0.); // 4 flop
-  chi=(3.+4.*ff*ff)/(5.+2.*sqrt(arg)); // 7 flops
+  arg=FMAX(4.-3.*ff*ff,0.); // 4 flop
+  chi=(3.+4.*ff*ff)/(5.+2.*SQRT(arg)); // 7 flops
 
   if(i==j) res=(1.-chi)/2.*c2e; // 1 flops on average
   arg=(3.*chi-1.)/2.*c2e;

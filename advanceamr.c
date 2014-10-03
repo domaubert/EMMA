@@ -4,6 +4,7 @@
 #include "prototypes.h"
 #include "amr.h"
 #include "hydro_utils.h"
+#include "poisson_utils.h"
 #include "tools.h"
 #ifdef WRAD
 #include "rad_utils.h"
@@ -28,7 +29,7 @@
 void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
   
   int level;
-  int ndtmax=pow(param->nsubcycles,param->lmax-param->lcoarse+1);
+  int ndtmax=POW(param->nsubcycles,param->lmax-param->lcoarse+1);
   int i,j,na;
   int nl;
 
@@ -38,7 +39,7 @@ void dispndt(struct RUNPARAMS *param, struct CPUINFO *cpu, int *ndt){
     printf("\n");
   }
   for(level=param->lcoarse;level<=param->lmax;level++){
-    na=pow(2,param->lmax-level+1);
+    na=POW(2,param->lmax-level+1);
     nl=ndt[level-1];
 
 #ifdef WMPI
@@ -80,7 +81,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   REAL Smax=0.,S1;
   REAL amax=0.;
 
-  //Smax=fmax(Smax,sqrt(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
+  //Smax=FMAX(Smax,SQRT(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
   // Computing new timestep
   dt=tmax;
   // setting the first oct
@@ -88,7 +89,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   nextoct=firstoct[level-1];
   
   if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
+    dxcur=POW(0.5,level); // +1 to protect level change
     do // sweeping through the octs of level
       {
 	curoct=nextoct;
@@ -100,17 +101,17 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 	    vx=curoct->cell[icell].field.u; 
 	    vy=curoct->cell[icell].field.v; 
 	    vz=curoct->cell[icell].field.w; 
-	    va=sqrt(vx*vx+vy*vy+vz*vz); 
-	    aa=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
-	    amax=fmax(aa,amax);
+	    va=SQRT(vx*vx+vy*vy+vz*vz); 
+	    aa=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
+	    amax=FMAX(aa,amax);
 	    //if(level==7) printf("v=%e\n",va+aa);
-	    Smax=fmax(Smax,va+aa); 
+	    Smax=FMAX(Smax,va+aa); 
 
 	  }
       }while(nextoct!=NULL);
   }
 
-  if(Smax>0.) dt=fmin(dxcur*CFL/(Smax*3.),dt);
+  if(Smax>0.) dt=FMIN(dxcur*CFL/(Smax*3.),dt);
   //printf("Smax=%e amax=%e dt=%e\n",Smax,amax,dt);
 
   //if(level==7) printf("DT HY=%e\n",dt);
@@ -140,7 +141,7 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
   nextoct=firstoct[level-1];
       
   if(nextoct!=NULL){
-    dxcur=pow(0.5,level); // +1 to protect level change
+    dxcur=POW(0.5,level); // +1 to protect level change
     do // sweeping through the octs of level
       {
 	curoct=nextoct;
@@ -148,12 +149,12 @@ REAL L_comptstep_ff(int level,struct RUNPARAMS *param,struct OCT** firstoct, REA
 	if(curoct->cpu!=cpu->rank) continue;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
-	    dtloc=0.1*sqrt(2.*M_PI/(3.*(curoct->cell[icell].gdata.d+1.)*aexp));
+	    dtloc=0.1*SQRT(2.*M_PI/(3.*(curoct->cell[icell].gdata.d+1.)*aexp));
  	    /* if(curoct->cell[icell].gdata.d<0.){ */
 	    /*   printf("ouhla %e\n",dtloc); */
 	    /*   abort(); */
 	    /* } */
-	    dt=fmin(dt,dtloc);
+	    dt=FMIN(dt,dtloc);
 	  }
       }while(nextoct!=NULL);
   }
@@ -190,7 +191,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   //nextoct=firstoct[level-1];
   
   //if(nextoct!=NULL){
-    //dxcur=pow(0.5,level); // +1 to protect level change
+    //dxcur=POW(0.5,level); // +1 to protect level change
     //dt=CFL*dxcur/(aexp*cfact*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0; // UNITS OK
     dt=CFL/(aexp*param->clight*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v)/3.0/(REAL)(1<<level); // UNITS OK
     //}
@@ -219,7 +220,7 @@ REAL L_comptstep_radfront(int level, struct RUNPARAMS *param,struct OCT** firsto
     // Computing new timestep
     //dt=tmax;
 
-    dxcur=pow(0.5,level); 
+    dxcur=POW(0.5,level); 
   
     // setting the first oct
     nextoct=firstoct[level-1];
@@ -246,15 +247,15 @@ REAL L_comptstep_radfront(int level, struct RUNPARAMS *param,struct OCT** firsto
 		deltaX=curoct->cell[icell].rfield.deltaX; 
 	      }
 	      
-	      REAL alpha= fabs(XP-X0)/dxcur;
-	      REAL contrast= fabs(XP-X0)/(XP+X0)*2.;
+	      REAL alpha= FABS(XP-X0)/dxcur;
+	      REAL contrast= FABS(XP-X0)/(XP+X0)*2.;
 	      if(contrast>0.1){
-	      if((fabs(XP-0.5)<0.4)||(fabs(X0-0.5)<0.4))
+	      if((FABS(XP-0.5)<0.4)||(FABS(X0-0.5)<0.4))
 		{
 		  vf=deltaX/alpha*1.;
 		  
 		  if(vf>clight) printf("vf/c=%3.1f deltaX=%e XP=%e X0=%e alpha=%e c=%e contrast=%e\n",vf/clight,deltaX,XP,X0,alpha,clight,contrast);
-		  Smax=fmax(Smax,fmin(clight,vf)); 
+		  Smax=FMAX(Smax,FMIN(clight,vf)); 
 		}
 	    }
 	    
@@ -266,7 +267,7 @@ REAL L_comptstep_radfront(int level, struct RUNPARAMS *param,struct OCT** firsto
     Smax=Smax/(aexp*LIGHT_SPEED_IN_M_PER_S/param->unit.unit_v); // switch back to natural units for speed of light
 
 #ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&Smax,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&Smax,1,MPI_REEL,MPI_MAX,cpu->comm);
     if(cpu->rank==RANK_DISP) printf("Smax=%f\n",Smax);
 #endif
     param->clightorg=Smax;
@@ -290,7 +291,7 @@ REAL L_comptstep_radfront(int level, struct RUNPARAMS *param,struct OCT** firsto
 	    struct Rtype *R;
 	    R=&curoct->cell[icell].rfield;
 	    
-	    REAL F=sqrt(pow(R->fx[0],2)+pow(R->fy[0],2)+pow(R->fz[0],2));
+	    REAL F=SQRT(POW(R->fx[0],2)+POW(R->fy[0],2)+POW(R->fz[0],2));
 	    REAL E=R->e[0];
 	    
 	    if(F>(Smax*E)) {
@@ -401,7 +402,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
 
 #ifdef TESTCOSMO
-    aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    aexp=interp_aexp(tloc,(double *)cosmo->tab_aexp,(double *)cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
 #endif
 
@@ -541,6 +542,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
+	//dumpIO(tloc,param,cpu,firstoct,adt,0);
+	//abort();
       }
     }
 #endif
@@ -569,7 +572,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       for(levelin=param->lcoarse;levelin<=param->lmax;levelin++){
       	nextoct=firstoct[levelin-1];
-      	dx=1./pow(2,levelin);
+      	dx=1./POW(2,levelin);
       	if(nextoct!=NULL){
       	  do // sweeping level
       	    {
@@ -600,9 +603,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       ein=ein+einloc;
 #ifdef WMPI
       REAL sum_ekp,sum_epp,sum_ein;
-      MPI_Allreduce(&ekp,&sum_ekp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-      MPI_Allreduce(&epp,&sum_epp,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
-      MPI_Allreduce(&ein,&sum_ein,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&ekp,&sum_ekp,1,MPI_REEL,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&epp,&sum_epp,1,MPI_REEL,MPI_SUM,cpu->comm);
+      MPI_Allreduce(&ein,&sum_ein,1,MPI_REEL,MPI_SUM,cpu->comm);
       ekp=sum_ekp;
       epp=sum_epp;
       ein=sum_ein;
@@ -611,7 +614,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       if(nsteps==1){
 #ifdef TESTCOSMO
-	htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+	htilde=2./SQRT(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
 	param->egy_last=epp*htilde;
 #else
 	param->egy_last=0.;
@@ -626,7 +629,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     
     if((level>=param->lcoarse)&&(nsteps>1)) {
 #ifdef TESTCOSMO
-      htilde=2./sqrt(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
+      htilde=2./SQRT(param->cosmo->om)/faexp_tilde(aexp,param->cosmo->om,param->cosmo->ov)/aexp;
       RHS=param->egy_rhs;
       
       //RHS=RHS+0.5*(epp*htilde+param->egy_last)*(tloc-param->egy_timelast); // trapezoidal rule
@@ -684,7 +687,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // Cosmo Expansion
 #ifdef TESTCOSMO
     REAL dtcosmo;
-    dtcosmo=-0.5*sqrt(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
+    dtcosmo=-0.5*SQRT(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",dtcosmo);
 #endif
@@ -761,14 +764,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       adt[level-1]=adt[level-2];
     }
     else{ // otherwise standard case
-      adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
+      adt[level-1]=FMIN(adt[level-1],adt[level-2]-dt);// we force synchronization
     }
 
 #ifdef WMPI
     REAL tdum=0.;
     REAL tdum2=0.;
-    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_REEL,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
@@ -801,8 +804,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
-    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_REEL,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
@@ -1009,7 +1012,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   // ================= V Computing the new refinement map
     REAL dxkpc=0.;
-    REAL dxnext=pow(0.5,level+1)*aexp;
+    REAL dxnext=POW(0.5,level+1)*aexp;
 #ifdef KPCLIMIT
     dxkpc=1e3*PARSEC/param->unit.unit_l;
 #endif
@@ -1108,7 +1111,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* } */
 
 #ifdef TESTCOSMO
-    aexp=interp_aexp(tloc,cosmo->tab_aexp,cosmo->tab_ttilde);
+    aexp=interp_aexp(tloc,(double *)cosmo->tab_aexp,(double *)cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
 #else
     aexp=1.0;
@@ -1154,14 +1157,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       adt[level-1]=adt[level-2];
     }
     else{ // otherwise standard case
-      adt[level-1]=fmin(adt[level-1],adt[level-2]-dt);// we force synchronization
+      adt[level-1]=FMIN(adt[level-1],adt[level-2]-dt);// we force synchronization
     }
 
 #ifdef WMPI
     REAL tdum=0.;
     REAL tdum2=0.;
-    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_REEL,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif
@@ -1192,8 +1195,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
-    MPI_Allreduce(adt+level-1,&tdum,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_DOUBLE,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-1,&tdum,1,MPI_REEL,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
 #endif

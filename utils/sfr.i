@@ -11,7 +11,7 @@
 //rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
 rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
 
-nsnap=16;
+nsnap=6;
 lcoarse=7.;
 bint=spanl(1e8,1e9,128);
 

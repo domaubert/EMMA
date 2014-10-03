@@ -38,7 +38,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   int ii;
 
   REAL ratiod,ratiou,ratiov,ratiow,ratiop,ratio;
-  REAL dxcur=pow(0.5,curoct->level);
+  REAL dxcur=POW(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
@@ -126,19 +126,19 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
 
   }
 
-  ratiod=sqrt(pow(gradd[0],2)+pow(gradd[1],2)+pow(gradd[2],2))*0.5/fabs(curoct->cell[icell].field.d+1e-10);
-  ratiou=sqrt(pow(gradu[0],2)+pow(gradu[1],2)+pow(gradu[2],2))*0.5/fabs(curoct->cell[icell].field.u+1e-10);
-  ratiov=sqrt(pow(gradv[0],2)+pow(gradv[1],2)+pow(gradv[2],2))*0.5/fabs(curoct->cell[icell].field.v+1e-10);
-  ratiow=sqrt(pow(gradw[0],2)+pow(gradw[1],2)+pow(gradw[2],2))*0.5/(fabs(curoct->cell[icell].field.w)+1e-3);
-  ratiop=sqrt(pow(gradp[0],2)+pow(gradp[1],2)+pow(gradp[2],2))*0.5/fabs(curoct->cell[icell].field.p+1e-10);
+  ratiod=SQRT(POW(gradd[0],2)+POW(gradd[1],2)+POW(gradd[2],2))*0.5/fabs(curoct->cell[icell].field.d+1e-10);
+  ratiou=SQRT(POW(gradu[0],2)+POW(gradu[1],2)+POW(gradu[2],2))*0.5/fabs(curoct->cell[icell].field.u+1e-10);
+  ratiov=SQRT(POW(gradv[0],2)+POW(gradv[1],2)+POW(gradv[2],2))*0.5/fabs(curoct->cell[icell].field.v+1e-10);
+  ratiow=SQRT(POW(gradw[0],2)+POW(gradw[1],2)+POW(gradw[2],2))*0.5/(fabs(curoct->cell[icell].field.w)+1e-3);
+  ratiop=SQRT(POW(gradp[0],2)+POW(gradp[1],2)+POW(gradp[2],2))*0.5/fabs(curoct->cell[icell].field.p+1e-10);
 
   //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
   ratio=ratiod;
-  ratio=fmax(ratio,ratiou);
-  ratio=fmax(ratio,ratiov);
-  ratio=fmax(ratio,ratiow);
-  ratio=fmax(ratio,ratiop);
+  ratio=FMAX(ratio,ratiou);
+  ratio=FMAX(ratio,ratiov);
+  ratio=FMAX(ratio,ratiow);
+  ratio=FMAX(ratio,ratiop);
 
   return ratio; 
   
@@ -168,7 +168,7 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   int ii;
 
   REAL ratiox,ratio,ratioe,ration;
-  REAL dxcur=pow(0.5,curoct->level);
+  REAL dxcur=POW(0.5,curoct->level);
 
   getcellnei(icell, vnei, vcell);
   //printf("__\n");
@@ -265,9 +265,9 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   }
 
 
-  ratiox=fmax(fabs(gradd[0]/(avgd[0]+1e-10)),fmax(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
-  ration=fmax(fabs(gradn[0]/(avgn[0]+1e-10)),fmax(fabs(gradn[1]/(avgn[1]+1e-10)),fabs(gradn[2]/(avgn[2]+1e-10))))*0.;
-  ratioe=fmax(fabs(grade[0]/(avge[0]+1e-10)),fmax(fabs(grade[1]/(avge[1]+1e-10)),fabs(grade[2]/(avge[2]+1e-10))))*0;
+  ratiox=FMAX(fabs(gradd[0]/(avgd[0]+1e-10)),FMAX(fabs(gradd[1]/(avgd[1]+1e-10)),fabs(gradd[2]/(avgd[2]+1e-10))));
+  ration=FMAX(fabs(gradn[0]/(avgn[0]+1e-10)),FMAX(fabs(gradn[1]/(avgn[1]+1e-10)),fabs(gradn[2]/(avgn[2]+1e-10))))*0.;
+  ratioe=FMAX(fabs(grade[0]/(avge[0]+1e-10)),FMAX(fabs(grade[1]/(avge[1]+1e-10)),fabs(grade[2]/(avge[2]+1e-10))))*0;
   //ratiox=fabs(gradd[0]/(avgd[0]+1e-10));
   /* if((curoct->x==0.)&&(ratiox>1.9)) if(icell%2==0) if(curoct->level==6) { */
   /* 	printf("ratiox=%e %e %e %e\n",ratiox,gradd[0],gradd[1],gradd[2]); */
@@ -275,8 +275,8 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
   /*     } */
   //  if((ratiow>0.1)&&(fabs(curoct->cell[icell].field.w)<1e-15)) abort();
 
-  ratio=fmax(ratiox,ratioe);
-  ratio=fmax(ration,ratio);
+  ratio=FMAX(ratiox,ratioe);
+  ratio=FMAX(ration,ratio);
   return ratio; 
   
 }
@@ -337,7 +337,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   if(cpu->rank==RANK_DISP) printf("==> start refining on cpu %d lcoarse=%d lmax=%d freeoct=%ld\n",cpu->rank,param->lcoarse,param->lmax,freeoct-firstoct[0]);
   long int dorg=freeoct-firstoct[0];
 
-  dxcur=1./pow(2,level);
+  dxcur=1./POW(2,level);
   nextoct=firstoct[level-1];
   if(nextoct!=NULL){
       do // sweeping level
@@ -740,7 +740,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
   int ii;
   int vnei[6],vcell[6];
   int ic;
-  REAL dxcur=1./pow(2,level);
+  REAL dxcur=1./POW(2,level);
 
 
   nextoct=firstoct[level-1];
@@ -900,10 +900,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   for(ismooth=0;ismooth<nsmooth;ismooth++)
     {
 	  //printf("level=%d ",level);
-	  dx=1./pow(2,level);
+	  dx=1./POW(2,level);
 	  
 #ifdef ZOOM
- 	  rin=param->rzoom*pow(param->fzoom,param->lmaxzoom-level-1);
+ 	  rin=param->rzoom*POW(param->fzoom,param->lmaxzoom-level-1);
 	  //printf("rin=%e\n",rin);
 #endif
 	  for(pass=0;pass<3;pass++)
@@ -1268,7 +1268,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 #ifdef TESTCLUMP
 			    REAL den2;
-			    den2=curoct->cell[icell].rfield.nh/pow(param->unit.unit_l,3);
+			    den2=curoct->cell[icell].rfield.nh/POW(param->unit.unit_l,3);
 			    den=-1;
 			    
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
@@ -1356,7 +1356,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   MPI_Allreduce(&stati[2],&stat2,1,MPI_INT,MPI_SUM,cpu->comm);
   stati[2]=stat2;
 
-  MPI_Allreduce(&mmax,&MMAX,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  MPI_Allreduce(&mmax,&MMAX,1,MPI_REEL,MPI_MAX,cpu->comm);
   mmax=MMAX;
 #endif
 

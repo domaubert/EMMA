@@ -23,10 +23,10 @@ __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   REAL eint=R->eint;
   REAL nH=R->nh;
   REAL x=R->nhplus/R->nh;
-  REAL pstar=param->unit.unit_n*param->unit.unit_mass/pow(param->unit.unit_l,3)*pow(param->unit.unit_v,2);
+  REAL pstar=param->unit.unit_n*param->unit.unit_mass/POW(param->unit.unit_l,3)*POW(param->unit.unit_v,2);
   
-  nH=nH/pow(aexp,3)/pow(param->unit.unit_l,3)*param->unit.unit_n;
-  eint=eint/pow(aexp,5)*pstar;
+  nH=nH/POW(aexp,3)*param->unit.unit_N;
+  eint=eint/POW(aexp,5)*pstar;
   tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
   R->temp=tloc;
 
@@ -41,7 +41,7 @@ __device__ REAL dcucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp)
   
   REAL alpha_b,lambda;
   lambda=2e0*157807e0/temp;
-  alpha_b=2.753e-14*pow(lambda,1.5)/pow(1e0+pow(lambda/2.740,0.407),2.242); //cm3/s
+  alpha_b=2.753e-14*POW(lambda,1.5)/POW(1e0+POW(lambda/2.740,0.407),2.242); //cm3/s
 #ifdef TESTCOSMO
   alpha_b=alpha_b*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
 #else
@@ -60,7 +60,7 @@ __device__ REAL dcucompute_alpha_a(REAL temp, REAL unit_number, REAL aexp)
   
   REAL alpha_a,lambda;
   lambda=2e0*157807e0/temp;
-  alpha_a=1.269e-13*pow(lambda,1.503)/pow(1e0+pow(lambda/0.522,0.470),1.923); //cm3/s
+  alpha_a=1.269e-13*POW(lambda,1.503)/POW(1e0+POW(lambda/0.522,0.470),1.923); //cm3/s
 #ifdef TESTCOSMO
   alpha_a=alpha_a*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
 #else
@@ -78,7 +78,7 @@ __device__ REAL dcucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   // temperature in Kelvin
   REAL beta,T5;
   T5=temp/1e5;
-  beta=5.85e-11*sqrt(temp)/(1+sqrt(T5))*expf(-(157809e0/temp)); //cm3/s
+  beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*expf(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
   beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
 #else
@@ -101,33 +101,33 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
 
   // Collisional Ionization Cooling
 
-  c1=expf(-157809.1e0/temp)*1.27e-21*sqrt(temp)/(1.f+sqrt(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c1=expf(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.f+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
   
 
   // Case A Recombination Cooling
 
-  c2=1.778e-29*temp*pow(2e0*157807e0/temp,1.965e0)/pow(1.f+pow(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
+  c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.f+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
   
   
   // Case B Recombination Cooling
 
-  c6=3.435e-30*temp*pow(2e0*157807e0/temp,1.970e0)/pow(1.f+(pow(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
+  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.f+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
   c6=0.;
 
   // Collisional excitation cooling
 
-  c3=expf(-118348e0/temp)*7.5e-19/(1+sqrt(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c3=expf(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
   
   
   // Bremmsstrahlung
 
-  c4=1.42e-27*1.5e0*sqrt(temp)*x*x*nh2*nh2*CLUMPF;
+  c4=1.42e-27*1.5e0*SQRT(temp)*x*x*nh2*nh2*CLUMPF;
   
   // Compton Cooling
   
-  //  c5=1.017e-37*pow(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x;
+  //  c5=1.017e-37*POW(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x;
 #ifndef WRADTEST
-  //  c5=5.406e-36*(temp-2.727/aexp)/pow(aexp,4)*x/(1.+x);
+  //  c5=5.406e-36*(temp-2.727/aexp)/POW(aexp,4)*x/(1.+x);
   c5=0;
 #endif
   // Overall Cooling
@@ -141,11 +141,11 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
 
   // cooling times
 
-  unsurtc=fmax(c1,c2);
-  unsurtc=fmax(unsurtc,c3);
-  unsurtc=fmax(unsurtc,c4);
-  unsurtc=fmax(unsurtc,fabs(c5));
-  unsurtc=fmax(unsurtc,c6)*1e-7;// ==> J/cm3/s
+  unsurtc=FMAX(c1,c2);
+  unsurtc=FMAX(unsurtc,c3);
+  unsurtc=FMAX(unsurtc,c4);
+  unsurtc=FMAX(unsurtc,FABS(c5));
+  unsurtc=FMAX(unsurtc,c6)*1e-7;// ==> J/cm3/s
 
   *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr
 }
@@ -206,7 +206,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
     srcloc[BLOCKCOOL];
   
   
-  REAL dt=dtnew*param->unit.unit_t*pow(aexporg,2);
+  REAL dt=dtnew*param->unit.unit_t*POW(aexporg,2);
 
   REAL emin;
   struct Rtype R;
@@ -214,7 +214,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
   int ncvgcool=param->ncvgcool;
   REAL E0;
 #ifdef SCHAYE
-  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/pow(param->unit.unit_l,3);
+  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d;
 #endif
   REAL xorg;
 
@@ -237,21 +237,25 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
       // switch to physical units, chemistry remains unchanged with and without cosmo
       for (igrp=0;igrp<NGRP;igrp++)
 	{			
-	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;//+ebkg[igrp]; 
-	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
-	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/pow(aexporg,4)/pow(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n;
+	  egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexporg*aexporg*aexporg)*param->unit.unit_N;//+ebkg[igrp]; 
+	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
+	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
+	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
 	}
 
 
       x0[idloc]=R.nhplus/R.nh;
       xorg= x0[idloc];
 
-      nH[idloc]=R.nh/(aexporg*aexporg*aexporg)/pow(param->unit.unit_l,3)*param->unit.unit_n;
+      nH[idloc]=R.nh/(aexporg*aexporg*aexporg)*param->unit.unit_N;
 
-      eint[idloc]=R.eint/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2);
-      emin=PMIN/(GAMMA-1.)/pow(aexporg,5)/pow(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_mass*pow(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=(R.src/pow(param->unit.unit_l,3)*param->unit.unit_n/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/pow(aexporg,3); 
+      eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
+      emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
+      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/POW(aexporg,3); 
+
+      /// BELOW THE FULL EXPRESSION OF E in natural units
+      //emin=PMIN/(GAMMA-1.)/POW(aexporg,5)/POW(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
+
 
       /* if(((isnan(eint[idloc]))||(isnan(x0[idloc])))||(eint[idloc]==0.)){ */
       /* 	printf("start with nans or ZErO egy %e\n",eint[idloc]); */
@@ -262,7 +266,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
       // DEALING WITH CLUMPING ----------------------
 #ifdef WCLUMP
-      REAL CLUMPF2=fmin(fmax(pow(nH[idloc]/6.,0.7),1.),40.);
+      REAL CLUMPF2=FMIN(FMAX(POW(nH[idloc]/6.,0.7),1.),40.);
       REAL CLUMPI=1.;
 #else
       REAL CLUMPF2=1.;
@@ -299,14 +303,14 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  // Poor FIT to Haardt & MAdau 2012
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
-	    ebkg[igrp]=amp/(sig*sqrt(2*M_PI))*exp(-pow((z-zavg),2)/(2.*pow(sig,2)))+mz*z+pz; // comoving photons/s/m3
+	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
 	  }
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
 	  // Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*sqrt(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
+	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
 #else
 	  REAL hubblet=0.;
 #endif
@@ -321,9 +325,9 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
-	  tcool=fabs(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
+	  tcool=FABS(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
 	  ai_tmp1=0.;
-	  dtcool=fmin(fudgecool*tcool,dt-currentcool_t);
+	  dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);
 	  
 	  alpha=dcucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
 	  alphab=dcucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
@@ -375,11 +379,11 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 #endif
 #else
 	  N2[0]=1.0;
-	  REAL pp=(1.-pow(x0[idloc],0.4092)); 
+	  REAL pp=(1.-POW(x0[idloc],0.4092)); 
 	  if(pp<0.) pp=0.; 
 
 	  for(igrp=1;igrp<NGRP;igrp++){
-	    N2[igrp]=1.0+0.3908*pow(pp,1.7592)*E0overI[igrp]; 
+	    N2[igrp]=1.0+0.3908*POW(pp,1.7592)*E0overI[igrp]; 
 	    if(N2[igrp]<1.0) N2[igrp]=1.0; 
 	  }
 #ifdef SEMI_IMPLICIT
@@ -410,6 +414,21 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 #ifdef COOLING
 	  // HEATING
 	  
+	  int compcool=1; // do we need to compute the cooling ?
+
+#ifdef SCHAYE
+	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
+	    REAL tlocs;
+	    tlocs=eintt/(1.5*nH[idloc]*KBOLTZ*(1.+xt));
+	    if(tlocs<1e5){
+	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
+	      compcool=0.; // cancel cooling calculation
+	      fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
+	    }
+	  }
+#endif
+
+	  if(compcool){ 
 	  /* #ifdef STARS */
 	  /* 	  REAL SN 	 = R.snfb; */
 	  /* 	  //if (R.snfb) Cool = 0; */
@@ -432,14 +451,14 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  REAL pp2;
 	  F2[0]=1.0;
 #ifdef SEMI_IMPLICIT
-	  pp2=1.0-pow(xt,0.2663); 
+	  pp2=1.0-POW(xt,0.2663); 
 #else
-	  pp2=1.0-pow(x0[idloc],0.2663); 
+	  pp2=1.0-POW(x0[idloc],0.2663); 
 #endif
 	  if(pp2<0.) pp2=0.; 
 	  for(igrp=1;igrp<NGRP;igrp++){
 	    F2[igrp]=1.0;
-	    F2[igrp]=0.9971*(1.0-pow(pp2,1.3163)); 
+	    F2[igrp]=0.9971*(1.0-POW(pp2,1.3163)); 
 	  
 	    if(F2[igrp]>1.0) F2[igrp]=1.0; 
 	    if(F2[igrp]<0.0) F2[igrp]=0.0; 
@@ -452,7 +471,17 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);
 #endif
 #endif
-	  
+	  int poly=0;
+#ifdef SCHAYE
+	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
+	    REAL tlocs;
+	    tlocs=eintt/(1.5*nH[idloc]*KBOLTZ*(1.+xt));
+	    if(tlocs<1e5){
+	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
+	      poly=1;
+	    }
+	  }
+#endif
 	  
 	  ai_tmp1=0;
 
@@ -464,29 +493,24 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	      continue;
 	    }
 
-	  if(fabs(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
+	  if(FABS(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
-	      fudgecool=fudgecool/10.;
+	     if(!poly)  fudgecool=fudgecool/10.;
 	      /* printf("loop 4 %e %e\n",eintt,eint[idloc]); */
 	      continue;
 	    }
   	  else{
 
- 	    fudgecool=fmin(fudgecool*1.5,param->fudgecool);
+ 	    fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
 	  }
 
 	  ai_tmp1=0;
 	  
-#ifdef SCHAYE
-	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
-	    eintt=(1.08e9*KBOLTZ)*pow(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
-	  }
-#endif
-	  eintt=fmax(emin,eintt);
+	  eintt=FMAX(emin,eintt);
 #else
 	  eintt=eint[idloc];
 #endif
-	  
+	  }
 	  for(igrp =0;igrp<NGRP;igrp++)
 	    {
 	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
@@ -520,14 +544,15 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
        if(!chemonly){
 	 for(igrp=0;igrp<NGRP;igrp++)
 	   {
-	     R.e[igrp]=fmax(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])*pow(param->unit.unit_l,3)/param->unit.unit_n;
-	     R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
-	     R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
-	     R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*pow(aexp,4)*pow(param->unit.unit_l,2)*param->unit.unit_t/param->unit.unit_n;
+	     R.e[igrp]=FMAX(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])/param->unit.unit_N;
+	     R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
+	     R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
+	     R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
 	   }
        }
       R.nhplus=x0[idloc]*R.nh;
-      R.eint=eint[idloc]*pow(aexp,5)*pow(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/pow(param->unit.unit_v,2);
+      //      R.eint=eint[idloc]*POW(aexp,5)*POW(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/POW(param->unit.unit_v,2);
+      R.eint=eint[idloc]*POW(aexp,5)/param->unit.unit_n/param->unit.unit_d/POW(param->unit.unit_v,2);
       
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 

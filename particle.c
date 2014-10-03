@@ -109,7 +109,7 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
       do // sweeping through the octs of level
 	{
 	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level+1); // +1 to protect level change
+	  dxcur=1./POW(2,oct.level+1); // +1 to protect level change
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
@@ -118,7 +118,7 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
 
-		aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+		aa=SQRT(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
 		
 		do{ 
 		  curp=nexp; 
@@ -128,7 +128,7 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 /* 		  if(curp->idx==0) continue; */
 /* #endif */
 		  // particle velocit
-		  va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
+		  va=SQRT(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
 
 		  // loc dt
 		  if((va>0.)&&(aa>0.)){
@@ -137,10 +137,10 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 		      dtlev=(FRACDX*dxcur)/va;
 		    }
 		    else if(EPS>10.){
-		      dtlev=sqrt(2.0*(FRACDX*dxcur)/aa);
+		      dtlev=SQRT(2.0*(FRACDX*dxcur)/aa);
 		    }
 		    else{
-		      dtlev=va/aa*(sqrt(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
+		      dtlev=va/aa*(SQRT(1.+2.*aa*(FRACDX*dxcur)/(va*va))-1.);
 		    }
 		  }		 
 		  else if((aa==0.)||(va==0.)){
@@ -210,7 +210,7 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
     do // sweeping through the octs of level
       {
 	oct=(*nextoct);
-	dxcur=1./pow(2,oct.level+1); // +1 to protect level change
+	dxcur=1./POW(2,oct.level+1); // +1 to protect level change
 	nextoct=oct.next;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
@@ -218,13 +218,13 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 	    nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	    if(nexp!=NULL){
 	    
-	      aa=sqrt(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+	      aa=SQRT(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
 	      do{ 
 		curp=nexp; 
 		nexp=curp->next; 
 	      
 		// particle velocity
-		va=sqrt(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
+		va=SQRT(curp->vx*curp->vx+curp->vy*curp->vy+curp->vz*curp->vz)*fa;
 		if(va!=0){
 		  dtlev=(FRACDX*dxcur)/va;
 		}		 
@@ -248,7 +248,7 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 
 /* #ifdef WMPI */
 /*   // reducing by taking the smallest time step */
-/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_DOUBLE,MPI_MIN,cpu->comm); */
+/*   MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REEL,MPI_MIN,cpu->comm); */
 /* #endif   */
 
   dt=(dt>tmax?tmax:dt);
@@ -275,7 +275,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   mdisp=0.;
   nextoct=firstoct[level-1];
   
-  dxcur=1./pow(2,level);
+  dxcur=1./POW(2,level);
 
   if(nextoct!=NULL){
   do // sweeping through the octs of level
@@ -296,11 +296,14 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 		// particle displacement
 	      if((curp->is==0)||(curp->level==level)){
 		dt=adt[curp->level-1];
-		disp=sqrt(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
+		disp=SQRT(curp->vx*dt*curp->vx*dt+curp->vy*dt*curp->vy*dt+curp->vz*dt*curp->vz*dt);
 		curp->x+=curp->vx*dt;
 		curp->y+=curp->vy*dt;
 		curp->z+=curp->vz*dt;
-		if(disp>mdisp) mdisp=disp;
+		if(disp>mdisp){
+		  mdisp=disp;
+		  //printf("%e %e %e %e\n",curp->vx,curp->vy,curp->vz,disp);
+		}
 	      }
 	    }while(nexp!=NULL);
 	  }
@@ -310,7 +313,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
 
 #ifdef WMPI
   REAL mmdisp;
-  MPI_Allreduce(&mdisp,&mmdisp,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  MPI_Allreduce(&mdisp,&mmdisp,1,MPI_REEL,MPI_MAX,cpu->comm);
   //  mdisp=mmdisp;
 #endif
 
@@ -429,7 +432,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 	  do{ // sweeping through the octs of level
 	    curoct=nextoct;
-	    dxcur=1./pow(2,curoct->level);
+	    dxcur=1./POW(2,curoct->level);
 	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
@@ -459,7 +462,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -489,7 +492,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -514,7 +517,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -542,7 +545,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -574,7 +577,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -602,7 +605,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -622,7 +625,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 				zp=(int)(DFACT*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -647,7 +650,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 				zp=(int)(DFACT*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -678,7 +681,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      //if(curp->idx==82279) printf("to level +1");
 			      
 			      newoct=newcell->child;
-			      dxcur2=1./pow(2.,newoct->level);
+			      dxcur2=1./POW(2.,newoct->level);
 			      
 			      xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);
 			      //printf("xp=%d\n",xp);
@@ -711,7 +714,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 				//if(curp->idx==82279) printf("to level +1");
 
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);
 				xp=(xp>1?1:xp);xp=(xp<0?0:xp);
@@ -740,7 +743,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 			      newoct=newcell->child;
-			      dxcur2=1./pow(2.,newoct->level);
+			      dxcur2=1./POW(2.,newoct->level);
 			      
 			      xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			      yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -768,7 +771,7 @@ void partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				
 				xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -869,7 +872,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 
       do{ // sweeping through the octs of level
 	curoct=nextoct;
-	dxcur=1./pow(2,curoct->level);
+	dxcur=1./POW(2,curoct->level);
 	nextoct=curoct->next;
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
@@ -898,7 +901,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		      // if refined we assign the particle to a refined cell
 		      if(newcell->child!=NULL){
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 
 			// new cell coordinates
 			//ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -928,7 +931,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			// if refined we assign the particle to a refined cell
 			if(newcell->child!=NULL){
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 
 			  // new cell coordinates
 			  //ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -953,7 +956,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		      // if refined we assign the particle to a refined cell
 		      if(newcell->child!=NULL){
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 
 			xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -981,7 +984,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			// if refined we assign the particle to a refined cell
 			if(newcell->child!=NULL){
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 				
 			  xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			  yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1013,7 +1016,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		      // if refined we assign the particle to a refined cell at level+1
 		      if(newcell->child!=NULL){
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 
 			xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1041,7 +1044,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			// if refined we assign the particle to a refined cell at level+1
 			if(newcell->child!=NULL){
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 
 			  xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			  yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1061,7 +1064,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		      // if refined we assign the particle to a refined cell
 		      if(newcell->child!=NULL){
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 			xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 			zp=(int)(DFACT*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -1086,7 +1089,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			// if refined we assign the particle to a refined cell
 			if(newcell->child!=NULL){
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 			  xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			  yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 			  zp=(int)(DFACT*(curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -1117,7 +1120,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			//if(curp->idx==82279) printf("to level +1");
 			      
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 			      
 			xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1146,7 +1149,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			  //if(curp->idx==82279) printf("to level +1");
 
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 
 			  xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			  yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1170,7 +1173,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 		      // if refined we assign the particle to a refined cell
 		      if(newcell->child!=NULL){
 			newoct=newcell->child;
-			dxcur2=1./pow(2.,newoct->level);
+			dxcur2=1./POW(2.,newoct->level);
 			      
 			xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1198,7 +1201,7 @@ void L_partcellreorg(int level,struct OCT **firstoct){
 			// if refined we assign the particle to a refined cell
 			if(newcell->child!=NULL){
 			  newoct=newcell->child;
-			  dxcur2=1./pow(2.,newoct->level);
+			  dxcur2=1./POW(2.,newoct->level);
 				
 			  xp=(int)(DFACT*(curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			  yp=(int)(DFACT*(curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1308,7 +1311,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 
 	  do{ // sweeping through the octs of level
 	    curoct=nextoct;
-	    dxcur=1./pow(2,curoct->level);
+	    dxcur=1./POW(2,curoct->level);
 	    nextoct=curoct->next;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
@@ -1335,7 +1338,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -1363,7 +1366,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				// new cell coordinates
 				//ip=(int)(DFACT*(curp->x-newoct->x)/dxcur)+(int)(DFACT*(curp->y-newoct->y)/dxcur)*2+(int)(DFACT*(curp->z-newoct->z)/dxcur)*4;
@@ -1388,7 +1391,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1416,7 +1419,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1446,7 +1449,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1474,7 +1477,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell at level+1
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1494,7 +1497,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 				zp=(int)((curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -1519,7 +1522,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 				zp=(int)((curp->z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
@@ -1548,7 +1551,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      //if(curp->idx==82279) printf("to level +1");
 			      
 			      newoct=newcell->child;
-			      dxcur2=1./pow(2.,newoct->level);
+			      dxcur2=1./POW(2.,newoct->level);
 			      
 			      xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			      yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1577,7 +1580,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 				//if(curp->idx==82279) printf("to level +1");
 
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1601,7 +1604,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			    // if refined we assign the particle to a refined cell
 			    if(newcell->child!=NULL){
 			      newoct=newcell->child;
-			      dxcur2=1./pow(2.,newoct->level);
+			      dxcur2=1./POW(2.,newoct->level);
 			      
 			      xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 			      yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -1629,7 +1632,7 @@ void  partcellreorg_GPU(int levelcoarse,int levelmax,struct OCT **firstoct){
 			      // if refined we assign the particle to a refined cell
 			      if(newcell->child!=NULL){
 				newoct=newcell->child;
-				dxcur2=1./pow(2.,newoct->level);
+				dxcur2=1./POW(2.,newoct->level);
 				
 				xp=(int)((curp->x-newoct->x)/dxcur2);xp=(xp>1?1:xp);xp=(xp<0?0:xp);
 				yp=(int)((curp->y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);

@@ -142,7 +142,7 @@ __device__ void dU2W(struct Utype *U, struct Wtype *W)
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
 #endif
-  W->a=sqrt(GAMMA*W->p/W->d);
+  W->a=SQRT(GAMMA*W->p/W->d);
 }
 
 // ==================== converts W -> U
@@ -247,42 +247,42 @@ __device__ void dminmod(struct Utype *Um, struct Utype *Up, struct Utype *Ur){
   // FLUX LIMITER
 
   if(Up->d>0){
-    Ur->d=fmax(fmax(0.,fmin(beta*Um->d,Up->d)),fmin(Um->d,beta*Up->d));
+    Ur->d=FMAX(FMAX(0.,FMIN(beta*Um->d,Up->d)),FMIN(Um->d,beta*Up->d));
   }
   else{
-    Ur->d=fmin(fmin(0.,fmax(beta*Um->d,Up->d)),fmax(Um->d,beta*Up->d));
+    Ur->d=FMIN(FMIN(0.,FMAX(beta*Um->d,Up->d)),FMAX(Um->d,beta*Up->d));
   }
 
 
   if(Up->du>0){
-    Ur->du=fmax(fmax(0.,fmin(beta*Um->du,Up->du)),fmin(Um->du,beta*Up->du));
+    Ur->du=FMAX(FMAX(0.,FMIN(beta*Um->du,Up->du)),FMIN(Um->du,beta*Up->du));
   }
   else{
-    Ur->du=fmin(fmin(0.,fmax(beta*Um->du,Up->du)),fmax(Um->du,beta*Up->du));
+    Ur->du=FMIN(FMIN(0.,FMAX(beta*Um->du,Up->du)),FMAX(Um->du,beta*Up->du));
   }
 
 
   if(Up->dv>0){
-    Ur->dv=fmax(fmax(0.,fmin(beta*Um->dv,Up->dv)),fmin(Um->dv,beta*Up->dv));
+    Ur->dv=FMAX(FMAX(0.,FMIN(beta*Um->dv,Up->dv)),FMIN(Um->dv,beta*Up->dv));
   }
   else{
-    Ur->dv=fmin(fmin(0.,fmax(beta*Um->dv,Up->dv)),fmax(Um->dv,beta*Up->dv));
+    Ur->dv=FMIN(FMIN(0.,FMAX(beta*Um->dv,Up->dv)),FMAX(Um->dv,beta*Up->dv));
   }
 
 
   if(Up->dw>0){
-    Ur->dw=fmax(fmax(0.,fmin(beta*Um->dw,Up->dw)),fmin(Um->dw,beta*Up->dw));
+    Ur->dw=FMAX(FMAX(0.,FMIN(beta*Um->dw,Up->dw)),FMIN(Um->dw,beta*Up->dw));
   }
   else{
-    Ur->dw=fmin(fmin(0.,fmax(beta*Um->dw,Up->dw)),fmax(Um->dw,beta*Up->dw));
+    Ur->dw=FMIN(FMIN(0.,FMAX(beta*Um->dw,Up->dw)),FMAX(Um->dw,beta*Up->dw));
   }
 
 
   if(Up->E>0){
-    Ur->E=fmax(fmax(0.,fmin(beta*Um->E,Up->E)),fmin(Um->E,beta*Up->E));
+    Ur->E=FMAX(FMAX(0.,FMIN(beta*Um->E,Up->E)),FMIN(Um->E,beta*Up->E));
   }
   else{
-    Ur->E=fmin(fmin(0.,fmax(beta*Um->E,Up->E)),fmax(Um->E,beta*Up->E));
+    Ur->E=FMIN(FMIN(0.,FMAX(beta*Um->E,Up->E)),FMAX(Um->E,beta*Up->E));
   }
 
 
@@ -297,42 +297,42 @@ __device__ void dminmod_W(struct Wtype *Wm, struct Wtype *Wp, struct Wtype *Wr){
   // FLUX LIMITER
 
   if(Wp->d>0){
-    Wr->d=fmax(fmax(0.,fmin(beta*Wm->d,Wp->d)),fmin(Wm->d,beta*Wp->d));
+    Wr->d=FMAX(FMAX(0.,FMIN(beta*Wm->d,Wp->d)),FMIN(Wm->d,beta*Wp->d));
   }
   else{
-    Wr->d=fmin(fmin(0.,fmax(beta*Wm->d,Wp->d)),fmax(Wm->d,beta*Wp->d));
+    Wr->d=FMIN(FMIN(0.,FMAX(beta*Wm->d,Wp->d)),FMAX(Wm->d,beta*Wp->d));
   }
 
 
   if(Wp->u>0){
-    Wr->u=fmax(fmax(0.,fmin(beta*Wm->u,Wp->u)),fmin(Wm->u,beta*Wp->u));
+    Wr->u=FMAX(FMAX(0.,FMIN(beta*Wm->u,Wp->u)),FMIN(Wm->u,beta*Wp->u));
   }
   else{
-    Wr->u=fmin(fmin(0.,fmax(beta*Wm->u,Wp->u)),fmax(Wm->u,beta*Wp->u));
+    Wr->u=FMIN(FMIN(0.,FMAX(beta*Wm->u,Wp->u)),FMAX(Wm->u,beta*Wp->u));
   }
 
 
   if(Wp->v>0){
-    Wr->v=fmax(fmax(0.,fmin(beta*Wm->v,Wp->v)),fmin(Wm->v,beta*Wp->v));
+    Wr->v=FMAX(FMAX(0.,FMIN(beta*Wm->v,Wp->v)),FMIN(Wm->v,beta*Wp->v));
   }
   else{
-    Wr->v=fmin(fmin(0.,fmax(beta*Wm->v,Wp->v)),fmax(Wm->v,beta*Wp->v));
+    Wr->v=FMIN(FMIN(0.,FMAX(beta*Wm->v,Wp->v)),FMAX(Wm->v,beta*Wp->v));
   }
 
 
   if(Wp->w>0){
-    Wr->w=fmax(fmax(0.,fmin(beta*Wm->w,Wp->w)),fmin(Wm->w,beta*Wp->w));
+    Wr->w=FMAX(FMAX(0.,FMIN(beta*Wm->w,Wp->w)),FMIN(Wm->w,beta*Wp->w));
   }
   else{
-    Wr->w=fmin(fmin(0.,fmax(beta*Wm->w,Wp->w)),fmax(Wm->w,beta*Wp->w));
+    Wr->w=FMIN(FMIN(0.,FMAX(beta*Wm->w,Wp->w)),FMAX(Wm->w,beta*Wp->w));
   }
 
 
   if(Wp->p>0){
-    Wr->p=fmax(fmax(0.,fmin(beta*Wm->p,Wp->p)),fmin(Wm->p,beta*Wp->p));
+    Wr->p=FMAX(FMAX(0.,FMIN(beta*Wm->p,Wp->p)),FMIN(Wm->p,beta*Wp->p));
   }
   else{
-    Wr->p=fmin(fmin(0.,fmax(beta*Wm->p,Wp->p)),fmax(Wm->p,beta*Wp->p));
+    Wr->p=FMIN(FMIN(0.,FMAX(beta*Wm->p,Wp->p)),FMAX(Wm->p,beta*Wp->p));
   }
 
 
@@ -575,7 +575,7 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 	    Wi[idir].u = W0->u+ix[idir]*D[0].u+iy[idir]*D[1].u+iz[idir]*D[2].u+Wt.u;
 	    Wi[idir].v = W0->v+ix[idir]*D[0].v+iy[idir]*D[1].v+iz[idir]*D[2].v+Wt.v;
 	    Wi[idir].w = W0->w+ix[idir]*D[0].w+iy[idir]*D[1].w+iz[idir]*D[2].w+Wt.w;
-	    Wi[idir].p = fmax(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
+	    Wi[idir].p = FMAX(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
 #ifdef WRADHYD
 	    Wi[idir].dX = W0->dX+ix[idir]*D[0].dX+iy[idir]*D[1].dX+iz[idir]*D[2].dX+Wt.dX;
 	    //printf("%e %e %e | %e %e\n",D[0].dX,D[1].dX,D[2].dX,W0->dX,Wt.dX);
@@ -607,7 +607,7 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 #endif
 #endif
 	    dgetE(Wi+idir);
-	    Wi[idir].a=sqrt(GAMMA*Wi[idir].p/Wi[idir].d);
+	    Wi[idir].a=SQRT(GAMMA*Wi[idir].p/Wi[idir].d);
 #ifdef WRADHYD
  	    Wi[idir].dX=W0->dX; 
 #endif 
@@ -631,8 +631,8 @@ __device__ REAL dfrootprime(REAL p, struct Wtype1D *WL, struct Wtype1D *WR)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?sqrt(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):pow(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
-  fR=(p>WR->p?sqrt(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):pow(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
+  fL=(p>WL->p?SQRT(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):POW(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
+  fR=(p>WR->p?SQRT(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):POW(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
 
   return fL+fR;
 }
@@ -653,8 +653,8 @@ __device__ REAL dfroot(REAL p, struct Wtype1D *WL, struct Wtype1D *WR, REAL *u)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?(p-WL->p)*sqrt(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(pow(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
-  fR=(p>WR->p?(p-WR->p)*sqrt(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(pow(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fL=(p>WL->p?(p-WL->p)*SQRT(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(POW(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fR=(p>WR->p?(p-WR->p)*SQRT(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(POW(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
   
   Deltau=WR->u-WL->u;
   *u=0.5*(WL->u+WR->u)+0.5*(fR-fL);
@@ -678,8 +678,8 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
   double pmin,pmax;
   double u2;
 
-  pmin=fmin(WL->p,WR->p);
-  pmax=fmax(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
   
   // EXACT SOLVER
 
@@ -692,16 +692,16 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
   ppv0=0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a);
-  ptr0=pow((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/pow(WL->p,1./unsurz)+WR->a/pow(WR->p,1./unsurz)),unsurz);
+  ptr0=POW((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/POW(WL->p,1./unsurz)+WR->a/POW(WR->p,1./unsurz)),unsurz);
 
-  ppv=fmax(ERRTOL,ppv0);
-  ptr=fmax(ERRTOL,ptr0);
+  ppv=FMAX(ERRTOL,ppv0);
+  ptr=FMAX(ERRTOL,ptr0);
   
-  GL=sqrt(AL/(ppv+BL));
-  GR=sqrt(AR/(ppv+BR));
+  GL=SQRT(AL/(ppv+BL));
+  GR=SQRT(AR/(ppv+BR));
 
   pts0=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
-  pts=fmax(ERRTOL,pts0);
+  pts=FMAX(ERRTOL,pts0);
 
 
   if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
@@ -718,7 +718,7 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
 
 
   //p=0.5*(WL->p+WR->p);
-  //p=fmax(p,ERRTOL);
+  //p=FMAX(p,ERRTOL);
 
   *niter=0;
   for(i=0;i<NITERMAX;i++)
@@ -729,7 +729,7 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
       	/* abort(); */
       }
       
-      if(fabs(dp)<ERRTOL) break;
+      if(FABS(dp)<ERRTOL) break;
       while((p-dp)<0){ 
        	dp=dp*0.5; 
       } 
@@ -737,7 +737,7 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
       porg=p;
       p=p-dp;
       //if(frootprime(p,WL,WR)==0) abort();//printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
-      err=2.*fabs(p-porg)/(fabs(p+porg));
+      err=2.*FABS(p-porg)/(FABS(p+porg));
       *niter=*niter+1;
       //if(p<=0) p=ERRTOL;
       if(err<ERRTOL) break;
@@ -770,8 +770,8 @@ __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
-  pmax=fmax(WL->p,WR->p);
-  pmin=fmin(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
   pstar=ppvrs;
   
   if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
@@ -784,13 +784,13 @@ __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int
       //TRRS CASE
       double z=(GAMMA-1.)/(2.*GAMMA);
       double iz=(2.*GAMMA)/(GAMMA-1.);
-      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),iz);
-      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
+      pstar=POW((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/POW(WL->p,z)+WR->a/POW(WR->p,z)),iz);
+      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(POW(pstar/WL->p,z)-1.);
     }
     else{
       //TSRS CASE
       double p0;
-      p0=fmax(0.,ppvrs);
+      p0=FMAX(0.,ppvrs);
       
       AL=2./((GAMMA+1.)*WL->d);
       AR=2./((GAMMA+1.)*WR->d);
@@ -798,8 +798,8 @@ __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int
       BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
       BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-      GL=sqrt(AL/(p0+BL));
-      GR=sqrt(AR/(p0+BR));
+      GL=SQRT(AL/(p0+BL));
+      GR=SQRT(AR/(p0+BR));
 
       pstar=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
       *ustar=0.5*((WL->u+WR->u)+(pstar-WR->p)*GR-(pstar-WL->p)*GL);
@@ -824,25 +824,25 @@ __device__ void dspeedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
   WLloc.d=WL->d;
   WLloc.u=WL->u;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->u;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)= dfindPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
   //if((*pstar)<0) abort();
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
   }
   /* if((*SL)>(*SR)) abort(); */
   /* if(isnan(*ustar)) abort(); */
@@ -860,26 +860,26 @@ void __device__ dspeedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
   WLloc.d=WL->d;
   WLloc.u=WL->v;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->v;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)=dfindPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
   //  if((*pstar)<0) abort();
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
 
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   //  if((*SL)>(*SR)) abort();
@@ -900,25 +900,25 @@ void __device__ dspeedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
   WLloc.d=WL->d;
   WLloc.u=WL->w;
   WLloc.p=WL->p;
-  WLloc.a=sqrt(GAMMA*WLloc.p/WLloc.d);
+  WLloc.a=SQRT(GAMMA*WLloc.p/WLloc.d);
   
   WRloc.d=WR->d;
   WRloc.u=WR->w;
   WRloc.p=WR->p;
-  WRloc.a=sqrt(GAMMA*WRloc.p/WRloc.d);
+  WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
   (*pstar)=dfindPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
   //if((*pstar)<0) abort();
 
-  qL=(*pstar<=WL->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
-  qR=(*pstar<=WR->p?1.:sqrt(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
+  qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
+  qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
   
   *SL=WLloc.u-WLloc.a*qL;
   *SR=WRloc.u+WRloc.a*qR;
   if((*SL)>(*SR)){
-    (*SL)=fminf(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
-    (*SR)=fmaxf(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
+    (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
+    (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
   //if((*SL)>(*SR)) abort();
@@ -986,7 +986,7 @@ __global__ void dhydroM_sweepZ(struct HGRID *stencil, int nread,REAL dx, REAL dt
       Wold.v=curcell->v;
       Wold.w=curcell->w;
       Wold.p=curcell->p;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 
 /* #ifdef WRADHYD */
 /*       Wold.X=curcell->X; */
@@ -1263,7 +1263,7 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
       Wold.v=curcell->v;
       Wold.w=curcell->w;
       Wold.p=curcell->p;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 /* #ifdef WRADHYD */
 /*       Wold.X=curcell->X; */
 /* #endif */
@@ -1538,7 +1538,7 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
       Wold.v=curcell->v;;
       Wold.w=curcell->w;;
       Wold.p=curcell->p;;
-      Wold.a=sqrt(GAMMA*Wold.p/Wold.d);
+      Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 /* #ifdef WRADHYD */
 /*       Wold.X=curcell->X; */
 /* #endif */

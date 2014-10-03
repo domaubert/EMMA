@@ -80,7 +80,7 @@ void gdb_debug()
 #ifdef TESTCOSMO
 REAL f_aexp(REAL aexp, REAL omegam, REAL omegav)
 {
-  return 1./sqrt(omegam/aexp+omegav*aexp*aexp);
+  return 1./SQRT(omegam/aexp+omegav*aexp*aexp);
 }
 #endif
 
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef MOVIE
-	const int n    = pow (2, param.movie->lmap);
+	const int n    = POW(2, param.movie->lmap);
 	param.movie->map = (float*)calloc(4*n*n,sizeof(float));
 	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));		
 #endif
@@ -284,61 +284,59 @@ int main(int argc, char *argv[])
   MPI_Aint    offsets[3], extent;
   
   
-  /* Setup description of the 8 MPI_REAL fields data */
+  /* Setup description of the 8 MPI_REEL fields data */
   offsets[0] = 0;
-  oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = 8+1; // MODKEY
+  oldtypes[0] = MPI_REEL;
+  blockcounts[0] = 8; // MODKEY
   
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REAL */
-  MPI_Type_extent(MPI_DOUBLE, &extent);
+  /* Need to first figure offset by getting size of MPI_REEL */
+  MPI_Type_extent(MPI_REEL, &extent);
   offsets[1] = blockcounts[0] * extent;
-  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; // MODKEY
-  oldtypes[1] = MPI_INT; // MODKEY
+  oldtypes[1] = MPI_DOUBLE; // MODKEY
   blockcounts[1] = 1;
+  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; // MODKEY
 
   // MODKEY
-  /* MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent); */
-  /* offsets[2] = offsets[1]+extent; */
-  /* oldtypes[2] = MPI_INT; */
-  /* blockcounts[2] = 1; */
+  MPI_Type_extent(MPI_DOUBLE, &extent);
+  offsets[2] = offsets[1]+blockcounts[1]*extent;
+  oldtypes[2] = MPI_INT;
+  blockcounts[2] = 1;
 
   /* Now define structured type and commit it */
-  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PACKET); //MODKEY
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); //MODKEY
   MPI_Type_commit(&MPI_PACKET);
 
 #ifdef PIC
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
 
-  /* Setup description of the 7 (+2 if STARS) MPI_REAL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
+  /* Setup description of the 7 (+2 if STARS) MPI_REEL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
   offsets[0] = 0;
-  oldtypes[0] = MPI_DOUBLE;
-  blockcounts[0] = 7+1; //MODKEY
+  oldtypes[0] = MPI_REEL;
+  blockcounts[0] = 7; //MODKEY
 #ifdef STARS
-  blockcounts[0] = 9+1; //MODKEY
+  blockcounts[0] = 9; //MODKEY
 #endif
+
+  // dealing witht he key
+  MPI_Type_extent(MPI_REEL, &extent);
+  offsets[1] = offsets[0]+blockcounts[0] * extent;
+  oldtypes[1] = MPI_DOUBLE;
+  blockcounts[2] = 1;
   
   /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
-  /* Need to first figure offset by getting size of MPI_REAL */
+  /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
-
-  offsets[1] = blockcounts[0] * extent;
-  oldtypes[1] = MPI_INT;
-  blockcounts[1] = 4;
+  offsets[2] = offsets[1]+blockcounts[1] * extent;
+  oldtypes[2] = MPI_INT;
+  blockcounts[2] = 4;
 #ifdef STARS
-  blockcounts[1] = 5;
+  blockcounts[2] = 5;
 #endif
 
-  //MODKEY
-  /* MPI_Type_extent(MPI_INT, &extent); */
-  /* offsets[2] = blockcounts[1] * extent+offsets[1]; */
-  /* oldtypes[2] = MPI_UNSIGNED_LONG_LONG; */
-  /* //oldtypes[2] = MPI_DOUBLE; // testing real key */
-  /* blockcounts[2] = 1; */
-
   /* Now define structured type and commit it */
-  MPI_Type_struct(2, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
   
 #endif
@@ -347,9 +345,9 @@ int main(int argc, char *argv[])
   //========= creating a WTYPE MPI type =======
   MPI_Datatype MPI_WTYPE;
 
-  /* Setup description of the 7/8 MPI_REAL fields d,u,v,w,p,a */
+  /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
   offsets[0] = 0;
-  oldtypes[0] = MPI_DOUBLE;
+  oldtypes[0] = MPI_REEL;
 #ifdef WRADHYD
   blockcounts[0] = 8;
 #else
@@ -369,7 +367,7 @@ int main(int argc, char *argv[])
   blockcounts[0] = 8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REAL */
+  /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_WTYPE, &extent);
   offsets[1] = 8 * extent;
   //oldtypes[1] = MPI_UNSIGNED_LONG_LONG;
@@ -393,9 +391,9 @@ int main(int argc, char *argv[])
   //========= creating a RTYPE MPI type =======
   MPI_Datatype MPI_RTYPE;
 
-  /* Setup description of the 7/8 MPI_REAL fields d,u,v,w,p,a */
+  /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
   offsets[0] = 0;
-  oldtypes[0] = MPI_DOUBLE;
+  oldtypes[0] = MPI_REEL;
 #ifdef WCHEM
   blockcounts[0] = NGRP*4+5;
 
@@ -424,7 +422,7 @@ blockcounts[0]++; // For SN feedback
   blockcounts[0] = 8;
 
   /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REAL */
+  /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_RTYPE, &extent);
   offsets[1] = 8 * extent;
   //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; //MODKEY
@@ -499,16 +497,16 @@ blockcounts[0]++; // For SN feedback
 
 #ifdef TESTCOSMO
 #ifndef ZOOM
-  threshold*=pow(2.0,-3.0*param.lcoarse);
+  threshold*=POW(2.0,-3.0*param.lcoarse);
 #else
-  threshold*=pow(2.0,-3.0*param.lmaxzoom);
+  threshold*=POW(2.0,-3.0*param.lmaxzoom);
 #endif
   if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh, threshold);
   param.amrthresh= threshold;
 #endif
 
-  gstride=fmax(8,param.gstride);//pow(2,levelcoarse);
-  hstride=fmax(8,param.hstride);//pow(2,levelcoarse);
+  gstride=FMAX(8,param.gstride);//POW(2,levelcoarse);
+  hstride=FMAX(8,param.hstride);//POW(2,levelcoarse);
   rstride=hstride;
   ncomp=10;
   acc=param.poissonacc;
@@ -527,7 +525,7 @@ blockcounts[0]++; // For SN feedback
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 
-  int ncellscoarse = pow(2,3*param.lcoarse)/8; // number of cells before refinement 
+  int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement 
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid
   int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
@@ -779,7 +777,7 @@ blockcounts[0]++; // For SN feedback
 
   newoct=grid+1;
   for(level=1;level<levelcoarse;level++){ // sweeping the levels from l=1 to l=levelcoarse
-    dxcur=1./pow(2,level);
+    dxcur=1./POW(2,level);
     nextoct=firstoct[level-1];
     noct2=0;
     if(nextoct==NULL) continue;
@@ -994,7 +992,7 @@ blockcounts[0]++; // For SN feedback
 
     int ir,nr=5;
     ip=0;
-    REAL dxcell=1./pow(2.,levelcoarse);
+    REAL dxcell=1./POW(2.,levelcoarse);
     REAL epsilon=0.;
     REAL r0=0.12;
     REAL vf=0.8;
@@ -1019,7 +1017,7 @@ blockcounts[0]++; // For SN feedback
 	z=0.5;
 
 	vx=0.;
-	vy=sqrt((1.-epsilon)/r0)*1.0; // this one is circular
+	vy=SQRT((1.-epsilon)/r0)*1.0; // this one is circular
 	vz=0.;
       
 	mass=epsilon/(nr-1);
@@ -1031,7 +1029,7 @@ blockcounts[0]++; // For SN feedback
 	z=0.5;
 
 	vy=0.;
-	vx=-sqrt((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
+	vx=-SQRT((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
 	vz=0.;
       
 	mass=epsilon/(nr-1);
@@ -1043,7 +1041,7 @@ blockcounts[0]++; // For SN feedback
 	z=0.5;
 
 	vx=0.;
-	vy=-sqrt((1.-epsilon)/r0)*vf;
+	vy=-SQRT((1.-epsilon)/r0)*vf;
 	vz=0.;
       
 	mass=epsilon/(nr-1);
@@ -1055,7 +1053,7 @@ blockcounts[0]++; // For SN feedback
 	z=0.5;
 
 	vy=0.;
-	vx=sqrt((1.-epsilon)/r0)*vf;
+	vx=SQRT((1.-epsilon)/r0)*vf;
 	vz=0.;
       
 	mass=epsilon/(nr-1);
@@ -1093,7 +1091,7 @@ blockcounts[0]++; // For SN feedback
 
     int ir,nr=32768;
     ip=0;
-    REAL dxcell=1./pow(2.,levelcoarse);
+    REAL dxcell=1./POW(2.,levelcoarse);
     REAL th,ph,r;
     for(ir=0;ir<nr;ir++) {
       // first we read the position etc... (eventually from the file)
@@ -1325,7 +1323,10 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifdef WRADTEST
-    REAL X0=1./pow(2,levelcoarse);
+
+    // SETTING THE RADIATIVE TRANSFER
+
+    REAL X0=1./POW(2,levelcoarse);
     int igrp;
     param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
     param.unit.unit_n=1.;
@@ -1335,10 +1336,12 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_l=15e3*PARSEC;
 #else
     param.unit.unit_l=6.6e3*PARSEC;
-    REAL vclump=4./3.*M_PI*pow(0.8e3*PARSEC,3); // clump volume in internal units
-    param.unit.unit_mass=200.*(pow(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
+    param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    param.unit.unit_N=200.*(POW(param.unit.unit_l,3)+199.*vclump);
+    param.unit.unit_d=param.unit.unit_mass/POW(param.unit.unit_l,3);
     REAL pstar;
-    pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);
+    pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);
 #endif
     param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
     ainit=1.;
@@ -1359,7 +1362,7 @@ blockcounts[0]++; // For SN feedback
     double rhoc=3.*H0*H0/(8.*M_PI*NEWTON_G); // comoving critical density (kg/m3)
 
     REAL rhostar=rhoc*om;
-    REAL tstar=2./H0/sqrt(om); // sec
+    REAL tstar=2./H0/SQRT(om); // sec
     REAL vstar=rstar/tstar; //m/s
 
     param.unit.unit_l=rstar;
@@ -1371,7 +1374,7 @@ blockcounts[0]++; // For SN feedback
 
     for(level=levelcoarse;level<=levelmax;level++) 
       {
-	dxcur=pow(0.5,level);
+	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -1415,7 +1418,7 @@ blockcounts[0]++; // For SN feedback
 #ifdef TESTCLUMP
 		  // defining the clump
 		  REAL X0=5./6.6;
-		  REAL rc=sqrt(pow(xc-X0,2)+pow(yc-0.5,2)+pow(zc-0.5,2));
+		  REAL rc=SQRT(POW(xc-X0,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
 		  if(rc<=(0.8/6.6)){
 		    temperature=40.;
 		    nh=40000.;
@@ -1423,12 +1426,14 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifndef TESTCLUMP		
-		  param.unit.unit_mass=nh*pow(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
 		  REAL pstar;
-		  pstar=param.unit.unit_n*param.unit.unit_mass*pow(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+		  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
 
-		  curoct->cell[icell].rfield.nh=nh*pow(param.unit.unit_l,3)/param.unit.unit_n; 
+		  curoct->cell[icell].rfield.nh=nh*POW(param.unit.unit_l,3)/param.unit.unit_n; 
 		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
 		  curoct->cell[icell].rfield.eint=eint; 
 		  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
@@ -1442,7 +1447,7 @@ blockcounts[0]++; // For SN feedback
 		  curoct->cell[icell].field.v=0.0;
 		  curoct->cell[icell].field.w=0.0;
 		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
-		  curoct->cell[icell].field.a=sqrt(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+		  curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		  getE(&(curoct->cell[icell].field));
 		  /* printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar); */
 		  /* abort(); */
@@ -1518,7 +1523,7 @@ blockcounts[0]++; // For SN feedback
   aexp=tsim;
 
   // at this stage we have to compute the conformal time
-  tsim=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
+  tsim=-0.5*SQRT(cosmo.om)*integ_da_dt_tilde(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
 
   // real times in units of 1./H0
   treal=-integ_da_dt(aexp,1.0,cosmo.om,cosmo.ov,1e-8);
@@ -1533,10 +1538,10 @@ blockcounts[0]++; // For SN feedback
       if(cpu.rank==RANK_DISP) printf("computing friedmann tables with ainit=%e amax=%e\n",ainit,amax);
   compute_friedmann(ainit*0.95,amax,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
   
-  tmax=-0.5*sqrt(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
+  tmax=-0.5*SQRT(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
   if(cpu.rank==RANK_DISP) printf("tmax=%e treal=%e\n",tmax,treal);
-  cosmo.tab_aexp=tab_aexp;
-  cosmo.tab_ttilde=tab_ttilde;
+  cosmo.tab_aexp=(REAL *)tab_aexp;
+  cosmo.tab_ttilde=(REAL *)tab_ttilde;
 #endif
 
   param.time_max=tmax;
@@ -1545,9 +1550,9 @@ blockcounts[0]++; // For SN feedback
 
   //#ifdef STARS
 /* #ifndef ZOOM */
-/*  	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmax)*param.stars->overdensity_cond; */
+/*  	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * POW(2.0,-3.0*param.lmax)*param.stars->overdensity_cond; */
 /* #else */
-/* 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * pow(2.0,-3.0*param.lmaxzoom); */
+/* 	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * POW(2.0,-3.0*param.lmaxzoom); */
 /* #endif */
   //if(cpu.rank==RANK_DISP) printf("mstars set to %e\n",param.stars->mstars);
 
@@ -1601,7 +1606,7 @@ blockcounts[0]++; // For SN feedback
 
     //if(cpu.rank==RANK_DISP) param.fpegy=fopen("energystat.txt","w");
 #ifdef TESTCOSMO
-    tdump=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
+    tdump=(REAL)interp_aexp(tsim,(double *)cosmo.tab_aexp,(double *)cosmo.tab_ttilde);
 #else
     tdump=tsim;
 #endif
@@ -1689,7 +1694,7 @@ blockcounts[0]++; // For SN feedback
       cpu.nsteps=nsteps;
       
 #ifdef TESTCOSMO
-      cosmo.aexp=interp_aexp(tsim,cosmo.tab_aexp,cosmo.tab_ttilde);
+      cosmo.aexp=interp_aexp(tsim,(double *)cosmo.tab_aexp,(double *)cosmo.tab_ttilde);
       cosmo.tsim=tsim;
       if(cpu.rank==RANK_DISP) printf("\n============== STEP %d aexp=%e z=%lf tconf=%e tmax=%e================\n",nsteps,cosmo.aexp,1./cosmo.aexp-1.,tsim,tmax);
 #else
@@ -1735,7 +1740,7 @@ blockcounts[0]++; // For SN feedback
 
 
       tg2=MPI_Wtime();
-      if(cpu.rank==RANK_DISP) printf("GLOBAL TIME = %e\n",tg2-tg1);
+      if(cpu.rank==RANK_DISP) printf("GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
 
 
       // ==================================== dump

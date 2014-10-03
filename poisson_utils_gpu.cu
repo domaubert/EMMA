@@ -318,7 +318,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     nitmax=param->nrelax;
   }
 
-  dxcur=pow(0.5,level);
+  dxcur=POW(0.5,level);
 
 
   // Scanning the Octs
@@ -415,12 +415,12 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
       if(iter==0){
 	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
-	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
       }
       else{
-	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
       }
     }
 #endif
@@ -431,14 +431,14 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     if(iter>0){
 
       // here we test the convergence of the temporary solution
-      dresconv=sqrt(dist/normp);
+      dresconv=SQRT(dist/normp);
 
       // here we test the zero level of Poisson equation
       if(level<param->lcoarse){
-	dres=sqrt(residual);
+	dres=SQRT(residual);
       }
       else{
-	dres=sqrt(residual/fnorm);
+	dres=SQRT(residual/fnorm);
       }
 
       // we take the smallest
@@ -457,7 +457,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
     if(cpu->rank==RANK_DISP) printf("GPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==RANK_DISP) printf("GPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
+    if(cpu->rank==RANK_DISP) printf("GPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,SQRT(residual),SQRT(res0),crit);
   }
 
 

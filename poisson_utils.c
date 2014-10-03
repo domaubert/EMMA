@@ -49,11 +49,11 @@ void minmod2grav_mix(struct Gtype *U1, struct Gtype *U2){
   REAL beta=1.; // 1 MINBEE 2 SUPERBEE
 
   if(Dp>0){
-    U1->d=fmax(fmax(0.,fmin(beta*Dm,Dp)),fmin(Dm,beta*Dp));
+    U1->d=FMAX(FMAX(0.,FMIN(beta*Dm,Dp)),FMIN(Dm,beta*Dp));
     U2->d=U1->d;
   }
   else{
-    U1->d=fmin(fmin(0.,fmax(beta*Dm,Dp)),fmax(Dm,beta*Dp));
+    U1->d=FMIN(FMIN(0.,FMAX(beta*Dm,Dp)),FMAX(Dm,beta*Dp));
     U2->d=U1->d;
   }
 }
@@ -96,7 +96,7 @@ void coarse2fine_grav(struct CELL *cell, struct Gtype *Wi){
   
   oct=cell2oct(cell);
   getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-  dxcur=pow(0.5,oct->level);
+  dxcur=POW(0.5,oct->level);
   
   W=&(cell->gdata);
   U0=*W;
@@ -207,7 +207,7 @@ void coarse2fine_gravlin(struct CELL *cell, struct Gtype *Wi){
   
   oct=cell2oct(cell);
   getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-  dxcur=pow(0.5,oct->level);
+  dxcur=POW(0.5,oct->level);
   
   W=&(cell->gdata);
   U0=*W;
@@ -325,7 +325,7 @@ void coarse2fine_forcelin(struct CELL *cell, REAL *Wi){
   
   oct=cell2oct(cell);
   getcellnei(cell->idx, vnei, vcell); // we get the neighbors
-  dxcur=pow(0.5,oct->level);
+  dxcur=POW(0.5,oct->level);
   
   W=cell->f;
   memcpy(U0,W,sizeof(REAL)*3);
@@ -572,7 +572,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
 
   /* oct=cell2oct(cell); */
   /* neioct=cell2oct(neicell); */
-  /* dxcur=pow(0.5,oct->level); */
+  /* dxcur=POW(0.5,oct->level); */
 
 
 
@@ -931,9 +931,9 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 
       for(icell=0;icell<8;icell++){ // we scan the cells
 #ifndef FASTGRAV
-	rloc=pow(gstencil->res[icell+i*8],2);
+	rloc=POW(gstencil->res[icell+i*8],2);
 #else
-	rloc=pow(gstencil->res[icell*stride+i],2);
+	rloc=POW(gstencil->res[icell*stride+i],2);
 #endif
 	residual+=rloc;
 	// ready for the next cell
@@ -952,9 +952,9 @@ REAL comp_residual(struct STENGRAV *gstencil, int level, int curcpu, int nread,i
 #endif
       for(icell=0;icell<8;icell++){ // we scan the cells
 #ifndef FASTGRAV
-	rloc=pow(gstencil->res[icell+i*8],2);
+	rloc=POW(gstencil->res[icell+i*8],2);
 #else
-	rloc=pow(gstencil->res[icell*stride+i],2);
+	rloc=POW(gstencil->res[icell*stride+i],2);
 #endif
 	residual+=rloc;
 	//residual=(residual>rloc?residual:rloc);
@@ -1090,8 +1090,8 @@ void update_pot_in_tree(int level,struct OCT ** firstoct,  struct CPUINFO *cpu, 
       for(icell=0;icell<8;icell++){	
 	pnew=curoct->cell[icell].pnew;
 	pold=curoct->cell[icell].gdata.p;
-	dist+=pow(pold-pnew,2);
-	normp+=pow(pold,2);
+	dist+=POW(pold-pnew,2);
+	normp+=POW(pold,2);
 	curoct->cell[icell].gdata.p=curoct->cell[icell].pnew;
       }
     }while(nextoct!=NULL);
@@ -1141,7 +1141,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     nitmax=param->nrelax;
   }
 
-  dxcur=pow(0.5,level);
+  dxcur=POW(0.5,level);
   
   double tall=0.,tcal=0.,tscat=0.,tgat=0.;
   double tglob=0.,tup=0.;
@@ -1250,6 +1250,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #ifdef FASTGRAV
     if(cpu->noct[level-1]>nread){ 
 #endif
+      dist=0;
+      normp=0.;
       if(nreadtot>0){
 	update_pot_in_tree(level,firstoct,cpu,param,&dist,&normp);
       }
@@ -1266,12 +1268,12 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
       if(iter==0){
 	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
-	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
       }
       else{
-	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&residual,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&dist,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
+	MPI_Allreduce(MPI_IN_PLACE,&normp,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
       }
     }
 #endif
@@ -1285,20 +1287,24 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if(iter>0){
 
       // here we test the convergence of the temporary solution
-      dresconv=sqrt(dist/normp);
+      dresconv=SQRT(dist/normp);
 
       // here we test the zero level of Poisson equation
       if(level<param->lcoarse){
-	dres=sqrt(residual);
+	dres=SQRT(residual);
       }
       else{
-	dres=sqrt(residual/fnorm);
+	dres=SQRT(residual/fnorm);
       }
 
       // we take the smallest
       crit=(dres<dresconv?0:1);
       dres=(dres<dresconv?dres:dresconv);
 
+      if(isnan(dres)){
+	printf("residual= %e dist=%e normp=%e fnorm=%e srt=%e srtconv=%e\n",residual,dist,normp,fnorm,SQRT(residual/fnorm),SQRT(dist/normp));
+	abort();
+      }
       if((dres)<param->poissonacc){
 	if(level>=param->lcoarse) break;
       }
@@ -1316,7 +1322,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if(cpu->rank==RANK_DISP) printf("CPU | level=%d iter=%d res=%e fnorm=%e\n",level,iter,dres,fnorm);
   }
   else{
-    if(cpu->rank==RANK_DISP) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,sqrt(residual),sqrt(res0),crit);
+    if(cpu->rank==RANK_DISP) printf("CPU | level=%d iter=%d res=%e fnorm=%e resraw=%e res0=%e crit=%d\n",level,iter,dres,fnorm,SQRT(residual),SQRT(res0),crit);
   }
   return dres;
 }
@@ -1438,8 +1444,8 @@ void PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct PART *nexp;
   int nread,nreadtot;
   int idir;
-  dxcur=pow(0.5,level);
-  
+  dxcur=POW(0.5,level);
+
   nextoct=firstoct[level-1];
   nreadtot=0;
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){

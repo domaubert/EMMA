@@ -74,6 +74,14 @@ void oct2loct(struct OCT *oct, struct LOCT *loct){
 
 void dumpHeaderOnScreen(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+
+printf( "SINGLEPRECISION\t");
+#ifdef SINGLEPRECISION
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
 printf( "PIC\t");
 #ifdef PIC
   printf( "%d\n", 1);
@@ -293,6 +301,34 @@ printf( "S_100000\t");
 
 printf( "COOLING\t");
 #ifdef COOLING
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "ACCEL_RAD_STAR\t");
+#ifdef ACCEL_RAD_STAR
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "SCHAYE\t");
+#ifdef SCHAYE
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "OTSA\t");
+#ifdef OTSA
+  printf( "%d\n", 1);
+#else
+  printf( "%d\n", 0);
+#endif
+
+printf( "COARSERAD\t");
+#ifdef COARSERAD
   printf( "%d\n", 1);
 #else
   printf( "%d\n", 0);
@@ -868,6 +904,8 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
   fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
   fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
   fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
 #endif
 
 
@@ -976,6 +1014,8 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   outf=fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
   outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
   outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_d),sizeof(REAL),1,fp);
+  outf=fread(&(param->unit.unit_N),sizeof(REAL),1,fp);
 #endif
   //printf("UNIT L=%e\n",param->unit.unit_l);
 
@@ -1145,7 +1185,8 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
   fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
   fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
 #endif
 
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
@@ -1233,7 +1274,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 	{
 	  if(nextoct==NULL) continue; // in case the level is empty
 	  oct=(*nextoct);
-//	  dxcur=1./pow(2,oct.level);
+//	  dxcur=1./POW(2,oct.level);
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
@@ -1267,10 +1308,10 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 		  val=curp->fy;			fwrite(&val,1,sizeof(float),fp);
 		  val=curp->fz;			fwrite(&val,1,sizeof(float),fp);
 #endif
-		  val=(REAL)(curp->idx);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->mass);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
-		  val=(REAL)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
+		  val=(float)(curp->idx);	fwrite(&val,1,sizeof(float),fp);
+		  val=(float)(curp->mass);	fwrite(&val,1,sizeof(float),fp);
+		  val=(float)(curp->epot);	fwrite(&val,1,sizeof(float),fp);
+		  val=(float)(curp->ekin);	fwrite(&val,1,sizeof(float),fp);
 #ifdef STARS
 		  if(curp->isStar) {
 		    val = curp->age;		fwrite(&val,1,sizeof(float),fp);
@@ -1330,7 +1371,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 	{
 	  if(nextoct==NULL) continue; // in case the level is empty
 	  oct=(*nextoct);
-	  dxcur=1./pow(2,oct.level);
+	  dxcur=1./POW(2,oct.level);
 	  nextoct=oct.next;
 	  for(icell=0;icell<8;icell++) // looping over cells in oct
 	    {
@@ -1494,7 +1535,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   FILE *buf; 
   char stream[256];
   size_t rstat;
-  REAL dummyf;
+  float dummyf;
 
 
   buf=fopen(fparam,"r");
@@ -1513,18 +1554,18 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->dt=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmax=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->tmax=(REAL)dummyf;
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->amrthresh=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->poissonacc=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->poissonacc=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
@@ -1542,37 +1583,37 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 #ifdef WRAD
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->clight=dummyf;param->clightorg=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->denthresh=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->tmpthresh=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->srcint=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->denthresh=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->tmpthresh=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->srcint=(REAL)dummyf;
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
 	int i;
 				rstat=fscanf(buf,"%s",stream);
-	for (i=0; i<4; i++)	rstat=fscanf(buf,"%s %lf",stream,&dummyf);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,"%s %f",stream,&dummyf);
 #endif
 
 #ifdef STARS
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->overdensity_cond	=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->density_cond			=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tcar							=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->tlife							=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_eff			=dummyf;
-      rstat=fscanf(buf,"%s %lf",stream,&dummyf);param->stars->feedback_frac			=dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->overdensity_cond	=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->density_cond			=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->tcar							=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->tlife							=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->feedback_eff			=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->feedback_frac			=(REAL)dummyf;
 #endif
 
 #ifdef MOVIE
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d", stream,&param->movie->lmap);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->xmin);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->xmax);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->ymin);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->ymax);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->zmin);
-      rstat=fscanf(buf,"%s %lf",stream,&param->movie->zmax);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->xmin);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->xmax);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->ymin);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->ymax);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->zmin);
+      rstat=fscanf(buf,"%s %f",stream,&param->movie->zmax);
 
 #endif
 
@@ -1583,8 +1624,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 
   // computing the maxhash
-  int val=(pow(2,param->lmax-1)<256?pow(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
-  param->maxhash=pow(val,3);
+  int val=(POW(2,param->lmax-1)<256?POW(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
+  param->maxhash=POW(val,3);
   //printf("maxhash=%d\n",param->maxhash);
 
   // ====================== some checks
@@ -1743,7 +1784,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 #ifdef ZOOM
   if(level>param->lcoarse){
-    offidx=pow(2,3*(level-param->lcoarse)); // for ids of particles
+    offidx=POW(2,3*(level-param->lcoarse)); // for ids of particles
   }
 #endif
 
@@ -2044,7 +2085,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
-	dxcur=pow(0.5,level);
+	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -2059,7 +2100,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 
 		W.d=(1.+(1.+ZC)/(1.+ZI)*cos(2.*M_PI*(xc-0.5)))*ob/om;
 		W.p=PMIN;
-		W.u=-(1.+ZC)/pow(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(M_PI); // for omegam=1. only
+		W.u=-(1.+ZC)/POW(1.+ZI,1.5)*sin(2.*M_PI*(xc-0.5))/(M_PI); // for omegam=1. only
 		W.v=0.;
 		W.w=0.;
 		W.a=sqrt(GAMMA*W.p/W.d);
@@ -2108,7 +2149,7 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   lbox=1.;
   astart=1e-3;
 
-  int n1d=pow(2,param->lcoarse);
+  int n1d=POW(2,param->lcoarse);
   REAL dx=1./n1d;
   iploc=0;
   int nin=0;
@@ -2129,11 +2170,11 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	      y=(j+0.5)*dx;
 	      z=(k+0.5)*dx;
 	      
-	      r=sqrt(pow(x-0.5,2)+pow(y-0.5,2)+pow(z-0.5,2));
+	      r=sqrt(POW(x-0.5,2)+POW(y-0.5,2)+POW(z-0.5,2));
 	      if(r<lsphere){
 		nin++;
 		mout=-1;
-		vsphere+=pow(dx,3);
+		vsphere+=POW(dx,3);
 	      }
 	      else{
 		nout++;
@@ -2193,7 +2234,7 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
-	dxcur=pow(0.5,level);
+	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -2282,7 +2323,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
-	dxcur=pow(0.5,level);
+	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -2325,12 +2366,12 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   REAL rhostar=M/(4./3.*M_PI*R*R*R);
   REAL estar=M/R; //assuming G=1
   REAL pstar=rhostar*estar;
-  REAL tstar=sqrt(M_PI*M_PI/8.)*pow(R,1.5)/pow(M,0.5);
+  REAL tstar=sqrt(M_PI*M_PI/8.)*POW(R,1.5)/POW(M,0.5);
   if(cpu->rank==RANK_DISP) printf("Generating Evrard Test Case ts=%e, rhostar=%e\n",tstar,rhostar);
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
-	dxcur=pow(0.5,level);
+	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
 	if(nextoct==NULL) continue;
 	do // sweeping level
@@ -2493,8 +2534,8 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 
 
 
-  if(np1!=(int)pow(2,level)){
-    printf("ERROR !ABORT! Grafic hydro  file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)pow(2,level));
+  if(np1!=(int)POW(2,level)){
+    printf("ERROR !ABORT! Grafic hydro  file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)POW(2,level));
     abort();
   }
 
@@ -2537,12 +2578,12 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   //double temp=0.0874545+0.0302621*zstart+0.00675076*zstart*zstart; // recfast ob fit
 #ifdef COOLING
   if(om==1.) {
-    temp=33.64/pow(41.,2)*pow(1.+zstart,2);
+    temp=33.64/POW(41.,2)*POW(1.+zstart,2);
     if(cpu->rank==RANK_DISP) printf("WARNING: YOU ARE USING SCDM COSMOLOGY\n");
   }
   else{
     if(cpu->rank==RANK_DISP) printf("No temperature law for cosmologies other than SCDM -> F** it\n");
-    temp=33.64/pow(41.,2)*pow(1.+zstart,2);
+    temp=33.64/POW(41.,2)*POW(1.+zstart,2);
     //    abort();
   }
 #else
@@ -2629,7 +2670,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  
 	  icell=icx+icy*2+icz*4;
 	
-	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/pow(astart,3); // physical baryon density in kg/m3
+	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/POW(astart,3); // physical baryon density in kg/m3
 	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
 	  
 	  //printf("pres=%e\n",pressure);
@@ -2641,7 +2682,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  W.u=(velx[i1+i2*np1]*1e3)*astart/vstar; // vstar is expressed in m/s and grafic vel are in km/s
 	  W.v=(vely[i1+i2*np1]*1e3)*astart/vstar;
 	  W.w=(velz[i1+i2*np1]*1e3)*astart/vstar;
-	  W.p=pressure/pstar*pow(astart,5);
+	  W.p=pressure/pstar*POW(astart,5);
 	  W.a=sqrt(GAMMA*W.p/W.d);
 	  getE(&W);
 
@@ -2688,12 +2729,16 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   param->unit.unit_l=rstar;
   param->unit.unit_v=vstar;
   param->unit.unit_t=param->unit.unit_l/param->unit.unit_v;
-  param->unit.unit_n=1.;
-  param->unit.unit_mass=rhostar*pow(param->unit.unit_l,3);
+  param->unit.unit_n=1.;//(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*rhostar; // 
+  param->unit.unit_mass=rhostar*POW(param->unit.unit_l,3);
+  param->unit.unit_d=rhostar; // kg/m3
+  param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3
 #endif
-  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/pow(param->unit.unit_l,3);
- 
-  if(cpu->rank==RANK_DISP) printf("navg=%e\n",navg);
+
+//  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/POW(param->unit.unit_l,3);
+ /*   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*rhostar; */
+
+/* if(cpu->rank==RANK_DISP) printf("navg=%e \n",navg); */
   
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -2722,7 +2767,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #endif
 	adump=tdump;
 #else
-	tdump=interp_aexp(tsim,param->cosmo->tab_aexp,param->cosmo->tab_ttilde);
+	tdump=interp_aexp(tsim,(double*)param->cosmo->tab_aexp,(double*)param->cosmo->tab_ttilde);
 	adump=tdump;
 #endif
 

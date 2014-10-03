@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
   // silo file
   int dumpsilo=0;
   sscanf(argv[6],"%d",&dumpsilo);
-  REAL zmin,zmax,xmin,xmax,ymin,ymax;
+  float zmin,zmax,xmin,xmax,ymin,ymax;
   int nmapz,nmapx,nmapy;
   int i0,j0,k0;
 
@@ -83,14 +83,14 @@ int main(int argc, char *argv[])
   sscanf(argv[7],"%d",&mono);
 
   if(argc>8) {
-    sscanf(argv[8],"%lf",&xmin);
-    sscanf(argv[9],"%lf",&xmax);
+    sscanf(argv[8],"%f",&xmin);
+    sscanf(argv[9],"%f",&xmax);
 
-    sscanf(argv[10],"%lf",&ymin);
-    sscanf(argv[11],"%lf",&ymax);
+    sscanf(argv[10],"%f",&ymin);
+    sscanf(argv[11],"%f",&ymax);
 
-    sscanf(argv[12],"%lf",&zmin);
-    sscanf(argv[13],"%lf",&zmax);
+    sscanf(argv[12],"%f",&zmin);
+    sscanf(argv[13],"%f",&zmax);
   }
   else{
     xmin=0;
@@ -192,7 +192,8 @@ int main(int argc, char *argv[])
     dummy=fread(&unit.unit_v,sizeof(REAL),1,fp);
     dummy=fread(&unit.unit_t,sizeof(REAL),1,fp);
     dummy=fread(&unit.unit_n,sizeof(REAL),1,fp);
-    dummy=fread(&unit.unit_mass,sizeof(REAL),1,fp);
+    dummy=fread(&unit.unit_d,sizeof(REAL),1,fp);
+    dummy=fread(&unit.unit_N,sizeof(REAL),1,fp);
 #endif
 
     printf("tsim=%e\n",tsim);

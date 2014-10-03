@@ -1,8 +1,43 @@
-typedef double REAL;
+
 
 #ifdef WMPI
 #include <mpi.h>
 #endif
+
+#ifdef SINGLEPRECISION
+// SINGLE PRECISION CASE
+
+typedef float REAL;
+#ifdef WMPI
+#define MPI_REEL MPI_FLOAT
+#endif
+
+#define POW(A,B) powf(A,B)
+#define SQRT(A) sqrtf(A)
+#define FMIN(A,B) fminf(A,B)
+#define FMAX(A,B) fmaxf(A,B)
+#define FABS(A) fabsf(A)
+#define CUDPP_REAL CUDPP_FLOAT
+
+
+#else
+// DOUBLE PRECISION CASE (BY DEFAULT)
+
+typedef double REAL;
+#ifdef WMPI
+#define MPI_REEL MPI_DOUBLE
+#endif
+
+#define POW(A,B) pow(A,B)
+#define SQRT(A) sqrt(A)
+#define FMIN(A,B) fmin(A,B)
+#define FMAX(A,B) fmax(A,B)
+#define FABS(A) fabs(A)
+#define CUDPP_REAL CUDPP_DOUBLE
+
+#endif
+
+
 
 #define RANK_DISP 0
 #define FBKP 1
@@ -43,7 +78,7 @@ typedef double REAL;
 
 #ifdef WRAD
 #define NVAR_R (5)
-#define NGRP (3)
+#define NGRP (1)
 #define EMIN (1e-20)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
@@ -119,6 +154,8 @@ struct UNITS{
   REAL unit_t; // unit time [seconds]
   REAL unit_n; // unit number [moles typically]
   REAL unit_mass; // unit mass [in kg, total mass is equal to one in unit codes]
+  REAL unit_d; // density unit [typically Omegam*rhoc in kg/m3]
+  REAL unit_N; // number density unit [typically Omegam*rhoc/mp in 1./m3]
 };
 
 //=======================================
@@ -208,7 +245,7 @@ struct RUNPARAMS{
 struct PACKET{
   REAL data[8]; // the data to be transfered (8 since we transmit data per octs)
   //unsigned long long key; // the destination hilbert key
-  REAL key; // MODKEY
+  double key; // MODKEY
   int level; // the level of the destination (to remove the key degeneracy)
 };
 

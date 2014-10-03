@@ -11,7 +11,7 @@
 void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 {
   REAL xc,yc,zc;
-  //REAL dxcur=1./pow(2,curoct->level);
+  //REAL dxcur=1./POW(2,curoct->level);
   REAL dxcur=1./(1<<curoct->level);
   
   int vnei [6],vcell [6];
@@ -174,7 +174,7 @@ void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)
 void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 {
   REAL xc,yc,zc;
-  //  REAL dxcur=1./pow(2,curoct->level);
+  //  REAL dxcur=1./POW(2,curoct->level);
   REAL dxcur=1./(1<<curoct->level);
   int vnei [6],vcell [6];
   int vnei2[6],vcell2[6];
@@ -219,9 +219,9 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
   ty=(curp->y-yc)/dxcur;ty=(ty>0.?ty:-ty);
   tz=(curp->z-zc)/dxcur;tz=(tz>0.?tz:-tz);
 
-  /* tx=fabs((curp->x-xc)/dxcur); */
-  /* ty=fabs((curp->y-yc)/dxcur); */
-  /* tz=fabs((curp->z-zc)/dxcur); */
+  /* tx=FABS((curp->x-xc)/dxcur); */
+  /* ty=FABS((curp->y-yc)/dxcur); */
+  /* tz=FABS((curp->z-zc)/dxcur); */
 	  
   dx=1.-tx;
   dy=1.-ty;
@@ -265,7 +265,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 
     // contribs to cardinal neighbors
     for(i1=0;i1<3;i1++){
-      //idx1=pow(2,i1);
+      //idx1=POW(2,i1);
       idx1=(1<<i1);
 
       contrib=vcont[idx1];
@@ -300,7 +300,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
       // contrib to 2nd order neighbours
       if(newcell!=NULL){
 	for(i2=0;i2<3;i2++){
-	  //idx2=pow(2,i1)+pow(2,i2);
+	  //idx2=POW(2,i1)+POW(2,i2);
 	  idx2=(1<<i1)+(1<<i2);
 	  if(i2==i1) continue;
 	  if(visit[idx2]) continue;
@@ -430,7 +430,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
     // contribs to cardinal neighbors
     getcellnei(icell, vnei, vcell);
     for(i1=0;i1<3;i1++){
-      //idx1=pow(2,i1);
+      //idx1=POW(2,i1);
       idx1=(1<<i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
@@ -451,7 +451,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
       // contrib to 2nd order neighbours
       if(newcell!=NULL){
 	for(i2=0;i2<3;i2++){
-	  //idx2=pow(2,i1)+pow(2,i2);
+	  //idx2=POW(2,i1)+POW(2,i2);
 	  idx2=(1<<i1)+(1<<i2);
 	  if(i2==i1) continue;
 	  if(visit[idx2]) continue;
@@ -511,7 +511,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 
 #ifdef PERFECT
    if(curp->mass<0.5) {
-    REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+    REAL r=SQRT((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
     accel[0]=(curp->x-0.5)/(r*r*r);
     accel[1]=(curp->y-0.5)/(r*r*r);
     accel[2]=(curp->z-0.5)/(r*r*r);
@@ -523,7 +523,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
    curp->vy+=-accel[1]*dt;
    curp->vz+=-accel[2]*dt;
    curp->epot=pot;
-   curp->ekin=0.5*(pow(curp->vx,2)+pow(curp->vy,2)+pow(curp->vz,2));
+   curp->ekin=0.5*(POW(curp->vx,2)+POW(curp->vy,2)+POW(curp->vz,2));
    
    //if(curp->idx==54944) printf("pos= %e %e %e vel = %e %e %e accel =%e %e %e dt=%e lp=%d\n",curp->x,curp->y,curp->z,curp->vx,curp->vy,curp->vz,accel[0],accel[1],accel[2],dt,curp->level);
    //printf("idx=%d fx=%e/%e fy=%e/%e fz=%e/%e\n",curp->idx,accel[ic]2,accel[ic],accely2,accely,accelz2,accelz);
@@ -534,8 +534,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
    curp->fz=-accel[2];
    
    if(curp->idx==1) {
-     REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
-     REAL f=sqrt((curp->fx)*(curp->fx)+(curp->fy)*(curp->fy)+(curp->fz)*(curp->fz));
+     REAL r=SQRT((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+     REAL f=SQRT((curp->fx)*(curp->fx)+(curp->fy)*(curp->fy)+(curp->fz)*(curp->fz));
      REAL fth=1./(r*r);
      printf("r=%e force=%e fth=%e rap=%e fx=%e fy=%e fz=%e\n",r,f,fth,(f-fth)/fth,curp->fx,curp->fy,curp->fz);
      //for(ic=0;ic<8;ic++) printf("%d %e %e\n",visit[ic],vcont[ic],vf[ic]);
@@ -554,7 +554,7 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 {
   REAL xc,yc,zc;
-  REAL dxcur=1./pow(2,curoct->level);
+  REAL dxcur=1./POW(2,curoct->level);
   int vnei [6],vcell [6];
   int vnei2[6],vcell2[6];
   int vnei3[6],vcell3[6];
@@ -592,9 +592,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 
 
   // the CIC weights
-  tx=fabs((curp->x-xc)/dxcur);
-  ty=fabs((curp->y-yc)/dxcur);
-  tz=fabs((curp->z-zc)/dxcur);
+  tx=FABS((curp->x-xc)/dxcur);
+  ty=FABS((curp->y-yc)/dxcur);
+  tz=FABS((curp->z-zc)/dxcur);
 	  
   dx=1.-tx;
   dy=1.-ty;
@@ -626,7 +626,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
   // contribs to cardinal neighbors
   getcellnei(icell, vnei, vcell);
   for(i1=0;i1<3;i1++){
-    idx1=pow(2,i1);
+    idx1=POW(2,i1);
     contrib=vcont[idx1];
     if(vnei[neip[i1]]==6){
       accel+=curoct->cell[vcell[neip[i1]]].gdata.p*contrib;
@@ -654,7 +654,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     // contrib to 2nd order neighbours
     if(newcell!=NULL){
       for(i2=0;i2<3;i2++){
-	idx2=pow(2,i1)+pow(2,i2);
+	idx2=POW(2,i1)+POW(2,i2);
 	if(i2==i1) continue;
 	if(visit[idx2]) continue;
 
@@ -724,7 +724,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     // Getting the new curoct at low resolution
     curoctlr=cell2oct(curoct->parent);
     icell=curoct->parent->idx;
-    dxcur=1./pow(2,curoctlr->level);
+    dxcur=1./POW(2,curoctlr->level);
 
     // start again
     
@@ -733,9 +733,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     zc=curoctlr->z+( icell/4   )*dxcur+dxcur/2; 
     
     // the CIC weights
-    tx=fabs((curp->x-xc)/dxcur);
-    ty=fabs((curp->y-yc)/dxcur);
-    tz=fabs((curp->z-zc)/dxcur);
+    tx=FABS((curp->x-xc)/dxcur);
+    ty=FABS((curp->y-yc)/dxcur);
+    tz=FABS((curp->z-zc)/dxcur);
 	  
     dx=1.-tx;
     dy=1.-ty;
@@ -767,7 +767,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     // contribs to cardinal neighbors
     getcellnei(icell, vnei, vcell);
     for(i1=0;i1<3;i1++){
-      idx1=pow(2,i1);
+      idx1=POW(2,i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
 	accel+=curoctlr->cell[vcell[neip[i1]]].gdata.p*contrib;
@@ -788,7 +788,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
       // contrib to 2nd order neighbours
       if(newcell!=NULL){
 	for(i2=0;i2<3;i2++){
-	  idx2=pow(2,i1)+pow(2,i2);
+	  idx2=POW(2,i1)+POW(2,i2);
 	  if(i2==i1) continue;
 	  if(visit[idx2]) continue;
 
@@ -845,7 +845,7 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
   
 #ifdef PERFECT
    if(curp->mass<0.5) {
-    REAL r=sqrt((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
+    REAL r=SQRT((curp->x-0.5)*(curp->x-0.5)+(curp->y-0.5)*(curp->y-0.5)+(curp->z-0.5)*(curp->z-0.5));
     accel=-1./r;
    }
 #endif
@@ -911,7 +911,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
   //second start CIC
   for(level=levelcoarse;level<=levelmax;level++)
     {
-      dxcur=1./pow(2,level);
+      dxcur=1./POW(2,level);
       nextoct=firstoct[level-1];
       if(nextoct==NULL) continue;
       do // sweeping level
@@ -953,8 +953,8 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		// first the cartesian neighbors (6)
 		for(inei=0;inei<6;inei++){
 		  nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
-		  //		  iv=13+pow(3,inei/2)*(2*(inei%2)-1);
-		  iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+		  //		  iv=13+POW(3,inei/2)*(2*(inei%2)-1);
+		  iv=13+POW(3,inei>>1)*(2*(inei&1)-1);
 		  visit[iv]=1;
 		  if(nexp!=NULL){
 		    do{ 
@@ -970,8 +970,8 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		  newoct=cell2oct(newcell); // we get the parent oct;
 		  getcellnei(newcell->idx, vnei, vcell); // we get its neighbors
 		  for(il=0;il<6;il++){
-		    //iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1);
-		    iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1);
+		    //iv=POW(3,inei/2)*(2*(inei%2)-1)+POW(3,il/2)*(2*(il%2)-1);
+		    iv=POW(3,inei>>1)*(2*(inei&1)-1)+POW(3,il>>1)*(2*(il&1)-1);
 		    if((il>>1)==(inei>>1)) continue;
 		    if(visit[iv]) continue;
 		    if(vnei[il]==6){
@@ -1009,8 +1009,8 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 		      newoct2=cell2oct(newcell2);
 		      getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
 		      for(ip=0;ip<6;ip++){
-			//iv=pow(3,inei/2)*(2*(inei%2)-1)+pow(3,il/2)*(2*(il%2)-1)+pow(3,ip/2)*(2*(ip%2)-1);
-			iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
+			//iv=POW(3,inei/2)*(2*(inei%2)-1)+POW(3,il/2)*(2*(il%2)-1)+POW(3,ip/2)*(2*(ip%2)-1);
+			iv=POW(3,inei>>1)*(2*(inei&1)-1)+POW(3,il>>1)*(2*(il&1)-1)+POW(3,ip>>1)*(2*(ip&1)-1);
 			//if(((ip/2)==(il/2))||((ip/2)==(inei/2))) continue;
 			if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
 			if(visit[iv]) continue;
@@ -1085,7 +1085,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
   static int iz[6]={0,0,0,0,-1,1};
 
 
-  dxcur=1./pow(2,level);
+  dxcur=1./POW(2,level);
   nextoct=firstoct[level-1];
   if(nextoct!=NULL){
   do // sweeping level
@@ -1123,7 +1123,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	    for(inei=0;inei<6;inei++){
 	      if(curoct->nei[inei] !=NULL){ // required for MPI boundaries
 		nexp=curoct->nei[inei]->phead; //sweeping the particles of the neighbour cell at level l-1
-		//iv=13+pow(3,inei>>1)*(2*(inei&1)-1);
+		//iv=13+POW(3,inei>>1)*(2*(inei&1)-1);
 		iv=13+ix[inei]+iy[inei]*3+iz[inei]*9;
 		visit[iv]=1;
 		if(nexp!=NULL){
@@ -1193,7 +1193,7 @@ void L_cic(int level,struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 		    newoct2=cell2oct(newcell2);
 		    getcellnei(newcell2->idx, vnei2, vcell2); // we get its neighbors
 		    for(ip=0;ip<6;ip++){
-		      //		      iv=pow(3,inei>>1)*(2*(inei&1)-1)+pow(3,il>>1)*(2*(il&1)-1)+pow(3,ip>>1)*(2*(ip&1)-1);
+		      //		      iv=POW(3,inei>>1)*(2*(inei&1)-1)+POW(3,il>>1)*(2*(il&1)-1)+POW(3,ip>>1)*(2*(ip&1)-1);
 		      if(((ip>>1)==(il>>1))||((ip>>1)==(inei>>1))) continue;
 		      iv3=iv2+ix[ip]+iy[ip]*3+iz[ip]*9;
 		      if(visit[iv3]) continue;

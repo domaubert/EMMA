@@ -57,8 +57,8 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   for(level=1;level<=levelmax;level++)
     {
       nextoct=firstoct[level-1];
-      dx=1./pow(2,level);
-      dv=pow(dx,3);
+      dx=1./POW(2,level);
+      dv=POW(dx,3);
       nlev=0;
       nlevd=0.;
       noct=0;
@@ -146,13 +146,13 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
     }
 
-  MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
 
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
   
-  /* if(  fabs(dm) > 1e-6 && cpu->rank==RANK_DISP){ */
+  /* if(  FABS(dm) > 1e-6 && cpu->rank==RANK_DISP){ */
   /*   printf("\n=================================================\n"); */
   /*   printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot); */
   /*   printf("\tTotal Baryonic Mass wanted \t %lf \n", tmw); */
@@ -269,7 +269,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 	printf(" nstar=%9d",lstar);
 #endif
 	int I;
-	REAL frac=(ltot/(1.0*pow(2,3*(level-1))))*100.;
+	REAL frac=(ltot/(1.0*POW(2,3*(level-1))))*100.;
 	printf(" [");
 	for(I=0;I<12;I++) printf("%c",(I/12.*100<frac?'*':' '));
 	printf("]\n");
@@ -290,6 +290,10 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
   }
 
 #ifdef PIC
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&ptot,1,MPI_INT,MPI_MAX,cpu->comm);
+#endif
+
   if(cpu->rank==RANK_DISP){
     int I;
     REAL frac=(ptot/(1.0*param->npartmax))*100.;
@@ -297,22 +301,19 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
     for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
     printf("]\n");
   }
-#ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&ptot,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
 #endif
 
   if(cpu->rank==RANK_DISP){
     int I;
-    REAL frac=(gtot/(1.0*pow(2,(param->lmax-1)*3)))*100.;
+    REAL frac=(gtot/(1.0*POW(2,(param->lmax-1)*3)))*100.;
     printf("comp factor   =%6.1f [",frac);
     for(I=0;I<24;I++) printf("%c",(I/24.*100<frac?'*':' '));
     printf("]\n\n");
   }
 
 /* #ifdef TESTCOSMO */
-/*   if(ptot!=pow(2,param->lcoarse*3)){ */
-/*     printf("Error on total number of particles %d found (%d expected)\n",ptot,(int)pow(2,3*param->lcoarse)); */
+/*   if(ptot!=POW(2,param->lcoarse*3)){ */
+/*     printf("Error on total number of particles %d found (%d expected)\n",ptot,(int)POW(2,3*param->lcoarse)); */
 /*     abort(); */
 /*   } */
 /* #endif */
