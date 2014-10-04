@@ -2686,6 +2686,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  W.a=sqrt(GAMMA*W.p/W.d);
 	  getE(&W);
 
+	  if(W.p<PMIN) {printf(" YOU SHOULD RECONSIDER PMIN %e %e %e\n",W.p,pressure,pstar);abort();}
 #ifdef WRADHYD
 	  // Testing ADVECTION
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
