@@ -500,8 +500,8 @@ void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nre
 	  part->age=curp->age;
 	  part->isStar=curp->isStar;
 #endif
-
-
+	  //if(cpu->rank==1) printf(" id send =%d\n",part->idx);
+	  
 	  // counting the number of packets for icpu
 	  countpacket[icpu]++;
 	  if(countpacket[icpu]>cpu->nbuffpart){
@@ -541,6 +541,7 @@ void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nre
   }
   free(countpacket);
 
+  //printf("nrem=%d\n",nrem[0]);
   //return nrem; // we return the number of exiting particles
 }
 #endif
@@ -924,15 +925,15 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
       part=precvbuffer[j]+i;
       //      if(part==NULL) continue;
 
-
+      //if(cpu->rank==0) if(i<50) printf("i=%d l=%d idx=%d on rank%d\n",i,part->level,part->idx,cpu->rank);
 
       if(part->level!=0){ // we do something
 
 	/* if(part->level!=level){ */
-	/*   printf("level=%d plevel=%d rg part=%d cpu=%d key=%lld\n",level,part->level,i,cpu->rank,part->key); */
+	/*   printf("level=%d plevel=%d rg part=%d cpu=%d key=%e\n",level,part->level,i,cpu->rank,part->key); */
 	/*   abort(); */
 	/* } */
-
+ 
 	/* if(part->level==12){ */
 	/*   printf("RECEPTION level 12 particle found with key=%e with pos= %e %e %e\n",part->key,part->x,part->y,part->z); */
 	/* } */
@@ -1067,7 +1068,7 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
     }
   }
 
-    
+  //printf("nadd=%d\n",nadd[0]);
   //return nadd; // returning the new number of particles
 }
 #endif
@@ -2431,6 +2432,8 @@ void mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struc
   int i;
   static int nrem[2];
   static int nadd[2];
+  MPI_Datatype MPI_PACKET=*(cpu->MPI_PART);
+  
   delta[0]=0;
   delta[1]=0;
 
@@ -2440,13 +2443,15 @@ void mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struc
 
   for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors
     mpitag=cpu->rank+cpu->mpinei[i];
+    
     MPI_Sendrecv(psendbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,precvbuffer[i],cpu->nbuffpart,*cpu->MPI_PART,cpu->mpinei[i],mpitag,cpu->comm,MPI_STATUS_IGNORE);
   }
-  //printf("17 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
+  
+  MPI_Barrier(cpu->comm);
   scatter_mpi_part(cpu,precvbuffer,nadd,level);
-  //printf("18 next=%p on proc=%d\n",cpu->firstoct[0]->next,cpu->rank);
   MPI_Barrier(cpu->comm);
 
+  //printf("nadd=%d nrem=%d on rank %d\n",nadd[0],nrem[0],cpu->rank);
   delta[0] = nadd[0]-nrem[0];
   delta[1] = nadd[1]-nrem[1];
 

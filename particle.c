@@ -175,7 +175,7 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 
 #ifdef WMPI
   // reducing by taking the smallest time step
-  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REAL,MPI_MIN,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_REEL,MPI_MIN,cpu->comm);
 #endif  
 
   dt=(dt>tmax?tmax:dt);
