@@ -10,6 +10,10 @@
 #include "vector.h"
 #include <mpi.h>
 
+#ifdef GPUAXL
+#include "hydro_utils_gpu.h"
+#endif
+
 #define NITERMAX 10
 #define ERRTOL 1e-10
 #define FRACP 1e-3
@@ -518,7 +522,6 @@ double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
   
   double fL,fR;
   double AL,AR,BL,BR;
-  double Deltau;
 
   AL=2./((GAMMA+1.)*WL->d);
   AR=2./((GAMMA+1.)*WR->d);
@@ -526,8 +529,8 @@ double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?SQRT(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):POW(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
-  fR=(p>WR->p?SQRT(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):POW(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
+  fL=(p>WL->p?sqrt(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):pow(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
+  fR=(p>WR->p?sqrt(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):pow(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
 
   return fL+fR;
 }
@@ -548,8 +551,8 @@ double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?(p-WL->p)*SQRT(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(POW(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
-  fR=(p>WR->p?(p-WR->p)*SQRT(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(POW(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fL=(p>WL->p?(p-WL->p)*sqrt(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(pow(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fR=(p>WR->p?(p-WR->p)*sqrt(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(pow(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
   
   Deltau=WR->u-WL->u;
   *u=0.5*(WL->u+WR->u)+0.5*(fR-fL);
@@ -568,8 +571,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
-  pmax=FMAX(WL->p,WR->p);
-  pmin=FMIN(WL->p,WR->p);
+  pmax=fmax(WL->p,WR->p);
+  pmin=fmin(WL->p,WR->p);
   pstar=ppvrs;
   
   if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
@@ -583,14 +586,14 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
       //TRRS CASE
       double z=(GAMMA-1.)/(2.*GAMMA);
       double iz=(2.*GAMMA)/(GAMMA-1.);
-      pstar=POW((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/POW(WL->p,z)+WR->a/POW(WR->p,z)),iz);
-      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(POW(pstar/WL->p,z)-1.);
+      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),iz);
+      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
       cas=1;
     }
     else{
       //TSRS CASE
       double p0;
-      p0=FMAX(0.,ppvrs);
+      p0=fmax(0.,ppvrs);
       
       AL=2./((GAMMA+1.)*WL->d);
       AR=2./((GAMMA+1.)*WR->d);
@@ -598,8 +601,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
       BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
       BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-      GL=SQRT(AL/(p0+BL));
-      GR=SQRT(AR/(p0+BR));
+      GL=sqrt(AL/(p0+BL));
+      GR=sqrt(AR/(p0+BR));
 
       pstar=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
       *ustar=0.5*((WL->u+WR->u)+(pstar-WR->p)*GR-(pstar-WL->p)*GL);
@@ -628,8 +631,8 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
   int tag;
   double u2;
 
-  pmin=FMIN(WL->p,WR->p);
-  pmax=FMAX(WL->p,WR->p);
+  pmin=fmin(WL->p,WR->p);
+  pmax=fmax(WL->p,WR->p);
   
   // EXACT SOLVER
 
@@ -642,16 +645,16 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
   ppv0=0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a);
-  ptr0=POW((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/POW(WL->p,1./unsurz)+WR->a/POW(WR->p,1./unsurz)),unsurz);
+  ptr0=pow((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/pow(WL->p,1./unsurz)+WR->a/pow(WR->p,1./unsurz)),unsurz);
 
-  ppv=FMAX(ERRTOL,ppv0);
-  ptr=FMAX(ERRTOL,ptr0);
+  ppv=fmax(ERRTOL,ppv0);
+  ptr=fmax(ERRTOL,ptr0);
   
-  GL=SQRT(AL/(ppv+BL));
-  GR=SQRT(AR/(ppv+BR));
+  GL=sqrt(AL/(ppv+BL));
+  GR=sqrt(AR/(ppv+BR));
 
   pts0=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
-  pts=FMAX(ERRTOL,pts0);
+  pts=fmax(ERRTOL,pts0);
 
 
   if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
@@ -671,19 +674,19 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 
 
   //p=0.5*(WL->p+WR->p);
-  //p=FMAX(p,ERRTOL);
+  //p=fmax(p,ERRTOL);
 
   REAL  p0=p;
   *niter=0;
   for(i=0;i<NITERMAX;i++)
     {
-      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///FMAX(0.8,FMIN(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
+      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///fmax(0.8,fmin(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
       if((isnan(dp))){
       	printf("froot=%e frootprime=%e\n",froot(p,WL,WR,&u2),frootprime(p,WL,WR));
       	abort();
       }
       
-      if(FABS(dp)<ERRTOL) break;
+      if(fabs(dp)<ERRTOL) break;
       while((p-dp)<0){ 
        	dp=dp*0.5; 
       } 
@@ -691,7 +694,7 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
       porg=p;
       p=p-dp;
       //if(frootprime(p,WL,WR)==0) abort();//printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
-      err=2.*FABS(p-porg)/(FABS(p+porg));
+      err=2.*fabs(p-porg)/(fabs(p+porg));
       *niter=*niter+1;
       //if(p<=0) p=ERRTOL;
       if(err<ERRTOL) break;
@@ -1111,6 +1114,7 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    //printf("%e %e %e | %e %e\n",D[0].dX,D[1].dX,D[2].dX,W0->dX,Wt.dX);
 #endif
 	    if(Wi[idir].d<0) abort();
+	    //if(Wi[idir].p==PMIN) printf("%e %e \n",W0->p,W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p);
 
 
 #ifdef WGRAV
@@ -1231,7 +1235,10 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     //abort();
   }
   if((*SL)>(*SR)) abort();
-  if(isnan(*ustar)) abort();
+  if(isnan(*ustar)){
+    printf("ustar isnan ABORT %e | %e %e %e | %e %e %e\n",*ustar,WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p);
+    abort();
+  }
 
 }
 

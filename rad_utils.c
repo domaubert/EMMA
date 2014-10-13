@@ -13,6 +13,10 @@
 #include "chem_utils.h"
 #endif
 
+#ifdef GPUAXL
+#include "rad_utils_gpu.h"
+#endif
+
 #include <omp.h>
 
 //================================================================================
@@ -1962,7 +1966,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   t[9]=MPI_Wtime();
   if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
-    //printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
+    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #else
     printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
 #endif

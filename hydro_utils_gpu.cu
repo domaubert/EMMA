@@ -23,9 +23,7 @@ extern "C" void destroy_pinned_stencil(struct HGRID **stencil, int stride);
 
 // ===================================================================
 void create_hydstencil_GPU(struct CPUINFO *cpu, int stride){
-  printf("start %d\n",sizeof(struct HGRID)*stride/1024/1024);
   cudaMalloc((void **)&(cpu->hyd_stencil),sizeof(struct HGRID)*stride);
-  printf("done\n");
 }
 
 // ===================================================================
@@ -477,6 +475,7 @@ __device__ void  dmatrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype
 #endif
   
   // ==== Final correction
+
   for(i=0;i<5;i++){
     W[i]*=(-dt/dx*0.5);
   }
@@ -550,6 +549,7 @@ __device__ void dMUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct
 	  // build jacobian matrix product
 	  
 	  dmatrix_jacobian(W0,dt,dx,&D[0],&D[1],&D[2],&Wt); // Here Wt contains the evolution of the state
+
 	  
 	  // READY TO EVOLVE EXTRAPOLATED VALUE
 
@@ -668,15 +668,15 @@ __device__ REAL dfroot(REAL p, struct Wtype1D *WL, struct Wtype1D *WR, REAL *u)
 __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 {
 
-  double ptr,pts,ppv;
-  double ptr0,pts0,ppv0;
-  double p,porg,dp;
+  REAL ptr,pts,ppv;
+  REAL ptr0,pts0,ppv0;
+  REAL p,porg,dp;
   int i;
-  double err;
-  double unsurz=(2.0*GAMMA)/(GAMMA-1.0);
-  double AL,AR,BL,BR,GL,GR;
-  double pmin,pmax;
-  double u2;
+  REAL err;
+  REAL unsurz=(2.0*GAMMA)/(GAMMA-1.0);
+  REAL AL,AR,BL,BR,GL,GR;
+  REAL pmin,pmax;
+  REAL u2;
 
   pmin=FMIN(WL->p,WR->p);
   pmax=FMAX(WL->p,WR->p);
@@ -724,10 +724,10 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
   for(i=0;i<NITERMAX;i++)
     {
       dp=dfroot(p,WL,WR,&u2)/dfrootprime(p,WL,WR);
-      if((isnan(dp))){
-      	/* printf("froot=%e frootprime=%e\n",froot(p,WL,WR,&u2),frootprime(p,WL,WR)); */
-      	/* abort(); */
-      }
+      /* if((isnan(dp))){ */
+      /* 	printf("froot=%e frootprime=%e\n",dfroot(p,WL,WR,&u2),dfrootprime(p,WL,WR));  */
+      /* 	/\* abort(); *\/ */
+      /* } */
       
       if(FABS(dp)<ERRTOL) break;
       while((p-dp)<0){ 
@@ -736,7 +736,7 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
 
       porg=p;
       p=p-dp;
-      //if(frootprime(p,WL,WR)==0) abort();//printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,frootprime(p,WL,WR));
+      //if(dfrootprime(p,WL,WR)==0) printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,dfrootprime(p,WL,WR));
       err=2.*FABS(p-porg)/(FABS(p+porg));
       *niter=*niter+1;
       //if(p<=0) p=ERRTOL;
@@ -744,10 +744,10 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
       if(dfroot(p,WL,WR,&u2)<ERRTOL) break;
     }
 
-  if(i==NITERMAX){
-    //printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err);
-    //abort();
-  }
+  /* if(i==NITERMAX){ */
+  /*   //printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,dfrootprime(p,WL,WR),err); */
+  /*   //abort(); */
+  /* } */
 
   /* if(p>6.4e-7){ */
   /*   printf("MAX p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err); */
@@ -763,10 +763,10 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
 //========================================================================================
 //========================================================================================
 __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *ustar){
-  double ppvrs;
-  double dbar,abar;
-  double pmax,pmin,pstar;
-  double AL,AR,BL,BR,GL,GR;
+  REAL ppvrs;
+  REAL dbar,abar;
+  REAL pmax,pmin,pstar;
+  REAL AL,AR,BL,BR,GL,GR;
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
@@ -774,6 +774,8 @@ __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int
   pmin=FMIN(WL->p,WR->p);
   pstar=ppvrs;
   
+  //printf("dbar=%e abar=%e ppvrs=%e pmax=%e pmin=%e pstar=%e\n",dbar,abar,ppvrs,pmax,pmin,pstar);
+
   if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
     // PVRS CASE
     pstar=ppvrs;
@@ -782,14 +784,14 @@ __device__ REAL dfindPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int
   else{
     if(pstar<pmin){
       //TRRS CASE
-      double z=(GAMMA-1.)/(2.*GAMMA);
-      double iz=(2.*GAMMA)/(GAMMA-1.);
+      REAL z=(GAMMA-1.)/(2.*GAMMA);
+      REAL iz=(2.*GAMMA)/(GAMMA-1.);
       pstar=POW((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/POW(WL->p,z)+WR->a/POW(WR->p,z)),iz);
       *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(POW(pstar/WL->p,z)-1.);
     }
     else{
       //TSRS CASE
-      double p0;
+      REAL p0;
       p0=FMAX(0.,ppvrs);
       
       AL=2./((GAMMA+1.)*WL->d);
@@ -831,9 +833,12 @@ __device__ void dspeedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
   WRloc.p=WR->p;
   WRloc.a=SQRT(GAMMA*WRloc.p/WRloc.d);
 
+  //printf("%e %e %e %e ||| %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WLloc.a,WLloc.d,WRloc.u,WRloc.p,WRloc.a);
+
+#if 1
   (*pstar)= dfindPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
-  if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
-  //if((*pstar)<0) abort();
+  //  if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
+  //if((*pstar)<=0) printf("shhh pstar=%e %e %d\n",*pstar,*ustar,n);
 
   qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
   qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
@@ -844,8 +849,9 @@ __device__ void dspeedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
     (*SL)=FMIN(WLloc.u-WLloc.a,WRloc.u-WRloc.a);
     (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
   }
-  /* if((*SL)>(*SR)) abort(); */
-  /* if(isnan(*ustar)) abort(); */
+#endif
+  
+  //if(isnan(*ustar)) printf("Hehey\n");
 }
 
 //====================================================================
@@ -883,6 +889,7 @@ void __device__ dspeedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
     //abort();
   }
   //  if((*SL)>(*SR)) abort();
+  //if(isnan(*ustar)) printf("Hehey y\n");
 
 }
 
@@ -922,6 +929,7 @@ void __device__ dspeedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
     //abort();
   }
   //if((*SL)>(*SR)) abort();
+  //if(isnan(*ustar)) printf("Hehey z\n");
 
 }
 
@@ -1481,6 +1489,7 @@ __global__ void dhydroM_sweepY(struct HGRID *stencil,int nread,REAL dx, REAL dt)
 
 __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt){
 
+  //printf("IN\n");
   int inei,icell,iface;
   int i;
   int vnei[6],vcell[6];
@@ -1539,6 +1548,8 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
       Wold.w=curcell->w;;
       Wold.p=curcell->p;;
       Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
+
+      //printf("dt=%e dx=%e Old =%e %e %e %e %e\n",dt,dx,Wold.d,Wold.u,Wold.v,Wold.w,Wold.p);
 /* #ifdef WRADHYD */
 /*       Wold.X=curcell->X; */
 /* #endif */
@@ -1578,7 +1589,9 @@ __global__ void dhydroM_sweepX(struct HGRID *stencil, int nread,REAL dx, REAL dt
 /* 	// =========================================== */
 
 #ifdef RIEMANN_HLLC
+      //printf("Ho %e %e %e %e|| %e %e %e %e\n",WC[0].d,WC[0].u,WC[0].p,WC[0].a,WN[0].d,WN[0].u,WN[0].p,WN[0].a);
       dspeedestimateX_HLLC(&WN[0],&WC[0],&SL,&SR,&pstar,&ustar);
+      //printf("Ha\n");
 
       if(SL>=0.){
 	dgetflux_X(&UN[0],FL);
@@ -1812,8 +1825,8 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
   struct OCT *curoct;
   struct OCT *curoct0;
   int nreadtot,nread;
-  /* double t[10]; */
-  /* double tg=0.,th=0.,tu=0.,ts=0.; */
+  /* REAL t[10]; */
+  /* REAL tg=0.,th=0.,tu=0.,ts=0.; */
   int is;
   int offset;
   CUDA_CHECK_ERROR("Hydro start");
@@ -1867,12 +1880,14 @@ int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struc
 #ifndef NOCOMP     
 	  cudaMemcpyAsync(cpu->hyd_stencil+offset,stencil+offset,vnread[is]*sizeof(struct HGRID),cudaMemcpyHostToDevice,stream[is]);  
 
-	  //printf("Sweep hydro\n");
+	  //printf("Sweep hydro dt=%e dx=%e\n",dtnew,dxcur);
+	  //CUDA_CHECK_ERROR("Sweep hydro");
 	  // ------------ solving the hydro
 	  dhydroM_sweepX<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew);
-	  dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew); 
-	  dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew); 
+	  dhydroM_sweepY<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew);  
+	  dhydroM_sweepZ<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],dxcur,dtnew);  
 	
+	  //printf("Sweep hydro stop\n");
 	  // ------------ updating values within the stencil
 
 	  dupdatefield<<<gridoct,blockoct,0,stream[is]>>>(cpu->hyd_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew);
