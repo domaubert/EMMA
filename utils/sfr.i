@@ -1,6 +1,6 @@
 
 #include "Bastien/cosmo.i"
-#include "utils/readpart.i"
+#include "../utils/readpart.i"
 
 //rep="./data0_dyncool";ncpu=32; srcint=5e15; tlife=20e6; // years
 //rep="./data0_dyncoll_nosrc";ncpu=32; srcint=0e15; tlife=20e6; sbox=12.;// years
@@ -9,9 +9,9 @@
 //rep="./data_coarse_256_24MPC/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_th/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
-rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
+rep="../data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
 
-nsnap=6;
+nsnap=18;
 lcoarse=7.;
 bint=spanl(1e8,1e9,128);
 

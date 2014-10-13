@@ -276,14 +276,37 @@ int main(int argc, char *argv[])
 #endif
 
   //========= creating a PACKET MPI type =======
-  MPI_Datatype MPI_PACKET,oldtypes[3]; 
-  int          blockcounts[3];
+  MPI_Datatype MPI_PACKET,oldtypes[16]; 
+  int          blockcounts[16];
   
   /* MPI_Aint type used to be consistent with syntax of */
   /* MPI_Type_extent routine */
   MPI_Aint    offsets[3], extent;
+  MPI_Aint base;
+  struct PACKET _info_pack;
+
+#ifndef OLDMPI
+  MPI_Address(&_info_pack.data,offsets);
+  base=offsets[0];
+  MPI_Address(&_info_pack.key,offsets+1);
+  MPI_Address(&_info_pack.level,offsets+2);
   
-  
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); // MODKEY WARNING TO 2 AND 3
+  MPI_Type_commit(&MPI_PACKET);
+
+#else
   /* Setup description of the 8 MPI_REEL fields data */
   offsets[0] = 0;
   oldtypes[0] = MPI_REEL;
@@ -306,10 +329,45 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); //MODKEY
   MPI_Type_commit(&MPI_PACKET);
+#endif
 
 #ifdef PIC
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
+  struct PART_MPI _info;
+
+#ifndef OLDMPI
+  MPI_Address(&_info.x,offsets);
+  base=offsets[0];
+  MPI_Address(&_info.key,offsets+1);
+  MPI_Address(&_info.idx,offsets+2);
+  
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+#ifdef STARS
+  blockcounts[0]=9;
+#else
+  blockcounts[0]=7;
+#endif
+  blockcounts[1]=1;
+
+#ifdef STARS
+  blockcounts[2]=5;
+#else
+  blockcounts[2]=4;
+#endif
+
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
+  MPI_Type_commit(&MPI_PART);
+  
+
+#else
 
   /* Setup description of the 7 (+2 if STARS) MPI_REEL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
   offsets[0] = 0;
@@ -323,8 +381,8 @@ int main(int argc, char *argv[])
   MPI_Type_extent(MPI_REEL, &extent);
   offsets[1] = offsets[0]+blockcounts[0] * extent;
   oldtypes[1] = MPI_DOUBLE;
-  blockcounts[2] = 1;
-  
+  blockcounts[1] = 1;
+ 
   /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
   /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
@@ -338,11 +396,61 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
-  
+#endif
 #endif
 
 #ifdef WHYDRO2
   //========= creating a WTYPE MPI type =======
+
+#ifndef OLDMPI
+  MPI_Datatype MPI_WTYPE;
+  struct Wtype _info_hyd;
+
+  MPI_Address(&_info_hyd.d,offsets);
+  base=offsets[0];
+  
+  offsets[0]=offsets[0]-base;
+
+  oldtypes[0]=MPI_REEL;
+
+#ifdef WRADHYD
+  blockcounts[0]=8;
+#else
+  blockcounts[0]=7;
+#endif
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
+  MPI_Type_commit(&MPI_WTYPE);
+
+
+  //========= creating a HYDRO MPI type =======
+  MPI_Datatype MPI_HYDRO;
+  struct HYDRO_MPI _info_hydmpi;
+
+  MPI_Address(&_info_hydmpi.data[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_hydmpi.key,offsets+1);
+  MPI_Address(&_info_hydmpi.level,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_WTYPE;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+
+/* Now define structured type and commit it */
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
+  MPI_Type_commit(&MPI_HYDRO);
+  
+#else
+
   MPI_Datatype MPI_WTYPE;
 
   /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
@@ -356,7 +464,6 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
   MPI_Type_commit(&MPI_WTYPE);
-
 
   //========= creating a HYDRO MPI type =======
   MPI_Datatype MPI_HYDRO;
@@ -385,12 +492,79 @@ int main(int argc, char *argv[])
   MPI_Type_commit(&MPI_HYDRO);
   
 #endif
-
+#endif
 
 #ifdef WRAD
   //========= creating a RTYPE MPI type =======
   MPI_Datatype MPI_RTYPE;
+  struct Rtype _info_r;
 
+
+#ifndef OLDMPI
+  MPI_Address(&_info_r.e[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_r.fx[0],offsets+1);
+  MPI_Address(&_info_r.fy[0],offsets+2);
+  MPI_Address(&_info_r.fz[0],offsets+3);
+  MPI_Address(&_info_r.src,offsets+4);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+  offsets[3]=offsets[3]-base;
+  offsets[4]=offsets[4]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_REEL;
+  oldtypes[2]=MPI_REEL;
+  oldtypes[3]=MPI_REEL;
+  oldtypes[4]=MPI_REEL;
+
+
+  blockcounts[0]=NGRP;
+  blockcounts[1]=NGRP;
+  blockcounts[2]=NGRP;
+  blockcounts[3]=NGRP;
+#ifdef WCHEM
+  blockcounts[4]=5;
+#else
+  blockcounts[4]=1;
+#endif
+
+#ifdef STARS
+  blockcounts[4]++;
+#endif
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(5, blockcounts, offsets, oldtypes, &MPI_RTYPE);
+  MPI_Type_commit(&MPI_RTYPE);
+
+  //========= creating a RAD MPI type =======
+  MPI_Datatype MPI_RAD;
+  struct RAD_MPI _info_radmpi;
+  
+  MPI_Address(&_info_radmpi.data[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_radmpi.key,offsets+1);
+  MPI_Address(&_info_radmpi.level,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_RTYPE;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+  
+  /* Now define structured type and commit it */
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
+  MPI_Type_commit(&MPI_RAD);
+  
+#else
   /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
   offsets[0] = 0;
   oldtypes[0] = MPI_REEL;
@@ -440,7 +614,7 @@ blockcounts[0]++; // For SN feedback
   MPI_Type_commit(&MPI_RAD);
   
 #endif
-
+#endif
 
   //============================================
 
