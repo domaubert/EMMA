@@ -471,20 +471,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);
 #endif
 #endif
-	  int poly=0;
-#ifdef SCHAYE
-	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
-	    REAL tlocs;
-	    tlocs=eintt/(1.5*nH[idloc]*KBOLTZ*(1.+xt));
-	    if(tlocs<1e5){
-	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
-	      poly=1;
-	    }
-	  }
-#endif
-	  
-	  ai_tmp1=0;
-
 
 	  if(eintt<0.)
  	    {
@@ -495,8 +481,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
 	  if(FABS(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
-	     if(!poly)  fudgecool=fudgecool/10.;
-	      /* printf("loop 4 %e %e\n",eintt,eint[idloc]); */
+	      fudgecool=fudgecool/10.;
 	      continue;
 	    }
   	  else{
@@ -551,7 +536,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	   }
        }
       R.nhplus=x0[idloc]*R.nh;
-      //      R.eint=eint[idloc]*POW(aexp,5)*POW(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/POW(param->unit.unit_v,2);
+      //R.eint=eint[idloc]*POW(aexp,5)*POW(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/POW(param->unit.unit_v,2);
       R.eint=eint[idloc]*POW(aexp,5)/param->unit.unit_n/param->unit.unit_d/POW(param->unit.unit_v,2);
       
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));

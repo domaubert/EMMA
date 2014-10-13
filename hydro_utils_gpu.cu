@@ -724,11 +724,7 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
   for(i=0;i<NITERMAX;i++)
     {
       dp=dfroot(p,WL,WR,&u2)/dfrootprime(p,WL,WR);
-      /* if((isnan(dp))){ */
-      /* 	printf("froot=%e frootprime=%e\n",dfroot(p,WL,WR,&u2),dfrootprime(p,WL,WR));  */
-      /* 	/\* abort(); *\/ */
-      /* } */
-      
+
       if(FABS(dp)<ERRTOL) break;
       while((p-dp)<0){ 
        	dp=dp*0.5; 
@@ -736,23 +732,12 @@ __device__ REAL dfindPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter
 
       porg=p;
       p=p-dp;
-      //if(dfrootprime(p,WL,WR)==0) printf("p0=%e dp=%e p=%e fprime=%e\n",porg,dp,p,dfrootprime(p,WL,WR));
       err=2.*FABS(p-porg)/(FABS(p+porg));
       *niter=*niter+1;
-      //if(p<=0) p=ERRTOL;
       if(err<ERRTOL) break;
       if(dfroot(p,WL,WR,&u2)<ERRTOL) break;
     }
 
-  /* if(i==NITERMAX){ */
-  /*   //printf("DIVERGENCE p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,dfrootprime(p,WL,WR),err); */
-  /*   //abort(); */
-  /* } */
-
-  /* if(p>6.4e-7){ */
-  /*   printf("MAX p0=%e dp=%e p=%e fprime=%e err=%e\n",porg,dp,p,frootprime(p,WL,WR),err); */
-  /*   abort(); */
-  /* } */
   dfroot(p,WL,WR,&u2); // last calculation to get u;
 
   *u=(REAL)u2;
@@ -837,7 +822,7 @@ __device__ void dspeedestimateX_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL
 
 #if 1
   (*pstar)= dfindPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
-  //  if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
+  if((*pstar)<0) (*pstar)=dfindPressure(&WLloc,&WRloc,&n,ustar);
   //if((*pstar)<=0) printf("shhh pstar=%e %e %d\n",*pstar,*ustar,n);
 
   qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));

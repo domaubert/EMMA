@@ -54,7 +54,7 @@ typedef double REAL;
 #define OMEGAB (0.049); // 0.049 for PLANCK
 #endif
 
-#define PMIN 1e-11
+#define PMIN 1e-12
 
 #define NCOSMOTAB (262144)
 

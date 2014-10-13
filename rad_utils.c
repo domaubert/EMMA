@@ -1907,7 +1907,7 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
-	  //if(curoct->cell[icell].rfield.src>0) printf("CLA eint=%e p=%e\n",curoct->cell[icell].rfield.eint,curoct->cell[icell].field.p);
+	  
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
 	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
 	  getE(&curoct->cell[icell].field);

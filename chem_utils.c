@@ -548,6 +548,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       }
        
       R.nhplus=x0[idloc]*R.nh;
+      //R.eint=eint[idloc]*POW(aexp,5)*POW(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/POW(param->unit.unit_v,2);
       R.eint=eint[idloc]*POW(aexp,5)/param->unit.unit_n/param->unit.unit_d/POW(param->unit.unit_v,2);
 
       //if(isnan(R.eint)) printf("E =%e N=%e (%e) F=%e (%e)\n",R.eint,R.e[0],egyloc[0],R.fx[0],floc[0]);

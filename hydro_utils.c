@@ -16,7 +16,6 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-#define FRACP 1e-3
 
 
 // ===================================================
@@ -517,11 +516,11 @@ void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi){
 
 // ==================== pressure solver
 
-double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
+REAL frootprime(REAL p, struct Wtype1D *WL, struct Wtype1D *WR)
 {
   
-  double fL,fR;
-  double AL,AR,BL,BR;
+  REAL fL,fR;
+  REAL AL,AR,BL,BR;
 
   AL=2./((GAMMA+1.)*WL->d);
   AR=2./((GAMMA+1.)*WR->d);
@@ -529,8 +528,8 @@ double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?sqrt(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):pow(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
-  fR=(p>WR->p?sqrt(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):pow(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
+  fL=(p>WL->p?SQRT(AL/(BL+p))*(1.-(p-WL->p)/(2.*(BL+p))):POW(p/WL->p,-(GAMMA+1)/(2.*GAMMA))/(WL->d*WL->a));
+  fR=(p>WR->p?SQRT(AR/(BR+p))*(1.-(p-WR->p)/(2.*(BR+p))):POW(p/WR->p,-(GAMMA+1)/(2.*GAMMA))/(WR->d*WR->a));
 
   return fL+fR;
 }
@@ -538,12 +537,12 @@ double frootprime(double p, struct Wtype1D *WL, struct Wtype1D *WR)
 
 // ------------------------------------
 
-double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
+REAL froot(REAL p, struct Wtype1D *WL, struct Wtype1D *WR, REAL *u)
 {
   
-  double fL,fR;
-  double AL,AR,BL,BR;
-  double Deltau;
+  REAL fL,fR;
+  REAL AL,AR,BL,BR;
+  REAL Deltau;
 
   AL=2./((GAMMA+1.)*WL->d);
   AR=2./((GAMMA+1.)*WR->d);
@@ -551,8 +550,8 @@ double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
   BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-  fL=(p>WL->p?(p-WL->p)*sqrt(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(pow(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
-  fR=(p>WR->p?(p-WR->p)*sqrt(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(pow(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fL=(p>WL->p?(p-WL->p)*SQRT(AL/(BL+p)):2.*WL->a/(GAMMA-1.)*(POW(p/WL->p,(GAMMA-1)/(2.*GAMMA))-1.));
+  fR=(p>WR->p?(p-WR->p)*SQRT(AR/(BR+p)):2.*WR->a/(GAMMA-1.)*(POW(p/WR->p,(GAMMA-1)/(2.*GAMMA))-1.));
   
   Deltau=WR->u-WL->u;
   *u=0.5*(WL->u+WR->u)+0.5*(fR-fL);
@@ -562,17 +561,17 @@ double froot(double p, struct Wtype1D *WL, struct Wtype1D *WR, double *u)
 
 
 
-double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *ustar){
-  double ppvrs;
-  double dbar,abar;
-  double pmax,pmin,pstar;
-  double AL,AR,BL,BR,GL,GR;
+REAL findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *ustar){
+  REAL ppvrs;
+  REAL dbar,abar;
+  REAL pmax,pmin,pstar;
+  REAL AL,AR,BL,BR,GL,GR;
   int cas;
   dbar=0.5*(WL->d+WR->d);
   abar=0.5*(WL->a+WR->a);
   ppvrs=0.5*((WL->p+WR->p)+(WL->u-WR->u)*dbar*abar);
-  pmax=fmax(WL->p,WR->p);
-  pmin=fmin(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
   pstar=ppvrs;
   
   if(((pmax/pmin)<2.)&&((pmin<pstar)&&(pstar<pmax))){
@@ -584,16 +583,16 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
   else{
     if(pstar<pmin){
       //TRRS CASE
-      double z=(GAMMA-1.)/(2.*GAMMA);
-      double iz=(2.*GAMMA)/(GAMMA-1.);
-      pstar=pow((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/pow(WL->p,z)+WR->a/pow(WR->p,z)),iz);
-      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(pow(pstar/WL->p,z)-1.);
+      REAL z=(GAMMA-1.)/(2.*GAMMA);
+      REAL iz=(2.*GAMMA)/(GAMMA-1.);
+      pstar=POW((WL->a+WR->a-(GAMMA-1.)/2.*(WR->u-WL->u))/(WL->a/POW(WL->p,z)+WR->a/POW(WR->p,z)),iz);
+      *ustar=WL->u-2.*WL->a/(GAMMA-1.)*(POW(pstar/WL->p,z)-1.);
       cas=1;
     }
     else{
       //TSRS CASE
-      double p0;
-      p0=fmax(0.,ppvrs);
+      REAL p0;
+      p0=FMAX(0.,ppvrs);
       
       AL=2./((GAMMA+1.)*WL->d);
       AR=2./((GAMMA+1.)*WR->d);
@@ -601,8 +600,8 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
       BL=(GAMMA-1.)/(GAMMA+1.)*WL->p;
       BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
-      GL=sqrt(AL/(p0+BL));
-      GR=sqrt(AR/(p0+BR));
+      GL=SQRT(AL/(p0+BL));
+      GR=SQRT(AR/(p0+BR));
 
       pstar=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
       *ustar=0.5*((WL->u+WR->u)+(pstar-WR->p)*GR-(pstar-WL->p)*GL);
@@ -617,22 +616,22 @@ double findPressure_Hybrid(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, R
 
 // --------------------------------------
 
-double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
+REAL findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 {
 
-  double ptr,pts,ppv;
-  double ptr0,pts0,ppv0;
-  double p,porg,dp;
+  REAL ptr,pts,ppv;
+  REAL ptr0,pts0,ppv0;
+  REAL p,porg,dp;
   int i;
-  double err;
-  double unsurz=(2.0*GAMMA)/(GAMMA-1.0);
-  double AL,AR,BL,BR,GL,GR;
-  double pmin,pmax;
+  REAL err;
+  REAL unsurz=(2.0*GAMMA)/(GAMMA-1.0);
+  REAL AL,AR,BL,BR,GL,GR;
+  REAL pmin,pmax;
   int tag;
-  double u2;
+  REAL u2;
 
-  pmin=fmin(WL->p,WR->p);
-  pmax=fmax(WL->p,WR->p);
+  pmin=FMIN(WL->p,WR->p);
+  pmax=FMAX(WL->p,WR->p);
   
   // EXACT SOLVER
 
@@ -645,16 +644,16 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
   BR=(GAMMA-1.)/(GAMMA+1.)*WR->p;
 
   ppv0=0.5*(WL->p+WR->p)-0.125*(WR->u-WL->u)*(WR->d+WL->d)*(WR->a+WL->a);
-  ptr0=pow((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/pow(WL->p,1./unsurz)+WR->a/pow(WR->p,1./unsurz)),unsurz);
+  ptr0=POW((WL->a+WR->a-0.5*(GAMMA-1)*(WR->u-WL->u))/(WL->a/POW(WL->p,1./unsurz)+WR->a/POW(WR->p,1./unsurz)),unsurz);
 
-  ppv=fmax(ERRTOL,ppv0);
-  ptr=fmax(ERRTOL,ptr0);
+  ppv=FMAX(ERRTOL,ppv0);
+  ptr=FMAX(ERRTOL,ptr0);
   
-  GL=sqrt(AL/(ppv+BL));
-  GR=sqrt(AR/(ppv+BR));
+  GL=SQRT(AL/(ppv+BL));
+  GR=SQRT(AR/(ppv+BR));
 
   pts0=(GL*WL->p+GR*WR->p-(WR->u-WL->u))/(GL+GR);
-  pts=fmax(ERRTOL,pts0);
+  pts=FMAX(ERRTOL,pts0);
 
 
   if(((pmax/pmin)<2.0)&&((pmin<=ppv)&&(ppv<=pmax))){
@@ -674,13 +673,13 @@ double findPressure(struct Wtype1D *WL, struct Wtype1D *WR, int *niter, REAL *u)
 
 
   //p=0.5*(WL->p+WR->p);
-  //p=fmax(p,ERRTOL);
+  //p=FMAX(p,ERRTOL);
 
   REAL  p0=p;
   *niter=0;
   for(i=0;i<NITERMAX;i++)
     {
-      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///fmax(0.8,fmin(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
+      dp=froot(p,WL,WR,&u2)/frootprime(p,WL,WR);///FMAX(0.8,FMIN(1.2,(1.0-0.5*froot(p,WL,WR,u)*frootprimeprime(p,WL,WR)/frootprime(p,WL,WR))));
       if((isnan(dp))){
       	printf("froot=%e frootprime=%e\n",froot(p,WL,WR,&u2),frootprime(p,WL,WR));
       	abort();
