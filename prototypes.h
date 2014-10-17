@@ -14,6 +14,7 @@ typedef float REAL;
 
 #define POW(A,B) powf(A,B)
 #define SQRT(A) sqrtf(A)
+#define EXP(A) expf(A)
 #define FMIN(A,B) fminf(A,B)
 #define FMAX(A,B) fmaxf(A,B)
 #define FABS(A) fabsf(A)
@@ -30,6 +31,7 @@ typedef double REAL;
 
 #define POW(A,B) pow(A,B)
 #define SQRT(A) sqrt(A)
+#define EXP(A) exp(A)
 #define FMIN(A,B) fmin(A,B)
 #define FMAX(A,B) fmax(A,B)
 #define FABS(A) fabs(A)
@@ -46,6 +48,7 @@ typedef double REAL;
 #define CFL (0.85)
 #define GRAV (0.25)
 #define FRACDX  (0.25)
+#define FRAC_VAR (0.1)
 
 
 #ifndef WHYDRO2 

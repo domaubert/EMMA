@@ -12,9 +12,6 @@
 #include "atomic_data/Atomic.h"
 #include "gpu_type.h"
 
-
-#define FRAC_VAR (0.1)
-
 //================================================================================
 __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
@@ -23,7 +20,7 @@ __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   REAL eint=R->eint;
   REAL nH=R->nh;
   REAL x=R->nhplus/R->nh;
-  REAL pstar=param->unit.unit_n*param->unit.unit_mass/POW(param->unit.unit_l,3)*POW(param->unit.unit_v,2);
+  REAL pstar=param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
   
   nH=nH/POW(aexp,3)*param->unit.unit_N;
   eint=eint/POW(aexp,5)*pstar;
@@ -78,7 +75,7 @@ __device__ REAL dcucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   // temperature in Kelvin
   REAL beta,T5;
   T5=temp/1e5;
-  beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*expf(-(157809e0/temp)); //cm3/s
+  beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*EXP(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
   beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
 #else
@@ -101,22 +98,22 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
 
   // Collisional Ionization Cooling
 
-  c1=expf(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.f+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c1=EXP(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF;
   
 
   // Case A Recombination Cooling
 
-  c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.f+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
+  c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
   
   
   // Case B Recombination Cooling
 
-  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.f+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
+  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
   c6=0.;
 
   // Collisional excitation cooling
 
-  c3=expf(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c3=EXP(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF;
   
   
   // Bremmsstrahlung
