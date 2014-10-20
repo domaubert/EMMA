@@ -99,22 +99,22 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
   // Collisional Ionization Cooling
 
-  c1=expf(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.f+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c1=EXP(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF;
   
 
   // Case A Recombination Cooling
 
-  c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.f+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
+  c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF;
   
   
   // Case B Recombination Cooling
 
-  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.f+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
+  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
   c6=0.;
 
   // Collisional excitation cooling
 
-  c3=expf(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.f-x)*nh2*nh2*CLUMPF;
+  c3=EXP(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF;
   
   
   // Bremmsstrahlung
@@ -234,10 +234,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
 	  floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
 	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
-	  /* egyloc[idloc+igrp*BLOCKCOOL]   =R.e[igrp]/(aexporg*aexporg*aexporg)/POW(param->unit.unit_l,3)*param->unit.unit_n;//+ebkg[igrp];  */
-	  /* floc[0+idloc3+igrp*BLOCKCOOL*3]=R.fx[igrp]/POW(aexporg,4)/POW(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n; */
-	  /* floc[1+idloc3+igrp*BLOCKCOOL*3]=R.fy[igrp]/POW(aexporg,4)/POW(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n; */
-	  /* floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/POW(aexporg,4)/POW(param->unit.unit_l,2)/param->unit.unit_t*param->unit.unit_n; */
 	}
 
  
@@ -248,9 +244,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
-
-      E0=eint[idloc];
-
       srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); 
 
       //      if(srcloc[0]>0) printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],srcloc[idloc]);
@@ -275,6 +268,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       // -------------------------------------------------
 
+      // local cooling loop -------------------------------
       aexp=aexporg;
       fudgecool=param->fudgecool;
       currentcool_t=0.;
@@ -323,7 +317,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
 	  tcool=FABS(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
-
 	  ai_tmp1=0.;
 	  dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);
 
@@ -494,10 +487,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  ai_tmp1=0;
 
-	  
-
-
-	  //if(eint[idloc]!=E0) printf("9!\n");
 
 	  eintt=FMAX(emin,eintt);
 
@@ -548,10 +537,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       }
        
       R.nhplus=x0[idloc]*R.nh;
-      //R.eint=eint[idloc]*POW(aexp,5)*POW(param->unit.unit_l,3)/param->unit.unit_n/param->unit.unit_mass/POW(param->unit.unit_v,2);
       R.eint=eint[idloc]*POW(aexp,5)/param->unit.unit_n/param->unit.unit_d/POW(param->unit.unit_v,2);
-
-      //if(isnan(R.eint)) printf("E =%e N=%e (%e) F=%e (%e)\n",R.eint,R.e[0],egyloc[0],R.fx[0],floc[0]);
      
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 

@@ -1886,12 +1886,13 @@ blockcounts[0]++; // For SN feedback
       }
 
       //Recursive Calls over levels
-      double tg1,tg2;
+      double tg1,tg2,tg3,tg4;
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
 
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
       MPI_Barrier(cpu.comm);
+      tg3=MPI_Wtime();
 
 #ifdef COARSERAD
       // inner loop on radiation
@@ -1901,21 +1902,35 @@ blockcounts[0]++; // For SN feedback
       if(cpu.rank==RANK_DISP) printf("START COARSE RAD with dt=%e\n",adt[levelcoarse-1]);
       while(trad<adt[levelcoarse-1]){
 	//if(cpu.rank==RANK_DISP) printf("step\n");
+	double tcr1,tcr2;
+	MPI_Barrier(cpu.comm);
+	tcr1=MPI_Wtime();
 	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad);
 	MPI_Barrier(cpu.comm);
+	tcr2=MPI_Wtime();
 	trad+=adt_rad[levelcoarse-1];
 	tsimrad+=adt_rad[levelcoarse-1];
 	nrad++;
-	if(nrad%10 ==0) if(cpu.rank==RANK_DISP) printf("rad iter=%d trad=%e tsimrad=%e tmax=%e\n",nrad,trad,tsimrad,adt[levelcoarse-1]);
+	if(nrad%10 ==0) if(cpu.rank==RANK_DISP) printf("rad iter=%d trad=%e tsimrad=%e tmax=%e done in %e secs\n",nrad,trad,tsimrad,adt[levelcoarse-1],tcr2-tcr1);
       }
       
-      if(cpu.rank==RANK_DISP) printf("COARSE RAD DONE with %d steps\n",nrad);
+      MPI_Barrier(cpu.comm);
+      tg4=MPI_Wtime();
+#ifndef GPUAXL
+      if(cpu.rank==RANK_DISP) printf("CPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
+#else
+      if(cpu.rank==RANK_DISP) printf("GPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
+#endif
 #endif
 
 
+      MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
-      if(cpu.rank==RANK_DISP) printf("GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
-
+#ifndef GPUAXL
+      if(cpu.rank==RANK_DISP) printf("CPU GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
+#else
+      if(cpu.rank==RANK_DISP) printf("GPU GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
+#endif
 
       // ==================================== dump
       if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
