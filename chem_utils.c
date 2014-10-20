@@ -12,7 +12,6 @@
 #include "atomic_data/Atomic.h"
 
 
-#define FRAC_VAR (0.1)
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
 
 //================================================================================

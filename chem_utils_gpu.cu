@@ -15,142 +15,6 @@
 
 #define FRAC_VAR (0.1)
 
-/* //================================================================================ */
-/* __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){ */
-
-
-/*   REAL tloc; */
-/*   REAL eint=R->eint; */
-/*   REAL nH=R->nh; */
-/*   REAL x=R->nhplus/R->nh; */
-/*   REAL pstar=param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);   */
-
-/*   nH=nH/POW(aexp,3)*param->unit.unit_N; */
-/*   eint=eint/POW(aexp,5)*pstar; */
-/*   tloc=eint/(1.5*nH*KBOLTZ*(1.+x)); */
-/*   R->temp=tloc; */
-
-/* } */
-
-
-/* // ============================================================================ */
-/* __device__ REAL dcucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp) */
-/* { */
-/*   // CASE B recombination rate m**3 s*-1 */
-/*   // temperature should be given in Kelvin */
-  
-/*   REAL alpha_b,lambda; */
-/*   lambda=2e0*157807e0/temp; */
-/*   alpha_b=2.753e-14*POW(lambda,1.5)/POW(1e0+POW(lambda/2.740,0.407),2.242); //cm3/s */
-/* #ifdef TESTCOSMO */
-/*   alpha_b=alpha_b*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s */
-/* #else */
-/*   alpha_b=alpha_b*1e-6*unit_number; //m3/s */
-/* #endif */
-/*   return alpha_b; */
-/* } */
-
-/* //========================================================= */
-/* //========================================================= */
-
-/* __device__ REAL dcucompute_alpha_a(REAL temp, REAL unit_number, REAL aexp) */
-/* { */
-/*   // CASE A recombination rate m**3 s*-1 */
-/*   // temperature should be given in Kelvin */
-  
-/*   REAL alpha_a,lambda; */
-/*   lambda=2e0*157807e0/temp; */
-/*   alpha_a=1.269e-13*POW(lambda,1.503)/POW(1e0+POW(lambda/0.522,0.470),1.923); //cm3/s */
-/* #ifdef TESTCOSMO */
-/*   alpha_a=alpha_a*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s */
-/* #else */
-/*   alpha_a=alpha_a*1e-6*unit_number; //m3/s */
-/* #endif */
-/*   return alpha_a; */
-/* } */
-
-/* //========================================================= */
-/* //========================================================= */
-
-/* __device__ REAL dcucompute_beta(REAL temp, REAL unit_number, REAL aexp) */
-/* { */
-/*   // Collizional ionization rate m**3 s*-1 */
-/*   // temperature in Kelvin */
-/*   REAL beta,T5; */
-/*   T5=temp/1e5; */
-/*   beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*expf(-(157809e0/temp)); //cm3/s */
-/* #ifdef TESTCOSMO */
-/*   beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s */
-/* #else */
-/*   beta=beta*1e-6*unit_number; // !m3/s */
-/* #endif */
-/*   return beta; */
-/* } */
-
-/* //\********************************************************************************** */
-/* //\********************************************************************************** */
-/* __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL aexp,REAL CLUMPF) */
-/* { */
-
-/*   REAL c1,c2,c3,c4,c5,c6; */
-/*   REAL unsurtc; */
-/*   REAL nh2; */
-
-/*   nh2=nH*1e-6;// ! m-3 ==> cm-3 */
-  
-
-/*   // Collisional Ionization Cooling */
-
-/*   c1=EXP(-157809.1e0/temp)*1.27e-21*SQRT(temp)/(1.+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF; */
-  
-
-/*   // Case A Recombination Cooling */
-
-/*   c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF; */
-  
-  
-/*   // Case B Recombination Cooling */
-
-/*   c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF; */
-/*   c6=0.; */
-
-/*   // Collisional excitation cooling */
-
-/*   c3=EXP(-118348e0/temp)*7.5e-19/(1+SQRT(temp/1e5))*x*(1.-x)*nh2*nh2*CLUMPF; */
-  
-  
-/*   // Bremmsstrahlung */
-
-/*   c4=1.42e-27*1.5e0*SQRT(temp)*x*x*nh2*nh2*CLUMPF; */
-  
-/*   // Compton Cooling */
-  
-/*   //  c5=1.017e-37*POW(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x; */
-/* #ifndef WRADTEST */
-/*   //  c5=5.406e-36*(temp-2.727/aexp)/POW(aexp,4)*x/(1.+x); */
-/*   c5=0; */
-/* #endif */
-/*   // Overall Cooling */
-  
-/*   *lambda=c1+c2+c3+c4+c5+c6;// ! erg*cm-3*s-1 */
-  
-
-/*   // Unit Conversion */
-
-/*   *lambda=(*lambda)*1e-7*1e6;// ! J*m-3*s-1 */
-
-/*   // cooling times */
-
-/*   unsurtc=FMAX(c1,c2); */
-/*   unsurtc=FMAX(unsurtc,c3); */
-/*   unsurtc=FMAX(unsurtc,c4); */
-/*   unsurtc=FMAX(unsurtc,FABS(c5)); */
-/*   unsurtc=FMAX(unsurtc,c6)*1e-7;// ==> J/cm3/s */
-
-/*   *tcool=1.5e0*nh2*(1.+x)*KBOLTZ*temp/unsurtc; //Myr */
-/* } */
-
-
 //================================================================================
 __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
@@ -159,7 +23,6 @@ __device__ void dE2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   REAL nH=R->nh;
   REAL x=R->nhplus/R->nh;
   REAL pstar=param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
-
   nH=nH/POW(aexp,3)*param->unit.unit_N;
   eint=eint/POW(aexp,5)*pstar;
   tloc=eint/(1.5*nH*KBOLTZ*(1.+x));
@@ -212,7 +75,7 @@ __device__ REAL dcucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   // temperature in Kelvin
   REAL beta,T5;
   T5=temp/1e5;
-  beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*exp(-(157809e0/temp)); //cm3/s
+  beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*EXP(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
   beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
 #else
