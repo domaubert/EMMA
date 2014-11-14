@@ -79,7 +79,7 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
   REAL va,vx,vy,vz;
   REAL dt;
   REAL Smax=0.,S1;
-  REAL amax=0.;
+  //  REAL amax=0.;
 
   //Smax=FMAX(Smax,SQRT(Warray[i].u*Warray[i].u+Warray[i].v*Warray[i].v+Warray[i].w*Warray[i].w)+Warray[i].a);
   // Computing new timestep
@@ -103,10 +103,9 @@ REAL L_comptstep_hydro(int level, struct RUNPARAMS *param,struct OCT** firstoct,
 	    vz=curoct->cell[icell].field.w; 
 	    va=SQRT(vx*vx+vy*vy+vz*vz); 
 	    aa=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d); 
-	    amax=FMAX(aa,amax);
+	    //amax=FMAX(aa,amax);
 	    //if(level==7) printf("v=%e\n",va+aa);
 	    Smax=FMAX(Smax,va+aa); 
-
 	  }
       }while(nextoct!=NULL);
   }
@@ -179,7 +178,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 #ifdef STARS
 #ifdef ACCEL_RAD_STAR
   if((cpu->trigstar==0)){
-    param->clight=1e-3;
+    param->clight=1e-4;
   }
   else{
     param->clight=param->clightorg;
@@ -716,7 +715,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
     if(cpu->rank==RANK_DISP) printf("dtnew=%e dtrad= %e\n",dtnew,dtrad);
-#ifndef COARSERAD
+#ifdef RADSTEP
     dtnew=(dtrad<dtnew?dtrad:dtnew); 
 #endif
 
@@ -965,7 +964,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
     //=============== Radiation Update ======================
-    //RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+#ifndef COARSERAD
+    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+#endif
 
     //printf("cpu #%d ready 4\n",cpu->rank);
 
@@ -1014,7 +1015,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
 #ifdef KPCLIMIT
-    dxkpc=1e3*PARSEC/param->unit.unit_l;
+    dxkpc=1e1*PARSEC/param->unit.unit_l;
 #endif
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
@@ -1222,9 +1223,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //=============== Building Sources and counting them ======================
 
     
-
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp);  // Computing source distribution and filling the radiation fields
-    
+
 #ifdef HOMOSOURCE
     homosource(param,firstoct,cpu,level); // FOR HOMOGENOUS SRC
 #endif

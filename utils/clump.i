@@ -1,9 +1,17 @@
-
+// 10Myr nc=52 c=99 c7=9
+// 15Myr nc=80 c=139 c7=14
+// 35Myr nc=184 c=323 c7=33
 //rep="data_3g/";execut="./utils/oct2grid ";
-//rep="data1g/";execut="./utils/oct2grid1 ";
-rep="data/";execut="./utils/oct2grid ";
+//rep="data/";execut="./utils/oct2grid ";
+rep="data_clump_coarserad/";execut="./utils/oct2grid ";
+rep="data_clump_nocoarserad_notsa_c1/";execut="./utils/oct2grid ";
+rep="data_clump_coarserad_notsa_c1/";execut="./utils/oct2grid ";
+//rep="data_clump_nocoarserad/";execut="./utils/oct2grid ";
+rep="data_clump_coarserad_ok_lev7";execut="./utils/oct2grid ";
 
-imax=2095;
+ll=exec("ls "+rep+"/grid*.p00000");
+
+imax=numberof(ll);
 imin=1;
 lvl=7;
 dxcur=1./pow(2,lvl+1);
@@ -19,8 +27,9 @@ rion=vion=tion=[];
 binr=span(r(dif)(1),1.,256);
 // logxy,0,1;
 // limits,0,1.05,1e-4,4e-3;
-for(i=imin;i<=imax;i+=50){
-  x=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,706,a,ncpu=64,execut=execut);
+for(i=imin;i<=imax;i+=1){
+  //  x=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,706,a,ncpu=32,execut=execut);
+  x=oct2cube(strpart(ll(i),1:-7),lvl,706,a,ncpu=32,execut=execut);
   // y=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,103,a,ncpu=32,execut="./utils/oct2grid ");
   // z=oct2cube(swrite(format=rep+"grid.%05d",i),lvl,104,a,ncpu=32,execut="./utils/oct2grid ");
   // x=sqrt(x^2+y^2+z^2);
@@ -33,5 +42,9 @@ for(i=imin;i<=imax;i+=50){
   //plg,hx*1e-6,binr(zcen),color="red";
  }
 
-// PL,rion,tion,color="red",msize=.5;
-// plg,rth,tion;
+// FIX RESTART
+tion2=tion;
+//tion2(75:115)=tion(75)+(indgen(115-75+1)-1)*tion(dif)(3);
+
+v=(smooth(rion)*6.6e3*3.08e13)(dif)/(tion2(dif)*1e6*365*24.*3600.);
+

@@ -1144,7 +1144,8 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].a=SQRT(GAMMA*Wi[idir].p/Wi[idir].d);
 
 #ifdef WRADHYD
- 	    Wi[idir].dX=W0->dX; 
+	    REAL X0=W0->dX/W0->d;
+ 	    Wi[idir].dX=Wi[idir].d*X0; 
 #endif 
 
 	   
@@ -3286,8 +3287,8 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 #ifndef GPUAXL
   nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #else
-  nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
-  //nreadtot=advancehydroGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
+  //nreadtot=advancehydro(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
+  nreadtot=advancehydroGPU(firstoct,level,cpu,stencil,stride,dxcur,dtnew);
 #endif
 
   // FINAL UPDATE OF THE VALUES

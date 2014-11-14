@@ -1535,8 +1535,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   FILE *buf; 
   char stream[256];
   size_t rstat;
-  float dummyf;
-
+  double dummyf;
+  char RF[]="%s %lf";
 
   buf=fopen(fparam,"r");
   if(buf==NULL)
@@ -1554,18 +1554,18 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->dt=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->tmax=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->dt=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->tmax=(REAL)dummyf;
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->amrthresh=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->poissonacc=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
@@ -1583,37 +1583,37 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 #ifdef WRAD
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->denthresh=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->tmpthresh=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->srcint=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
 	int i;
 				rstat=fscanf(buf,"%s",stream);
-	for (i=0; i<4; i++)	rstat=fscanf(buf,"%s %f",stream,&dummyf);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
 #ifdef STARS
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->overdensity_cond	=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->density_cond			=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->tcar							=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->tlife							=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->feedback_eff			=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %f",stream,&dummyf);param->stars->feedback_frac			=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond	=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond			=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar							=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife							=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->feedback_eff			=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->feedback_frac			=(REAL)dummyf;
 #endif
 
 #ifdef MOVIE
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d", stream,&param->movie->lmap);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->xmin);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->xmax);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->ymin);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->ymax);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->zmin);
-      rstat=fscanf(buf,"%s %f",stream,&param->movie->zmax);
+      rstat=fscanf(buf,RF,stream,&param->movie->xmin);
+      rstat=fscanf(buf,RF,stream,&param->movie->xmax);
+      rstat=fscanf(buf,RF,stream,&param->movie->ymin);
+      rstat=fscanf(buf,RF,stream,&param->movie->ymax);
+      rstat=fscanf(buf,RF,stream,&param->movie->zmin);
+      rstat=fscanf(buf,RF,stream,&param->movie->zmax);
 
 #endif
 

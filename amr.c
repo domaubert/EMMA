@@ -1268,7 +1268,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 #ifdef TESTCLUMP
 			    REAL den2;
-			    den2=curoct->cell[icell].rfield.nh/POW(param->unit.unit_l,3);
+			    den2=curoct->cell[icell].rfield.nh*param->unit.unit_N;
 			    den=-1;
 			    
 			    //mcell=(curoct->cell[icell].rfield.src>0.);

@@ -1,6 +1,6 @@
 
 #include "Bastien/cosmo.i"
-#include "../utils/readpart.i"
+#include "./utils/readpart.i"
 
 //rep="./data0_dyncool";ncpu=32; srcint=5e15; tlife=20e6; // years
 //rep="./data0_dyncoll_nosrc";ncpu=32; srcint=0e15; tlife=20e6; sbox=12.;// years
@@ -9,9 +9,10 @@
 //rep="./data_coarse_256_24MPC/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_th/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
 //rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
-rep="../data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
+//rep="./data_cosmo_corse_c0_ok/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
+rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.; // years
 
-nsnap=18;
+nsnap=25;
 lcoarse=7.;
 bint=spanl(1e8,1e9,128);
 
@@ -74,7 +75,7 @@ eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 // DISPLAY
 window,2;
 plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
-col="green";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
+col="blue";PL,SFR(),zSFR(),color=col,incolor=col,msize=.3;
 logxy,0,1;
 limits,2,12,5e-5,1;
 xytitles,"redshift z","SFR [MS/yr/Mpc^3^]";

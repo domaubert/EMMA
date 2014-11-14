@@ -154,7 +154,7 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
       cell->rfield.src=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
       cell->rfieldnew.src=cell->rfield.src;
       flag=1;
-      //printf("CLA0 p=%e\n",cell->field.p);
+      
     }
     else{
       flag=0;
@@ -173,14 +173,13 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
   cell->rfield.src=0.;
   cell->rfieldnew.src=0.;
-  if(xc<=X0){
+  flag=0;
+  if(fabs(xc)<=X0){
     for(igrp=0;igrp<NGRP;igrp++){
-      curoct->cell[icell].rfield.e[igrp]=factgrp[igrp]*1e10*param->unit.unit_t*POW(param->unit.unit_l,2)/param->unit.unit_N/param->clight; 
-      curoct->cell[icell].rfield.fx[igrp]=factgrp[igrp]*1e10*param->unit.unit_t*POW(param->unit.unit_l,2)/param->unit.unit_N;
+      curoct->cell[icell].rfield.e[igrp]=factgrp[igrp]*1e10*param->unit.unit_t/param->unit.unit_l/param->unit.unit_N/param->clight; 
+      curoct->cell[icell].rfield.fx[igrp]=factgrp[igrp]*1e10*param->unit.unit_t/param->unit.unit_l/param->unit.unit_N;
       curoct->cell[icell].rfield.fy[igrp]=0.; 
       curoct->cell[icell].rfield.fz[igrp]=0.; 
-      printf("ABORT CLUMP TEST: PLEASE CHECK UNITS BEFORE !\n");
-      abort();
       curoct->cell[icell].rfieldnew.e[igrp] =curoct->cell[icell].rfield.e[igrp];
       curoct->cell[icell].rfieldnew.fx[igrp]=curoct->cell[icell].rfield.fx[igrp]; 
       curoct->cell[icell].rfieldnew.fy[igrp]=curoct->cell[icell].rfield.fy[igrp]; 

@@ -1512,7 +1512,7 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
     param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
-    param.unit.unit_N=200.*(POW(param.unit.unit_l,3)+199.*vclump);
+    param.unit.unit_N=(200.*(POW(param.unit.unit_l,3)+199.*vclump))/POW(param.unit.unit_l,3);
     param.unit.unit_d=param.unit.unit_mass/POW(param.unit.unit_l,3);
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);
@@ -1989,11 +1989,16 @@ blockcounts[0]++; // For SN feedback
 
 		// backups for restart
 		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
-		save_amr(filename,firstoct,tdump,tinit,nsteps,ndumps,&param, &cpu,part,adt);
-	#ifdef PIC
+		REAL tsave=tdump;
+#ifndef TESTCOSMO
+		tsave=tdump/(param.unit.unit_t/MYR);
+#endif
+
+		save_amr(filename,firstoct,tsave,tinit,nsteps,ndumps,&param, &cpu,part,adt);
+#ifdef PIC
 		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
-		save_part(filename,firstoct,param.lcoarse,param.lmax,tdump,&cpu,part);
-	#endif
+		save_part(filename,firstoct,param.lcoarse,param.lmax,tsave,&cpu,part);
+#endif
 
 #endif
 	ndumps++;

@@ -13,7 +13,7 @@
 
 
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
-
+#define FSCHAYE 2.5
 //================================================================================
 void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
@@ -126,8 +126,8 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   /* c5=0.; */
 #ifndef WRADTEST
   //  c5=5.406e-36*(temp-2.727/aexp)/POW(aexp,4)*x/(1.+x);
-  c5=0;
 #endif
+  c5=0;
   // Overall Cooling
   
   *lambda=c1+c2+c3+c4+c5+c6;// ! erg*cm-3*s-1
@@ -245,7 +245,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
       srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); 
 
-      //      if(srcloc[0]>0) printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],srcloc[idloc]);
+      //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],srcloc[idloc]);
 
       // at this stage we are ready to do the calculations
 
@@ -302,16 +302,20 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
 	  
 	  
+
 	  //if(eint[idloc]!=E0) printf("2!\n");
 	  tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 	  
 	  //== Getting a timestep
 	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
-
 	  ai_tmp1=0.;
 
 	  //if(eint[idloc]!=E0) printf("3!\n");
 
+	  if(fudgecool<1e-6){
+	    printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
+	    if(fudgecool<1e-20) abort();
+	  }
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
@@ -355,6 +359,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  
 	  if(test) 
 	    {
+	      //printf("EGY ERR eintt=%e xt=%e et=%e/%e/%e e0=%e/%e/%e dtcool=%e src=%e\n",eintt,xt,et[0],et[1],et[2],egyloc[0],egyloc[1],egyloc[2],dtcool,srcloc[idloc]);
 	      fudgecool=fudgecool/10.; 
 	      continue;	
 	    } 
@@ -388,6 +393,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
+	      //printf("XION ERR eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
 	      fudgecool/=10.; 
 	      continue;	
 	    } 
@@ -404,11 +410,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  int compcool=1; // do we need to compute the cooling ?
 
 #ifdef SCHAYE
-	  if((nH[idloc]>1e5)&&(R.nh>(57.7*navg))){
+	  if((nH[idloc]>1e6)&&(R.nh>(param->stars->overdensity_cond*navg))){
 	    REAL tlocs;
 	    tlocs=eintt/(1.5*nH[idloc]*KBOLTZ*(1.+xt));
 	    if(tlocs<1e5){
-	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1); // polytropic EOS
+	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
 	      compcool=0.; // cancel cooling calculation
 	      fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
 	    }
@@ -469,6 +475,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(eintt<0.)
  	    {
+	      //printf("E NEG eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
 	      fudgecool=fudgecool/10.;
 	      continue;
 	    }
@@ -476,7 +483,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  if(FABS(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
 	    {
 	      //	      if(srcloc[idloc]==0.){
+	      //printf("DELTA E eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
 	      fudgecool=fudgecool/10.;
+
 	      continue;
 	      //}
 	    }
