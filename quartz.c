@@ -1124,7 +1124,6 @@ blockcounts[0]++; // For SN feedback
   }
 
 
-
   //=================================  building the array of timesteps
 
   REAL *adt;
@@ -1139,6 +1138,7 @@ blockcounts[0]++; // For SN feedback
 
   int *ndt;
   ndt=(int *)malloc(sizeof(int)*levelmax);
+
 
   // INITIALISATION FROM INITIAL CONDITIONS =========================
   if(param.nrestart==0){
@@ -1232,7 +1232,7 @@ blockcounts[0]++; // For SN feedback
       
 	mass=epsilon/(nr-1);
       }
-    
+
       // periodic boundary conditions
     
       x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
@@ -1648,6 +1648,7 @@ blockcounts[0]++; // For SN feedback
   else{
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
+	printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
     sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank); 
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);

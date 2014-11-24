@@ -1659,14 +1659,14 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   char filename[256];
 
   if(cpu->rank==0){
-
+    printf("OK OK OK \n");
     sprintf(filename,"./level_%03d/ic_velbx",level); 
     fx=fopen(filename,"rb");
     sprintf(filename,"./level_%03d/ic_velby",level); 
     fy=fopen(filename,"rb");
     sprintf(filename,"./level_%03d/ic_velbz",level); 
     fz=fopen(filename,"rb");
-    
+
 
     // reading the headers
     size_t outf;

@@ -8,7 +8,7 @@ max_nuber_of_steps 300000001
 time_step_max  1e0
 tmax_or_amax 0.2
 ##==AMRGrid==================
-level_coarse 7
+level_coarse 6
 level_max 10
 amr_thresh 8
 n_smooth 2
@@ -19,7 +19,7 @@ mgrid_lmin 4
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 2
+restart_snap 0
 ##==ThreadManagement======
 grav_stencil_size 16
 cons_stencil_size 16
