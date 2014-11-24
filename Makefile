@@ -73,7 +73,7 @@ DEFINES  += -DACCEL_RAD_STAR
 #DEFINES  += -DRADSTEP
 #DEFINES  += -DHOMOSOURCE
 DEFINES  += -DCOARSERAD
-#DEFINES  += -DSCHAYE
+DEFINES  += -DSCHAYE
 #DEFINES += -DOTSA
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
@@ -120,8 +120,8 @@ all:$(C_OBJS) $(CUDA_OBJS)
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
-oct2cell:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/oct2cell utils/oct2cell.c utils/silo/lib/libsilo.a	
+alloct:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/alloct utils/alloct.c utils/silo/lib/libsilo.a -lm	
 
 clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~

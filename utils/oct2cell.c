@@ -29,8 +29,8 @@ int main(int argc, char *argv[])
   REAL dxmap,dxcur;
   int icur,ii,jj,kk,ic,icell;
   int level;
-  struct OCT * nextoct;
-  struct OCT oct;
+  struct LOCT * nextoct;
+  struct LOCT oct;
   FILE *fp;
   REAL xc,yc,zc;
   int field;
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
   // getting the number of CPUs
   sscanf(argv[5],"%d",&ncpu);
-
+  printf("ncpu=%d\n",ncpu);
 
   // silo file
   int dumpsilo=0;
@@ -78,10 +78,11 @@ int main(int argc, char *argv[])
 
   int mono;
   sscanf(argv[7],"%d",&mono);
+  printf("mono=%d\n",mono);
 
   if(argc>8) {
-    sscanf(argv[8],"%lf",&zmin);
-    sscanf(argv[9],"%lf",&zmax);
+    sscanf(argv[8],"%f",&zmin);
+    sscanf(argv[9],"%f",&zmax);
   }
   else{
     zmin=0;
@@ -148,11 +149,11 @@ int main(int argc, char *argv[])
     dummy=fread(&zerooct,sizeof(struct OCT *),1,fp);
 
     
-    dummy=fread(&oct,sizeof(struct OCT),1,fp);
+    dummy=fread(&oct,sizeof(struct LOCT),1,fp);
     while(!feof(fp)){
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
-	  if(oct.cell[icell].child==NULL)
+	  if(oct.cell[icell].child==0)
 	    {
 	      if((zc<zmin)||(zc>zmax)){
 		continue;
@@ -230,7 +231,7 @@ int main(int argc, char *argv[])
       dxcur=1./pow(2.,oct.level);
       for(icell=0;icell<8;icell++) // looping over cells in oct
 	{
-	  if(oct.cell[icell].child==NULL)
+	  if(oct.cell[icell].child==0)
 	    {
 	      xc=oct.x+( icell   %2)*dxcur+0.5*dxcur;
 	      yc=oct.y+((icell/2)%2)*dxcur+0.5*dxcur;
@@ -257,7 +258,7 @@ int main(int argc, char *argv[])
 		  break;
 #ifdef WGRAV
 		case 1:
-		  map[ic*NREAL+4]=oct.cell[icell].gdata.d;
+		  map[ic*NREAL+4]=oct.cell[icell].den;
 		  break;
 #ifdef PIC
 		case -1:
@@ -265,7 +266,7 @@ int main(int argc, char *argv[])
 		  break;
 #endif
 		case 2:
-		  map[ic*NREAL+4]=oct.cell[icell].gdata.p;
+		  map[ic*NREAL+4]=oct.cell[icell].pot;
 		  break;
 		case 6:
 		  map[ic*NREAL+4]+=oct.cell[icell].res;
@@ -288,62 +289,48 @@ int main(int argc, char *argv[])
 		  break;
 #ifdef WHYDRO2
 		case 101:
-		  map[ic*NREAL+4]=oct.cell[icell].field.d;
-		  //printf("%f\n",oct.cell[icell].field.d);
+		  map[ic*NREAL+4]=oct.cell[icell].d;
+		  //printf("%f\n",oct.cell[icell].d);
 		  break;
 		case 102:
-		  map[ic*NREAL+4]=oct.cell[icell].field.u;
+		  map[ic*NREAL+4]=oct.cell[icell].u;
 		  break;
 		case 103:
-		  map[ic*NREAL+4]=oct.cell[icell].field.v;
+		  map[ic*NREAL+4]=oct.cell[icell].v;
 		  break;
 		case 104:
-		  map[ic*NREAL+4]=oct.cell[icell].field.w;
+		  map[ic*NREAL+4]=oct.cell[icell].w;
 		  break;
 		case 105:
-		  map[ic*NREAL+4]=oct.cell[icell].field.p;
+		  map[ic*NREAL+4]=oct.cell[icell].p;
 		  break;
-		case 106:
-		  map[ic*NREAL+4]=oct.cell[icell].field.E;
-		  break;
-		case 107:
-		  map[ic*NREAL+4]=(oct.cell[icell].field.E-0.5*oct.cell[icell].field.d*(oct.cell[icell].field.u*oct.cell[icell].field.u+oct.cell[icell].field.v*oct.cell[icell].field.v+oct.cell[icell].field.w*oct.cell[icell].field.w))*(GAMMA-1.); // alternative pressure
-		  break;
-		case 110:
-		  map[ic*NREAL+4]=sqrt(pow(oct.cell[icell].field.w,2)+pow(oct.cell[icell].field.v,2)+pow(oct.cell[icell].field.u,2))/oct.cell[icell].field.a;
-		  break;
-#ifdef WRADHYD
-		case 108:
-		  map[ic*NREAL+4]=oct.cell[icell].field.X;
-		  break;
-#endif
 #endif			  
 
 #ifdef WRAD
 		case 701:
-		  map[ic*NREAL+4]=log10(oct.cell[icell].rfield.e[0]);
+		  map[ic*NREAL+4]=log10(oct.cell[icell].e[0]);
 		  break;
 		case 702:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.fx[0];
+		  map[ic*NREAL+4]=oct.cell[icell].fx[0];
 		  break;
 		case 703:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.fy[0];
+		  map[ic*NREAL+4]=oct.cell[icell].fy[0];
 		  break;
 		case 704:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.fz[0];
+		  map[ic*NREAL+4]=oct.cell[icell].fz[0];
 		  break;
 		case 705:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.src;
+		  map[ic*NREAL+4]=oct.cell[icell].src;
 		  break;
 #ifdef WCHEM
 		case 706:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.xion;
+		  map[ic*NREAL+4]=oct.cell[icell].xion;
 		  break;
 		case 707:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.temp;
+		  map[ic*NREAL+4]=oct.cell[icell].temp;
 		  break;
 		case 708:
-		  map[ic*NREAL+4]=oct.cell[icell].rfield.nh/pow(unit.unit_l,3.);
+		  map[ic*NREAL+4]=oct.cell[icell].d/pow(unit.unit_l,3.);
 		  break;
 #endif
 #endif

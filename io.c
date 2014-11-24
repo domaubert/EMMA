@@ -2781,7 +2781,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("Dumping .......");
 	    printf("%s %p\n",filename,cpu->part);
 	  }
-	  dumppart(firstoct,filename,param->lcoarse,param->lmax,tdump,cpu);
+	  dumppart(firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 
 #endif
 	}

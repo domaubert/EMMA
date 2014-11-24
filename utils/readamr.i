@@ -73,6 +73,7 @@ func readcell(fname,&time){
   close,fp;
 
   map=reform(map,[2,5,nc]);
+  time;
   return map;
 }
 
@@ -181,13 +182,14 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,
   if(is_void(fout)) fout=fname+".f"+pr1(field);
   if(!is_void(cen)){
     cen=cen(,1);
-    if(is_void(dcen)) dcen=0.05;
-    xmin=cen(1)-dcen;
-    xmax=cen(1)+dcen;
-    ymin=cen(2)-dcen;
-    ymax=cen(2)+dcen;
-    zmin=cen(3)-dcen;
-    zmax=cen(3)+dcen;
+    if(is_void(dcen)) dcen=array(0.05,3);
+    if(dimsof(dcen)(1)==0) dcen=array(dcen,3);
+    xmin=cen(1)-dcen(1);
+    xmax=cen(1)+dcen(1);
+    ymin=cen(2)-dcen(2);
+    ymax=cen(2)+dcen(2);
+    zmin=cen(3)-dcen(3);
+    zmax=cen(3)+dcen(3);
   }
 
   time=array(double);
@@ -199,14 +201,14 @@ func oct2cube(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,xmin=,xmax=,ymin=,
 }
 
 
-func oct2cell(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
-  if(is_void(execut)) execut="../utils/oct2cell ";
+func alloct(fname,lvl,field,&time,ncpu=,execut=,zmin=,zmax=,mono=){
+  if(is_void(execut)) execut="../utils/alloct ";
   if(is_void(ncpu)) ncpu=1;
   if(is_void(zmin)) zmin=0.;
   if(is_void(zmax)) zmax=1.;
   if(is_void(mono)) mono=-1;
   time=array(double);
-  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono)+" "+pr1(zmin)+" "+pr1(zmax);
+  commande=execut+" "+fname+" "+pr1(lvl)+" "+pr1(field)+" "+fname+".f"+pr1(field)+" "+pr1(ncpu)+" 0 "+pr1(mono);//+" "+pr1(zmin)+" "+pr1(zmax);
   commande;
   system(commande);
   cube=readcell(fname+".f"+pr1(field),time);

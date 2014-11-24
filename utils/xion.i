@@ -3,11 +3,13 @@
 //rep="./data0_dyncool";ncpu=32;
 //rep="./data0_dyncoll_nosrc";ncpu=32;execut="./utils/oct2grid_cosmo ";
 //rep="./dataref";ncpu=16;
-rep="./data_coarse_256_24MPC/";ncpu=256;execut="./utils/oct2grid "sbox=24.;;
+//rep="./data_coarse_256_24MPC/";ncpu=256;execut="./utils/oct2grid "sbox=24.;
+rep="./data/";ncpu=32;execut="./utils/oct2grid "sbox=4.;
+//rep="./data_12_noschaye/";ncpu=32;execut="./utils/oct2grid ";sbox=12.;
 
-
-nsnap=24;
-level=9;
+#if 1
+nsnap=35;
+level=8;
 nsamp=1;
 
 MPC=3.08e22; // m

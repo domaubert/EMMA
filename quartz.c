@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
   
   /* MPI_Aint type used to be consistent with syntax of */
   /* MPI_Type_extent routine */
-  MPI_Aint    offsets[3], extent;
+  MPI_Aint    offsets[5], extent;
   MPI_Aint base;
   struct PACKET _info_pack;
 

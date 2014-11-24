@@ -16,6 +16,7 @@ avconv -i mpeg_link%04d.jpeg -r 24 -b 65536k video.mp4
 
  */
 
+
 void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct LOCT *oct, struct UNITS *unit);
 void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct LOCT *oct, struct UNITS *unit);
 
@@ -28,6 +29,7 @@ int main(int argc, char *argv[])
   int lmap;
   //REAL *map;
   float *map;
+  float data;
   int imap,jmap,kmap;
   int nmap;
   REAL dxmap,dxcur;
@@ -50,6 +52,7 @@ int main(int argc, char *argv[])
   struct OCT *zerooct;
   struct UNITS unit;
   size_t dummy;
+  int flagdata;
 
   if(argc<7){
     printf("USAGE: /a.out input level field output nproc\n");
@@ -112,6 +115,14 @@ int main(int argc, char *argv[])
   j0=ymin/dxmap;
   nmapz=(zmax-zmin)/dxmap;
   k0=zmin/dxmap;
+
+  // should we dump cell data ?
+  int dumpcell=0;
+  if(argc>15){
+    sscanf(argv[14],"%d",&dumpcell);
+  }
+
+ 
 
 
   /// allocating the cube or the map
@@ -205,7 +216,7 @@ int main(int argc, char *argv[])
     printf("size of the OCT=%ld\n",sizeof(struct OCT));
 
     ic=0;
-
+    int idat=0;
 
     //    dummy=fread(&oct,sizeof(struct LOCT),1,fp);
     //while(!feof(fp)){
@@ -235,6 +246,7 @@ int main(int argc, char *argv[])
 		imap=xc/dxmap;
 		jmap=yc/dxmap;
 		kmap=zc/dxmap;
+		flagdata=0;
 		for(kk=0;kk<pow(2,lmap-oct.level);kk++)
 		  {
 		    if((kmap+kk)>=(nmapz+k0)){
@@ -251,13 +263,14 @@ int main(int argc, char *argv[])
 			      continue;
 			    }
 
-			    int flag;
+			    int flag=0;
 			    if(mono>=0){
 			      flag=(oct.cpu>=0);
 			    }
 			    else{
 			      flag=(oct.cpu==icpu);
 			    }
+
 
 			    if(flag) {
 			      if(proj==0){
@@ -267,9 +280,13 @@ int main(int argc, char *argv[])
 				assign_zmap(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
 			      }
 			    }
+			    
+			    
+
 			  }
 		      }
-		  } 
+		  }
+ 
 	      }
 	  }
       }
@@ -299,6 +316,8 @@ int main(int argc, char *argv[])
     status=ferror(fp);
     fclose(fp);
   }
+
+
 #if 0
   else{
     // silo style
@@ -404,7 +423,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 
 #ifdef WRAD
   case 701:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=log10(oct->cell[icell].e[0]+1e-15);
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].e[0];
     break;
   case 702:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].fx[0];
@@ -416,7 +435,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].fz[0];
     break;
   case 711:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=log10(oct->cell[icell].e[1]+1e-15);
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].e[1];
     break;
   case 712:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].fx[1];
@@ -433,7 +452,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 
 
   case 721:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=log10(oct->cell[icell].e[2]+1e-15);
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].e[2];
     break;
   case 722:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].fx[2];
@@ -463,7 +482,9 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 #endif
 #endif
 
-  }  
+  }
+
+  
 }
 
 // ===============================================================
