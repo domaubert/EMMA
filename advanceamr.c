@@ -1015,7 +1015,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
 #ifdef KPCLIMIT
-    dxkpc=1e1*PARSEC/param->unit.unit_l;
+    dxkpc=1e2*PARSEC/param->unit.unit_l;
 #endif
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
@@ -1033,7 +1033,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	}
     }
     else{
-      if(cpu->rank==RANK_DISP) printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+      //if(cpu->rank==RANK_DISP) 
+	printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
     }
 
     // ====================== VI Some bookkeeping ==========
