@@ -44,6 +44,10 @@ void U2W(struct Utype *U, struct Wtype *W)
   W->E=U->E;
 #ifdef WRADHYD
   W->dX=U->dX;
+#ifdef HELIUM
+  W->Y1=U->Y1;
+  W->Y2=U->Y2;
+#endif
 #endif
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
@@ -65,6 +69,10 @@ void W2U(struct Wtype *W, struct Utype *U)
 
 #ifdef WRADHYD
   U->dX=W->dX;
+#ifdef HELIUM
+  U->dY1=W->dY1;
+  U->dY2=W->dY2;
+#endif
 #endif
 #endif
 
@@ -96,6 +104,10 @@ void diffW(struct Wtype *W2, struct Wtype *W1, struct Wtype *WR){
   WR->p=W2->p- W1->p;
 #ifdef WRADHYD
   WR->dX=W2->dX- W1->dX;
+#ifdef HELIUM
+  WR->dY1=W2->dY1- W1->dY1;
+  WR->dY2=W2->dY2- W1->dY2;
+#endif
 #endif
 }
 
@@ -173,6 +185,22 @@ void minmod_W(struct Wtype *Wm, struct Wtype *Wp, struct Wtype *Wr){
   else{
     Wr->dX=FMIN(FMIN(0.,FMAX(beta*Wm->dX,Wp->dX)),FMAX(Wm->dX,beta*Wp->dX));
   }
+#ifdef HELIUM
+  if(Wp->dY1>0){
+    Wr->dY1=FMAX(FMAX(0.,FMIN(beta*Wm->dY1,Wp->dY1)),FMIN(Wm->dY1,beta*Wp->dY1));
+  }
+  else{
+    Wr->dY1=FMIN(FMIN(0.,FMAX(beta*Wm->dY1,Wp->dY1)),FMAX(Wm->dY1,beta*Wp->dY1 ));
+  }
+
+  if(Wp->dY2>0){
+    Wr->dY2=FMAX(FMAX(0.,FMIN(beta*Wm->dY2,Wp->dY2)),FMIN(Wm->dY2,beta*Wp->dY2));
+  }
+  else{
+    Wr->dY2=FMIN(FMIN(0.,FMAX(beta*Wm->dY2,Wp->dY2)),FMAX(Wm->dY2,beta*Wp->dY2 ));
+  }
+#endif
+
 #endif
 
   if(Wp->u>0){
@@ -238,6 +266,10 @@ void interpminmod_W(struct Wtype *W0, struct Wtype *Wp, struct Wtype *Dx, struct
   Wp->p =W0->p +dx*Dx->p +dy*Dy->p +dz*Dz->p;
 #ifdef WRADHYD
   Wp->dX =W0->dX +dx*Dx->dX +dy*Dy->dX +dz*Dz->dX;
+#ifdef HELIUM
+  Wp->dY1 =W0->dY1 +dx*Dx->dY1 +dy*Dy->dY1 +dz*Dz->dY1;
+  Wp->dY2 =W0->dY2 +dx*Dx->dY2 +dy*Dy->dY2 +dz*Dz->dY2;
+#endif
 #endif
 }
 
@@ -862,6 +894,10 @@ void getflux_X(struct Utype *U, REAL *f)
 
 #ifdef WRADHYD
   f[6]=U->du*U->dX/U->d;
+#ifdef HELIUM
+  f[7]=U->du*U->dY1/U->d;
+  f[8]=U->du*U->dY2/U->d;
+#endif
 #endif
 }
 
@@ -876,6 +912,10 @@ void getflux_Y(struct Utype *U, REAL *f)
   f[4]=GAMMA*U->dv/U->d*U->E-0.5*(GAMMA-1.)*U->dv/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
 #ifdef WRADHYD
   f[6]=U->dv*U->dX/U->d;
+#ifdef HELIUM
+  f[7]=U->dv*U->dY1/U->d;
+  f[8]=U->dv*U->dY2/U->d;
+#endif
 #endif
 }
 
@@ -890,6 +930,10 @@ void getflux_Z(struct Utype *U, REAL *f)
   f[4]=GAMMA*U->dw/U->d*U->E-0.5*(GAMMA-1.)*U->dw/(U->d*U->d)*(U->du*U->du+U->dv*U->dv+U->dw*U->dw);
 #ifdef WRADHYD
   f[6]=U->dw*U->dX/U->d;
+#ifdef HELIUM
+  f[7]=U->dw*U->dY1/U->d;
+  f[8]=U->dw*U->dY2/U->d;
+#endif
 #endif
 }
 
@@ -903,12 +947,9 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct 
 
 
   REAL M[25];
-  REAL W[6]={0.,0.,0.,0.,0.,0.};
+  REAL W[8]={0.,0.,0.,0.,0.,0.,0.,0.};
   REAL d[5];
   int i,j;
-#ifdef WRADHYD
-  REAL X;
-#endif
 
   // =====  building the A matrix
 
@@ -941,6 +982,10 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct 
 
 #ifdef WRADHYD
   W[5]+=W0->u*Dx->dX+W0->dX*Dx->u;
+#ifdef HELIUM
+  W[6]+=W0->u*Dx->dY1+W0->dY1*Dx->u;
+  W[7]+=W0->u*Dx->dY2+W0->dY2*Dx->u;
+#endif
 #endif
 
   // =====  building the B matrix
@@ -973,7 +1018,11 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct 
   }
 
 #ifdef WRADHYD
-  W[5]+=W0->v*Dx->dX+W0->dX*Dx->v;
+  W[5]+=W0->v*Dy->dX+W0->dX*Dy->v;
+#ifdef HELIUM
+  W[6]+=W0->v*Dy->dY1+W0->dY1*Dy->v;
+  W[7]+=W0->v*Dy->dY2+W0->dY2*Dy->v;
+#endif
 #endif
 
   // =====  building the C matrix
@@ -1005,11 +1054,15 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct 
   }
 
 #ifdef WRADHYD
-  W[5]+=W0->w*Dx->dX+W0->w*Dx->dX;
+  W[5]+=W0->w*Dz->dX+W0->w*Dz->dX;
+#ifdef HELIUM
+  W[6]+=W0->w*Dz->dY1+W0->dY1*Dz->w;
+  W[7]+=W0->w*Dz->dY2+W0->dY2*Dz->w;
+#endif
 #endif
   
   // ==== Final correction
-  for(i=0;i<6;i++){
+  for(i=0;i<8;i++){
     W[i]*=(-dt/dx*0.5);
   }
   
@@ -1021,6 +1074,10 @@ void  matrix_jacobian(struct Wtype *W0, REAL dt,REAL dx,struct Wtype *Dx,struct 
   
 #ifdef WRADHYD
   Wt->dX=W[5];
+#ifdef HELIUM
+  Wt->dY1=W[6];
+  Wt->dY2=W[7];
+#endif
 #endif
 
 }
@@ -1110,7 +1167,10 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].p = FMAX(W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p,PMIN);
 #ifdef WRADHYD
 	    Wi[idir].dX = W0->dX+ix[idir]*D[0].dX+iy[idir]*D[1].dX+iz[idir]*D[2].dX+Wt.dX;
-	    //printf("%e %e %e | %e %e\n",D[0].dX,D[1].dX,D[2].dX,W0->dX,Wt.dX);
+#ifdef HELIUM
+	    Wi[idir].dY1 = W0->dY1+ix[idir]*D[0].dY1+iy[idir]*D[1].dY1+iz[idir]*D[2].dY1+Wt.dY1;
+	    Wi[idir].dY2 = W0->dY2+ix[idir]*D[0].dY2+iy[idir]*D[1].dY2+iz[idir]*D[2].dY2+Wt.dY2;
+#endif
 #endif
 	    if(Wi[idir].d<0) abort();
 	    //if(Wi[idir].p==PMIN) printf("%e %e \n",W0->p,W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p);
@@ -1144,8 +1204,15 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].a=SQRT(GAMMA*Wi[idir].p/Wi[idir].d);
 
 #ifdef WRADHYD
+	    // Override
 	    REAL X0=W0->dX/W0->d;
- 	    Wi[idir].dX=Wi[idir].d*X0; 
+	    REAL Y10=W0->dY1/W0->d;
+	    REAL Y20=W0->dY2/W0->d;
+ 	    Wi[idir].dX =Wi[idir].d*X0; 
+#ifdef HELIUM
+ 	    Wi[idir].dY1=Wi[idir].d*Y10; 
+ 	    Wi[idir].dY2=Wi[idir].d*Y20; 
+#endif
 #endif 
 
 	   
@@ -1343,9 +1410,6 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       Wold.p=curcell->p;
       Wold.a=SQRT(GAMMA*Wold.p/Wold.d);
 
-/* #ifdef WRADHYD */
-/*       Wold.dX=curcell->dX; */
-/* #endif */
 
       W2U(&Wold,&Uold); // primitive -> conservative
 
@@ -1423,6 +1487,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
+#ifdef HELIUM
+	FL[7]+=(fact*WN[0].dY1/WN[0].d                                                                 -UN[0].dY1)*SL;
+	FL[8]+=(fact*WN[0].dY2/WN[0].d                                                                 -UN[0].dY2)*SL;
+#endif
 #endif
       }
       else if((ustar<=0.)&&(SR>0.)){
@@ -1444,6 +1512,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
+#ifdef HELIUM
+	FL[7]+=(fact*WC[0].dY1/WC[0].d                                                                 -UC[0].dY1)*SR;
+	FL[8]+=(fact*WC[0].dY2/WC[0].d                                                                 -UC[0].dY2)*SR;
+#endif
 #endif
       }
 
@@ -1502,6 +1574,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
+#ifdef HELIUM
+	FR[7]+=(fact*WC[1].dY1/WC[1].d                                                                 -UC[1].dY1)*SL;
+	FR[8]+=(fact*WC[1].dY2/WC[1].d                                                                 -UC[1].dY2)*SL;
+#endif
 #endif
       }
       else if((ustar<=0.)&&(SR>0.)){
@@ -1523,6 +1599,10 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
+#ifdef HELIUM
+	FR[7]+=(fact*WN[1].dY1/WN[1].d                                                                 -UN[1].dY1)*SR;
+	FR[8]+=(fact*WN[1].dY2/WN[1].d                                                                 -UN[1].dY2)*SR;
+#endif
 #endif
       }
 
@@ -1705,6 +1785,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
+#ifdef HELIUM
+	  FL[7]+=(fact*WN[0].dY1/WN[0].d                                                                 -UN[0].dY1)*SL;
+	  FL[8]+=(fact*WN[0].dY2/WN[0].d                                                                 -UN[0].dY2)*SL;
+#endif
 #endif
 
 	}
@@ -1727,6 +1811,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
+#ifdef HELIUM
+	  FL[7]+=(fact*WC[0].dY1/WC[0].d                                                                 -UC[0].dY1)*SR;
+	  FL[8]+=(fact*WC[0].dY2/WC[0].d                                                                 -UC[0].dY2)*SR;
+#endif
 #endif
 
 	}
@@ -1795,6 +1883,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
+#ifdef HELIUM
+	  FR[7]+=(fact*WC[1].dY1/WC[1].d                                                                 -UC[1].dY1)*SL;
+	  FR[8]+=(fact*WC[1].dY2/WC[1].d                                                                 -UC[1].dY2)*SL;
+#endif
 #endif
 	}
 	else if((ustar<=0.)&&(SR>0.)){
@@ -1816,6 +1908,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
+#ifdef HELIUM
+	  FR[7]+=(fact*WN[1].dY1/WN[1].d                                                                 -UN[1].dY1)*SR;
+	  FR[8]+=(fact*WN[1].dY2/WN[1].d                                                                 -UN[1].dY2)*SR;
+#endif
 #endif
 	}
 
@@ -1997,6 +2093,10 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	 FL[6]+=(fact*WN[0].dX/WN[0].d                                                                 -UN[0].dX)*SL;
+#ifdef HELIUM
+	 FL[7]+=(fact*WN[0].dY1/WN[0].d                                                                 -UN[0].dY1)*SL;
+	 FL[8]+=(fact*WN[0].dY2/WN[0].d                                                                 -UN[0].dY2)*SL;
+#endif
 #endif
 	 
 	}
@@ -2019,6 +2119,10 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FL[6]+=(fact*WC[0].dX/WC[0].d                                                                 -UC[0].dX)*SR;
+#ifdef HELIUM
+	  FL[7]+=(fact*WC[0].dY1/WC[0].d                                                                 -UC[0].dY1)*SR;
+	  FL[8]+=(fact*WC[0].dY2/WC[0].d                                                                 -UC[0].dY2)*SR;
+#endif
 #endif
 
 	}
@@ -2087,6 +2191,10 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FR[6]+=(fact*WC[1].dX/WC[1].d                                                                 -UC[1].dX)*SL;
+#ifdef HELIUM
+	  FR[7]+=(fact*WC[1].dY1/WC[1].d                                                                 -UC[1].dY1)*SL;
+	  FR[8]+=(fact*WC[1].dY2/WC[1].d                                                                 -UC[1].dY2)*SL;
+#endif
 #endif
 
 	}
@@ -2109,6 +2217,10 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 #ifdef WRADHYD
 	  FR[6]+=(fact*WN[1].dX/WN[1].d                                                                 -UN[1].dX)*SR;
+#ifdef HELIUM
+	  FR[7]+=(fact*WN[1].dY1/WN[1].d                                                                 -UN[1].dY1)*SR;
+	  FR[8]+=(fact*WN[1].dY2/WN[1].d                                                                 -UN[1].dY2)*SR;
+#endif
 #endif
 	}
 
@@ -2977,8 +3089,16 @@ void updatefield(struct OCT *octstart, struct HGRID *stencil, int nread, int str
 #ifdef WRADHYD
 #ifndef NOADX
 	U.dX+=F[6+flx*NVAR]*dtsurdx*one;
+#ifdef HELIUM
+	U.dY1+=F[7+flx*NVAR]*dtsurdx*one;
+	U.dY2+=F[8+flx*NVAR]*dtsurdx*one;
+#endif
 #else
 	U.dX+=0.;
+#ifdef HELIUM
+	U.dY1+=0.;
+	U.dY2+=0.;
+#endif
 #endif
 #endif
 	one*=-1.;
@@ -3053,9 +3173,19 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 #ifdef WRADHYD
 #ifdef NOADX
 	REAL xion=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh;
-	U.dX=U.d*xion;
+	U.dX=U.d*(1.-Y)*xion;
+#ifdef HELIUM
+	REAL yion1=curoct->cell[icell].rfield.nheplus/curoct->cell[icell].rfield.nh;
+	U.dY1=U.d*(1.-Y)*yion1*MHE_OVER_MH;
+	REAL yion2=curoct->cell[icell].rfield.nheplusplus/curoct->cell[icell].rfield.nh;
+	U.dX=U.d*(1.-Y)*yion2*MHE_OVER_MH;
+#endif
 #else
 	U.dX  +=deltaU.dX;
+#ifdef HELIUM
+	U.dY1 +=deltaU.dY1;
+	U.dY2 +=deltaU.dY2;
+#endif
 #endif
 	//printf("d=%e deltaX=%e dX=%e X=%e\n",U.d,deltaU.dX,U.dX,U.dX/U.d);
 #endif
@@ -3095,7 +3225,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 #ifdef WRADHYD
 	//Ceiling for the ionisation fraction
 	if(curoct->cell[icell].fieldnew.dX<0) curoct->cell[icell].fieldnew.dX=0.;
-	if(curoct->cell[icell].fieldnew.dX>curoct->cell[icell].fieldnew.d) curoct->cell[icell].fieldnew.dX=curoct->cell[icell].fieldnew.d;
+	if(curoct->cell[icell].fieldnew.dX>(curoct->cell[icell].fieldnew.d*(1.-Y))) curoct->cell[icell].fieldnew.dX=curoct->cell[icell].fieldnew.d*(1.-Y);
 #endif	
 	// ==================== let us now deal with coarser neighbors
 	getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -3168,6 +3298,10 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 #ifdef WRADHYD
 	      U.dX+=F[6]*dtsurdx*one*0.125;
+#ifdef HELIUM
+	      U.dY1+=F[7]*dtsurdx*one*0.125;
+	      U.dY2+=F[8]*dtsurdx*one*0.125;
+#endif
 #endif 	      
 	      //if(U.eint<0) abort();
 	      //scatter back

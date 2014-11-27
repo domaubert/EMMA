@@ -535,7 +535,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    REAL E;
 		    REAL F;
 		    int il;
-		    //curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
 
 		    //coarse2fine_rad2(&(curoct->cell[icell]),Ri);
   		     for(il=0;il<8;il++){ 
@@ -550,9 +549,21 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WRADHYD
 		       // some fix here for RHD values
 		       REAL xion=Ri[il].nhplus/Ri[il].nh;
-		       Wi[il].dX=Wi[il].d*xion;
-		       Ri[il].nh= Wi[il].d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
-		       Ri[il].nhplus= Wi[il].dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
+		       Wi[il].dX=Wi[il].d*(1.-Y)*xion;
+		       Ri[il].nh=Wi[il].d*(1.-Y);
+		       Ri[il].nhplus=Wi[il].dX;
+		       
+#ifdef HELIUM
+		       // A CHEKCER ======= > !!!!!!!!!!!!!!!!!
+		       REAL y1,y2;
+		       y1=Ri[il].nheplus/Ri[il].nh;
+		       y2=Ri[il].nheplusplus/Ri[il].nh;
+		       Wi[il].dY1=Wi[il].d*(1.-Y)*MHE_OVER_MH*y1;
+		       Wi[il].dY2=Wi[il].d*(1.-Y)*MHE_OVER_MH*y2;
+		       Ri[il].nheplus=Wi[il].dY1;
+		       Ri[il].nheplusplus=Wi[il].dY2;
+#endif
+
 		       Ri[il].eint= Wi[il].p/(GAMMA-1.);
 #endif	       
 

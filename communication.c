@@ -1650,6 +1650,10 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 
 #ifdef WRADHYD
 	      U.dX+=Ue.dX;
+#ifdef HELIUM
+	      U.dY1+=Ue.dY1;
+	      U.dY2+=Ue.dY2;
+#endif
 #endif
 	      U2W(&U,&W);
 	      //getE(&W);

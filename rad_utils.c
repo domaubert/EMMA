@@ -1907,9 +1907,17 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
-	  
+	  // Note that herafter in supercomoving units  d*(1-Y)/nh=1.
+	  // hence dX=nhplus
+	  // dY1=nheplus*MHE/MH
+	  // dY2=nheplusplus*MHE/MH
 	  curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
+	  curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y);
+#ifdef HELIUM
+	  curoct->cell[icell].field.dY1=curoct->cell[icell].rfield.nheplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y)*MHE_OVER_MH;
+	  curoct->cell[icell].field.dY2=curoct->cell[icell].rfield.nheplusplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y)*MHE_OVER_MH;
+#endif
+
 	  getE(&curoct->cell[icell].field);
 #endif
 
@@ -1945,7 +1953,13 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #ifdef WRADHYD
 	    // inject back thermal energy into the hydro
 	    curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
-	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d;
+	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y);
+
+#ifdef HELIUM
+	  curoct->cell[icell].field.dY1=curoct->cell[icell].rfield.nheplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y)*MHE_OVER_MH;
+	  curoct->cell[icell].field.dY2=curoct->cell[icell].rfield.nheplusplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-Y)*MHE_OVER_MH;
+#endif
+
 	    getE(&curoct->cell[icell].field);
 #endif
 	}

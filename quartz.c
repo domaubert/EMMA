@@ -414,7 +414,11 @@ int main(int argc, char *argv[])
   oldtypes[0]=MPI_REEL;
 
 #ifdef WRADHYD
+#ifdef HELIUM
+  blockcounts[0]=10;
+#else
   blockcounts[0]=8;
+#endif
 #else
   blockcounts[0]=7;
 #endif
@@ -526,7 +530,11 @@ int main(int argc, char *argv[])
   blockcounts[2]=NGRP;
   blockcounts[3]=NGRP;
 #ifdef WCHEM
+#ifdef HELIUM
+  blockcounts[4]=7;
+#else
   blockcounts[4]=5;
+#endif
 #else
   blockcounts[4]=1;
 #endif
@@ -1511,7 +1519,7 @@ blockcounts[0]++; // For SN feedback
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
-    param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
+    param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS;
     param.unit.unit_N=(200.*(POW(param.unit.unit_l,3)+199.*vclump))/POW(param.unit.unit_l,3);
     param.unit.unit_d=param.unit.unit_mass/POW(param.unit.unit_l,3);
     REAL pstar;
@@ -1600,8 +1608,8 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifndef TESTCLUMP		
-		  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
-		  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
+		  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS;
+		  param.unit.unit_d=nh*PROTON_MASS;
 		  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
@@ -1616,7 +1624,7 @@ blockcounts[0]++; // For SN feedback
 		
 		
 #ifdef WRADHYD
-		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
 		  curoct->cell[icell].field.v=0.0;
 		  curoct->cell[icell].field.w=0.0;

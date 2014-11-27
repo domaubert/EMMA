@@ -67,7 +67,11 @@ typedef double REAL;
 #ifndef WRADHYD
 #define NVAR (6)
 #else
+#ifdef HELIUM
+#define NVAR (9)
+#else
 #define NVAR (7)
+#endif
 #endif
 #else
 
@@ -80,7 +84,7 @@ typedef double REAL;
 
 
 #ifdef WRAD
-#define NVAR_R (5)
+#define NVAR_R (5) // SHOULD BE 4 ?
 #define NGRP (3)
 #define EMIN (1e-8)
 #define NFLUX_R (6*NGRP*NVAR_R)
@@ -96,8 +100,13 @@ typedef double REAL;
 #define MYR (3.1536e13) // s
 #define PROTON_MASS (1.67262158e-27) //kg
 #define NEWTON_G (6.67384e-11) // SI
+#ifdef HELIUM
 #define HELIUM_MASSFRACTION (0.24)
-#define MOLECULAR_MU (1.0)
+#else
+#define HELIUM_MASSFRACTION (0.)
+#endif
+#define MHE_OVER_MH (4.)
+#define Y (HELIUM_MASSFRACTION)
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
 
 //=======================================
@@ -408,6 +417,10 @@ struct Rtype{
   REAL nh;
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
   //  REAL deltaX; // the ionization variation (to track fronts)
+#ifdef HELIUM
+  REAL nheplus;
+  REAL nheplusplus;
+#endif
 #endif
 
 };
@@ -425,6 +438,10 @@ struct Wtype{
 
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dY1;
+  REAL dY2;
+#endif
 #endif
 };
 
@@ -439,6 +456,10 @@ struct Wtype_MPI{
   REAL E; 
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dY1;// HeII
+  REAL dY2;// HeIII
+#endif
 #endif
 };
 
@@ -456,6 +477,10 @@ struct Utype{
 
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dY1;
+  REAL dY2;
+#endif
 #endif
 
 };
@@ -468,6 +493,10 @@ struct Wtype1D{
   REAL a;   // sound speed
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dY1;
+  REAL dY2;
+#endif
 #endif
 };
 
@@ -485,6 +514,11 @@ struct Utype1D{
   REAL E;    // Energy
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dY1;
+  REAL dY2;
+#endif
+
 #endif
 };
 
@@ -661,6 +695,10 @@ struct LCELL
   float w;
   float p;
   float dX;
+#ifdef HELIUM
+  REAL dY1;
+  REAL dY2;
+#endif
 #endif
 
 

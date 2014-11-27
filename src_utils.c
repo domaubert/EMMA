@@ -371,16 +371,45 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	// filling the temperature, nh, and xion
 #ifdef WCHEM
 #ifdef WRADHYD
+
+	//SANDBOX
+	/* nh=(d*unitd/mp)/unit_N; */
+	/* mais unit_N=rhostar/mp et unitd=rhostar; */
+	/* donc nh=d*(rhostat/mp)/(rhostar/mp); */
+
+	/* avec helium; */
+	/* nh=(1-Y)*(d*unitd/mp)/unit_N; */
+	/* si les unites sont inchangees : unit_d=rhostar et unit_N=rhostar/mp; */
+	/* alors nh=(1-Y)d; */
+
+	/* de plus nheII=y1 nh; */
+	/* donc nhEII=y1*(1-Y)*d; */
+
+	// nhplus=dx*unitd/mp/unit_n
+	// mais unit_n=unit_d/mp
+
+	// nhEII=(dy1*unitd)/mHe/unit_N = dy1 *rhostar/mHE*(mp/rhostar) = dy1 * mp/mHE
+
+	// END SANDBOX
+
 	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
-	//curoct->cell[icell].rfield.nh=d/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; // switch to atom/m^3
-	curoct->cell[icell].rfield.nh=d; // [unit_N] note d in unit_d and nh in unit_N are identical 
-	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+
+	curoct->cell[icell].rfield.nh=d*(1.-Y); // [unit_N] note d in unit_d and nh in unit_N are identical 
+	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX; // [unit_N] note d in unit_d and nh in unit_N are identical // (1-Y) already taken in account in dX
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
-	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.); 
- 	/* curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; */
-	/* curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; */
-	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX; // [unit_N] note d in unit_d and nh in unit_N are identical 
+#ifdef HELIUM
+	curoct->cell[icell].rfield.nheplus=curoct->cell[icell].field.dY1/(MHE_OVER_MH); // [unit_N] note d in unit_d and nh in unit_N are identical // (1-Y) already taken in account in dX
+	curoct->cell[icell].rfield.nheplusplus=curoct->cell[icell].field.dY2/(MHE_OVER_MH); // [unit_N] note d in unit_d and nh in unit_N are identical // (1-Y) already taken in account in dX
+#endif
+
+	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].rfield.eint;
 	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].rfield.nhplus; // [unit_N] note d in unit_d and nh in unit_N are identical 
+#ifdef HELIUM
+	curoct->cell[icell].rfieldnew.nheplus=curoct->cell[icell].rfield.nheplus; // [unit_N] note d in unit_d and nh in unit_N are identical 
+	curoct->cell[icell].rfieldnew.nheplusplus=curoct->cell[icell].rfield.nheplusplus; // [unit_N] note d in unit_d and nh in unit_N are identical 
+
+#endif
 
 #endif
 #endif
@@ -411,6 +440,14 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
 	  curoct->cell[icell].rfieldnew.nhplus=xion*curoct->cell[icell].rfieldnew.nh; 
 	  
+#ifdef HELIUM
+	  curoct->cell[icell].rfield.nheplus=xion*curoct->cell[icell].rfield.nh*Y/(1.-Y)*MHE_OVER_MH; 
+	  curoct->cell[icell].rfieldnew.nheplus=xion*curoct->cell[icell].rfield.nh*Y/(1.-Y)*MHE_OVER_MH; 
+	  curoct->cell[icell].rfield.nheplusplus=xion*curoct->cell[icell].rfield.nh*Y/(1.-Y)*MHE_OVER_MH; 
+	  curoct->cell[icell].rfieldnew.nheplusplus=xion*curoct->cell[icell].rfield.nh*Y/(1.-Y)*MHE_OVER_MH; 
+#endif
+
+
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
 	  eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexp,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;

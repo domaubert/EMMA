@@ -200,8 +200,15 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U.d    -= drho;
 
 #ifdef WRADHYD
-	REAL xion=W.dX/W.d;
-	U.dX = U.d*xion;
+	REAL xion=W.dX/(W.d*(1.-Y));
+	U.dX = U.d*(1.-Y)*xion;
+#ifdef HELIUM
+	REAL y1,y2;
+	y1=W.dY1/(W.d*(1.-Y)*MHE_OVER_MH);
+	y2=W.dY2/(W.d*(1.-Y)*MHE_OVER_MH);
+	U.dY1=U.d*(1.-Y)*MHE_OVER_MH*y1;
+	U.dY2=U.d*(1.-Y)*MHE_OVER_MH*y2;
+#endif
 #endif
 
 //	momentum

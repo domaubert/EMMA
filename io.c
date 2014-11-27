@@ -34,6 +34,10 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
   lcell->p=cell->field.p;
 #ifdef WRADHYD
   lcell->dX=cell->field.dX;
+#ifdef HELIUM
+  lcell->dY1=cell->field.dY1;
+  lcell->dY2=cell->field.dY2;
+#endif
 #endif
 #endif
 
@@ -2671,7 +2675,12 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  icell=icx+icy*2+icz*4;
 	
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/POW(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
+#ifdef HELIUM
+	  REAL y=Y/(1.-Y)*MHE_OVER_MH;
+#else
+	  REAL y=0.;
+#endif
+	  pressure=(rhob/(PROTON_MASS)*(1.-Y)*(1.+y))*KBOLTZ*temp; // physical pressure
 	  
 	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values
@@ -2691,7 +2700,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef WRADHYD
 	  // Testing ADVECTION
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
-	  W.dX=0.2e-3*W.d;
+	  W.dX=0.2e-3*W.d*(1.-Y);
+#ifdef HELIUM
+	  W.dY1=0.2e-3*W.d*(1.-Y)*MHE_OVER_MH;
+	  W.dY2=0.2e-3*W.d*(1.-Y)*MHE_OVER_MH;
+#endif
 #endif
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 
@@ -2734,11 +2747,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   param->unit.unit_n=1.;//(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*rhostar; // 
   param->unit.unit_mass=rhostar*POW(param->unit.unit_l,3);
   param->unit.unit_d=rhostar; // kg/m3
-  param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3
+  param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3 //  WHAT ABOUT HELIUM ?
 #endif
 
-//  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/POW(param->unit.unit_l,3);
- /*   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*rhostar; */
 
 /* if(cpu->rank==RANK_DISP) printf("navg=%e \n",navg); */
   
