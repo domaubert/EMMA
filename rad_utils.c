@@ -1586,7 +1586,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
       }
 
       
-#if 1
+#if 0
 
 
 	// ================================ START MEGA DIAGNOSE =========================

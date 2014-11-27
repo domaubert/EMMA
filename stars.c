@@ -87,14 +87,74 @@ void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL a
   REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
   s8 	*= 31556926; 	// years en s
   
-  REAL dv 	= POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.); 
-  
+  REAL dv 	= POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
   REAL E 		= param->stars->feedback_frac *mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
   E	       *= exp( -t0/s8 )/s8;
-  
-  cell->rfield.snfb += E;	
+
+ 	struct OCT* oct = cell2oct(cell);
+	int i;
+	for(i=0;i<8;i++){
+		struct CELL* curcell = &oct->cell[i];
+	  cell->rfield.snfb += E/8.;	
+	}
   //printf("E=%e SN=%e v=%e mstar=%e\n",E,SN_EGY,param->unit.unit_l,mstar);
 }
+
+
+void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt, REAL mstar){
+
+//	REAL rhoc = 3.* POW(67.*1e-3*PARSEC ,2) /(8.*PI*NEWTON_G);
+//	printf("level = %d a = %f Ul = %f\n",level, aexp, param->unit.unit_l);
+//  REAL dv 	= POW( POW(2.,-6) * aexp * param->unit.unit_l, 3.); 
+
+
+//	printf("rhoc = %e dv = %f\n",rhoc, dv);
+//	REAL unit_m = rhoc*dv;
+//	printf("unit_m = %f \n",unit_m);
+
+
+
+  REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
+  s8 	*= 31556926; 	// years en s
+  
+  REAL dv 	= POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
+  REAL E = (1.-param->stars->feedback_frac) *mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
+  E	       *= exp( -t0/s8 )/s8;
+
+
+
+
+
+	E*= 1e25;
+
+//		printf(" %f \t %f \t %f \t %f\t %f \t %f \n ",  param->stars->feedback_frac ,mstar,unit_m,SN_EGY,param->stars->feedback_eff,dv);
+
+	struct OCT* oct = cell2oct(cell);
+
+	float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
+	float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+	float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+	
+	int i;
+	for(i=0;i<8;i++){
+		struct CELL* curcell = &oct->cell[i];
+		
+  	REAL e = E/8.;
+		REAL V = SQRT(2.*e/curcell->field.d);
+
+		printf("--> %e \t ",  curcell->field.u);
+		curcell->field.u += dir_x[i] * 0.52532198881 * V;
+		printf(" %e \t %e \n ",  curcell->field.u , V);
+
+
+
+		curcell->field.v += dir_y[i] * 0.52532198881 * V;
+		curcell->field.w += dir_z[i] * 0.52532198881 * V;
+
+	}
+
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -124,6 +184,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 				  else if ( t0 >= param->stars->tlife){
 				    curp->isStar = 2; 
 				    thermalFeedback(cell, param, t0*31556926, aexp, level, dt,curp->mass);
+				    kineticFeedback(cell, param, t0*31556926, aexp, level, dt,curp->mass);
 				    Nsn++;
 				  }
 				}

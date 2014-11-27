@@ -483,8 +483,9 @@ printf( "REFZM\t");
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
   printf("Dumping parameters file\n");
 
-  FILE *fp; 
+  FILE *fp = NULL; 
   fp=fopen("data/param.00000.p00000","w");
+  if(fp == NULL) printf("Cannot open %s\n", "data/param.00000.p00000");
 
   int t = 1;
   int f = 0;
@@ -870,7 +871,7 @@ fprintf(fp, "REFZM\t");
 //====================================================================================================
 void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int nsteps, int ndumps, struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt){
   
-  FILE *fp;
+  FILE *fp = NULL;
   int level;
   struct OCT * nextoct;
   struct OCT * root;
@@ -885,7 +886,8 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
   rootpart=proot;
 
   fp=fopen(filename,"wb");
-  
+  if(fp == NULL) printf("Cannot open %s\n", filename);
+
   fwrite(&tsim,sizeof(REAL),1,fp); 
   fwrite(&tinit,sizeof(REAL),1,fp); 
   fwrite(&nsteps,sizeof(int),1,fp); 
@@ -956,7 +958,7 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
 //====================================================================================================
 struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **lastoct, REAL *tsim, REAL *tinit, int *nsteps, int *ndumps,struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot, REAL *adt, struct CELL *root){
   
-  FILE *fp;
+  FILE *fp = NULL;
   int level,lcoarse,lmax;
   struct OCT * curoct;
   struct OCT * nextoct;
@@ -992,7 +994,8 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 
   // opening the file
   fp=fopen(filename,"rb");
-  
+  if(fp == NULL) printf("Cannot open %s\n", filename);
+
   size_t outf;
 
   // reading snapshot time
@@ -1172,11 +1175,11 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   struct OCT * nextoct;
   struct OCT oct;
   struct LOCT loct;
-  FILE *fp;
+  FILE *fp =NULL;
   int noct=0;
 
   fp=fopen(filename,"wb");
-
+	if(fp == NULL) printf("Cannot open %s\n", filename);
   //printf("tsim=%f\n",tsim);
   fwrite(&tsim,sizeof(REAL),1,fp); 
 
@@ -1231,7 +1234,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 #ifdef PIC
 void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
-  FILE *fp;
+  FILE *fp = NULL;
   float val;
   int vali;
   int ipart=0;
@@ -1250,9 +1253,16 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
   int nstar=0; 
 
   char filenamestar[128];							char filenamepart[128];	
-  FILE *fstar;									FILE *fpart;
-  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+  FILE *fstar;												FILE *fpart;
+
+  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);	
+	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+
   fstar=fopen(filenamestar,"wb");						fpart=fopen(filenamepart,"wb");
+
+	if(fstar == NULL) printf("Cannot open %s\n", filenamestar);
+	if(fpart == NULL) printf("Cannot open %s\n", filenamepart);
+
   fwrite(&nstar,1,sizeof(int)  ,fstar);						fwrite(&npart,1,sizeof(int)  ,fpart);
   fwrite(&tsimf,1,sizeof(float),fstar);						fwrite(&tsimf,1,sizeof(float),fpart);
 
@@ -1260,6 +1270,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 
 #else
   fp=fopen(filename,"wb");
+	if(fp == NULL) printf("Cannot open %s\n", filename);
   fwrite(&npart,1,sizeof(int)  ,fp);
   fwrite(&tsimf,1,sizeof(float),fp);
 #endif
@@ -1339,7 +1350,7 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 
 void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct PART* proot){
 
-  FILE *fp;
+  FILE *fp = NULL;
   int vali;
   int ipart=0;
   int level;
@@ -1355,6 +1366,8 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
   fp=fopen(filename,"wb");
+	if(fp == NULL) printf("Cannot open %s\n", filename);
+
   fwrite(&npart,1,sizeof(int),fp);		
   fwrite(&tsim,1,sizeof(REAL),fp);		
   fwrite(&proot,1,sizeof(struct PART *),fp);	
@@ -1405,7 +1418,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
 
 struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, struct RUNPARAMS *param, struct CPUINFO *cpu, struct PART *proot){
   
-  FILE *fp;
+  FILE *fp = NULL;
   int level;
 
   struct PART * rootpart_sna;
@@ -1429,6 +1442,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   // opening the file
   fp=fopen(filename,"rb");
+	if(fp == NULL) printf("Cannot open %s\n", filename);
 
   // reading snapshot time
   size_t outf;
@@ -1650,7 +1664,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef GRAFIC
 struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
-  FILE *fx, *fy, *fz;
+  FILE *fx = NULL;
+  FILE *fy = NULL;
+  FILE *fz = NULL;
+
   int np1,np2,np3;
   float dx,x1o,x2o,x3o,astart,om,ov,h0,ob;
   int dummy;
@@ -1661,11 +1678,11 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   if(cpu->rank==0){
 
     sprintf(filename,"./level_%03d/ic_velbx",level); 
-    fx=fopen(filename,"rb");
+    fx=fopen(filename,"rb"); 	if(fx == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velby",level); 
-    fy=fopen(filename,"rb");
+    fy=fopen(filename,"rb"); 	if(fy == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velbz",level); 
-    fz=fopen(filename,"rb");
+    fz=fopen(filename,"rb");	if(fz == NULL) printf("Cannot open %s\n", filename);
     
 
     // reading the headers
@@ -2414,10 +2431,10 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef GRAFIC
  int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param,int level){
   
-  FILE *fx;
-  FILE *fy;
-  FILE *fz;
-  FILE *fdx;
+  FILE *fx = NULL;
+  FILE *fy = NULL;
+  FILE *fz = NULL;
+  FILE *fdx = NULL;
   int np1,np2,np3;
   float dx,x1o,x2o,x3o,astart,om,ov,ob,h0;
   int dummy;
@@ -2431,13 +2448,13 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   if(cpu->rank==0){
 
     sprintf(filename,"./level_%03d/ic_deltab",level); 
-    fdx=fopen(filename,"rb");
+    fdx=fopen(filename,"rb");		if(fdx == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velbx",level); 
-    fx=fopen(filename,"rb");
+    fx=fopen(filename,"rb");		if(fx == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velby",level); 
-    fy=fopen(filename,"rb");
+    fy=fopen(filename,"rb");		if(fy == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velbz",level); 
-    fz=fopen(filename,"rb");
+    fz=fopen(filename,"rb");		if(fz == NULL) printf("Cannot open %s\n", filename);
 
     /* fdx=fopen("./ic_deltab","rb"); */
     /* fx=fopen("./ic_velcx","rb"); */
@@ -2795,15 +2812,18 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 	  dumpgrid(param->lmax,firstoct,filename,adump,param); 
 
+
+
+
 	  // backups for restart
 
+#ifdef BKP
 	  if(*(cpu->ndumps)%FBKP==0){
 
 	    if(cpu->rank==RANK_DISP){
-	      printf("BACKUP .......#%d\n",*cpu->ndumps%2);
+	      printf("BACKUP .......#%d\n",*cpu->ndumps%2+1);
 	    }
 
-	    
 	    sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
 	    save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 	    
@@ -2812,6 +2832,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank); 
 	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 #endif
+
 	  }
+#endif
 	}	
 }
