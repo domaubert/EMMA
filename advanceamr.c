@@ -1005,7 +1005,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif
+#ifndef SNTEST
       createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+#else
+      createStars(firstoct,param,cpu, adt[level-1], tloc, level, is); 
+#endif
+
 #endif
 
 

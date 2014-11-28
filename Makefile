@@ -7,12 +7,12 @@ DEFINES  =
 #=========================================== CODE PARAMETERS =====================
 
 #------------ MAIN OPTIONS --------------------
-DEFINES  +=  -DPIC
+#DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
-DEFINES  +=  -DWGRAV 
+#DEFINES  +=  -DWGRAV 
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
-DEFINES  +=  -DTESTCOSMO
+#DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DSTARS
 #DEFINES  +=  -DKPCLIMIT
 #DEFINES  +=  -DWDBG
@@ -36,14 +36,14 @@ DEFINES  +=  -DWCUDA_ERR
 
 #------------ ICs OPTIONS ---------------------
 
-DEFINES  +=  -DGRAFIC
+#DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
 #DEFINES  +=  -DEDBERT
 #DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-#DEFINES  +=  -DWRADTEST  
+DEFINES  +=  -DWRADTEST  
 #DEFINES  +=  -DTESTCLUMP # RADTEST MUST BE SET
 
 #------------ PIC OPTIONS ----------------------
@@ -74,23 +74,25 @@ DEFINES  += -DACCEL_RAD_STAR
 #DEFINES  += -DHOMOSOURCE
 DEFINES  += -DCOARSERAD
 #DEFINES  += -DSCHAYE
-#DEFINES += -DOTSA
+DEFINES += -DOTSA
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
-# DEFINES  +=  -DTRANSZM
-# DEFINES  +=  -DTRANSZP
-# DEFINES  +=  -DTRANSYM
-# DEFINES  +=  -DTRANSYP
-#DEFINES  +=  -DTRANSXM
-#DEFINES  +=  -DTRANSXP
-#DEFINES  +=  -DREFXM # TRANS must be turned on too
-#DEFINES  +=  -DREFYM # TRANS must be turned on too
-#DEFINES  +=  -DREFZM # TRANS must be turned on too
+DEFINES  +=  -DTRANSZM
+DEFINES  +=  -DTRANSZP
+DEFINES  +=  -DTRANSYM
+DEFINES  +=  -DTRANSYP
+DEFINES  +=  -DTRANSXM
+DEFINES  +=  -DTRANSXP
+DEFINES  +=  -DREFXM # TRANS must be turned on too
+DEFINES  +=  -DREFYM # TRANS must be turned on too
+DEFINES  +=  -DREFZM # TRANS must be turned on too
 
 # ---- MOVIE--------------
-#DEFINES += -DMOVIE
+DEFINES += -DMOVIE
 
- DEFINES += -DBKP
+#DEFINES += -DBKP
+DEFINES += -DSNTEST
+
 #=================================================================================
 
 ifeq ($(ARCH),GPU)

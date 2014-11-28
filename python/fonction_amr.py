@@ -71,7 +71,7 @@ def denoct2grid(data,args,silo):
 		f=" 707 "
 	if args.field[0]=="field.u" : 
 		f=" 102 "
-	if args.field[0]=="rfield.snfb" : 
+	if args.field[0]=="rfield.xion" : 
 		f=" 706 "
 	
 	if f=="0 ":
@@ -79,7 +79,7 @@ def denoct2grid(data,args,silo):
 		sys.exit()
 
 	print "Lecture de la grille", data 
-	commande = o2g + " " + data + " " +  str(args.level) + " "  + str(f) + out + str(args.nproc) + " " + str(silo) + " -1 0 0.5 0 0.5 0.5 1 > dump" 
+	commande = o2g + " " + data + " " +  str(args.level) + " "  + str(f) + out + str(args.nproc) + " " + str(silo) + " -1 0 1 0 1 0 1 " 
 	print commande
 	os.system(commande)
 

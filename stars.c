@@ -1,3 +1,5 @@
+#ifdef STARS
+
 
 #include <math.h>
 #include <stdio.h>
@@ -18,7 +20,8 @@
 #endif
 
 
-#ifdef STARS
+
+
 
 /*
 known t_car :
@@ -32,6 +35,7 @@ known t_car :
 // 		SOME FONCTIONS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifdef TESTCOSMO
 REAL a2t(struct RUNPARAMS *param, REAL az ){
 //  	from Ned Wright http://www.astro.ucla.edu/~wright/CC.python
 
@@ -53,8 +57,9 @@ REAL a2t(struct RUNPARAMS *param, REAL az ){
 
 	return zage_Gyr*1e9;
 }
+#endif
 
-#ifdef STARS
+
 REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
@@ -78,18 +83,14 @@ int gpoiss(REAL lambda){
 	return k;
 }
 
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		FEEDBACK
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt, REAL mstar){
-
-  REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
-  s8 	*= 31556926; 	// years en s
-  
-  REAL dv 	= POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
-  REAL E 		= param->stars->feedback_frac *mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
-  E	       *= exp( -t0/s8 )/s8;
+void thermalFeedback(struct CELL *cell,  REAL E){
 
  	struct OCT* oct = cell2oct(cell);
 	int i;
@@ -101,65 +102,50 @@ void thermalFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL a
 }
 
 
-void kineticFeedback(struct CELL *cell, struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL dt, REAL mstar){
-
-//	REAL rhoc = 3.* POW(67.*1e-3*PARSEC ,2) /(8.*PI*NEWTON_G);
-//	printf("level = %d a = %f Ul = %f\n",level, aexp, param->unit.unit_l);
-//  REAL dv 	= POW( POW(2.,-6) * aexp * param->unit.unit_l, 3.); 
-
-
-//	printf("rhoc = %e dv = %f\n",rhoc, dv);
-//	REAL unit_m = rhoc*dv;
-//	printf("unit_m = %f \n",unit_m);
-
-
-
-  REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
-  s8 	*= 31556926; 	// years en s
-  
-  REAL dv 	= POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
-  REAL E = (1.-param->stars->feedback_frac) *mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
-  E	       *= exp( -t0/s8 )/s8;
-
-
-
-
-
-	E*= 1e25;
-
-//		printf(" %f \t %f \t %f \t %f\t %f \t %f \n ",  param->stars->feedback_frac ,mstar,unit_m,SN_EGY,param->stars->feedback_eff,dv);
-
-	struct OCT* oct = cell2oct(cell);
+void kineticFeedback(struct CELL *cell, REAL E){
 
 	float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
 	float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
 	float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
-	
+
+	REAL e = E/8.;
+
+	struct OCT* oct = cell2oct(cell);
+
 	int i;
 	for(i=0;i<8;i++){
 		struct CELL* curcell = &oct->cell[i];
-		
-  	REAL e = E/8.;
+
 		REAL V = SQRT(2.*e/curcell->field.d);
 
 		printf("--> %e \t ",  curcell->field.u);
 		curcell->field.u += dir_x[i] * 0.52532198881 * V;
-		printf(" %e \t %e \n ",  curcell->field.u , V);
-
-
-
 		curcell->field.v += dir_y[i] * 0.52532198881 * V;
 		curcell->field.w += dir_z[i] * 0.52532198881 * V;
+		printf(" %e \t %e \n ",  curcell->field.u , V);
 
 	}
-
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
+
+	REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
+	s8 	*= 31556926; 	// years en s
+
+	REAL dv = POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
+	REAL E  = mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
+	E	     *= exp( -t0*31556926/s8 )/s8;
+
+	return E;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
+#ifndef SNTEST
 	cell->rfield.snfb = 0;
 
 	if(param->stars->feedback_eff){
@@ -167,7 +153,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 		int Nsn = 0;
 		REAL t0;
 
-		struct PART *nexp; //
+		struct PART *nexp;
 		struct PART *curp;
 
 		nexp=cell->phead;
@@ -183,8 +169,12 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 				  }
 				  else if ( t0 >= param->stars->tlife){
 				    curp->isStar = 2; 
-				    thermalFeedback(cell, param, t0*31556926, aexp, level, dt,curp->mass);
-				    kineticFeedback(cell, param, t0*31556926, aexp, level, dt,curp->mass);
+
+						REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass) ;
+
+				    thermalFeedback(cell, E*(   param->stars->feedback_frac));
+				    kineticFeedback(cell, E*(1.-param->stars->feedback_frac));
+
 				    Nsn++;
 				  }
 				}
@@ -193,7 +183,39 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 		return Nsn;
 	}
 	return 0;
+
+#else
+
+	struct OCT* oct = cell2oct(cell);
+
+	if (oct->x == 0.5 && oct->y == 0.5 && oct->z == 0.5 && cell->idx == 0){
+		REAL t0 = aexp *param->unit.unit_t/MYR *1e6;
+
+		printf("t0 = %e\n",t0);
+
+		if ( t0 >= param->stars->tlife && t0 < 2e9){
+
+				printf("SN active\n");
+
+				REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
+				s8 	*= 31556926; 	// years en s
+
+				REAL dv = POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
+				dv = 1e-2;
+				REAL E  = SN_EGY*param->stars->feedback_eff/dv;
+				E	     *= exp( -t0*31556926/s8 )/s8;
+
+		    thermalFeedback(cell, E*(   param->stars->feedback_frac));
+		    kineticFeedback(cell, E*(1.-param->stars->feedback_frac));
+
+		}
+	}
+	return 1;
+
+#endif
+
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		STARS
@@ -229,8 +251,11 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->ekin = 0.5 * star->mass * (POW(star->vx,2) + POW(star->vy,2) + POW(star->vz,2));
 
 	star->isStar = 1;
+#ifdef TESTCOSMO
 	star->age = param->cosmo->tphy;
+#endif	
 	star->rhocell = cell->field.d;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -238,11 +263,13 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *param, REAL aexp, int level){
 
 	if (cell->child != NULL) return 0;
-
-	int A = 	cell->field.d > param->stars->thresh;
-	int B = 0?	cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) 				: 1;
-
+	int A,B;
+	A = 	cell->field.d > param->stars->thresh;
+#ifdef WGRAV
+	B = 0?	cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) 				: 1;
+#endif
 	return 		A && B;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -329,8 +356,9 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars, REAL mlevel){
 
+void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars, REAL mlevel){
+#ifdef PIC
 	struct PART *star = cpu->freepart;
 
 	if (star==NULL){
@@ -367,12 +395,15 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		conserveField(&(cell->field   ), param, star,  dx, aexp,mlevel);
 		conserveField(&(cell->fieldnew), param, star,  dx, aexp,mlevel);
 	}
+#endif
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
+#ifdef TESTCOSMO
 	REAL k =(param->stars->density_cond >0)? 1 : -POW(aexp,3.0);
 	
 	REAL rhostar		= param->unit.unit_mass/POW(param->unit.unit_l,3) ;
@@ -383,6 +414,8 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 	param->stars->thresh = FMAX(1e6*POW(aexp,3.) *PROTON_MASS/rhostar, param->stars->overdensity_cond* (param->cosmo->ob/param->cosmo->om));
 #else
 	param->stars->thresh    = FMAX( k * rhocrittilde / rhostar, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
+#endif
+
 #endif
 }
 
@@ -408,10 +441,12 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	
 	initThresh(param, aexp);
+#ifdef TESTCOSMO
 	param->cosmo->tphy	= a2t(param, aexp);
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
 	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse); // coarse mass
+#endif
 
 /*	if(cpu->rank == 0){
 		printf("\n");
@@ -427,7 +462,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	  for(icell=0;icell<8;icell++) {
 	    curcell = &curoct->cell[icell];
-	    
+
+#ifndef SNTEST	    
 	    if( testCond(curcell, dt, dx, param, aexp, level) ) {
 	      xc=curoct->x+( icell    & 1)*dx+dx*0.5; 
 	      yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
@@ -438,10 +474,13 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 	      for (ipart=0;ipart< N; ipart++){
+#ifdef PIC
 		addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++,mstars_level);						
+#endif
 	      }
 	    }
-	    
+#endif
+
 	    Nsn += feedback(curcell, param, cpu, aexp,level,dt);
 	    mmax = FMAX(curcell->field.d, mmax);
 	  }
@@ -460,7 +499,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("%d stars added on level %d \n", nstars, level);
 		printf("%d stars in total\n",param->stars->n);
 		if(param->stars->n>0) cpu->trigstar=1;
-		printf("\n");
+//		printf("\n");
 	}
 	
 	for (l = param->lcoarse; l<=param->lmax;l++){
@@ -472,10 +511,10 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	}
 
 	if(cpu->rank==RANK_DISP) {	printf("%d\tActive SN\n",Nsn);}
-	if(cpu->rank==RANK_DISP) {	printf("\n");}
+//	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
 #endif
 
 
 
-#endif
+

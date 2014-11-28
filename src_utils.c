@@ -13,7 +13,7 @@
 
 #ifdef COARSERAD
 #ifdef STARS
-
+#ifndef SNTEST
 void collectstars(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param, REAL dxcoarse, REAL aexp, REAL tcur, int *ns){
 
   REAL srcint = param->srcint;
@@ -72,6 +72,8 @@ int putsource2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL ae
 
   return ns;
 }
+
+#endif
 #endif
 
 // --------------------------------------------------------------------

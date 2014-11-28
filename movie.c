@@ -13,6 +13,7 @@ int MOVIE_SNAP_NUMBER = 0;
 
 void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
 
+	
 	if(cpu->rank==0)  printf("dump movie file ");
 
 // Param------------------------
@@ -89,10 +90,13 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 								const int y  = jmap+jj-j0;
 								const int id = x+y*nmapx;
 
+#ifdef WGRAV
 								m1[id] += (float)cell->gdata.p;
+#endif
 								m2[id] += (float)cell->field.d;
 								m3[id] += (float)cell->field.dX/(float)cell->field.d;
 								m4[id] += (float)cell->rfield.temp;
+
 							}
 						}
 					}
@@ -112,11 +116,12 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
 	if(cpu->rank==0){
 
-
 		char fname[128];
 		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER++);
 
-		FILE *fp = fopen(fname,"wb");
+		FILE *fp = NULL;
+		fp =fopen(fname,"wb");
+		if(fp == NULL) printf("Cannot open %s\n", fname);
 
 		fwrite(&nmapx,1,sizeof(int  ),fp);
 		fwrite(&nmapy,1,sizeof(int  ),fp);
@@ -125,8 +130,6 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 		fclose(fp);
 	}
-
-
 
   if(cpu->rank==0) printf("done\n");
 }

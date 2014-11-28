@@ -4,12 +4,12 @@ max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
 output_frequency 10
-max_nuber_of_steps 900000
+max_nuber_of_steps 9000
 time_step_max  1e0
 tmax_or_amax 0.2
 ##==AMRGrid==================
 level_coarse 6
-level_max 10
+level_max 7
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============
@@ -19,7 +19,7 @@ mgrid_lmin 3
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 0
+restart_snap 2
 ##==ThreadManagement======
 grav_stencil_size 16
 cons_stencil_size 16
@@ -37,8 +37,8 @@ overdensity_cond 10
 density_cond -50
 tcar 4e9   
 tlife 2e7
-feedback_eff 1.
-feedback_frac 0.5
+feedback_eff 1e25
+feedback_frac 0
 ##==Movie====================
 lmap 8
 xmin 0

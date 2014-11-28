@@ -2303,7 +2303,7 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, struct OCT **firstoct)
 {
-  FILE *fd;
+  FILE *fd = NULL;
   
   int level;
   REAL dxcur;

@@ -68,9 +68,9 @@ def plotdiffslice(args):
 def plotslice(args):
 
 #	args.field = ["rfield.src"]
-#	args.field = ["rfield.snfb"]
-	args.field = ["rfield.temp"]
-#	args.field = ["field.d"]
+#	args.field = ["rfield.xion"]
+#	args.field = ["rfield.temp"]
+	args.field = ["field.d"]
 
 	filename = args.files[0][:-7]
 	filename = args.files[0]
@@ -87,9 +87,9 @@ def plotslice(args):
 	N = pow(2,args.level)
 
 	#data=np.abs(data) 
-	plt.imshow( data, interpolation='nearest',extent=(0,N/2,0,N/2), origin='top' )
+	plt.imshow( np.log(data), interpolation='nearest',extent=(0,N,0,N), origin='top' )
 	plt.colorbar()
-	plt.clim(5,7)
+#	plt.clim(5,7)
 #	N,t,parts=readStars(args.files[0], args)
 #	plotpart(args,N,parts)
 
