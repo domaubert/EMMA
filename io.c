@@ -474,7 +474,7 @@ printf( "REFZM\t");
   printf( "tcar\t%e\n",(param->stars->tcar) );				// carateristic time [yr]
   printf( "tlife\t%e\n",(param->stars->tlife) );			// radiative life time of a stellar particle [yr]
   printf( "feedback_eff\t%e\n",(param->stars->feedback_eff) );		// SN feedback efficiency
-  printf( "feedback_frac\t%e\n",(param->stars->feedback_frac) );	// fraction of thermal feedback (the other part goes to kinetic feedback) 
+  printf( "feedback_frac\t%e\n",(param->stars->feedback_frac) );	// fraction of kinetic feedback (the other part goes to thermal feedback) 
 
 #endif
 

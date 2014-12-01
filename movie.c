@@ -72,7 +72,6 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 					const REAL yc=oct->y+((icell/2)%2)*dxcur;
 					const REAL zc=oct->z+( icell/4   )*dxcur;
 
-
 					if((zc<zmin)||(zc>zmax))	  continue;
 					if((yc<ymin)||(yc>ymax))	  continue;
 					if((xc<xmin)||(xc>xmax))	  continue;

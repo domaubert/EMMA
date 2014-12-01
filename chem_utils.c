@@ -422,20 +422,20 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
 
 	  if(compcool){
-/* #ifdef STARS */
-/* 	  REAL SN 	 = R.snfb; */
-/* 	  //if (R.snfb) Cool = 0; */
-/* 	  //if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt); */
-/* #else */
-/* 	  REAL SN = 0; */
-/* #endif */
-	    REAL SN=0.;
+#ifdef STARS 
+ 	  REAL SN 	 = R.snfb*0; 
+// 	  if (R.snfb) Cool = 0; 
+ 	  if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool); 
+#else 
+ 	  REAL SN = 0; 
+#endif 
+
 	  
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
-
+	  eintt=(eint[idloc]+ dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
+ 	  if (R.snfb) printf("E0\t%e\n",eintt);
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);

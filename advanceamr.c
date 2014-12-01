@@ -19,6 +19,7 @@
 
 #ifdef STARS
 #include "stars.h"
+#include "supernovae.h"
 #endif
 
 #include "movie.h"
@@ -1007,8 +1008,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 #ifndef SNTEST
       createStars(firstoct,param,cpu, adt[level-1], aexp, level, is); 
+      supernovae(firstoct,param,cpu, adt[level-1], aexp, level, is); 
 #else
-      createStars(firstoct,param,cpu, adt[level-1], tloc, level, is); 
+      createStars(firstoct,param,cpu, adt[level-1], tloc, level, is);
+			supernovae(firstoct,param,cpu, adt[level-1], tloc, level, is);  
 #endif
 
 #endif
@@ -1057,7 +1060,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
 #ifdef MOVIE
-	if (level<=param->movie->lmap)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
+	if (level==param->lcoarse)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
 #endif
 
   }while((dt<adt[level-2])&&(is<nsub));

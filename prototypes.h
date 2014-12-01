@@ -99,7 +99,6 @@ typedef double REAL;
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
-
 //=======================================
 #ifdef TESTCOSMO
 struct COSMOPARAM{

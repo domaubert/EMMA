@@ -1,6 +1,5 @@
 #ifdef STARS
 
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,9 +17,6 @@
 #ifdef WMPI
 #include <mpi.h>
 #endif
-
-
-
 
 
 /*
@@ -82,140 +78,6 @@ int gpoiss(REAL lambda){
 	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
 	return k;
 }
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//		FEEDBACK
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void thermalFeedback(struct CELL *cell,  REAL E){
-
- 	struct OCT* oct = cell2oct(cell);
-	int i;
-	for(i=0;i<8;i++){
-		struct CELL* curcell = &oct->cell[i];
-	  cell->rfield.snfb += E/8.;	
-	}
-  //printf("E=%e SN=%e v=%e mstar=%e\n",E,SN_EGY,param->unit.unit_l,mstar);
-}
-
-
-void kineticFeedback(struct CELL *cell, REAL E){
-
-	float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
-	float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-	float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
-
-	REAL e = E/8.;
-
-	struct OCT* oct = cell2oct(cell);
-
-	int i;
-	for(i=0;i<8;i++){
-		struct CELL* curcell = &oct->cell[i];
-
-		REAL V = SQRT(2.*e/curcell->field.d);
-
-		printf("--> %e \t ",  curcell->field.u);
-		curcell->field.u += dir_x[i] * 0.52532198881 * V;
-		curcell->field.v += dir_y[i] * 0.52532198881 * V;
-		curcell->field.w += dir_z[i] * 0.52532198881 * V;
-		printf(" %e \t %e \n ",  curcell->field.u , V);
-
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
-
-	REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
-	s8 	*= 31556926; 	// years en s
-
-	REAL dv = POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
-	REAL E  = mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
-	E	     *= exp( -t0*31556926/s8 )/s8;
-
-	return E;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-
-#ifndef SNTEST
-	cell->rfield.snfb = 0;
-
-	if(param->stars->feedback_eff){
-
-		int Nsn = 0;
-		REAL t0;
-
-		struct PART *nexp;
-		struct PART *curp;
-
-		nexp=cell->phead;
-		if(nexp==NULL) return 0;
-	 	do{ 	curp=nexp;
-			nexp=curp->next;
-
-			if (curp->isStar && curp->isStar < 3){
-				t0 =  param->cosmo->tphy - curp->age;
-				if(t0>=0){ // for inter-level communications
-				  if ( t0 >= (param->stars->tlife*11)){
-				    curp->isStar = 3;
-				  }
-				  else if ( t0 >= param->stars->tlife){
-				    curp->isStar = 2; 
-
-						REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass) ;
-
-				    thermalFeedback(cell, E*(   param->stars->feedback_frac));
-				    kineticFeedback(cell, E*(1.-param->stars->feedback_frac));
-
-				    Nsn++;
-				  }
-				}
-			}
-		}while(nexp!=NULL);
-		return Nsn;
-	}
-	return 0;
-
-#else
-
-	struct OCT* oct = cell2oct(cell);
-
-	if (oct->x == 0.5 && oct->y == 0.5 && oct->z == 0.5 && cell->idx == 0){
-		REAL t0 = aexp *param->unit.unit_t/MYR *1e6;
-
-		printf("t0 = %e\n",t0);
-
-		if ( t0 >= param->stars->tlife && t0 < 2e9){
-
-				printf("SN active\n");
-
-				REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
-				s8 	*= 31556926; 	// years en s
-
-				REAL dv = POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);   
-				dv = 1e-2;
-				REAL E  = SN_EGY*param->stars->feedback_eff/dv;
-				E	     *= exp( -t0*31556926/s8 )/s8;
-
-		    thermalFeedback(cell, E*(   param->stars->feedback_frac));
-		    kineticFeedback(cell, E*(1.-param->stars->feedback_frac));
-
-		}
-	}
-	return 1;
-
-#endif
-
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		STARS
@@ -436,7 +298,6 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int nstars = 0;
 	int nsl = 0;
 	int N;
-	int Nsn=0;
 	REAL mstars_level; // mass of stars at level
 
 	
@@ -447,6 +308,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
 	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse); // coarse mass
 #endif
+
+
 
 /*	if(cpu->rank == 0){
 		printf("\n");
@@ -480,8 +343,6 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	      }
 	    }
 #endif
-
-	    Nsn += feedback(curcell, param, cpu, aexp,level,dt);
 	    mmax = FMAX(curcell->field.d, mmax);
 	  }
 	}while(nextoct!=NULL);
@@ -489,8 +350,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,MPI_MAX,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,	MPI_MAX,cpu->comm);
 #endif
 
 	param->stars->n += nstars ;
@@ -510,7 +370,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	  //if(cpu->rank==RANK_DISP && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
 
-	if(cpu->rank==RANK_DISP) {	printf("%d\tActive SN\n",Nsn);}
+
 //	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
 #endif
