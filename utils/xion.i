@@ -4,11 +4,11 @@
 //rep="./data0_dyncoll_nosrc";ncpu=32;execut="./utils/oct2grid_cosmo ";
 //rep="./dataref";ncpu=16;
 //rep="./data_coarse_256_24MPC/";ncpu=256;execut="./utils/oct2grid "sbox=24.;
-rep="./data/";ncpu=32;execut="./utils/oct2grid "sbox=4.;
+rep="./data/";ncpu=32;execut="./utils/alloct ";sbox=4.;
 //rep="./data_12_noschaye/";ncpu=32;execut="./utils/oct2grid ";sbox=12.;
 
 #if 1
-nsnap=35;
+nsnap=36;
 level=8;
 nsamp=1;
 
@@ -41,8 +41,9 @@ va=array(double,nsnap);
 vt=array(double,nsnap);
 
 for(i=1;i<=nsnap;i+=nsamp){
-  xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut=execut);
-  xa(i)=xion(avg,avg,avg,);
+  //xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut=execut);
+  xion=alloct(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut=execut);
+  xa(i)=(xion(5,)*pow(0.5,xion(4,)))(sum)/pow(0.5,xion(4,))(sum);
   //ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut=execut)(avg,avg,avg);
   //ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut=execut))(avg,avg,avg);
   va(i)=a;

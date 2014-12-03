@@ -14,13 +14,13 @@ DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
 #DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DSTARS
-#DEFINES  +=  -DKPCLIMIT
-#DEFINES  +=  -DWDBG
-#DEFINES  +=  -DZOOM
-#DEFINES  +=  -DJUSTIC
+DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
+#DEFINES  +=  -DWDBG #// mode debug
+#DEFINES  +=  -DZOOM #// mode zoom
+#DEFINES  +=  -DJUSTIC #// juste les conditions initiales
 
 #------------ PRECISION OPTIONS ---------------------
-#DEFINES  +=  -DSINGLEPRECISION
+DEFINES  +=  -DSINGLEPRECISION 
 
 #------------ MPI OPTIONS ---------------------
 
@@ -70,8 +70,9 @@ DEFINES  += -DCOOLING
 DEFINES  += -DSEMI_IMPLICIT 
 #DEFINES  += -DOLDCHEMRAD 
 DEFINES  += -DACCEL_RAD_STAR
-#DEFINES  += -DRADSTEP
+#DEFINES += -DOTSA
 #DEFINES  += -DHOMOSOURCE
+#DEFINES  += -DRADSTEP
 DEFINES  += -DCOARSERAD
 #DEFINES  += -DSCHAYE
 DEFINES += -DOTSA

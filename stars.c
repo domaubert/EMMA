@@ -179,7 +179,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 
 int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL aexp, int level, REAL mlevel){
 	
-	REAL gas_efficiency = 1e-1;	// maybe need to be passed in param??
+	REAL gas_efficiency = 1e0;	// maybe need to be passed in param??
 
 
 #ifdef SCHAYE
