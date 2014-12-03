@@ -86,6 +86,8 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//int SN_TMP_PARAM = 1;
+
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
 #ifndef SNTEST
@@ -131,28 +133,30 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 	struct OCT* oct = cell2oct(cell);
 
-	if (oct->x == 0 && oct->y == 0 && oct->z == 0 && cell->idx == 0){
+	if (oct->x == 0.5 && oct->y == 0.5 && oct->z == 0.5 && cell->idx == 0){
 
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 
 		REAL t = aexp * in_yrs;
 
 		if ( t >= param->stars->tlife && t < param->stars->tlife*11){
+//		if ( t >= param->stars->tlife && SN_TMP_PARAM){
+//				SN_TMP_PARAM = 0;
 
 				printf("SN active at t = %e\n", t);
 
 				REAL s8 	 = param->stars->tlife; //yrs
 
-				REAL dv = POW( POW(2.,-level) * param->unit.unit_l, 3.);
+				REAL dv = POW( POW(2.,-level) * param->unit.unit_l, 3.); //m-3
 
-				REAL E  = param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv; 
+			
+				REAL msn = 8. *2e30 ; //kg
+
+				REAL E  = msn *SN_EGY*param->stars->feedback_eff/dv; //J.m-3 
 
 				
 
-				E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8;
-
-				printf("dt = %e \n",dt*in_yrs);
-
+				E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
 
 				printf("total feedback EGY %e\n",E);
 

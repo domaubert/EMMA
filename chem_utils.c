@@ -314,7 +314,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(fudgecool<1e-6){
 	    printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
-	    if(fudgecool<1e-20) abort();
+	 //   if(fudgecool<1e-20) abort();
 	  }
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
@@ -423,8 +423,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(compcool){
 #ifdef STARS 
- 	  REAL SN 	 = R.snfb*0; 
-// 	  if (R.snfb) Cool = 0; 
+ 	  REAL SN 	 = R.snfb; 
+// 	  if (R.snfb) Cool = 0; // Stop the cooling if supernovae
  	  if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool); 
 #else 
  	  REAL SN = 0; 

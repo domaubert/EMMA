@@ -38,6 +38,8 @@ class cube :
 		return self.data
 	def getZ(self):
 		return self.a.getZ()
+	def getSize(self):
+		return self.a.getSize()
 
 def denoct2grid(data,args,silo):
 
@@ -73,6 +75,8 @@ def denoct2grid(data,args,silo):
 		f=" 102 "
 	if args.field[0]=="rfield.xion" : 
 		f=" 706 "
+	if args.field[0]=="eint" : 
+		f=" 721 "
 	
 	if f=="0 ":
 		print "entrez un champ"
