@@ -742,7 +742,9 @@ blockcounts[0]++; // For SN feedback
     printf(" === alloc Memory ===\n");
     printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);
     printf(" grid = %f MB\n",(ngridmax/(1024*1024.))*sizeof(struct OCT));
+#ifdef PIC
     printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct PART));
+#endif
   }
 
   firstoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the firstoct of each level
@@ -758,9 +760,11 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 
+#ifndef PIC
+	part = NULL;
+#endif
 
   lastpart=part-1; // the last particle points before the first at the very beginning
-
 
   //===================================================================================================
 

@@ -4,7 +4,7 @@ max_number_of_part 100000
 mpi_buffer_size 800000
 ##==TimestepManagement=======
 output_frequency 50
-max_nuber_of_steps 50
+max_nuber_of_steps 500
 time_step_max  1e0
 tmax_or_amax 10000.
 ##==AMRGrid==================
@@ -37,7 +37,7 @@ density_cond -500
 tcar 2e9
 tlife 2e5
 feedback_eff 1.
-feedback_frac 0.95
+feedback_frac 1.
 ##==Movie====================
 lmap 7
 xmin 0

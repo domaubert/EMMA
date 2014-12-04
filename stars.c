@@ -129,7 +129,10 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 	A = 	cell->field.d > param->stars->thresh;
 #ifdef WGRAV
 	B = 0?	cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) 				: 1;
+#else
+	B = 1;
 #endif
+
 	return 		A && B;
 
 }
