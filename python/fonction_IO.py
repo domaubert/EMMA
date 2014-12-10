@@ -49,7 +49,7 @@ class Param :
 		self.TRANSXP      = unpack('i',file.read(4))[0]
 		self.REFXM        = unpack('i',file.read(4))[0]
 		self.REFYM        = unpack('i',file.read(4))[0]
-		self.REFZM	  = unpack('i',file.read(4))[0]
+		self.REFZM	  		= unpack('i',file.read(4))[0]
 
 		self.npartmax     = unpack('i',file.read(4))[0]
 		self.ngridmax     = unpack('i',file.read(4))[0]

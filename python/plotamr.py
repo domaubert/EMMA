@@ -70,7 +70,7 @@ def plotslice(args):
 #	args.field = ["rfield.src"]
 #	args.field = ["rfield.xion"]
 #	args.field = ["rfield.temp"]
-	args.field = ["rfield.temp"]
+	args.field = ["field.d"]
 
 	filename = args.files[0][:-7]
 	filename = args.files[0]
@@ -81,14 +81,14 @@ def plotslice(args):
 	denoct2grid(filename, args,0)
 #	data = np.log10(np.sum( cube(filename + ".cube").getData()  ,axis=0))
 	data = cube(filename + ".cube").getData()
-	data = data[:,:,64]
-
-	plt.grid(True)
-	
 	N = pow(2,args.level)
+	data = data[:,:,N/2]
+
+
+	#plt.grid(True)
 
 	#data=np.abs(data) 
-	plt.imshow( data, interpolation='nearest',extent=(0,N,0,N), origin='top' )
+	plt.imshow(data, interpolation='nearest',extent=(0,N,0,N), origin='top' )
 	plt.colorbar()
 #	plt.clim(5,7)
 #	N,t,parts=readStars(args.files[0], args)
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 	args = getargs()
 
 	filename = args.files[0]
-	filename = filename[:-10] +  "part" +  filename[-6:] 
+#	filename = filename[:-10] +  "part" +  filename[-6:] 
 
 	print "redshift" , getZ(filename + ".p00000"  )
 

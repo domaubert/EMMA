@@ -29,8 +29,8 @@ if __name__ == "__main__":
 			j+=1		
 			print "%d / %d"%(j,len(files)/nsub)
 			f = open(folder + file, "rb")
-			x 	= np.fromfile(f, dtype=np.int32  ,count=1)[0]		
-			y 	= np.fromfile(f, dtype=np.int32  ,count=1)[0]		
+			x 	= np.fromfile(f, dtype=np.int32  ,count=1)[0]
+			y 	= np.fromfile(f, dtype=np.int32  ,count=1)[0]
 			a 	= np.fromfile(f, dtype=np.float32  ,count=1)[0]		
 
 			m1 	= np.fromfile(f, dtype=np.float32  ,count=x*y)		#pot
@@ -40,9 +40,9 @@ if __name__ == "__main__":
 
 			data = m2.reshape(x,y)
 
-			plt.imshow(np.log(data), interpolation='none')
+			plt.imshow(data, interpolation='nearest')
 			plt.colorbar()
-#			plt.clim(-1.9,-1.7)
+		#	plt.clim(np.log(0.0135),np.log(0.0175))
 			plt.savefig("data/img/"+file+".png")
 			plt.clf()
 

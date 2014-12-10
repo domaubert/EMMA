@@ -407,7 +407,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #ifdef COOLING
 	  // HEATING + COOLING
 
-	  int compcool=1; // do we need to compute the cooling ?
+	  int compcool=0; // do we need to compute the cooling ?
 
 #ifdef SCHAYE
 	  if((nH[idloc]>1e6)&&(R.nh>(param->stars->overdensity_cond*navg))){

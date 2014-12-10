@@ -1508,10 +1508,10 @@ blockcounts[0]++; // For SN feedback
     int igrp;
     param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
     param.unit.unit_n=1.;
-
+    
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-    param.unit.unit_l=15e3*PARSEC;
+    param.unit.unit_l= 15 *PARSEC;
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
@@ -1627,8 +1627,8 @@ blockcounts[0]++; // For SN feedback
 		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
 		  curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		  getE(&(curoct->cell[icell].field));
-		  /* printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar); */
-		  /* abort(); */
+		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
+		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif
 
 #endif
@@ -1640,6 +1640,8 @@ blockcounts[0]++; // For SN feedback
       }
 #endif
 #endif
+
+
 
     // saving the absolute initial time
 #ifdef TESTCOSMO
