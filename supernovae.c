@@ -9,6 +9,7 @@
 #include <mpi.h>
 #endif
 
+
 void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 #ifdef WRAD
 	struct OCT  *nextoct=firstoct[level-1];
@@ -36,10 +37,15 @@ void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUIN
 void thermalFeedback(struct CELL *cell,  REAL E){
 #ifdef WRAD
  	struct OCT* oct = cell2oct(cell);
+ 	
+ 	REAL dp = E * (GAMMA -1.);
+ 	
 	int i;
 	for(i=0;i<8;i++){
 		struct CELL* curcell = &oct->cell[i];
-		cell->rfield.snfb += E/8.;
+		//cell->rfield.snfb += E/8.;
+		cell->fieldnew.E += E/8.;
+		cell->fieldnew.p += dp/8.;
 	}
 #endif
 }
@@ -51,8 +57,9 @@ void kineticFeedback(struct CELL *cell, REAL E){
 	float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
 	float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
 	float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+	REAL cos45 = 0.52532198881;
 
-	REAL e = E/8.;
+
 
 	struct OCT* oct = cell2oct(cell);
 
@@ -60,13 +67,14 @@ void kineticFeedback(struct CELL *cell, REAL E){
 	for(i=0;i<8;i++){
 		struct CELL* curcell = &oct->cell[i];
 
+		REAL e = E/8.;
 		REAL V = SQRT(2.*e/curcell->field.d);
 
-		printf("--> %e \t ",  curcell->field.u);
-		curcell->field.u += dir_x[i] * 0.52532198881 * V;
-		curcell->field.v += dir_y[i] * 0.52532198881 * V;
-		curcell->field.w += dir_z[i] * 0.52532198881 * V;
-		printf(" %e \t %e \n ",  curcell->field.u , V);
+		//printf("--> %e \t ",  curcell->field.u);
+		curcell->field.u += dir_x[i] * cos45 * V;
+		curcell->field.v += dir_y[i] * cos45 * V;
+		curcell->field.w += dir_z[i] * cos45 * V;
+		//printf(" %e \t %e \n ",  curcell->field.u , V);
 	
 	}
 }
@@ -91,7 +99,6 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
 int SN_TMP_PARAM = 1;
 
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-
 #ifndef SNTEST
 	cell->rfield.snfb = 0;
 
@@ -143,25 +150,32 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 //		if ( t >= param->stars->tlife && t < param->stars->tlife*11){
 		if ( t >= param->stars->tlife && SN_TMP_PARAM){
-				SN_TMP_PARAM = 0;
 
-				printf("SN active at t = %e\n", t);
+			SN_TMP_PARAM = 0;
+			printf("SN active at t = %e\n", t);
 
-				REAL s8 	 = param->stars->tlife; //yrs
+			REAL dx = POW(2.,-level) * param->unit.unit_l; //m
+			REAL dv = POW( dx, 3.); //m3
 
-				REAL dv = POW( POW(2.,-level) * param->unit.unit_l, 3.); //m-3
+			REAL msn = 100 * 2e30 ; //kg
 
+			REAL E  = msn *SN_EGY*param->stars->feedback_eff/dv; //J.m-3 
+
+//				REAL s8 	 = param->stars->tlife; //yrs
+//				E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
+
+			printf("total feedback EGY %e erg\n",E*dv*1e7);
 			
-				REAL msn = 8. *2e30 ; //kg
-
-				REAL E  = msn *SN_EGY*param->stars->feedback_eff/dv; //J.m-3 
-
-				
-
-	//			E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
-
-				printf("total feedback EGY %e\n",E);
-
+			
+			printf("eblast=\t%e erg\n", E*dv*1e7);
+			printf("rho0=\t%e g.cm-3\n", param->unit.unit_d * cell->field.d * 1e-3 );
+			printf("ener0=\t%e erg\n",cell->field.p/(GAMMA-1.)*dv /1e-7 );
+			printf("P0=\t%e g.cm-1.s-2\n", cell->field.p /1e-1 );
+			printf("cs=\t%e cm.s-1\n", cell->field.a*param->unit.unit_v * 1e2);
+			printf("l=\t%e cm\n", param->unit.unit_l/2.0 * 1e2 );
+			
+			//abort(); 
+			
 		    kineticFeedback(cell, E*(   param->stars->feedback_frac));
 		    thermalFeedback(cell, E*(1.-param->stars->feedback_frac));
 		}
@@ -178,6 +192,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+	if(cpu->rank==RANK_DISP) printf("Supernovae\n");
 
 	int Nsn = 0;
 	struct OCT  *nextoct=firstoct[level-1];

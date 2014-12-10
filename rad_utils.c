@@ -1799,7 +1799,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 	// ----------- perform physical cooling and ionisation 
 
 #ifdef WCHEM
-	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
+	//chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
 #endif
 
 
