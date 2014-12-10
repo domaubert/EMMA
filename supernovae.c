@@ -10,7 +10,7 @@
 #endif
 
 void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
-	
+#ifdef WRAD
 	struct OCT  *nextoct=firstoct[level-1];
 
 	do {	if(nextoct==NULL) 		continue;
@@ -28,18 +28,20 @@ void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUIN
 
 		}
 	}while(nextoct!=NULL);
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedback(struct CELL *cell,  REAL E){
-
+#ifdef WRAD
  	struct OCT* oct = cell2oct(cell);
 	int i;
 	for(i=0;i<8;i++){
 		struct CELL* curcell = &oct->cell[i];
 		cell->rfield.snfb += E/8.;
 	}
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +88,7 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//int SN_TMP_PARAM = 1;
+int SN_TMP_PARAM = 1;
 
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
@@ -139,9 +141,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 		REAL t = aexp * in_yrs;
 
-		if ( t >= param->stars->tlife && t < param->stars->tlife*11){
-//		if ( t >= param->stars->tlife && SN_TMP_PARAM){
-//				SN_TMP_PARAM = 0;
+//		if ( t >= param->stars->tlife && t < param->stars->tlife*11){
+		if ( t >= param->stars->tlife && SN_TMP_PARAM){
+				SN_TMP_PARAM = 0;
 
 				printf("SN active at t = %e\n", t);
 
@@ -156,7 +158,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 				
 
-				E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
+	//			E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
 
 				printf("total feedback EGY %e\n",E);
 

@@ -200,7 +200,11 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	REAL tstars 	= param->stars->tcar * 31556926 / SQRT(cell->field.d / param->stars->thresh );
 #endif
 
+#ifdef WRADHYD
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t;
+#else
+	REAL tstartilde = 1;
+#endif
 
 	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level);
 

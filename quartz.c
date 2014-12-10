@@ -1507,7 +1507,7 @@ blockcounts[0]++; // For SN feedback
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-    param.unit.unit_l=15e3*PARSEC;
+    param.unit.unit_l=15e3*PARSEC/1000;
 #else
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
@@ -1628,6 +1628,10 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #endif
+
+
+
+
 		}
 	      }
 	  }while(nextoct!=NULL);
@@ -1635,6 +1639,50 @@ blockcounts[0]++; // For SN feedback
       
       }
 #endif
+#endif
+
+
+#ifdef SNTEST0
+	REAL X0=1./POW(2,levelcoarse);
+	int igrp;
+	param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+	param.unit.unit_n=1.;
+
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  ainit=1.;
+
+	param.unit.unit_l=15e3*PARSEC;
+
+  REAL nh=1000.;
+  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
+  REAL pstar;
+  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
+
+  for(level=levelcoarse;level<=levelmax;level++){
+		dxcur=POW(0.5,level);
+		nextoct=firstoct[level-1];
+		if(nextoct==NULL) continue;
+		do{
+			curoct=nextoct;
+			nextoct=curoct->next;
+			for(icell=0;icell<8;icell++){
+				xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+				yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+				zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+				curoct->cell[icell].field.d=PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+				curoct->cell[icell].field.u=0.0;
+				curoct->cell[icell].field.v=0.0;
+				curoct->cell[icell].field.w=0.0;
+//		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
+				curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+				getE(&(curoct->cell[icell].field));
+
+			}
+		}while(nextoct!=NULL);
+	}
 #endif
 
     // saving the absolute initial time

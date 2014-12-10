@@ -19,7 +19,7 @@ if __name__ == "__main__":
 	files = os.listdir(folder)
 	i,j=0,0
 	
-	nsub = 2
+	nsub = 10
 	fig = plt.figure()
 
 	for file in np.sort(files):

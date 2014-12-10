@@ -206,10 +206,11 @@ struct RUNPARAMS{
   int nstream; // number of GPU streams
   int ompthread; // numberf of OMP threads
 
+  struct UNITS unit; // contains the units
+
 #ifdef WRAD
   REAL clight; // speed of light in units of the real one
   REAL clightorg; // speed of light in units of the real one // saving the original value
-  struct UNITS unit; // contains the units
   REAL fudgecool; // cooling fraction
   int ncvgcool; // cooling max iterations
   

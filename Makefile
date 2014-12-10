@@ -14,7 +14,7 @@ DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
 #DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DSTARS
-#DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
+#0DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
 #DEFINES  +=  -DWDBG #// mode debug
 #DEFINES  +=  -DZOOM #// mode zoom
 #DEFINES  +=  -DJUSTIC #// juste les conditions initiales
@@ -43,7 +43,7 @@ DEFINES  +=  -DWCUDA_ERR
 #DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST  
+DEFINES  +=  -DWRADTEST
 #DEFINES  +=  -DTESTCLUMP # RADTEST MUST BE SET
 
 #------------ PIC OPTIONS ----------------------
