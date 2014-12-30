@@ -9,7 +9,7 @@
 // returns the cells on a neighbour face given by idx
 
 void getfcell(int idx, int *fcell){
-  
+
   switch(idx){
   case 0:
     fcell[0]=1;
@@ -54,7 +54,7 @@ void getfcell(int idx, int *fcell){
 ///------------------------------------------------------------------------
 // it flips the cell along a certain direction for transmissive boundary conditions
 void flipcell(struct OCT *oct, int dir){
-  
+
   int i;
   struct CELL temp;
 
@@ -93,9 +93,9 @@ void flipcell(struct OCT *oct, int dir){
       break;
     }
   }
-    
+
 }
-  
+
 
 
 
@@ -188,6 +188,31 @@ void getcellnei(int cindex, int *neip, int *cell)
   }
 
 }
+
+void getneicell(struct CELL *cell, struct CELL** neicell ){
+// return a pointer table with the 6 neighbors of a given cell
+
+    int vnei[6],vcell[6];
+    getcellnei(cell->idx, vnei, vcell);
+
+    struct OCT* curoct = cell2oct(cell);
+
+    struct OCT* neioct[6];
+
+    int i;
+    for(i=0;i<6;i++){
+        neicell[i] = NULL;
+        if(vnei[i]==6){
+            neicell[i] = &curoct->cell[vcell[i]];
+        }else{
+            struct OCT* neioct = curoct->nei[vnei[i]]->child;
+            if(neioct != NULL){
+                neicell[i] = &neioct->cell[vcell[i]];
+
+            }
+        }
+    }
+}
 //==================================================================
 //------------------------------------------------------------------------
 
@@ -197,16 +222,16 @@ void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
   struct PART *nexp;
   struct PART *curp;
   int icell;
-  
+
   for(icell=0;icell<8;icell++){
     if(oct->cell[icell].child==NULL){
       nexp=oct->cell[icell].phead; //sweeping the particles of the current cell */
-      if(nexp!=NULL){ 
-	do{  
-	  curp=nexp; 
-	  nexp=curp->next; 
-	  part2cell_cic(curp, octorg, icellorg,1); 
-	}while(nexp!=NULL); 
+      if(nexp!=NULL){
+	do{
+	  curp=nexp;
+	  nexp=curp->next;
+	  part2cell_cic(curp, octorg, icellorg,1);
+	}while(nexp!=NULL);
       }
     }
     else{

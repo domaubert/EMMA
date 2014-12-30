@@ -152,7 +152,6 @@ int main(int argc, char *argv[])
     printf("Cast single cpu #%d\n",mono) ;
   }
 
-
   for(icpu=icpustart;icpu<icpustop;icpu++){
     
     
@@ -221,11 +220,13 @@ int main(int argc, char *argv[])
     //    dummy=fread(&oct,sizeof(struct LOCT),1,fp);
     //while(!feof(fp)){
     dummy=fread(boct,sizeof(struct LOCT),noct,fp);
+
     for(ioct=0;ioct<noct;ioct++){
       memcpy(&oct,boct+ioct,sizeof(struct LOCT));
       if(oct.level<=lmap){
 	ic++;
 	dxcur=1./pow(2.,oct.level);
+
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    if(((oct.cell[icell].child==0)||(oct.level==lmap)))
