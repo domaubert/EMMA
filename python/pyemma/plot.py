@@ -1,0 +1,30 @@
+import matplotlib.pylab as plt
+
+from convert import *
+from amr import *
+
+def slice(filename,level,force=0, nproc=getNproc(), field="density", xmin=0, xmax=-1, ymin=0, ymax=-1, zmin=0, zmax=-1, log=False):
+	N = pow(2,level)
+	if xmax == -1 :
+		xmax = N
+	if ymax == -1 :
+		ymax = N
+	if zmax == -1 :
+		zmax = N
+		
+	oct2grid(filename,level, force, nproc, field, xmin, xmax, ymin, ymax, zmin, zmax)
+
+	data = cube(filename.replace("grid","cube"+ str(level)) + "." + field)
+
+	print data.geta()
+	data = data.getData()
+
+	if log:
+		data = np.log(data)
+	
+	data = np.mean(data,axis=0)
+
+	plt.clf()
+	plt.imshow(data, interpolation='nearest',extent=(xmin,xmax,ymin,ymax), origin='top' )
+	plt.colorbar()
+	plt.show(block=False)
