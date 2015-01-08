@@ -19,7 +19,7 @@ mgrid_lmin 4
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 2
+restart_snap 0
 ##==ThreadManagement======
 grav_stencil_size 16
 cons_stencil_size 16

@@ -122,12 +122,12 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   
   // Compton Cooling
   
+  c5=0;
   /* c5=1.017e-37*POW(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x; */
   /* c5=0.; */
 #ifndef WRADTEST
-  //  c5=5.406e-36*(temp-2.727/aexp)/POW(aexp,4)*x/(1.+x);
+  c5=5.406e-24*(temp-2.727/aexp)/POW(aexp/0.001,4)*x*nh2;
 #endif
-  c5=0;
   // Overall Cooling
   
   *lambda=c1+c2+c3+c4+c5+c6;// ! erg*cm-3*s-1
@@ -319,7 +319,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
-	  tcool=FABS(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1-Cool));
+	  tcool=FABS(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1*(!chemonly)-Cool));
 	  ai_tmp1=0.;
 	  dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);
 

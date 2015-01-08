@@ -36,6 +36,7 @@ DEFINES  +=  -DWCUDA_ERR
 
 #------------ ICs OPTIONS ---------------------
 
+#DEFINES  +=  -DGRAFIC -DBULKFLOW
 DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD

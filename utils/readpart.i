@@ -135,3 +135,16 @@ func genpartsilo(fname,ncpu=,execut=){
   commande=execut+" "+fname+" "+pr1(ncpu);
   system(commande);
 }
+
+
+
+func part2para(p,fname){
+
+  ff=open(fname,"w");
+  for(i=1;i<=dimsof(p)(0);i++){
+    write,ff,format="%f,%f,%f,%f\n",p(1,i),p(2,i),p(3,i),p(8,i);
+  }
+  
+  close,ff;
+  
+}

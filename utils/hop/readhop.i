@@ -45,6 +45,47 @@ func read_tag(tagfile,verbose=)
   return tagarray;
 }
 
+
+func read_idx(idxfile,np){
+  ff=open(idxfile,"rb");
+  adress=0;
+  tagarray=array(int,np);_read,ff,adress,tagarray;
+  close,ff;
+
+  return tagarray;
+
+}
+
+
+func read_multi_tag(pos,dir,isnap,nprochop){
+  
+  halo=[];
+  dcrit=0.5/nprochop;
+  for(i=0;i<nprochop;i++){
+    write,"PROC ########## "+pr1(i);
+    zmid=(i+0.5)/nprochop;
+    fname=swrite(format=dir+"/reg.%05d.h%05d.tag",isnap,i);
+    tag=read_tag(fname);
+    fname=swrite(format=dir+"/hop.%05d.h%05d.den",isnap,i);
+    den=read_dens(fname);
+    fname=swrite(format=dir+"/part.%05d.h%05d",isnap,i);
+    np=numberof(tag);
+    idx=read_idx(fname,np);
+    for(ih=0;ih<=max(tag);ih++){
+      www=where(tag==ih);
+      //icdm=den(www)(mxx);
+      cdm=pos(1:3,idx(www)+1)(,avg);
+      dz=min(abs(cdm(3)-zmid),1.-(cdm(3)-zmid));
+      if(dz<dcrit){
+        grow,halo,[cdm];
+      }
+    }
+  }
+  
+  return halo;
+  
+}
+
 func read_dens(tagfile,verbose=)
 {
   if(is_void(verbose)) verbose=0;
@@ -88,3 +129,7 @@ func read_group_pos(groupposfile)
   close,ff;
   return reform(pos,[2,3,n]);
 }
+
+
+
+

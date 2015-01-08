@@ -2,22 +2,19 @@
 #include "Bastien/cosmo.i"
 #include "./utils/readpart.i"
 
-//rep="./data0_dyncool";ncpu=32; srcint=5e15; tlife=20e6; // years
-//rep="./data0_dyncoll_nosrc";ncpu=32; srcint=0e15; tlife=20e6; sbox=12.;// years
-//rep="./data0_dyncool_homo";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.;// years
-//rep="./data_coarse_c0";ncpu=32; srcint=5e15; tlife=20e6;sbox=12.; // years
-//rep="./data_coarse_256_24MPC/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
-//rep="./data_coarse_256_24MPC_alt_th/";ncpu=256; srcint=5e15; tlife=20e6; sbox=24.; // years
-//rep="./data_coarse_256_24MPC_alt_mstar/";ncpu=256; srcint=1e15; tlife=20e6; sbox=24.; // years
-//rep="./data_cosmo_corse_c0_ok/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.; // years
-rep="./data_4_noschaye_nosrc/";ncpu=32; srcint=5e1; tlife=20e6; sbox=4.;nsnap=36; // years
-//rep="./data_12_noschaye/";ncpu=32; srcint=5e15; tlife=20e6; sbox=12.;nsnap=21; // years
-//rep="./data_4_noschaye/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=36; // years
-//rep="./data_4_schaye/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=27; // years
-//rep="./data/";ncpu=32; srcint=5e1; tlife=20e6; sbox=4.;nsnap=27; // years
-rep="./data/";ncpu=32; srcint=5e1; tlife=20e6; sbox=4.;nsnap=23; // years
 
-col="red";
+//rep="./data_4_new_wsrc/";ncpu=32; srcint=5e1; tlife=20e6; sbox=4.;nsnap=35; // years
+//rep="./data_4_new_wsrc_ministar_x100/";ncpu=32; srcint=5e17; tlife=20e6; sbox=4.;nsnap=35; // years
+//rep="./data_4_new_wsrc_ministar_x10/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=13; // years
+//rep="./data_4_new_wsrc_ministar_x1/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
+//rep="./data_4_new_wsrc_ministar_x10/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
+rep="./data_4_new_wsrc_ministar_x3/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
+rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
+//rep="./data_4_new_wsrc_ministar_x3_mono_vb/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
+//rep="./data_4_new_wsrc_ministar_x3_mono_noamr_higheff/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=25; // years
+rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=14 // years
+
+col="green";
 lcoarse=7.;
 bint=spanl(1e8,1e9,32);
 
@@ -60,7 +57,6 @@ zSFR=interp(span(90,4,256),vt,bint(zcen));
 // emissivity of photons
 //te=s(11,);
 te=bint(zcen);
-tlife=20e6;
 ne=te*0.;
 for(i=1;i<=dimsof(s)(0);i++){
   heav=(te>=s(11,i))*(te<=(s(11,i)+tlife));
@@ -76,11 +72,11 @@ SFRB2=10.^[-1.06,-1.19,-1.59,-1.72,-2.05,-3.18]; // Ms/Mpc^3/yr
 eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 
 
-
+#if 1
 // DISPLAY
 window,2;
 plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
-PL,SFR(),zSFR(),color=col,incolor=col,msize=.3,line=1;
+PL,SFR(),zSFR(),color=col,incolor=col,msize=.3,line=1,width=5;
 logxy,0,1;
 limits,2,12,5e-5,1;
 xytitles,"redshift z","SFR [MS/yr/Mpc^3^]";
