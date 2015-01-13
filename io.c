@@ -1837,9 +1837,19 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// periodic boundary conditions
 
-	x+=(x<=0.)*((int)(-x)+1.)-(x>1.)*((int)x); 
-	y+=(y<=0.)*((int)(-y)+1.)-(y>1.)*((int)y); 
-	z+=(z<=0.)*((int)(-z)+1.)-(z>1.)*((int)z); 
+	/* x+=(x<=0.)*((int)(-x)+1.)-(x>1.)*((int)x);  */
+	/* y+=(y<=0.)*((int)(-y)+1.)-(y>1.)*((int)y);  */
+	/* z+=(z<=0.)*((int)(-z)+1.)-(z>1.)*((int)z);  */
+
+	x+=((x<0.)-(x>1.))*1.; 
+	y+=((y<0.)-(y>1.))*1.; 
+	z+=((z<0.)-(z>1.))*1.; 
+
+	// ugly fix for huge config in SINGLE FLOAT precision
+	// generally affects a tiny fraction of particle (like 1 over 1e7)
+ 	if(x>0.99999) x=0.;
+	if(y>0.99999) y=0.;
+	if(z>0.99999) z=0.;
 
 	// computing the velocities
 	vx=(velx[(i1-1)+(i2-1)*np1]+veloff/astart*1e-3)*astart/(np1*dx*h0)/(sqrt(om)*0.5);
