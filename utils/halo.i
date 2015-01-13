@@ -2,11 +2,11 @@
 
 //rep="./data_4_new_wsrc_ministar/";istart=32;istop=32;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 rep="./data_4_new_wsrc_ministar_x1/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-rep="./data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+//rep="./data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="./data_4_new_wsrc_ministar_x3_mono/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="./data_4_new_wsrc_ministar_x3_mono_vb/";istart=11;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-//rep="./data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-//rep="./data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+rep="./data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+rep="./data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="./data_4_new_wsrc/";istart=34;istop=34;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="./data/";istart=25;istop=25;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 
@@ -21,7 +21,7 @@ for(isnap=istart;isnap<=istop;isnap+=1){
   d=alloct(swrite(format=rep+"/grid.%05d",isnap),13,101,a,ncpu=ncpu,execut="utils/alloct ");
   xd=d(:3,);
   zz=1./a-1.;
-  tsnap= univAge(1000,h0=67.,Omega_l=0.6825,Omega_m=0.3175)-univAge(z,h0=67.,Omega_l=0.6825,Omega_m=0.3175);
+  tsnap= univAge(1000,h0=67.,Omega_l=0.6825,Omega_m=0.3175)-univAge(zz,h0=67.,Omega_l=0.6825,Omega_m=0.3175);
   tsnap/=(3600.*24*365*1e6);
   p=mergepart(swrite(format=rep+"part.%05d",isnap),ncpu,a);
   s=mergepart(swrite(format=rep+"star.%05d",isnap),ncpu,a,star=1);

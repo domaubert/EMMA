@@ -1,5 +1,14 @@
 
 
+func readnpart(fname){
+  fp=open(fname,"rb");
+  adress=0;
+  npart=array(int);
+  _read,fp,adress,npart;adress+=sizeof(npart);
+  close,fp;
+  return npart;
+}
+
 func readpart(fname,&time,star=,cen=,dcen=){
   //fname=exec("ls -d data/part.*")
   //x=y=[];for(i=1;i<=numberof(fname);i++){phase=readpart(fname(i));www=where(phase(7,)==1);grow,x,phase(1,www);grow,y,phase(2,www);}
@@ -52,11 +61,34 @@ func readpart(fname,&time,star=,cen=,dcen=){
 func mergepart(fname,ncpu,&time,star=,cen=,dcen=){
   pf=[];
   time=array(float);
+  npartot=0;
+  for(i=0;i<ncpu;i++){
+    fname2=swrite(format=fname+".p%05d",i);
+    fname2;
+    npartot+=readnpart(fname2);
+  }
+  write,"Found "+pr1(npartot)+" part total";
   for(i=0;i<ncpu;i++){
     fname2=swrite(format=fname+".p%05d",i);
     p=readpart(fname2,time,star=star,cen=cen,dcen=dcen);
-    if(numberof(p)!=1) grow,pf,p;
+    if(is_void(pf)){
+      if(numberof(p)!=1){
+        pf=array(float,dimsof(p)(2),npartot);
+        off=1;
+      }
+    }
+    if(numberof(p)!=1){
+      pf(,off:off+dimsof(p)(0)-1)=p;
+      off+=dimsof(p)(0);
+      // grow,pf,p;
+    }
   }
+
+  if(!is_void(cen)){
+    www=where(pf(8,)>0);
+    if(numberof(www)>0) pf=pf(,www);
+  }
+  
   return pf;
 }
 
@@ -134,17 +166,4 @@ func genpartsilo(fname,ncpu=,execut=){
   time=array(double);
   commande=execut+" "+fname+" "+pr1(ncpu);
   system(commande);
-}
-
-
-
-func part2para(p,fname){
-
-  ff=open(fname,"w");
-  for(i=1;i<=dimsof(p)(0);i++){
-    write,ff,format="%f,%f,%f,%f\n",p(1,i),p(2,i),p(3,i),p(8,i);
-  }
-  
-  close,ff;
-  
 }
