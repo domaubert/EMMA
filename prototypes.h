@@ -1,5 +1,3 @@
-
-
 #ifdef WMPI
 #include <mpi.h>
 #endif
@@ -81,7 +79,7 @@ typedef double REAL;
 
 #ifdef WRAD
 #define NVAR_R (5)
-#define NGRP (3)
+#define NGRP (1 )
 #define EMIN (1e-8)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
@@ -101,7 +99,7 @@ typedef double REAL;
 #define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
 //=======================================
 
-#define LIFETIME_OF_STARS_IN_TEST (2e7)
+#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
 
 #ifdef TESTCOSMO
 struct COSMOPARAM{

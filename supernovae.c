@@ -9,6 +9,13 @@
 #include <mpi.h>
 #endif
 
+
+// src http://cdsads.u-strasbg.fr/abs/2009A%26A...495..389B
+// L(M) = 9.315613314066386e+16 photon/s/kg
+
+//============== STEP 9228 tsim=4.085313e+03 [2.000045e+02 Myr] ================
+
+
 #ifdef SUPERNOVAE
 void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 #ifdef WRAD
@@ -36,9 +43,19 @@ void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUIN
 
 void thermalFeedback(struct CELL *cell,  REAL E){
 #ifdef WRAD
-    cell->field.E += E;
-    cell->field.p += E*(GAMMA-1.);
-    //cell->rfield.snfb =1;
+    struct OCT* oct = cell2oct(cell);
+
+    int i;
+    for(i=0;i<8;i++){
+        struct CELL* curcell = &oct->cell[i];
+
+        REAL e = E/8.;
+        curcell->field.E += E;
+        curcell->field.p += E*(GAMMA-1.);
+
+        //cell->rfield.snfb =1;
+
+    }
 #endif
 }
 
@@ -47,8 +64,8 @@ void thermalFeedback(struct CELL *cell,  REAL E){
 void kineticFeedback(struct CELL *cell, REAL E){
 
     int type = 0;   //oct
-//    int type = 1;   //cardinal
-//    int type = 2;   //cardinal
+ //  int type = 1;   //cardinal
+//    int type = 2;   //cardinal manual
 
     switch(type){
 
@@ -71,18 +88,18 @@ void kineticFeedback(struct CELL *cell, REAL E){
                 curcell->field.w += dir_z[i] * V /2.;
 
             }
+            break;
         }
-        break;
 
         case 1:{
 
             struct CELL* neicell[6];
-            getneicell(cell, neicell);
+            getneicell_6(cell, neicell);
 
             int i;
             for(i=0;i<6;i++){
                 struct CELL* curcell = neicell[i];
-                printf("neicell = %p\n",neicell[i]);
+
 
                 if (curcell!=NULL) {
                     REAL dir_x[]={-1., 1., 0., 0., 0., 0.};
@@ -117,8 +134,9 @@ void kineticFeedback(struct CELL *cell, REAL E){
                 REAL stop = 0;
                 }
             }
+            break;
         }
-        break;
+
 
         case 2:{
 
@@ -149,8 +167,8 @@ void kineticFeedback(struct CELL *cell, REAL E){
             curcell =  &(curoct->cell[4]);
             curcell->field.w += dv;
 
+            break;
         }
-        break;
     }
 }
 
@@ -158,17 +176,76 @@ void kineticFeedback(struct CELL *cell, REAL E){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
-#ifdef STARS
-	REAL s8 	 = param->stars->tlife;		// life time of a massive star (~20 Myr for 8 M0 star)
-	s8 	*= 31556926; 	// years en s
+    REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
+	REAL dv = POW( dx, 3.); //m3
+	REAL msn = mstar * param->unit.unit_mass; //kg
+	REAL E  = msn *SN_EGY/dv; //J.m-3
 
-	REAL dv = POW( POW(2.,-level) * aexp * param->unit.unit_l, 3.);
-	REAL E  = mstar*param->unit.unit_mass*SN_EGY*param->stars->feedback_eff/dv;
+    E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
 
-	E	     *= exp( -t0*31556926/s8 )/s8;
+	//REAL s8 	 = param->stars->tlife * 31556926;;		// life time of a massive star (~20 Myr for 8 M0 star)
+    //E	     *= exp( -t0*31556926/s8 )/s8;
 
 	return E;
-#endif // STARS
+}
+
+REAL computetPDS(REAL E51, REAL n0, REAL Z){
+    REAL tPDS;
+    if(Z<0.01){
+        tPDS = 3.06 * 1e2 * POW(E51, 1./8.)* POW(n0, -3./4.);
+    }else{
+        tPDS = 26.5 * POW(E51, 3./14.)*POW(n0, -4./7.)*POW(Z, -5./14.);
+    }
+    return tPDS;
+}
+
+REAL computeRPDS(REAL E51, REAL n0, REAL Z){
+    REAL RPDS;
+    if(Z<0.01){
+        RPDS = 49.3 * POW(E51, 1./4.)* POW(n0, -1./2.);
+    }else{
+        RPDS = 18.5 * POW(E51, 2./7.)*POW(n0, -3./7.)*POW(Z, -1./7.);
+    }
+
+    return RPDS * PARSEC;
+}
+
+REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, REAL aexp){
+
+REAL Z=0;
+REAL unit_E = POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2));
+REAL E51 = E/(1e51*1e-7*unit_E);
+REAL dx = POW(2.,-level)*param->unit.unit_l*aexp*PARSEC; //m
+
+REAL mu = MOLECULAR_MU *PROTON_MASS;
+REAL n0 = cell->field.d*param->unit.unit_d/PROTON_MASS*1e6; //cm-3
+
+REAL tPDS = computetPDS(E51,n0,Z);
+REAL RPDS = computeRPDS(E51,n0,Z);
+
+REAL fKIN = 3.97e-6 * mu*n0* POW(RPDS,7.)*pow(tPDS,-2.)*POW(dx,-2.)*POW(E51,-1.) ;
+
+printf("FKIN = %e\n",fKIN);
+return fKIN;
+
+}
+
+REAL massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
+    REAL fact_mass = 0.01;
+
+    REAL mtot_feedback = curp->mass * fact_mass;
+    struct OCT* oct = cell2oct(cell);
+
+    REAL dx = POW(2.,-level) *  aexp; //m
+	REAL dv = POW(dx,3.); //m3
+
+    int i;
+    for(i=0;i<8;i++){
+        struct CELL* curcell = &oct->cell[i];
+        REAL m = mtot_feedback/8.;
+        curcell->field.d += m/dv;
+    }
+    curp->mass -= mtot_feedback;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,7 +256,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 #ifdef PIC
 	cell->rfield.snfb = 0;
 
-	if(param->stars->feedback_eff){
+	if(param->sn->feedback_eff){
 
 		int Nsn = 0;
 		REAL t0;
@@ -199,12 +276,16 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 				    curp->isStar = 3;
 				  }
 				  else if ( t0 >= param->stars->tlife){
-				    curp->isStar = 2;
+				    curp->isStar = 3;
 
-            REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass) ;
+                    REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
 
-				    thermalFeedback(cell, E*(1.-param->sn->feedback_frac));
-				    kineticFeedback(cell, E*(   param->sn->feedback_frac));
+                 // REAL  fKIN = compute_fkin(param,cell,E,level,aexp);
+                    REAL fKIN = param->sn->feedback_frac;
+
+                    massFeedback(cell,curp,param,aexp,level);
+				    thermalFeedback(cell, E*(1.-fKIN));
+				    kineticFeedback(cell, E*(   fKIN));
 
 				    Nsn++;
 				  }
@@ -219,60 +300,37 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 	struct OCT* oct = cell2oct(cell);
 
-	if (oct->x == 0 && oct->y == 0 && oct->z == 0 && cell->idx == 0){
+    if (!SN_TMP_PARAM && cpu->rank==RANK_DISP){
+        printf("======================================\n");
+        printf("===SN EXPLODE=========================\n");
+        printf("======================================\n");
+    }
+
+	if (oct->x == 0.5 && oct->y == 0.5 && oct->z == 0.5 && cell->idx == 0){
 
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 		REAL t = aexp * in_yrs;
 
-		if(!SN_TMP_PARAM){
-            printf("======================================\n");
-            printf("===SN EXPLODE=========================\n");
-            printf("======================================\n");
-        }
-
-//		if ( t >= param->stars->tlife && t < param->stars->tlife*11){
 		if ( t >= LIFETIME_OF_STARS_IN_TEST && SN_TMP_PARAM ){
-
-// src http://cdsads.u-strasbg.fr/abs/2009A%26A...495..389B
-// S20
-// mass = 7.6e6
-// L = 4.6e43 erg/s
-// L = 4.6e43 / 1e7 J/s
-// L = 4.6e43 / 1e7 / (29.609895722*1.6022e-19)
-//
-//S100
-//mass = 9.5e8 M0
-//L = 5.75e45 erg/s
-
 			SN_TMP_PARAM = 0;
-			printf("SN active at t = %e\n", t);
 
+//          REAL msn = 7.6e6 * 2e30 ; //kg L=1.42e61
+            REAL msn = 26.84 * 2e30 ; //kg L=5e48
 
-			REAL dx = POW(2.,-level) * param->unit.unit_l; //m
-			REAL dv = POW( dx, 3.); //m3
+            REAL E = computeFeedbackEnergy(param, 0, 1, level, msn/param->unit.unit_mass );
 
-			REAL msn = 7.6e6 * 2e30 ; //kg
+            //REAL  fKIN = compute_fkin(param,cell,E,level,1.);
+            REAL fKIN = param->sn->feedback_frac;
+            thermalFeedback(cell, E*(1.-fKIN));
+            kineticFeedback(cell, E*(   fKIN));
 
-			REAL E  = msn *SN_EGY/dv; //J.m-3
-
-//				REAL s8 	 = param->stars->tlife; //yrs
-//				E	     *= exp( -(t-param->stars->tlife)/s8 ) * dt*in_yrs/s8; //J.m-3
-
-			printf("total feedback EGY %e erg\n",E*dv*1e7);
-
-			dv = POW( 2., -3.*level);
-			printf("eblast= %e erg   \n", 		E*dv);
-
-		    kineticFeedback(cell, E);
-		    //thermalFeedback(cell, E);
-		}
-	}
-	return 1;
-
-#endif
-
+            printf("SN active at t = %e\n", t);
+			printf("eblast= %e \n", E*POW( 2.,-3.*level));
+        }
+        return 1;
+    }
+#endif // SNTEST
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //		FEEDBACK
@@ -317,7 +375,7 @@ void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 
 
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
-	if(cpu->rank==RANK_DISP) printf("Supernovae\n");
+	if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
 
 	int Nsn = 0;
 	struct OCT  *nextoct=firstoct[level-1];
@@ -329,11 +387,10 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 	  nextoct=curoct->next;
 	  if(curoct->cpu != cpu->rank) 	continue;
 
-		int icell;
+      int icell;
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
 			Nsn += feedback(curcell, param, cpu, aexp, level, dt);
-
 		}
 	}while(nextoct!=NULL);
 #ifdef WMPI

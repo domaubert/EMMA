@@ -406,7 +406,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		// if destruction, newoct should be updated
 		newoct=freeoct;
 #ifdef PIC
-		//======== dealing with particles
+		///======== dealing with particles
 		// we gather the particles of the oct to be destroyed in the parent cell
 
 		curploc=findlastpart(curoct->cell[icell].phead); // we get the last particle from the parent cell (should be nil in principle)
@@ -1274,17 +1274,18 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
 			    //mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    //if(curoct->cell[icell].rfield.src>0.) printf("den=%e\n",den);
-
-			    //~ if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
-			      //~ curoct->cell[icell].marked=marker;
-			      //~ nmark++;stati[2]++;
-			    //~ }
-
+/*
+			     if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
+			       curoct->cell[icell].marked=marker;
+			       nmark++;stati[2]++;
+			     }
+*/
+/*
 			    if(((curoct->cell[icell].field.d>1.001))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-
+*/
 
 			    //~ mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//\*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05); */
 			    //~ if(mcell>mmax) mmax=mcell;

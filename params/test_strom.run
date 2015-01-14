@@ -4,16 +4,16 @@ max_number_of_part 100000
 mpi_buffer_size 800000
 ##==TimestepManagement=======
 output_frequency 20
-max_nuber_of_steps 20000
+max_nuber_of_steps 100
 time_step_max  1e10
-tmax_or_amax 3e10
+tmax_or_amax 0.15
 ##==AMRGrid==================
 level_coarse 6
-level_max 6
-amr_thresh 1
-n_smooth 5
+level_max 8
+amr_thresh 8
+n_smooth 2
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 1000
+max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-2
 mgrid_lmin 3
 mgrid_nvcycles 3
@@ -30,15 +30,15 @@ nstream 16
 clight 1e-2
 dens_threshold 0.5
 temp_threshold 1e5
-src_int 9.7e53
+src_int 5e48
 ##==StarFormation============
-overdensity_cond 150
-density_cond -500
+overdensity_cond 10
+density_cond -50
 tcar 2e9
 tlife 2e7
 ##==Supernovae===============
 feedback_eff 1.
-feedback_frac 1.
+feedback_frac 0.3
 ##==Movie====================
 lmap 7
 xmin 0

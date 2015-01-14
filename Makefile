@@ -1,6 +1,6 @@
 ##########################################
 ARCH = CPU
-C_LIBS = -lm -g #-O2 -fopenmp # -lstdc++ -g
+C_LIBS = -g -lm #-O2 -fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o zoom.o supernovae.o movie.o
 DEFINES  =
@@ -8,15 +8,15 @@ DEFINES  =
 
 
 #------------ MAIN OPTIONS --------------------
-#DEFINES  +=  -DPIC
+DEFINES  +=  -DPIC
 DEFINES  +=  -DWHYDRO2
-#DEFINES  +=  -DWGRAV
+DEFINES  +=  -DWGRAV
 DEFINES  +=  -DWRAD
 DEFINES  +=  -DWRADHYD
-#DEFINES  +=  -DTESTCOSMO
-#DEFINES  +=  -DSTARS
-DEFINES += -DSUPERNOVAE
-#0DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
+DEFINES  +=  -DTESTCOSMO
+DEFINES  +=  -DSTARS
+DEFINES  +=  -DSUPERNOVAE
+#DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
 #DEFINES  +=  -DWDBG #// mode debug
 #DEFINES  +=  -DZOOM #// mode zoom
 #DEFINES  +=  -DJUSTIC #// juste les conditions initiales
@@ -25,7 +25,6 @@ DEFINES += -DSUPERNOVAE
 #DEFINES  +=  -DSINGLEPRECISION
 
 #------------ MPI OPTIONS ---------------------
-
 DEFINES  +=  -DWMPI
 #DEFINES  +=  -DFLOORDT
 
@@ -37,19 +36,17 @@ DEFINES  +=  -DWCUDA_ERR
 #DEFINES  +=  -DNOCOMP
 
 #------------ ICs OPTIONS ---------------------
-
-#DEFINES  +=  -DGRAFIC
+DEFINES  +=  -DGRAFIC
 #DEFINES  +=  -DZELDOVICH
 #DEFINES  +=  -DEVRARD
 #DEFINES  +=  -DEDBERT
 #DEFINES  +=  -DTUBE
 #DEFINES  +=  -DPARTN
 #DEFINES  +=  -DPART2
-DEFINES  +=  -DWRADTEST
+#DEFINES  +=  -DWRADTEST
 #DEFINES  +=  -DTESTCLUMP # RADTEST MUST BE SET
 
 #------------ PIC OPTIONS ----------------------
-
 #DEFINES += -DPART_EGY
 #DEFINES += -DPERFECT
 
@@ -71,7 +68,7 @@ DEFINES  += -DCOOLING
 #DEFINES  += -DUVBKG
 DEFINES  += -DSEMI_IMPLICIT
 #DEFINES  += -DOLDCHEMRAD
-#DEFINES  += -DACCEL_RAD_STAR
+DEFINES  += -DACCEL_RAD_STAR
 #DEFINES += -DOTSA
 #DEFINES  += -DHOMOSOURCE
 DEFINES  += -DRADSTEP
@@ -79,21 +76,21 @@ DEFINES  += -DCOARSERAD
 #DEFINES  += -DSCHAYE
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
-DEFINES  +=  -DTRANSZM
-DEFINES  +=  -DTRANSZP
-DEFINES  +=  -DTRANSYM
-DEFINES  +=  -DTRANSYP
-DEFINES  +=  -DTRANSXM
-DEFINES  +=  -DTRANSXP
-DEFINES  +=  -DREFXM # TRANS must be turned on too
-DEFINES  +=  -DREFYM # TRANS must be turned on too
-DEFINES  +=  -DREFZM # TRANS must be turned on too
+#DEFINES  +=  -DTRANSZM
+#DEFINES  +=  -DTRANSZP
+#DEFINES  +=  -DTRANSYM
+#DEFINES  +=  -DTRANSYP
+#DEFINES  +=  -DTRANSXM
+#DEFINES  +=  -DTRANSXP
+#DEFINES  +=  -DREFXM # TRANS must be turned on too
+#DEFINES  +=  -DREFYM # TRANS must be turned on too
+#DEFINES  +=  -DREFZM # TRANS must be turned on too
 
 # ---- MOVIE--------------
 #DEFINES += -DMOVIE
 
-#DEFINES += -DBKP
-DEFINES += -DSNTEST # RADTEST must be turned on too
+DEFINES += -DBKP
+#DEFINES += -DSNTEST # RADTEST must be turned on too
 
 #=================================================================================
 

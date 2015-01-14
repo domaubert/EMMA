@@ -1001,7 +1001,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
 #endif // STARS
 
-
 #ifdef SUPERNOVAE
 #ifndef SNTEST
     supernovae(firstoct,param,cpu, adt[level-1], aexp, level, is);

@@ -96,11 +96,6 @@ void flipcell(struct OCT *oct, int dir){
 
 }
 
-
-
-
-
-
 //------------------------------------------------------------------------
 
 // This function returns the parent oct of a given cell
@@ -189,7 +184,7 @@ void getcellnei(int cindex, int *neip, int *cell)
 
 }
 
-void getneicell(struct CELL *cell, struct CELL** neicell ){
+void getneicell_6(struct CELL *cell, struct CELL** neicell ){
 // return a pointer table with the 6 neighbors of a given cell
 
     int vnei[6],vcell[6];
@@ -208,11 +203,11 @@ void getneicell(struct CELL *cell, struct CELL** neicell ){
             struct OCT* neioct = curoct->nei[vnei[i]]->child;
             if(neioct != NULL){
                 neicell[i] = &neioct->cell[vcell[i]];
-
             }
         }
     }
 }
+
 //==================================================================
 //------------------------------------------------------------------------
 

@@ -1508,7 +1508,6 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifdef WRADTEST
-
     // SETTING THE RADIATIVE TRANSFER
 
     REAL X0=1./POW(2,levelcoarse);
@@ -1518,10 +1517,8 @@ blockcounts[0]++; // For SN feedback
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-
-    param.unit.unit_l= 3e3 *PARSEC;
-
-#else
+    param.unit.unit_l= 15e3 *PARSEC;
+#else //TESTCLUMP
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
     param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
@@ -1529,10 +1526,10 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_d=param.unit.unit_mass/POW(param.unit.unit_l,3);
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);
-#endif
+#endif //TESTCLUMP
     param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
     ainit=1.;
-#else
+#else //TESTCOSMO
     ainit=1./(16.);;
     REAL om=0.27;
     REAL ov=0.73;
@@ -1557,7 +1554,7 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_t=tstar;
     param.unit.unit_n=1.;
 
-#endif
+#endif //TESTCOSMO
 
     for(level=levelcoarse;level<=levelmax;level++)
       {

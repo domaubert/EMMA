@@ -220,7 +220,7 @@ def field2ID(field="field.d"):
 	return f
 
 
-def oct2grid(data,level, force=0, nproc=getNproc(), field="field.d", xmin=0, xmax=-1, ymin=0, ymax=-1, zmin=0, zmax=-1, silo=0):
+def oct2grid(data,level, force=0, nproc=IO.getNproc(), field="field.d", xmin=0, xmax=-1, ymin=0, ymax=-1, zmin=0, zmax=-1, silo=0):
 	"""
 		Parser for oct2grid
 	"""
@@ -245,15 +245,16 @@ def oct2grid(data,level, force=0, nproc=getNproc(), field="field.d", xmin=0, xma
 	
 	dx =pow(2.,-level)  
 	
-	xmin *= dx
-	xmax *= dx	
 	
-	ymin *= dx
-	ymax *= dx	
+	xmin *= (xmin>1)*dx + (xmin<=1)
+	xmax *= (xmax>1)*dx + (xmax<=1)
+
+	ymin *= (ymin>1)*dx + (ymin<=1)
+	ymax *= (ymax>1)*dx + (ymax<=1)
+
+	zmin *= (zmin>1)*dx + (zmin<=1)
+	zmax *= (zmax>1)*dx + (zmax<=1)
 	
-	zmin *= dx
-	zmax *= dx
-		
 	o2g  = "utils/oct2grid "
 	
 	out  = data.replace("grid","cube"+ str(level)) + "." + field

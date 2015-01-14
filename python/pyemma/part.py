@@ -1,8 +1,6 @@
 import sys, os
 import numpy as np
-
-from struct import *
-from IO import *
+import IO
 
 class Part : 
 	def __init__(self,N,type):
@@ -89,7 +87,7 @@ class Part :
 
 def getN(filename):
 	filePart = open(filename, "rb")
-	N = unpack('i',filePart.read(4))[0]
+	N 	= np.fromfile(filePart, dtype=np.int32  ,count=1)[0]
 	filePart.close()
 	return N
 
@@ -100,16 +98,15 @@ def getNtot(filename, nProc):
 
 	return Ntot
 
-def readPart(filename):
+def read(filename):
 	
-	if "star.p" in filename:
+	if "star." in filename:
 		star = 1
 	else:
 		star = 0
-	
 	s = 10 + star
 
-	nProc = getNproc(filename)
+	nProc = IO.getNproc(filename)
 
 	print "Reading file ", filename
 	Ntot = getNtot(filename, nProc)
@@ -120,10 +117,9 @@ def readPart(filename):
 	for proc in range(nProc):
 
 		file = open(filename + ".p"+ str(proc).zfill(5)	, "rb")	
-
-		N 	= np.fromfile(file, dtype=np.int32  ,count=1)[0]
-		a 	= np.fromfile(file, dtype=np.float32,count=1)[0]
-		data 	= np.fromfile(file, dtype=np.float32)
+		N = np.fromfile(file, dtype=np.int32  ,count=1)[0]
+		a = np.fromfile(file, dtype=np.float32,count=1)[0]
+		data = np.fromfile(file, dtype=np.float32)
 		file.close()
 
 		for j in range(0,data.shape[0],s):

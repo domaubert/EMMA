@@ -1,5 +1,5 @@
 import numpy as np
-
+import IO
 
 class Constantes : 
 	def __init__(self):
@@ -18,7 +18,6 @@ class Constantes :
 		self.WV = 0.6825               		# Omega(vacuum) or lambda
 		self.WR = 4.165E-5/(self.h*self.h)    	# Omega(radiation)
 		self.WK = 1-self.WM-self.WR-self.WV	# Omega curvaturve = 1-Omega(total)
-	
 
 def a2z(a) :
 	return 1.0/a -1.0
@@ -54,26 +53,24 @@ def t2a(t):
 	T = a2t(A)
 
 	return np.interp(t,T,A)
-	
-	
 
-def m2mo(m, L) :
+def m2mo(m,folder) :
 	"""
 		convert code mass in kg
 	"""
 	c = Constantes()
-	H0 = c.H0 * 1000.0/1e6/c.Parsec
 
-	rho = 3.0*pow(H0,2.0) * c.WM / (8.0 * np.pi * c.G)
-#	print rho	
+	param = IO.Params(folder = folder).get()
 
-	L *= 1e6 * c.Parsec #Mpc en m
-	V   = pow(L/0.67,3.0)
+	unit_m = float(param["unit_mass"])
+	unit_m /= c.MO
+	return m*unit_m 
 
-	Mtot = rho * V
-
-	return Mtot/c.MO  * m 
-
-
-
-
+def Cell2Meter(args):
+	"""
+		return the size of a cell in parsec
+	"""
+	param = IO.Params(folder = args.folder).get()
+	L = float(param["unit_l"])/3.085677e16
+	dx = pow(2,- args.level)*L
+	return dx

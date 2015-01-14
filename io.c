@@ -446,10 +446,12 @@ fprintf(fp, "REFZM\t");
   fprintf(fp, "density_cond\t%e\n",(param->stars->density_cond) );		// minimum Hydrogen density [cm-3]
   fprintf(fp, "tcar\t%e\n",(param->stars->tcar) );				// carateristic time [yr]
   fprintf(fp, "tlife\t%e\n",(param->stars->tlife) );				// radiative life time of a stellar particle [yr]
-  fprintf(fp, "feedback_eff\t%e\n",(param->stars->feedback_eff) );		// SN feedback efficiency
-  fprintf(fp, "feedback_frac\t%e\n",(param->stars->feedback_frac) );		// fraction of thermal feedback (the other part goes to kinetic feedback)
 #endif
 
+#ifdef SUPERNOVAE
+  fprintf(fp, "feedback_eff\t%e\n",(param->sn->feedback_eff) );		// SN feedback efficiency
+  fprintf(fp, "feedback_frac\t%e\n",(param->sn->feedback_frac) );		// fraction of thermal feedback (the other part goes to kinetic feedback)
+#endif // SUPERNOVAE
   if (i>0) fclose(fp);
 
 }
@@ -1184,8 +1186,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->nstream);
       rstat=fscanf(buf,"%s %d",stream,&param->ompthread);
 
-#ifdef WRAD
       rstat=fscanf(buf,"%s",stream);
+#ifdef WRAD
       rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
@@ -1193,24 +1195,29 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-	int i;
-				rstat=fscanf(buf,"%s",stream);
+    int i;
 	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
-#ifdef STARS
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond	=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond			=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar							=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife							=(REAL)dummyf;
+#ifdef STARS
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;
+#else
+//	int i;
+	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
-#ifdef SUPERNOVAE
       rstat=fscanf(buf,"%s",stream);
+#ifdef SUPERNOVAE
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff			=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac			=(REAL)dummyf;
-#endif // SUPERNOVAE
+#else
+
+	for (i=0; i<2; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+#endif
 
 #ifdef MOVIE
       rstat=fscanf(buf,"%s %d", stream,&param->movie->lmap);

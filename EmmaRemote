@@ -46,6 +46,7 @@ def sendtar(args):
 def untaronhost(args):
 	print "Decompressing archive on %s"%args.host
 	command = "tar -xf %s%s -C %s 2>error"%(args.folder, tar, args.folder)
+	print command
 	sshcom(command, args.user, args.host)
 
 def runslurm(args):
@@ -60,7 +61,7 @@ def make(args):
 
 def runfront(args):
 	print "Running program"
-	command = "cd %s && ./quartzcpu %s 2>error 1>runlog"%(args.folder, args.paramfile)
+	command = "cd %s && nohup ./quartzcpu %s 2>error 1>runlog &"%(args.folder, args.paramfile)
 	sshcom(command, args.user, args.host)
 	
 def run(args):	
@@ -77,6 +78,7 @@ def getargs():
 	parser.add_argument('-u', action="store", default=user_default, dest="user", help="username used to connect on host")
 	parser.add_argument('-r', action="store", default=host_default, dest="host", help="distant machine where the run will be launch")
 	parser.add_argument('-f', action="store", default=folder_default, dest="folder", help="working directory on host")
+	parser.add_argument('-n', action="store_true", dest="no_run", help="copy but don't run")
 	args = parser.parse_args()
 	return args
 	
@@ -85,6 +87,6 @@ if __name__ == "__main__":
 	compress(args)
 	sendtar(args)
 	untaronhost(args)
-	run(args)
-
+	if not args.no_run:
+		run(args)
 	print "Done"

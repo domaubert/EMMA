@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class array :
 	def __init__(self,fileName):
@@ -36,14 +37,7 @@ class cube :
 		return self.a.geta()
 	def getSize(self):
 		return self.a.getSize()
-"""
-def geta(fileName):
-	file = open(fileName, "rb")
-	x,y,z = np.fromfile(file, dtype=np.int32    ,count=3)
-	a = np.fromfile(file, dtype=np.float32  ,count=1)[0]
-	file.close()
-	return a
-"""
+
 def geta(fileName):
 	file = open(fileName, "rb")
 	a = np.fromfile(file, dtype=np.float64  ,count=1)[0]
@@ -53,4 +47,11 @@ def geta(fileName):
 def cubename(filename,level,field):
 	return filename.replace("grid","cube"+ str(level)) + "." + str(field)
 
-
+def gettmap(folder = "data/"):
+	tmap = []
+	for file in np.sort(os.listdir(folder)):
+		if "grid." in file and ".p00000" in file: 
+			file= "%s%s"%(folder,file)
+			t = geta(file)
+			tmap.append(t)
+	return np.array(tmap)

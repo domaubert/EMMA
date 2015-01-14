@@ -292,6 +292,8 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 
+	if(cpu->rank == RANK_DISP) printf("STARS\n");
+
 	struct OCT  *curoct;
 	struct OCT  *nextoct=firstoct[level-1];
 	struct CELL *curcell;
@@ -316,15 +318,6 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse); // coarse mass
 #endif
 
-
-
-/*	if(cpu->rank == 0){
-		printf("\n");
-		printf("================================\n");
-		printf("   Starting Add Stars routine   \n");
-		printf("================================\n");
-	}
-*/
 	do {	if(nextoct==NULL) 		continue;
 	  curoct=nextoct;
 	  nextoct=curoct->next;
@@ -365,6 +358,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("Mmax=%e\tthresh=%e\n", mmax, param->stars->thresh );
 		printf("%d stars added on level %d \n", nstars, level);
 		printf("%d stars in total\n",param->stars->n);
+		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS\t%e",1./aexp-1.);
 		if(param->stars->n>0) cpu->trigstar=1;
 //		printf("\n");
 	}

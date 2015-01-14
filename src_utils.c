@@ -154,14 +154,15 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
 int lifetime_test = 1;
 #ifdef SNTEST
-REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6 ;
-if ( tcur_in_yrs > LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
+REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
+if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #endif // SNTEST
 
-  if((FABS(xc-0.5)<=X0)*(FABS(yc-0.5)<=X0)*(FABS(zc-0.5)<=X0) && lifetime_test){
+  //if((FABS(xc-0.5)<=X0)*(FABS(yc-0.5)<=X0)*(FABS(zc-0.5)<=X0) && lifetime_test){
+  if(curoct->x==0.5 && curoct->y==0.5 && curoct->z==0.5 && icell==0 && lifetime_test){
     if((xc>0.)*(yc>0.)*(zc>0.)){
-      //      cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
-      cell->rfield.src=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
+      //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
+      cell->rfield.src=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);///8.;///8.;///POW(1./16.,3);
       cell->rfieldnew.src=cell->rfield.src;
       flag=1;
     }
@@ -250,10 +251,6 @@ if ( tcur_in_yrs > LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
 #endif //WHYDRO
 #endif //STARS
-
-
-
-
 #endif
 
   return flag;
@@ -461,12 +458,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   MPI_Allreduce(&nc,&nctot,1,MPI_INT,MPI_SUM,cpu->comm);
   nc=nctot;
 #endif
-
-
-
   //if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
   return nc;
 }
-
-
 #endif
