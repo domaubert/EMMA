@@ -1,7 +1,7 @@
 # Makefile for HOP.  Follow the checklist:
 #
 # 1) Compiler choice:
-CC = gcc
+CC = gcc 
 
 # 2) Compiler flags: optimization, debugging, profiling, etc.
 # For debugging:
@@ -11,12 +11,12 @@ CC = gcc
 #CFLAGS	=   -O3
 # Solaris:
 #CFLAGS	=   -fast -64 -fsimple=2 -fsingle 
-CFLAGS	=   -O -mcmodel=medium
+CFLAGS	=   -O2 -mcmodel=medium -w
 # 3) Libraries: (if you have some replacement for math.h)
 LIBS	=   -lm
 
 # 4) Preprocessor definitions: Useful to toggle the DIFFERENT_MASSES flag
-DEFS = -DDIFFERENT_MASSES
+DEFS = -DDIFFERENT_MASSES #-DPARAHOP
 
 # 5) Return to the command line and type "make"
 

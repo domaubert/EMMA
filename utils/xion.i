@@ -4,12 +4,22 @@
 //rep="./data0_dyncoll_nosrc";ncpu=32;execut="./utils/oct2grid_cosmo ";
 //rep="./dataref";ncpu=16;
 //rep="./data_coarse_256_24MPC/";ncpu=256;execut="./utils/oct2grid "sbox=24.;
-rep="./data/";ncpu=32;execut="./utils/oct2grid "sbox=4.;
 //rep="./data_12_noschaye/";ncpu=32;execut="./utils/oct2grid ";sbox=12.;
+rep="./data/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+rep="./data_4_new_wsrc/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+rep="./data_4_new_wsrc_ministar_x100/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+//rep="./data_4_new_wsrc_ministar_x10/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+//rep="./data_4_new_wsrc_ministar_x1/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+//rep="./data_4_new_wsrc_ministar_x3/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+//rep="./data_4_new_wsrc_ministar_x3_mono_noamr50/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+rep="./data/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+
+
 
 #if 1
-nsnap=35;
-level=8;
+nsnap=25;
+level=7;
 nsamp=1;
 
 MPC=3.08e22; // m
@@ -17,7 +27,7 @@ H=67; // km/s/Mpc
 Hor=H;
 G=6.67e-11; // S.I.
 omegam=0.3175;
-omegab=0.045;
+omegab=0.049;
 n=128^3;
 lbox=sbox/(H/100.)*MPC;// m
 lorg=lbox/MPC;
@@ -29,20 +39,54 @@ mH=(1.67262158e-27); // kg
 nH=rhobaryon/mH; // atoms/m3
 
 
+c=299792458.*0.1;
+unitN=rhoc*omegam/mH;
+sig=[3.00563459955e-22,5.04006266253e-23,7.89888816374e-24];
+
+
 // stellar particle mass
 ncell=pow(2,level);
 //xion=array(float,ncell,ncell,ncell,nsnap);
 //temp=array(float,ncell,ncell,ncell,nsnap);
 xa=array(float,nsnap);
-ea=array(double,nsnap);
-ta=array(float,nsnap);
+gamma=array(float,nsnap);
+xam=array(float,nsnap);
+dxa=array(float,nsnap);
 
 va=array(double,nsnap);
 vt=array(double,nsnap);
 
+
 for(i=1;i<=nsnap;i+=nsamp){
-  xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut=execut);
-  xa(i)=xion(avg,avg,avg,);
+
+#if 1
+  xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut="utils/oct2grid ");
+  dxion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,1006,a,ncpu=ncpu,execut="utils/oct2grid ");
+  xa(i)=xion(*)(avg);
+  dxa(i)=dxion(*)(avg);
+#endif
+
+#if 0
+  xion=alloct(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut="utils/alloct ");
+   xa(i)=(xion(5,)*pow(0.5,3*xion(4,)))(sum)/pow(0.5,xion(4,)*3)(sum);
+
+  ng=0.;
+  gamma(i)=0.;
+  for(ig=0;ig<3;ig++){
+    nion=alloct(swrite(format=rep+"/grid.%05d",i),level,701+ig*10,a,ncpu=ncpu,execut="utils/alloct ");
+    gamma(i)+=((nion(5,)*unitN*c*sig(ig+1)/a^3)*pow(0.5,3*nion(4,)))(sum)/pow(0.5,3*nion(4,))(sum);
+  }
+ #endif 
+
+
+  //  dxion=alloct(swrite(format=rep+"/grid.%05d",i),level,1006,a,ncpu=ncpu,execut="utils/alloct ");
+  //  d=alloct(swrite(format=rep+"/grid.%05d",i),level,101,a,ncpu=ncpu,execut="utils/alloct ");
+  //  xam(i)=(d(5,)*xion(5,)*pow(0.5,3*xion(4,)))(sum)/(d(5,)*pow(0.5,xion(4,)*3))(sum);
+  //  dxa(i)=(dxion(5,)*pow(0.5,3*dxion(4,)))(sum)/pow(0.5,dxion(4,)*3)(sum);
+
+  
+
+  
   //ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut=execut)(avg,avg,avg);
   //ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut=execut))(avg,avg,avg);
   va(i)=a;
@@ -56,11 +100,13 @@ va=va(www);
 vz=1./va-1.;
 vt=vt(www);
 xa=xa(www);
+xam=xam(www);
+dxa=dxa(www);
 
-#if 0
+#if 1
 
-ta=ta(www);
-ea=ea(www);
+//ta=ta(www);
+//ea=ea(www);
 
 // ===== computing tau
 
@@ -72,16 +118,24 @@ te=univAge(ze,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam);
 
 
 // tab electron density
+davg=omegab/omegam;
 ne=array(float,2*numberof(va));
 ne(:numberof(va))=nH;
+ne2=ne;
 ne(numberof(va)+1:2*numberof(va))=nH*xa(::-1);
+ne2(numberof(va)+1:2*numberof(va))=dxa(::-1)/davg*nH;
 ne=ne*(1+ze)^3; // physical density
+ne2=ne2*(1+ze)^3; // physical density
 
 //computing tau
 clight=299792458.; // m
 sigmat=6.65e-29; //m^2;
 itau=te(dif)/ze(dif)*ne(zcen)*clight*sigmat;
+itau2=te(dif)/ze(dif)*ne2(zcen)*clight*sigmat;
 tau=integ(itau,ze(zcen),ze(zcen));
+tau2=integ(itau2,ze(zcen),ze(zcen));
+
+#if 0
 
 window,0;
 plg,1.-xa,vz;
@@ -102,3 +156,7 @@ plshade,tauP,ze(zcen),color=__rgb(,30);
 plg,tau,ze(zcen),color="red",width=5;
 range,-0.01,0.16;
 xytitles,"redshift z","!t";
+
+log10gamma_cal=[-13.1,-13.09,-13.51,-12.99,-12.94,-12.64,-12.37,-12.86,-12.71,-11.74,-12.32,-12.02,-11.99,-11.41,-11.73];
+z_cal=[6.42,6.31,6.25,6.02,6.016,5.82,5.810,5.41,5.33,5.2,5.09,4.967,4.886,4.876,4.588];
+e_cal=[0.53,0.46,0.64,0.42,0.55,0.43,0.40,0.46,0.48,1.15,0.69,0.34,0.54,0.58,0.54];

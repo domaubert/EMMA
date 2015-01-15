@@ -82,12 +82,20 @@ has to be done. */
 #define FIX_INT(x)   (*(unsigned int *)&(x)   = SWAP_4(*(unsigned int *)&(x)))
 #define FIX_FLOAT(x) FIX_INT(x)
 
+#ifndef NPARA
+#define NPARA (5000000)
+#endif
 
-int ReadSimulationFile(KD kd, char *inputfile, int nfile)
+#ifndef FRACPARA
+#define FRACPARA (0.2)
+#endif
+
+
+int ReadSimulationFile(KD kd, char *inputfile, int nfile, int rank, int nproc)
 {
-  int ReadQuartz(KD kd,char *inputfile, int nfile);
+  int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc);
 
-  ReadQuartz(kd, inputfile, nfile);
+  ReadQuartz(kd, inputfile, nfile, rank, nproc);
 
   return;
 }
@@ -735,7 +743,145 @@ int ReadASCII2(KD kd,FILE *fp)
 
 // =============================================
 
-int ReadQuartz(KD kd,char *inputfile, int nfile)
+#ifdef PARAHOP
+
+int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc)
+{
+  int j,dummy;
+  float pos[3], mass;
+  int ifile;
+  char currfile[256];
+  char tempi[256];
+  char idxfile[256];
+  int nparttotal=0,npart;
+  float time;
+  float x;
+  float y;
+  float z;
+  float dum;
+  int ip=0;
+  FILE *fp;
+  FILE *fi;
+  int idxloc;
+  int off;
+
+  PARTICLE *p;
+  int nActive;
+
+  // defining the boundaries
+  
+  float zmid;
+  float dcrit=(1.+FRACPARA)/nproc*0.5;
+  float dz;
+  zmid=(rank+0.5)*(1./nproc);
+  
+  printf("zmid=%f dcrit=%f dd=%f\n",zmid,dcrit,1./nproc);
+  
+  strcpy(idxfile,inputfile);
+  sprintf(tempi,".h%05d",rank);
+  strcat(idxfile,tempi);
+  printf("%s\n",idxfile);
+  fi=fopen(idxfile,"wb");
+
+  // reading all the files
+
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,".p%05d");
+    sprintf(currfile,tempi,ifile);
+    //printf("%s\n",currfile);
+    fp=fopen(currfile,"r");
+    fread(&npart,sizeof(int),1,fp);
+    fclose(fp);
+    nparttotal+=npart;
+  }
+  
+
+  printf("Found %d particles in %d files\n",nparttotal,nfile);
+  //nActive = nparttotal;
+  //  kd->nActive = nparttotal;
+  
+  //  kd->p = (PARTICLE *)malloc(kd->nActive*sizeof(PARTICLE));
+  p = (PARTICLE *)malloc(NPARA*sizeof(PARTICLE));
+
+  off=0;
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,".p%05d");
+    sprintf(currfile,tempi,ifile);
+    fp=fopen(currfile,"r");
+    printf("Reading %s\n",currfile);
+    fread(&npart,sizeof(int),1,fp);
+    fread(&time,sizeof(float),1,fp);
+
+    for(j=0;j<npart;j++){
+      fread(&x,sizeof(float),1,fp);
+      fread(&y,sizeof(float),1,fp);
+      fread(&z,sizeof(float),1,fp);
+
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      fread(&dum,sizeof(float),1,fp);
+      
+      
+      dz=fmin(fabsf(z-zmid),1.-fabsf(z-zmid));
+      if(dz<dcrit){
+
+	p[ip].r[0] = x;
+	p[ip].r[1] = y;
+	p[ip].r[2] = z;
+	
+	idxloc=off+j;
+	fwrite(&idxloc,sizeof(int),1,fi);
+	ip++;
+	if(ip==NPARA){
+	  printf(" ERROR PLEASE INCREASE NPARA IN MAKEFILE");
+	  abort();
+	}
+      }
+    }
+
+    fclose(fp);
+    off+=npart;
+  }
+
+  fclose(fi);
+  float avgx=0.,avgy=0.,avgz=0.;
+
+  printf("keep %d particles on rank %d\n",ip,rank);
+  // assign pointers
+  kd->nActive = ip;
+  kd->p = (PARTICLE *)malloc(kd->nActive*sizeof(PARTICLE));
+  memcpy(kd->p,p,kd->nActive*sizeof(PARTICLE));
+  free(p);
+
+  printf("Renormalizing particle masses to get Mtot=1\n");
+#ifdef DIFFERENT_MASSES
+  for(j=0;j<=kd->nActive-1;j++){
+    kd->p[j].fMass=1./nparttotal;   
+    avgx+= kd->p[j].r[0];
+    avgy+= kd->p[j].r[1];
+    avgz+= kd->p[j].r[2];
+  }
+#else
+  kd->fMass=1./float(nparttotal);
+#endif  
+
+  avgx/=kd->nActive;
+  avgy/=kd->nActive;
+  avgz/=kd->nActive;
+
+  printf(" avg x=%e y=%e z=%e\n",avgx,avgy,avgz);
+
+  return kd->nActive;
+}
+
+#else
+int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc)
 {
   int j,dummy;
   float pos[3], mass;
@@ -750,6 +896,9 @@ int ReadQuartz(KD kd,char *inputfile, int nfile)
   float dum;
   int ip=0;
   FILE *fp;
+
+  
+
 
 
   for(ifile=0;ifile<nfile;ifile++){
@@ -822,5 +971,5 @@ int ReadQuartz(KD kd,char *inputfile, int nfile)
 
   return kd->nActive;
 }
-
+#endif
 
