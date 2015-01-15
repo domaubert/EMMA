@@ -710,9 +710,13 @@ blockcounts[0]++; // For SN feedback
 
   cpu.octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
   int iLev;
-  for(iLev = 0; iLev<levelmax; iLev++)
+  for(iLev = 0; iLev<levelcoarse; iLev++){
+    cpu.locNoct[iLev] = POW(2,3*(iLev+1));
+    cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+  }
+  for(iLev = levelcoarse; iLev<levelmax; iLev++){
 	cpu.octList[iLev] = (struct OCT**)calloc(ngridmax,sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
-
+  }
 
 
   int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement
@@ -764,7 +768,7 @@ blockcounts[0]++; // For SN feedback
   }
 
   firstoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the firstoct of each level
-  lastoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
+  lastoct =	    (struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
   cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));	memsize+=cpu.maxhash*sizeof(struct OCT *);	// the htable keys->oct address
   cpu.noct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of octs per level
   cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles* per level	*(DM+stars ifdef STARS)
@@ -974,11 +978,15 @@ blockcounts[0]++; // For SN feedback
     dxcur=1./POW(2,level);
     nextoct=firstoct[level-1];
     noct2=0;
+    int noct3 =0;
     if(nextoct==NULL) continue;
     do // sweeping level
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+
+    cpu.octList[level-1][noct3++] = curoct;
+
 	for(icell=0;icell<8;icell++){ // sweeping the cells
 
 	  segok=segment_cell(curoct,icell,&cpu,levelcoarse);// the current cell will be splitted according to a segmentation condition
@@ -986,6 +994,7 @@ blockcounts[0]++; // For SN feedback
 	    //if(level==levelcoarse-1) printf(" segok=%d\n",segok);
 
 	    noct2++;
+
 	    // the newoct is connected to its mother cell
 	    curoct->cell[icell].child=newoct;
 
@@ -1042,14 +1051,18 @@ blockcounts[0]++; // For SN feedback
 	      lastoct[level]->next=newoct;
 	    }
 	    lastoct[level]=newoct;
-
 	    // next oct ready
 	    newoct++;
+
 	  }
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
+
+ //   setOctList(firstoct[level-1], &cpu, &param,level);
+
   }
+
 
   if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
 
@@ -1130,8 +1143,6 @@ blockcounts[0]++; // For SN feedback
 
 #endif
 
-
-
   // =====================  computing the memory location of the first freeoct and linking the freeocts
 
   freeoct=lastoct[levelcoarse-1]+1; //(at this stage the memory is perfectly aligned)
@@ -1142,8 +1153,6 @@ blockcounts[0]++; // For SN feedback
     curoct->next=NULL;
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
-
-
 
   //=================================  building the array of timesteps
 

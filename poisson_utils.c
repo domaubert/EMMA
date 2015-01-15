@@ -1404,6 +1404,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+
 	curcell=curoct->parent;
 	coarse2fine_gravlin(curcell,Wi);
 	for(icell=0;icell<8;icell++) // looping over cells in oct
