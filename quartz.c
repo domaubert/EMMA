@@ -706,6 +706,15 @@ blockcounts[0]++; // For SN feedback
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 
+  cpu.locNoct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the local number of octs per level
+
+  cpu.octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
+  int iLev;
+  for(iLev = 0; iLev<levelmax; iLev++)
+	cpu.octList[iLev] = (struct OCT**)calloc(ngridmax,sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+
+
+
   int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid

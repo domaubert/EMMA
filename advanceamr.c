@@ -502,6 +502,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
+    setOctList(firstoct[level-1], cpu, param,level);
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp);
 
 
