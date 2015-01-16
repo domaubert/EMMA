@@ -243,10 +243,7 @@ void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
 
 void cleanOctList(struct CPUINFO *cpu, struct RUNPARAMS *param, int level){
   int i;
-
-
   for(i=0;i<param->ngridmax; i++)  cpu->octList[level-1][i] = NULL;
-
 }
 
 

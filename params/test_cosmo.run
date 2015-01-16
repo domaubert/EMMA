@@ -3,10 +3,10 @@ max_number_of_octs 500000
 max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 5
-max_nuber_of_steps 5
+output_frequency 50
+max_nuber_of_steps 9000
 time_step_max  1e0
-tmax_or_amax 0.2
+tmax_or_amax 0.15
 ##==AMRGrid==================
 level_coarse 6
 level_max 10
@@ -33,15 +33,15 @@ dens_threshold 5e20
 temp_threshold 1e5
 src_int 1e15
 ##==StarFormation============
-overdensity_cond 2
-density_cond 0
-tcar 2e6
-tlife 2e5
+overdensity_cond 150
+density_cond -500
+tcar 4e9
+tlife 2e7
 ##==SuperNovae===============
 feedback_eff 1.
 feedback_frac 1.
 ##==Movie====================
-lmap 8
+lmap 9
 xmin 0
 xmax 1
 ymin 0

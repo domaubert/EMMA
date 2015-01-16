@@ -756,8 +756,6 @@ blockcounts[0]++; // For SN feedback
  }
 #endif
 
-
-
   if(cpu.rank==RANK_DISP){
     printf(" === alloc Memory ===\n");
     printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);

@@ -1504,7 +1504,6 @@ int FillDens(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct 
   REAL avgdens=0.;
   int nc=0;
 
-
   curoct=firstoct[level-1];
   if((curoct!=NULL)&&(cpu->noct[level-1]!=0)){
     nextoct=curoct;
