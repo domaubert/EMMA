@@ -1212,15 +1212,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
       rstat=fscanf(buf,"%s",stream);
 #ifdef SUPERNOVAE
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff			=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac			=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff	=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac	=(REAL)dummyf;
 #else
-
 	for (i=0; i<2; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
 #ifdef MOVIE
-      rstat=fscanf(buf,"%s %d", stream,&param->movie->lmap);
+      rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %d",stream,&param->movie->lmap);
       rstat=fscanf(buf,RF,stream,&param->movie->xmin);
       rstat=fscanf(buf,RF,stream,&param->movie->xmax);
       rstat=fscanf(buf,RF,stream,&param->movie->ymin);

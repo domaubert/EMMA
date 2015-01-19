@@ -367,7 +367,6 @@ void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 
                 (*N)++;
                 REAL stop = 0;
-
             }
 		}
 	}while(nextoct!=NULL);
@@ -397,7 +396,7 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
 #endif
 
-	if(cpu->rank==RANK_DISP) {	printf("%d\tActive SN\n",Nsn);}
+	if(cpu->rank==RANK_DISP && Nsn) {	printf("%d\tActive SN\n",Nsn);}
 }
 
 

@@ -358,7 +358,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 		printf("Mmax=%e\tthresh=%e\n", mmax, param->stars->thresh );
 		printf("%d stars added on level %d \n", nstars, level);
 		printf("%d stars in total\n",param->stars->n);
-		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS\t%e",1./aexp-1.);
+		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS\t%e\n",1./aexp-1.);
 		if(param->stars->n>0) cpu->trigstar=1;
 //		printf("\n");
 	}

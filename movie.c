@@ -13,8 +13,7 @@ int MOVIE_SNAP_NUMBER = 0;
 
 void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
 
-	
-	if(cpu->rank==0)  printf("dump movie file ");
+	if(cpu->rank==RANK_DISP)  printf("dump movie file ");
 
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
@@ -57,8 +56,8 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 		struct OCT  *oct;
 		struct OCT  *nextoct=firstoct[ilev-1];
-		if(nextoct!=NULL) 
-		do {	
+		if(nextoct!=NULL)
+		do {
 			oct=nextoct;
 			nextoct=oct->next;
 			if(oct->cpu != cpu->rank) 	continue;
@@ -82,7 +81,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 					int ii,jj,kk;
 					for(kk=0;kk<locN;kk++){							if((kmap+kk)>=(nmapz+k0)) continue;
-						for(jj=0;jj<locN;jj++){						if((jmap+jj)>=(nmapy+j0))	continue;				
+						for(jj=0;jj<locN;jj++){						if((jmap+jj)>=(nmapy+j0))	continue;
 							for(ii=0;ii<locN;ii++){					if((imap+ii)>=(nmapx+i0)) continue;
 
 								const int x  = imap+ii-i0;
@@ -110,10 +109,10 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 	int ii;
 	for(ii=0;ii<4*ntot;ii++) map[ii] /= nmapz * cpu->nproc;
 
-  //=======================================      
+  //=======================================
   //============= dump ====================
   //=======================================
-	
+
 	float* mapred = param->movie->map_reduce;
 	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
 	if(cpu->rank==0){
