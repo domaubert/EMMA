@@ -290,6 +290,65 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
+
+  /*
+  state = 0 -> DM particle
+  state = 1 -> Radiative Star
+  state = 2 -> Supernovae
+  state = 3 -> Dead star
+  */
+
+  struct OCT  *curoct;
+	struct OCT  *nextoct=firstoct[level-1];
+
+	do{
+    if(nextoct==NULL) 		continue;
+	  curoct=nextoct;
+	  nextoct=curoct->next;
+	  if(curoct->cpu != cpu->rank) 	continue;
+    int icell;
+	  for(icell=0;icell<8;icell++) {
+	    struct CELL *curcell = &curoct->cell[icell];
+      struct PART *curp;
+      struct PART *nexp=curcell->phead;
+      do{
+        if(nexp==NULL) continue;
+        curp=nexp;
+        nexp=curp->next;
+
+        //------------------------------------------------//
+
+        if(curp->isStar==2){
+          curp->isStar=3;
+
+          /*
+          t0 =  param->cosmo->tphy - curp->age;
+          if(t0>=0){ // for inter-level communications
+            if ( t0 >= (param->stars->tlife*11)){
+              curp->isStar = 3;
+            }
+            else if ( t0 >= param->stars->tlife){
+              curp->isStar = 3;
+          */
+        }
+
+        if(curp->isStar==1){
+          REAL t0 =  param->cosmo->tphy - curp->age;
+          if(t0>=0){ // for inter-level communications
+              curp->isStar = 2;
+          }
+        }
+
+        //------------------------------------------------//
+
+      }while(nexp!=NULL);
+    }
+  }while(nextoct!=NULL);
+  return 0;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 
 	if(cpu->rank == RANK_DISP) printf("STARS\n");
@@ -309,10 +368,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	int N;
 	REAL mstars_level; // mass of stars at level
 
-
 	initThresh(param, aexp);
 #ifdef TESTCOSMO
-	param->cosmo->tphy	= a2t(param, aexp);
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
 	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse); // coarse mass
@@ -356,8 +413,10 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	param->stars->n += nstars ;
 	if(cpu->rank==RANK_DISP) {
 		printf("Mmax=%e\tthresh=%e\n", mmax, param->stars->thresh );
-		printf("%d stars added on level %d \n", nstars, level);
-		printf("%d stars in total\n",param->stars->n);
+		if (nstars){
+      printf("%d stars added on level %d \n", nstars, level);
+      printf("%d stars in total\n",param->stars->n);
+    }
 		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS\t%e\n",1./aexp-1.);
 		if(param->stars->n>0) cpu->trigstar=1;
 //		printf("\n");
@@ -375,7 +434,3 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 //	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
 #endif
-
-
-
-

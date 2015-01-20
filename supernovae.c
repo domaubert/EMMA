@@ -43,8 +43,9 @@ void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUIN
 
 void thermalFeedback(struct CELL *cell,  REAL E){
 #ifdef WRAD
-    struct OCT* oct = cell2oct(cell);
 
+/*
+    struct OCT* oct = cell2oct(cell);
     int i;
     for(i=0;i<8;i++){
         struct CELL* curcell = &oct->cell[i];
@@ -56,6 +57,11 @@ void thermalFeedback(struct CELL *cell,  REAL E){
         //cell->rfield.snfb =1;
 
     }
+*/
+
+        cell->field.E += E;
+        cell->field.p += E*(GAMMA-1.);
+
 #endif
 }
 
@@ -211,23 +217,30 @@ REAL computeRPDS(REAL E51, REAL n0, REAL Z){
 }
 
 REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, REAL aexp){
+/*
+  REAL Z=0;
+  REAL unit_E = POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2));
+  REAL E51 = E/(1e51*1e-7*unit_E);
+  REAL dx = POW(2.,-level)*param->unit.unit_l*aexp*PARSEC; //m
 
-REAL Z=0;
-REAL unit_E = POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2));
-REAL E51 = E/(1e51*1e-7*unit_E);
-REAL dx = POW(2.,-level)*param->unit.unit_l*aexp*PARSEC; //m
+  REAL mu = MOLECULAR_MU *PROTON_MASS;
+  REAL n0 = cell->field.d*param->unit.unit_d/PROTON_MASS*1e6; //cm-3
 
-REAL mu = MOLECULAR_MU *PROTON_MASS;
-REAL n0 = cell->field.d*param->unit.unit_d/PROTON_MASS*1e6; //cm-3
+  REAL tPDS = computetPDS(E51,n0,Z);
+  REAL RPDS = computeRPDS(E51,n0,Z);
 
-REAL tPDS = computetPDS(E51,n0,Z);
-REAL RPDS = computeRPDS(E51,n0,Z);
+  REAL fKIN = 3.97e-6 * mu*n0* POW(RPDS,7.)*pow(tPDS,-2.)*POW(dx,-2.)*POW(E51,-1.) ;
 
-REAL fKIN = 3.97e-6 * mu*n0* POW(RPDS,7.)*pow(tPDS,-2.)*POW(dx,-2.)*POW(E51,-1.) ;
+  printf("FKIN = %e\n",fKIN);
 
-printf("FKIN = %e\n",fKIN);
-return fKIN;
+*/
 
+  REAL fKIN = param->sn->feedback_frac;
+
+// REAL dx = POW(2.,-level) *  aexp * param->unit.unit_l /PARSEC; //m
+// fKIN = dx>100?1:0;
+
+  return fKIN;
 }
 
 REAL massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
@@ -237,7 +250,7 @@ REAL massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, 
     struct OCT* oct = cell2oct(cell);
 
     REAL dx = POW(2.,-level) *  aexp; //m
-	REAL dv = POW(dx,3.); //m3
+    REAL dv = POW(dx,3.); //m3
 
     int i;
     for(i=0;i<8;i++){
@@ -254,6 +267,7 @@ int SN_TMP_PARAM = 1;
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 #ifndef SNTEST
 #ifdef PIC
+
 	cell->rfield.snfb = 0;
 
 	if(param->sn->feedback_eff){
@@ -261,37 +275,25 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 		int Nsn = 0;
 		REAL t0;
 
-		struct PART *nexp;
-		struct PART *curp;
+		struct PART *nexp=cell->phead;
+		struct PART  *curp;
 
-		nexp=cell->phead;
 		if(nexp==NULL) return 0;
 	 	do{ curp=nexp;
 			nexp=curp->next;
 
-			if (curp->isStar && curp->isStar < 3){
-				t0 =  param->cosmo->tphy - curp->age;
-				if(t0>=0){ // for inter-level communications
-				  if ( t0 >= (param->stars->tlife*11)){
-				    curp->isStar = 3;
-				  }
-				  else if ( t0 >= param->stars->tlife){
-				    curp->isStar = 3;
+			if (curp->isStar==2){
 
-                    REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
+        REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
+        REAL fKIN = compute_fkin(param,cell,E,level,aexp);
 
-                 // REAL  fKIN = compute_fkin(param,cell,E,level,aexp);
-                    REAL fKIN = param->sn->feedback_frac;
+        massFeedback(cell,curp,param,aexp,level);
+        thermalFeedback(cell, E*(1.-fKIN));
+        kineticFeedback(cell, E*(   fKIN));
 
-                    massFeedback(cell,curp,param,aexp,level);
-				    thermalFeedback(cell, E*(1.-fKIN));
-				    kineticFeedback(cell, E*(   fKIN));
-
-				    Nsn++;
-				  }
-				}
-			}
-		}while(nexp!=NULL);
+        Nsn++;
+      }
+    }while(nexp!=NULL);
 		return Nsn;
 	}
 	return 0;
@@ -314,21 +316,20 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 		if ( t >= LIFETIME_OF_STARS_IN_TEST && SN_TMP_PARAM ){
 			SN_TMP_PARAM = 0;
 
-//          REAL msn = 7.6e6 * 2e30 ; //kg L=1.42e61
-            REAL msn = 26.84 * 2e30 ; //kg L=5e48
+//    REAL msn = 7.6e6 * 2e30 ; //kg L=1.42e61
+      REAL msn = 26.84 * 2e30 ; //kg L=5e48
 
-            REAL E = computeFeedbackEnergy(param, 0, 1, level, msn/param->unit.unit_mass );
+      REAL E = computeFeedbackEnergy(param, 0, 1, level, msn/param->unit.unit_mass );
 
-            //REAL  fKIN = compute_fkin(param,cell,E,level,1.);
-            REAL fKIN = param->sn->feedback_frac;
-            thermalFeedback(cell, E*(1.-fKIN));
-            kineticFeedback(cell, E*(   fKIN));
+      REAL  fKIN = compute_fkin(param,cell,E,level,1.);
+      thermalFeedback(cell, E*(1.-fKIN));
+      kineticFeedback(cell, E*(   fKIN));
 
-            printf("SN active at t = %e\n", t);
+      printf("SN active at t = %e\n", t);
 			printf("eblast= %e \n", E*POW( 2.,-3.*level));
-        }
-        return 1;
     }
+    return 1;
+  }
 #endif // SNTEST
 }
 
@@ -386,7 +387,7 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 	  nextoct=curoct->next;
 	  if(curoct->cpu != cpu->rank) 	continue;
 
-      int icell;
+    int icell;
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
 			Nsn += feedback(curcell, param, cpu, aexp, level, dt);
@@ -396,7 +397,8 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
 #endif
 
-	if(cpu->rank==RANK_DISP && Nsn) {	printf("%d\tActive SN\n",Nsn);}
+
+	if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
 }
 
 

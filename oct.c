@@ -236,3 +236,37 @@ void cic_child(struct OCT* oct,struct OCT* octorg, int icellorg)
 }
 
 #endif
+
+
+
+
+
+void cleanOctList(struct CPUINFO *cpu, struct RUNPARAMS *param, int level){
+  int i;
+  for(i=0;i<param->ngridmax; i++)  cpu->octList[level-1][i] = NULL;
+}
+
+
+void setOctList(struct OCT *firstoct, struct CPUINFO *cpu, struct RUNPARAMS *param, int level){
+
+ // printf("Building octList\n");
+
+  struct OCT  *nextoct = firstoct;
+  struct OCT  *curoct;
+
+  cleanOctList(cpu,param,level);
+
+  int nOct = 0;
+  do{ if(nextoct==NULL) 		continue;
+      curoct=nextoct;
+      nextoct=curoct->next;
+      if(curoct->cpu!=cpu->rank) continue;
+
+      cpu->octList[level-1][nOct++] = curoct;
+
+  }while(nextoct!=NULL);
+
+  cpu->locNoct[level-1] = nOct;
+
+//  printf("nOct = %d on level %d by cpu %d\n",nOct, level, cpu->rank);
+}

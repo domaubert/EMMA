@@ -57,7 +57,7 @@ typedef double REAL;
 
 #define PMIN 1e-12
 
-#define NCOSMOTAB (262144)
+#define NCOSMOTAB (256)
 
 
 #ifdef DUAL_E
@@ -350,6 +350,10 @@ struct CPUINFO{
   int nsteps; // the current coarse step index
   REAL tinit; // the initial time
   int *ndumps; // the current dump number
+
+
+  int *locNoct; // the local number of octs per levels
+  struct OCT *** octList;
 
 #ifdef GPUAXL
 

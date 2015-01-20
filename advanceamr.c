@@ -502,6 +502,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
     /* //====================================  Poisson Solver ========================== */
+    setOctList(firstoct[level-1], cpu, param,level);
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp);
 
 
@@ -994,11 +995,17 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     /* //===================================creating new stars=================================// */
 
+
+#ifdef TESTCOSMO
+	param->cosmo->tphy	= a2t(param, aexp);
+#endif // TESTCOSMO
+
 #ifdef STARS
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif //ZOOM
       createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
+      setStarsState(firstoct, param, cpu, level);
 #endif // STARS
 
 #ifdef SUPERNOVAE
