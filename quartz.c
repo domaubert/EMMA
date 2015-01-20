@@ -1152,6 +1152,7 @@ blockcounts[0]++; // For SN feedback
     if(curoct!=(grid+ngridmax-1)) curoct->next=curoct+1;
   }
 
+
   //=================================  building the array of timesteps
 
   REAL *adt;
@@ -1166,6 +1167,7 @@ blockcounts[0]++; // For SN feedback
 
   int *ndt;
   ndt=(int *)malloc(sizeof(int)*levelmax);
+
 
   // INITIALISATION FROM INITIAL CONDITIONS =========================
   if(param.nrestart==0){
@@ -1678,6 +1680,7 @@ blockcounts[0]++; // For SN feedback
   else{
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
+	printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
     sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);

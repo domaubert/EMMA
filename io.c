@@ -1275,7 +1275,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   char filename[256];
 
   if(cpu->rank==0){
-
     sprintf(filename,"./level_%03d/ic_velbx",level);
     fx=fopen(filename,"rb"); 	if(fx == NULL) printf("Cannot open %s\n", filename);
     sprintf(filename,"./level_%03d/ic_velby",level);
@@ -1391,6 +1390,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   int offidx=0;
   int keep;
   double mass;
+  double veloff=0.;
 
 #ifdef WHYDRO2
   mass=(1.-ob/om)/(np1*np2*np3);
@@ -1403,6 +1403,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     offidx=POW(2,3*(level-param->lcoarse)); // for ids of particles
   }
 #endif
+
+
 
   velx=(float*)malloc(sizeof(float)*np1*np2);
   vely=(float*)malloc(sizeof(float)*np1*np2);
@@ -1455,9 +1457,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	z+=(z<=0.)*((int)(-z)+1.)-(z>1.)*((int)z);
 
 	// computing the velocities
-	vx=velx[(i1-1)+(i2-1)*np1]*astart/(np1*dx*h0)/(sqrt(om)*0.5);
-	vy=vely[(i1-1)+(i2-1)*np1]*astart/(np2*dx*h0)/(sqrt(om)*0.5);
-	vz=velz[(i1-1)+(i2-1)*np1]*astart/(np3*dx*h0)/(sqrt(om)*0.5);
+	vx=(velx[(i1-1)+(i2-1)*np1]+veloff/astart*1e-3)*astart/(np1*dx*h0)/(sqrt(om)*0.5);
+	vy=(vely[(i1-1)+(i2-1)*np1])*astart/(np2*dx*h0)/(sqrt(om)*0.5);
+	vz=(velz[(i1-1)+(i2-1)*np1])*astart/(np3*dx*h0)/(sqrt(om)*0.5);
 
 	// if it belongs to the current cpu, we proceed and assign the particle to the particle array
 	if(segment_part(x,y,z,cpu,cpu->levelcoarse)){
@@ -2214,6 +2216,10 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   double tstar2;
   double pstar;
   double mpc=3.08568025e22; // Mpc in m
+  double veloff=0.;
+#ifdef BULKFLOW
+  veloff=VBC; // relative motion in km/s at z=999
+#endif
 
   rstar= np1*dx*mpc; // box size in m
   rhostar=rhoc*om;
@@ -2295,7 +2301,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  //abort();
 
 	  W.d=(deltab[i1+i2*np1]+1.0)*ob/om;
-	  W.u=(velx[i1+i2*np1]*1e3)*astart/vstar; // vstar is expressed in m/s and grafic vel are in km/s
+	  W.u=((velx[i1+i2*np1]+veloff)*1e3)*astart/vstar; // vstar is expressed in m/s and grafic vel are in km/s
 	  W.v=(vely[i1+i2*np1]*1e3)*astart/vstar;
 	  W.w=(velz[i1+i2*np1]*1e3)*astart/vstar;
 	  W.p=pressure/pstar*POW(astart,5);

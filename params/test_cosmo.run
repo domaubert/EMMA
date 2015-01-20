@@ -9,7 +9,7 @@ time_step_max  1e0
 tmax_or_amax 0.15
 ##==AMRGrid==================
 level_coarse 6
-level_max 12
+level_max 10
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============

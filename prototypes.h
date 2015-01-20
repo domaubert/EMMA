@@ -57,7 +57,8 @@ typedef double REAL;
 
 #define PMIN 1e-12
 
-#define NCOSMOTAB (256)
+#define NCOSMOTAB (262144)
+#define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 
 
 #ifdef DUAL_E

@@ -95,18 +95,18 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
 
-	star->vx = cell->field.u;
+ 	star->vx = cell->field.u;
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
-/*	REAL r 		= rdm(0,1) * cell->field.a ;
+	REAL r 		= rdm(0,1) * cell->field.a ;
 	REAL theta   	= acos(rdm(-1,1));
 	REAL phi 	= rdm(0,2*PI);
 
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
-*/
+
 	star->mass  = mlevel;
 
 	star->epot = 0.0;
@@ -369,10 +369,11 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	REAL mstars_level; // mass of stars at level
 
 	initThresh(param, aexp);
+
 #ifdef TESTCOSMO
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
-	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse); // coarse mass
+	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse+2); // coarse mass
 #endif
 
 	do {	if(nextoct==NULL) 		continue;
