@@ -359,7 +359,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  
 	  if(test) 
 	    {
-	      //printf("EGY ERR eintt=%e xt=%e et=%e/%e/%e e0=%e/%e/%e dtcool=%e src=%e\n",eintt,xt,et[0],et[1],et[2],egyloc[0],egyloc[1],egyloc[2],dtcool,srcloc[idloc]);
 	      fudgecool=fudgecool/10.; 
 	      continue;	
 	    } 
@@ -422,13 +421,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
 
 	  if(compcool){
-/* #ifdef STARS */
-/* 	  REAL SN 	 = R.snfb; */
-/* 	  //if (R.snfb) Cool = 0; */
-/* 	  //if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt); */
-/* #else */
-/* 	  REAL SN = 0; */
-/* #endif */
 	    REAL SN=0.;
 	  
 #ifndef S_X

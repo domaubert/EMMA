@@ -737,6 +737,72 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
     free(countpacket);
 }
 
+// ======================================================
+// ======================================================
+void gather_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int level){
+  int i,j;
+  int found=0;
+  unsigned long long hidx;
+  struct PACKET *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+  int *countpacket;
+
+/*   double t[10]; */
+/*   double th=0,tg=0,tt=0,tc=0; */
+/*   int nt=0; */
+
+  // we create a counter of values for each neighbor
+  countpacket=(int*)calloc(cpu->nnei,sizeof(int));
+
+    for(j=0;j<cpu->nnei;j++){
+      for(i=0;i<cpu->nbuff;i++){
+	pack=sendbuffer[j]+i; // we assume that the sendbuffer already contains the keys
+	if(pack->level==level){ // we do something
+	  //t[0]=MPI_Wtime();
+	  countpacket[j]++;
+
+	  // first we compute the adress from the hashfunction
+	  hidx=hfun((unsigned long long) pack->key,cpu->maxhash);
+	  nextoct=cpu->htable[hidx];
+	  //t[3]=MPI_Wtime();
+	  if(nextoct!=NULL){
+	    do{ // resolving collisions
+	      curoct=nextoct;
+	      nextoct=curoct->nexthash;
+	      found=((oct2key(curoct,curoct->level)==(unsigned long long) pack->key)&&(pack->level==curoct->level));
+	    }while((nextoct!=NULL)&&(!found));
+
+	    //t[1]=MPI_Wtime();
+	    if(found){ // the reception oct has been found
+
+	      // we set the current oct as a border one (for vector based communications)
+	      //curoct->border=1;
+
+	      for(icell=0;icell<8;icell++){
+		pack->data[icell]=curoct->cell[icell].gdata.p; // potential
+	      }
+	    }
+	    else{
+	      printf("error no reception oct found !");
+	      abort();
+	    }
+	    //t[2]=MPI_Wtime();
+
+	    
+	  }else{
+	    printf("error no hash key obtained !!\n");
+	    abort();
+	  }
+	}
+      }
+    }
+    
+
+    free(countpacket);
+}
+
  //------------------------------------------------------------------------
 void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
 
@@ -876,6 +942,53 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 		break;
 #endif
 	      }
+	    }
+	  }
+	  else{
+	    printf("error no reception oct found ! for buff #%d lev=%d key=%e\n",i,pack->level,pack->key);
+	    abort();
+	  }
+	    
+	}else{
+	  printf("error no hash key obtained !!\n");
+	  abort();
+	}
+      }
+    }
+  }
+    
+      
+}
+
+// ==================================================================================
+void scatter_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int level){
+
+  int i,j;
+  int found=0;
+  unsigned long long hidx;
+  struct PACKET *pack;
+  struct OCT *curoct;
+  struct OCT *nextoct;
+  int icell;
+
+  for(j=0;j<cpu->nnei;j++){
+    for(i=0;i<cpu->nbuff;i++){
+      pack=recvbuffer[j]+i;
+      if(pack->level==level){ // we do something
+
+	// first we compute the adress from the hashfunction
+	hidx=hfun((unsigned long long)pack->key,cpu->maxhash);
+	nextoct=cpu->htable[hidx];
+	if(nextoct!=NULL){
+	  do{ // resolving collisions
+	    curoct=nextoct;
+	    nextoct=curoct->nexthash;
+	    found=((oct2key(curoct,curoct->level)==(unsigned long long)pack->key)&&(pack->level==curoct->level));
+	  }while((nextoct!=NULL)&&(!found));
+
+	  if(found){ // the reception oct has been found
+	    for(icell=0;icell<8;icell++){
+		curoct->cell[icell].gdata.p=pack->data[icell]; // potential
 	    }
 	  }
 	  else{
@@ -2241,6 +2354,103 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
   t[5]=MPI_Wtime();
   // ----------- V  / the client scatter the data back in the oct tree
   scatter_mpi_level(cpu,recvbuffer,field,level);
+  
+  t[6]=MPI_Wtime();
+
+  //
+  free(req);
+  free(stat);
+
+  t[7]=MPI_Wtime();
+  tot=t[7]-t[0];
+}
+
+// ===================================================
+// ===================================================
+
+void mpi_exchange_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int cmp_keys, int level)
+{
+  int i;
+  int icpu;
+  MPI_Status *stat;
+  MPI_Request *req;
+  MPI_Datatype MPI_PACKET=*(cpu->MPI_PACKET);
+  int mpitag=1;
+
+  double t[10];
+  double tot;
+  req=(MPI_Request*)calloc(cpu->nnei*2,sizeof(MPI_Request));
+  stat=(MPI_Status*)calloc(cpu->nnei*2,sizeof(MPI_Status));
+
+  // ---------- The key calculation may already been computed (cmp_key=0) or must be recomputed (cmp_key=1)
+
+  if(cmp_keys){
+    // ----------- 0  / we clean the mpi buffers
+    clean_mpibuff(cpu,sendbuffer,recvbuffer);
+
+    // ----------- 0.5  / we allocate the number of octs to transmit
+    if(cpu->nsend!=NULL){
+      free(cpu->nsend);
+      free(cpu->nrecv);
+    }
+
+    cpu->nsend=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to send to each neighbor
+    cpu->nrecv=(int *)calloc(cpu->nnei,sizeof(int)); // the number of packets to receive from each neighbor
+
+
+    // ----------- I  / we compute the boundary keys and store them in recvbuffer
+    compute_bndkeys_level(cpu,recvbuffer,level,cpu->nrecv);
+
+    // ----------- I bis/ we send the number of requested packets to each server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(cpu->nrecv+i,1,MPI_INT,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(cpu->nsend+i,1,MPI_INT,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(cpu->comm);
+    
+
+    // ----------- II / we send the keys to the server
+
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Isend(recvbuffer[i],*(cpu->nrecv+i),MPI_PACKET,cpu->mpinei[i],cpu->rank,cpu->comm,&req[i]  );
+    }
+    for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+      MPI_Irecv(sendbuffer[i],*(cpu->nsend+i),MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+    }
+    MPI_Waitall(2*cpu->nnei,req,stat);
+    MPI_Barrier(cpu->comm);
+  }
+
+  // ----------- III/ the server gather the data
+  gather_mpi_pot_level(cpu, sendbuffer,level);
+
+  //if(cpu->rank==RANK_DISP) printf("--- X ---\n");
+  memset(req,0,2*cpu->nnei*sizeof(MPI_Request));
+  memset(stat,0,2*cpu->nnei*sizeof(MPI_Status));
+  MPI_Barrier(cpu->comm);
+
+  // ----------- IV / the server send the data back to the client
+
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Isend(sendbuffer[i],*(cpu->nsend+i),MPI_PACKET,cpu->mpinei[i],cpu->rank         ,cpu->comm,&req[i]  );
+  }
+
+  for(i=0;i<cpu->nnei;i++){ // we scan all the neighbors to send the keys
+    MPI_Irecv(recvbuffer[i],*(cpu->nrecv+i),MPI_PACKET,cpu->mpinei[i],cpu->mpinei[i],cpu->comm,&req[i+cpu->nnei]);
+  }
+  MPI_Waitall(2*cpu->nnei,req,stat);
+  MPI_Barrier(cpu->comm);
+
+
+
+  t[5]=MPI_Wtime();
+  // ----------- V  / the client scatter the data back in the oct tree
+  scatter_mpi_pot_level(cpu,recvbuffer,level);
   
   t[6]=MPI_Wtime();
 

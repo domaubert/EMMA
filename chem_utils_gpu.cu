@@ -123,10 +123,9 @@ __device__ void dcuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *t
   // Compton Cooling
   
   /* c5=1.017e-37*POW(2.727/aexp,4)*(temp-2.727/aexp)*nh2*x; */
-  /* c5=0.; */
+   c5=0.;
 #ifndef WRADTEST
-  //  c5=5.406e-36*(temp-2.727/aexp)/POW(aexp,4)*x/(1.+x);
-  c5=0;
+   c5=5.406e-24*(temp-2.727/aexp)/POW(aexp/0.001,4)*x*nh2;
 #endif
   // Overall Cooling
   
@@ -317,10 +316,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
 	  //== Getting a timestep
 	  dcuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
-	  
 	  ai_tmp1=0.;
-
-
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
 	  
@@ -395,8 +391,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet));
 	  ai_tmp1=0.;
 
-	  /* printf("xt=%e alphat=%e betat=%e betat2=%e\n",xt,alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool,dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet),dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1)); */
-	  /* abort(); */
 
 	  if(((xt>1.)||(xt<0.))||(isnan(xt))) 
  	    {
@@ -428,13 +422,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 #endif
 
 	  if(compcool){ 
-	  /* #ifdef STARS */
-	  /* 	  REAL SN 	 = R.snfb; */
-	  /* 	  //if (R.snfb) Cool = 0; */
-	  /* 	  //if (R.snfb) printf("dE\t%e\tE0\t%e\n",R.snfb*dtcool,eintt); */
-	  /* #else */
-	  /* 	  REAL SN = 0; */
-	  /* #endif */
 	  REAL SN=0.;
 
 #ifndef S_X

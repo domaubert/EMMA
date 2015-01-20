@@ -8,13 +8,13 @@ DEFINES  =
 
 #------------ MAIN OPTIONS --------------------
 DEFINES  +=  -DPIC
-DEFINES  +=  -DWHYDRO2
+#DEFINES  +=  -DWHYDRO2
 DEFINES  +=  -DWGRAV 
-DEFINES  +=  -DWRAD
-DEFINES  +=  -DWRADHYD
+#DEFINES  +=  -DWRAD
+#DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
-DEFINES  +=  -DSTARS
-DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
+#DEFINES  +=  -DSTARS
+#DEFINES  +=  -DKPCLIMIT #// limite la resolution physique
 #DEFINES  +=  -DWDBG #// mode debug
 #DEFINES  +=  -DZOOM #// mode zoom
 #DEFINES  +=  -DJUSTIC #// juste les conditions initiales
@@ -74,7 +74,7 @@ DEFINES  += -DACCEL_RAD_STAR
 #DEFINES += -DOTSA
 #DEFINES  += -DHOMOSOURCE
 #DEFINES  += -DRADSTEP
-DEFINES  += -DCOARSERAD
+#DEFINES  += -DCOARSERAD
 #DEFINES  += -DSCHAYE
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
@@ -101,7 +101,7 @@ CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o che
 CUDA_LIBS =  -I/workdir/observatoire/aubert/cudpp_src_2.0/include -L/workdir/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda-5.0/lib64 -lcudart  -I/usr/local/cuda-5.0/include -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
 else
 DEFINESGLOB= $(DEFINES) 
-EXECUTABLE = quartzcpu
+EXECUTABLE = quartzNB
 CUDA_OBJS= 
 CUDA_LIBS =
 endif

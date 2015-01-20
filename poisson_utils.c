@@ -1200,7 +1200,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #endif
 	if(nread>0){
 	// ------------ solving the hydro
-	PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
+	  PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
 
 	// ------------ computing the residuals
 
@@ -1265,7 +1265,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     // reduction of relevant quantities
 
     if((iter<=param->niter)||(iter%1==0)){
-      mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,(iter==0),level); // potential field exchange
+      mpi_exchange_pot_level(cpu,cpu->sendbuffer,cpu->recvbuffer,(iter==0),level); // potential field exchange
       if(iter==0){
 	//if(level==7) printf("rank=%d fnorm=%e\n",cpu->rank,fnorm);
 	MPI_Allreduce(MPI_IN_PLACE,&fnorm,1,MPI_REEL,MPI_SUM,MPI_COMM_WORLD);
@@ -1344,7 +1344,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   // pre-relaxation
 
 #ifdef WMPI
-  mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level); // potential field exchange
+  mpi_exchange_pot_level(cpu,cpu->sendbuffer,cpu->recvbuffer,(level==param->lcoarse),level); // potential field exchange
 #endif
 
 #ifndef GPUAXL
@@ -1382,7 +1382,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   
   if((level-1)==param->mgridlmin){
 #ifdef WMPI
-    mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level-1); // potential field exchange
+    mpi_exchange_pot_level(cpu,cpu->sendbuffer,cpu->recvbuffer,0,level-1); // potential field exchange
 #endif
 
 #ifndef GPUAXL
@@ -1415,7 +1415,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   
   // post relaxation
 #ifdef WMPI
-  mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,2,1,level); // potential field exchange
+  mpi_exchange_pot_level(cpu,cpu->sendbuffer,cpu->recvbuffer,0,level); // potential field exchange
 #endif
 
 #ifndef GPUAXL
