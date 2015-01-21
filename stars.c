@@ -188,7 +188,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 #ifdef SCHAYE
 	/* REAL A=1.515e-4; // Ms/yr/kpc2 */
 	/* A=A*(2e30)/(3600.*24.*365)/POW(1e3*PARSEC,2.); // kg/sec/m2 */
-	REAL A=1.0028e-20; // Kg/sec/m2
+	REAL A=1.0028e-20; // Kag/sec/m2
 	REAL E=1.; // Ms/pc2
 	E=E*2e30/POW(PARSEC,2.);
 
@@ -212,7 +212,6 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level);
 
 	REAL lambda =  gas_efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
-
 
 	int N 		= gpoiss(lambda);
 
