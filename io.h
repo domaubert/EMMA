@@ -16,6 +16,5 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump);
 void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, struct OCT **firstoct);
 
-void dumpHeaderOnScreen(struct RUNPARAMS *param, struct CPUINFO *cpu);
-void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu);
+void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam);
 

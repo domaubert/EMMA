@@ -1755,7 +1755,7 @@ blockcounts[0]++; // For SN feedback
 
 
 
-  if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu);
+  if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   //#ifdef STARS
 /* #ifndef ZOOM */
