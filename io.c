@@ -1,12 +1,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "prototypes.h"
 #include "friedmann.h"
 #include "segment.h"
-#include <string.h>
 #include "stars.h"
-
 
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 
@@ -71,392 +70,557 @@ void oct2loct(struct OCT *oct, struct LOCT *loct){
   loct->level=oct->level;
 }
 
+
+
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu){
-  printf("Dumping parameters file\n");
+  printf("Dumping parameters file\n\n");
 
   FILE *fps[2] = {stdout, NULL};
-  fps[1]=fopen("data/param.00000.p00000","w");
-  if(fps[1] == NULL) printf("Cannot open %s\n", "data/param.00000.p00000");
+
+  char* filename = "data/param.00000.p00000";
+  fps[1]=fopen(filename,"w");
+  if(fps[1] == NULL) printf("Cannot open %s\n", filename);
+
+  char* bool_format = "%-24s";
+  char* int_format = "%-24s%d\n";
+  char* real_format = "%-24s%e\n";
 
 int i;
 for(i=0;i<2;i++){
   FILE *fp = fps[i];
 
-fprintf(fp, "PIC\t");
+  fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
+  fprintf(fp,"\n");
+
+  fprintf(fp, real_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+  fprintf(fp,"\n");
+
+#ifdef WRAD
+  fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
+  fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
+  fprintf(fp, real_format,"unit_t",(param->unit.unit_t) );		// unit time [seconds]
+  fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
+  fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
+  fprintf(fp,"\n");
+#endif
+
+#ifdef TESTCOSMO
+  fprintf(fp, real_format,"om",(param->cosmo->om) );			// Omega matter
+  fprintf(fp, real_format,"ov",(param->cosmo->ov) );			// Omega vacuum
+  fprintf(fp, real_format,"ob",(param->cosmo->ob) );			// Omega baryon
+  fprintf(fp, real_format,"H0",(param->cosmo->H0) );			// Hubble constant
+  fprintf(fp,"\n");
+#endif
+
+
+fprintf(fp,"#------------ MAIN OPTIONS --------------------\n");
+
+fprintf(fp, bool_format, "PIC");
 #ifdef PIC
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WHYDRO2\t");
+fprintf(fp, bool_format, "WHYDRO2");
 #ifdef WHYDRO2
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WGRAV\t");
+fprintf(fp, bool_format, "WGRAV");
 #ifdef WGRAV
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WRAD\t");
+fprintf(fp, bool_format, "WRAD");
 #ifdef WRAD
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WRADHYD\t");
+fprintf(fp, bool_format, "WRADHYD");
 #ifdef WRADHYD
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TESTCOSMO\t");
+fprintf(fp, bool_format, "TESTCOSMO");
 #ifdef TESTCOSMO
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WDBG\t");
-#ifdef WDBG
-  fprintf(fp, "%d\n", 1);
-#else
-  fprintf(fp, "%d\n", 0);
-#endif
-
-fprintf(fp, "STARS\t");
+fprintf(fp, bool_format, "STARS");
 #ifdef STARS
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WMPI\t");
+fprintf(fp, bool_format, "SUPERNOVAE");
+#ifdef SUPERNOVAE
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "KPCLIMIT");
+#ifdef KPCLIMIT
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "ZOOM");
+#ifdef ZOOM
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "JUSTIC");
+#ifdef JUSTIC
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp,"#------------ PRECISION OPTIONS ---------------------\n");
+fprintf(fp, bool_format, "DSINGLEPRECISION");
+#ifdef DSINGLEPRECISION
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp,"#------------ MPI OPTIONS ---------------------\n");
+fprintf(fp, bool_format, "WMPI");
 #ifdef WMPI
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "FLOORDT\t");
+fprintf(fp, bool_format, "FLOORDT");
 #ifdef FLOORDT
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WCUDA_ERR\t");
+fprintf(fp,"#------------ OPEN MP OPTIONS ---------------------\n");
+fprintf(fp, bool_format, "WOMP");
+#ifdef WOMP
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp,"#------------ CUDA OPTIONS ---------------------\n");
+fprintf(fp, bool_format, "WCUDA_ERR");
 #ifdef WCUDA_ERR
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "NOCOMP\t");
+fprintf(fp, bool_format, "NOCOMP");
 #ifdef NOCOMP
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "GRAFIC\t");
+fprintf(fp,"#------------ ICs OPTIONS ---------------------\n");
+fprintf(fp, bool_format, "GRAFIC");
 #ifdef GRAFIC
   fprintf(fp, "%d\n", 1);
 #else
-  fprintf(fp, "%d\n", 0);
+  fprintf(fp, bool_format, "%d\n", 0);
 #endif
 
-fprintf(fp, "ZELDOVICH\t");
+fprintf(fp, bool_format, "ZELDOVICH");
 #ifdef ZELDOVICH
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "EVRARD\t");
+fprintf(fp, bool_format, "EVRARD");
 #ifdef EVRARD
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "EDBERT\t");
+fprintf(fp, bool_format, "EDBERT");
 #ifdef EDBERT
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TUBE\t");
+fprintf(fp, bool_format, "TUBE");
 #ifdef TUBE
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "PARTN\t");
+fprintf(fp, bool_format, "PARTN");
 #ifdef PARTN
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "PART2\t");
+fprintf(fp, bool_format, "PART2");
 #ifdef PART2
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WRADTEST\t");
+fprintf(fp, bool_format, "WRADTEST");
 #ifdef WRADTEST
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TESTCLUMP\t");
+fprintf(fp, bool_format, "TESTCLUM");
 #ifdef TESTCLUMP
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "PART_EGY\t");
+
+fprintf(fp,"#------------ PIC OPTIONS ----------------------\n");
+fprintf(fp, bool_format, "PART_EGY");
 #ifdef PART_EGY
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "PERFECT\t");
+fprintf(fp, bool_format, "PERFECT");
 #ifdef PERFECT
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "FASTGRAV\t");
+fprintf(fp,"#------------ GRAV OPTIONS ----------------------\n");
+fprintf(fp, bool_format, "FASTGRAV");
 #ifdef FASTGRAV
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "ONFLYRED\t");
+fprintf(fp, bool_format, "ONFLYRED");
 #ifdef ONFLYRED
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "RIEMANN_HLLC\t");
+fprintf(fp,"# ----------- HYDRODYNAMICS OPTIONS ------------\n");
+fprintf(fp, bool_format, "RIEMANN_HLLC");
 #ifdef RIEMANN_HLLC
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "RIEMANN_EXACT\t");
+fprintf(fp, bool_format, "RIEMANN_EXACT");
 #ifdef RIEMANN_EXACT
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "PRIMITIVE\t");
+fprintf(fp, bool_format, "PRIMITIVE");
 #ifdef PRIMITIVE
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "DUAL_E\t");
+fprintf(fp, bool_format, "DUAL_E");
 #ifdef DUAL_E
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "WCHEM\t");
+fprintf(fp, bool_format, "NOADX");
+#ifdef NOADX
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp,"# ----------- RADIATION OPTIONS ------------\n");
+fprintf(fp, bool_format, "WCHEM");
 #ifdef WCHEM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "S_100000\t");
+fprintf(fp, bool_format, "S_100000");
 #ifdef S_100000
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "COOLING\t");
+fprintf(fp, bool_format, "COOLING");
 #ifdef COOLING
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "UVBKG\t");
+fprintf(fp, bool_format, "UVBKG");
 #ifdef UVBKG
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSZM\t");
+fprintf(fp, bool_format, "SEMI_IMPLICIT");
+#ifdef SEMI_IMPLICIT
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "OLDCHEMRAD");
+#ifdef OLDCHEMRAD
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "ACCEL_RAD_STAR");
+#ifdef ACCEL_RAD_STAR
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "OTSA");
+#ifdef OTSA
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "HOMOSOURCE");
+#ifdef HOMOSOURCE
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "RADSTEP");
+#ifdef RADSTEP
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "COARSERAD");
+#ifdef COARSERAD
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+fprintf(fp, bool_format, "SCHAYE");
+#ifdef SCHAYE
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
+
+
+fprintf(fp,"# ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--\n");
+
+fprintf(fp, bool_format, "TRANSZM");
 #ifdef TRANSZM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSZP\t");
+fprintf(fp, bool_format, "TRANSZP");
 #ifdef TRANSZP
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSYM\t");
+fprintf(fp, bool_format, "TRANSYM");
 #ifdef TRANSYM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSYP\t");
+fprintf(fp, bool_format, "TRANSYP");
 #ifdef TRANSYP
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSXM\t");
+fprintf(fp, bool_format, "TRANSXM");
 #ifdef TRANSXM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "TRANSXP\t");
+fprintf(fp, bool_format, "TRANSXP");
 #ifdef TRANSXP
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "REFXM\t");
+fprintf(fp, bool_format, "REFXM");
 #ifdef REFXM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "REFYM\t");
+fprintf(fp, bool_format, "REFYM");
 #ifdef REFYM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-fprintf(fp, "REFZM\t");
+fprintf(fp, bool_format, "REFZM");
 #ifdef REFZM
   fprintf(fp, "%d\n", 1);
 #else
   fprintf(fp, "%d\n", 0);
 #endif
 
-  fprintf(fp, "npartmax\t%d\n",(param->npartmax)); 		// the max particles number (per process)
-  fprintf(fp, "ngridmax\t%d\n",(param->ngridmax) ); 		// the max oct numbers (per process)
-  fprintf(fp, "nbuff\t%d\n",(param->nbuff) ); 			// the mpi buffer size
-  fprintf(fp, "ndumps\t%d\n",(param->ndumps) ); 		// the frequency of outputs
-  fprintf(fp, "nsteps\t%d\n",(param->nsteps) ); 		// the maximal number of timesteps
+fprintf(fp,"# ---- OUTPUT--------------\n");
+fprintf(fp, bool_format, "MOVIE");
+#ifdef MOVIE
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
 
-  fprintf(fp, "lcoarse\t%d\n",(param->lcoarse) ); 		// the coarse level
-  fprintf(fp, "lmax\t%d\n",(param->lmax) ); 			// the max level of refinement
+fprintf(fp, bool_format, "WDBG");
+#ifdef WDBG
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
 
-  fprintf(fp, "niter\t%d\n",(param->niter) ); 			// the maximal number of iterations for the Poisson solver
+fprintf(fp, bool_format, "WDBKP");
+#ifdef WDBKP
+  fprintf(fp, "%d\n", 1);
+#else
+  fprintf(fp, "%d\n", 0);
+#endif
 
-  fprintf(fp, "gstride\t%d\n",(param->gstride) ); 		// the size of the stencil for vector based computations (gravity)
-  fprintf(fp, "hstride\t%d\n",(param->hstride) ); 		// the size of the stencil for vector based computations (hydro)
+  fprintf(fp,"\n");
 
-  fprintf(fp, "dt\t%e\n",(param->dt) ); 			// the timsestep
-  fprintf(fp, "tmax\t%e\n",(param->tmax) ); 			// the simulation stops at tmax : corresponds to amax in cosmo
-  fprintf(fp, "time_max\t%e\n",(param->time_max) ); 		// for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
+  fprintf(fp,"##==MemoryManagement=========\n");
+  fprintf(fp, int_format,"ngridmax",(param->ngridmax) ); 		// the max oct numbers (per process)
+  fprintf(fp, int_format, "npartmax",(param->npartmax)); 		// the max particles number (per process)
+  fprintf(fp, int_format,"nbuff",(param->nbuff) ); 			// the mpi buffer size
 
-  fprintf(fp, "maxhash\t%d\n",(param->maxhash) ); 		// the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
+  fprintf(fp,"##==TimestepManagement=======\n");
+  fprintf(fp, int_format,"ndumps",(param->ndumps) ); 		// the frequency of outputs
+  fprintf(fp, int_format,"nsteps",(param->nsteps) ); 		// the maximal number of timesteps
+  fprintf(fp, real_format,"dt",(param->dt) ); 			// the timsestep
+  fprintf(fp, real_format,"tmax",(param->tmax) ); 			// the simulation stops at tmax : corresponds to amax in cosmo
 
-  fprintf(fp, "amrthresh\t%e\n",(param->amrthresh) ); 		// the refinement criterion (refine if mcell>amrthresh)
-  fprintf(fp, "nsmooth\t%d\n",(param->nsmooth) ); 		// the number of neighbour refinement steps
+  fprintf(fp,"##==AMRGrid==================\n");
+  fprintf(fp, int_format,"lcoarse",(param->lcoarse) ); 		// the coarse level
+  fprintf(fp, int_format,"lmax",(param->lmax) ); 			// the max level of refinement
+  fprintf(fp, real_format,"amrthresh",(param->amrthresh0) ); 		// the refinement criterion (refine if mcell>amrthresh)
+  fprintf(fp, int_format,"nsmooth",(param->nsmooth) ); 		// the number of neighbour refinement steps
 
-  fprintf(fp, "poissonacc\t%e\n",(param->poissonacc) ); 	// relaxation accuracy for Poisson equation
-  fprintf(fp, "mgridlmin\t%d\n",(param->mgridlmin) ); 		// coarsest level for multigrid relaxation
-  fprintf(fp, "nvcycles\t%d\n",(param->nvcycles) ); 		// number of vcycles for multigrid relaxation
-  fprintf(fp, "nrelax\t%d\n",(param->nrelax) ); 		// number of smoothing cycles
+  fprintf(fp,"##==PoissonSolver============\n");
+  fprintf(fp, int_format,"niter",(param->niter) ); 			// the maximal number of iterations for the Poisson solver
+  fprintf(fp, real_format,"poissonacc",(param->poissonacc) ); 	// relaxation accuracy for Poisson equation
+  fprintf(fp, int_format,"mgridlmin",(param->mgridlmin) ); 		// coarsest level for multigrid relaxation
+  fprintf(fp, int_format,"nvcycles",(param->nvcycles) ); 		// number of vcycles for multigrid relaxation
+  fprintf(fp, int_format,"nrelax",(param->nrelax) ); 		// number of smoothing cycles
 
-  fprintf(fp, "nrestart\t%d\n",(param->nrestart) ); 		// the restart snapshot
-  fprintf(fp, "nsubcycles\t%d\n",(param->nsubcycles) ); 	// number of subcyles in AMR advance procedure
+  fprintf(fp,"##==Restart==================\n");
+  fprintf(fp, int_format,"nrestart",(param->nrestart) ); 		// the restart snapshot
 
-  fprintf(fp, "nthread\t%d\n",(param->nthread) );		// number of thread
-  fprintf(fp, "nstream\t%d\n",(param->nstream) );		// number of stream
+  fprintf(fp,"##==ThreadManagement=========\n");
+  fprintf(fp, int_format,"gstride",(param->gstride) ); 		// the size of the stencil for vector based computations (gravity)
+  fprintf(fp, int_format,"hstride",(param->hstride) ); 		// the size of the stencil for vector based computations (hydro)
+  fprintf(fp, int_format,"nsubcycles",(param->nsubcycles) ); 	// number of subcyles in AMR advance procedure
+  fprintf(fp, int_format,"nthread",(param->nthread) );		// number of thread
+  fprintf(fp, int_format,"nstream",(param->nstream) );		// number of stream
+  fprintf(fp, int_format,"ompthread",(param->ompthread) );
 
-  fprintf(fp, "egy_rhs\t%e\n",(param->egy_rhs) ); 		// the right hand side of the energy conservation equation (0 in non cosmological case);
-  fprintf(fp, "egy_0\t%e\n",(param->egy_0) ); 			// the initial energy
-  fprintf(fp, "egy_last\t%e\n",(param->egy_last) ); 		// the last integrand for the energy equation (used for trapezoidal rule)
-  fprintf(fp, "egy_timelast\t%e\n",(param->egy_timelast) ); 	// the last time for the integrand (used for trapezoidal rule)
-  fprintf(fp, "egy_totlast\t%e\n",(param->egy_totlast) );
-
-//  printf("%lf\n",param->egy_0);
-
+  fprintf(fp,"##==RadTransfert============\n");
 #ifdef WRAD
-  fprintf(fp, "unit_l\t%e\n",(param->unit.unit_l) );		// comoving length size of the box [meters]
-  fprintf(fp, "unit_v\t%e\n",(param->unit.unit_v) );		// unit velocity
-  fprintf(fp, "unit_t\t%e\n",(param->unit.unit_t) );		// unit time [seconds]
-  fprintf(fp, "unit_\t%e\n",(param->unit.unit_n) );		// unit number [moles typically]
-  fprintf(fp, "unit_mass\t%e\n",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
+  fprintf(fp, real_format,"clight",(param->clightorg) ); 		// speed of light in units of the real one
+  fprintf(fp, real_format,"denthresh",(param->denthresh) );		// density threshold to turn the sources on
+  fprintf(fp, real_format,"tmpthresh",(param->tmpthresh) );		// temperature threshold to turn the sources on
+  fprintf(fp, real_format,"srcint",(param->srcint) );			// intensity of the sources
+#endif // WRAD
 
-  fprintf(fp, "clight\t%e\n",(param->clightorg) ); 		// speed of light in units of the real one
-  fprintf(fp, "fudgecool\t%e\n",(param->fudgecool) ); 		// cooling fraction
-  fprintf(fp, "ncvgcool\t%d\n",(param->ncvgcool) ); 		// cooling max iterations
-
-  fprintf(fp, "denthresh\t%e\n",(param->denthresh) );		// density threshold to turn the sources on
-  fprintf(fp, "tmpthresh\t%e\n",(param->tmpthresh) );		// temperature threshold to turn the sources on
-  fprintf(fp, "srcint\t%e\n",(param->srcint) );			// intensity of the sources
-#endif
-
-#ifdef TESTCOSMO
-  fprintf(fp, "om\t%e\n",(param->cosmo->om) );			// Omega matter
-  fprintf(fp, "ov\t%e\n",(param->cosmo->ov) );			// Omega vacuum
-  fprintf(fp, "ob\t%e\n",(param->cosmo->ob) );			// Omega baryon
-  fprintf(fp, "H0\t%e\n",(param->cosmo->H0) );			// Hubble constant
-#endif
-
+  fprintf(fp,"##==StarFormation============\n");
 #ifdef STARS
-  fprintf(fp, "overdensity_cond\t%e\n",(param->stars->overdensity_cond) );	// need overdensity_cond times the mean density to begin star formation
-  fprintf(fp, "density_cond\t%e\n",(param->stars->density_cond) );		// minimum Hydrogen density [cm-3]
-  fprintf(fp, "tcar\t%e\n",(param->stars->tcar) );				// carateristic time [yr]
-  fprintf(fp, "tlife\t%e\n",(param->stars->tlife) );				// radiative life time of a stellar particle [yr]
-#endif
+  fprintf(fp, real_format,"overdensity_cond",(param->stars->overdensity_cond) );	// need overdensity_cond times the mean density to begin star formation
+  fprintf(fp, real_format,"density_cond",(param->stars->density_cond) );		// minimum Hydrogen density [cm-3]
+  fprintf(fp, real_format,"tcar",(param->stars->tcar) );				// carateristic time [yr]
+  fprintf(fp, real_format,"tlife",(param->stars->tlife) );				// radiative life time of a stellar particle [yr]
+  fprintf(fp, real_format,"mass_res",(param->stars->mass_res) );				// radiative life time of a stellar particle [yr]
+#endif // STARS
 
+  fprintf(fp,"##==SuperNovae===============\n");
 #ifdef SUPERNOVAE
-  fprintf(fp, "feedback_eff\t%e\n",(param->sn->feedback_eff) );		// SN feedback efficiency
-  fprintf(fp, "feedback_frac\t%e\n",(param->sn->feedback_frac) );		// fraction of thermal feedback (the other part goes to kinetic feedback)
+  fprintf(fp, real_format,"feedback_eff",(param->sn->feedback_eff) );		// SN feedback efficiency
+  fprintf(fp, real_format,"feedback_frac",(param->sn->feedback_frac) );		// fraction of thermal feedback (the other part goes to kinetic feedback)
 #endif // SUPERNOVAE
+
+
+  fprintf(fp,"##==Movie====================\n");
+#ifdef MOVIE
+  fprintf(fp, int_format,"lmap",(param->movie->lmap) );
+  fprintf(fp, real_format,"xmin",(param->movie->xmin) );
+  fprintf(fp, real_format,"xmax",(param->movie->xmax) );
+  fprintf(fp, real_format,"ymin",(param->movie->ymin) );
+  fprintf(fp, real_format,"ymax",(param->movie->ymax) );
+  fprintf(fp, real_format,"zmin",(param->movie->zmin) );
+  fprintf(fp, real_format,"zmax",(param->movie->zmax) );
+#endif // MOVIE
+
+  fprintf(fp,"\n");
+
   if (i>0) fclose(fp);
 
 }
 
-//  abort();
+  abort();
 }
 
 //====================================================================================================
@@ -1142,7 +1306,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   size_t rstat;
   double dummyf;
   char RF[]="%s %lf";
-
+  int i;
   buf=fopen(fparam,"r");
   if(buf==NULL)
     {
@@ -1165,7 +1329,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
       rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh0=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
       rstat=fscanf(buf,"%s",stream);
@@ -1195,7 +1359,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-    int i;
 	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
@@ -1205,8 +1368,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;
+
 #else
-//	int i;
 	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
@@ -2417,11 +2581,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 	  dumpgrid(param->lmax,firstoct,filename,adump,param);
 
-
-
-
-	  // backups for restart
-
+/// backups for restart
 #ifdef BKP
 	  if(*(cpu->ndumps)%FBKP==0){
 

@@ -199,9 +199,8 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	//printf("A=%e E=%e P=%e p=%e c=%e tstars=%e\n",A,E,P,cell->field.p,param->unit.unit_d,tstars/(3600.*24*265*1e9));
 	//	abort();
 #else
-
 	REAL tstars 	= param->stars->tcar * 31556926 / SQRT(cell->field.d / param->stars->thresh );
-#endif
+#endif //SCHAYE
 
 #ifdef WRADHYD
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t;
@@ -334,7 +333,7 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
         if(curp->isStar==1){
           REAL t0 =  param->cosmo->tphy - curp->age;
-          if(t0>=0){ // for inter-level communications
+          if ( t0 >= param->stars->tlife){
               curp->isStar = 2;
           }
         }
@@ -352,47 +351,41 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	if(cpu->rank == RANK_DISP) printf("STARS\n");
 
-	struct OCT  *curoct;
 	struct OCT  *nextoct=firstoct[level-1];
-	struct CELL *curcell;
 
-	REAL xc, yc, zc;
 	REAL dx = POW(2.0,-level);
 	REAL mmax = 0;
-	REAL mmin = 1e9;
-
-	int l,icell, ipart;
+  REAL mstars_level=0; // mass of stars at level
 	int nstars = 0;
 	int nsl = 0;
-	int N;
-	REAL mstars_level; // mass of stars at level
 
 	initThresh(param, aexp);
 
 #ifdef TESTCOSMO
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
-	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse+2); // coarse mass
+	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse + param->stars->mass_res)); // coarse mass
 #endif
 
 	do {	if(nextoct==NULL) 		continue;
-	  curoct=nextoct;
+	  struct OCT  *curoct=nextoct;
 	  nextoct=curoct->next;
 	  if(curoct->cpu != cpu->rank) 	continue;
 
+    int icell;
 	  for(icell=0;icell<8;icell++) {
-	    curcell = &curoct->cell[icell];
+	    struct CELL *curcell = &curoct->cell[icell];
 
 #ifndef SNTEST
 	    if( testCond(curcell, dt, dx, param, aexp, level) ) {
-	      xc=curoct->x+( icell    & 1)*dx+dx*0.5;
-	      yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-	      zc=curoct->z+( icell>>2    )*dx+dx*0.5;
+	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
+	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+	      REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
 
-	      N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
+	      int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 
 	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
-
+        int ipart;
 	      for (ipart=0;ipart< N; ipart++){
 #ifdef PIC
 		addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++, mstars_level);
@@ -422,6 +415,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 //		printf("\n");
 	}
 
+  int l;
 	for (l = param->lcoarse; l<=param->lmax;l++){
 #ifdef WMPI
 	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);

@@ -7,6 +7,7 @@
 //#include "silo.h"
 #include "prototypes.h"
 //=================================================================================================
+#define max(a,b) (a>=b?a:b)
 
 /*
 
@@ -495,7 +496,8 @@ void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap,
   
   switch(field){
   case 0:
-    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*oct->level;
+    //map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*oct->level;
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]=max(oct->level, map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]);
     break;
 #ifdef WGRAV
   case 1:

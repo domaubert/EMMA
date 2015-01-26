@@ -80,7 +80,7 @@ typedef double REAL;
 
 #ifdef WRAD
 #define NVAR_R (5)
-#define NGRP (1 )
+#define NGRP (1)
 #define EMIN (1e-8)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
@@ -97,7 +97,13 @@ typedef double REAL;
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
-#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
+
+//#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
+//#define N_SNII (1.)
+
+//#define N_SNII (1.736e-2)   // #sn/MO salpeter IMF [6->100MO] Vecchia & Schaye 2012
+#define N_SNII (1.180e-2)   // #sn/MO salpeter IMF [8->100MO] Vecchia & Schaye 2012 in this model SN_EGY=8.73e15 erg.g-1
+#define SN_EGY (8.73e11)
 //=======================================
 
 #define LIFETIME_OF_STARS_IN_TEST (0*3e6)
@@ -123,6 +129,7 @@ struct STARSPARAM{
   REAL density_cond;	// Hydrogen density (m-3)
   REAL tcar;		// caracteristic time (yr)
   REAL tlife;		// life time of a radiative source (yr)
+  REAL mass_res;
   //REAL mstars;		// Mass of a stellar particle (PLUS BESOIN)
   int  n;		// total number of stars
   REAL thresh;		// density threshold to allow star formation
@@ -188,7 +195,9 @@ struct RUNPARAMS{
 
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
 
+  REAL amrthresh0;
   REAL amrthresh; // the refinement criterion (refine if mcell>amrthresh)
+
   int nsmooth; // the number of neighbour refinement steps
 
   REAL poissonacc; // relaxation accuracy for Poisson equation

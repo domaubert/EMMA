@@ -1,5 +1,5 @@
 ##==MemoryManagement=========
-max_number_of_octs 500000
+max_number_of_octs 			500000
 max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
@@ -37,6 +37,7 @@ overdensity_cond 500
 density_cond -500
 tcar 4e9
 tlife 2e7
+mass_res 2
 ##==SuperNovae===============
 feedback_eff 1.
 feedback_frac 1.

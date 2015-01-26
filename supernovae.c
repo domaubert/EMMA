@@ -182,12 +182,12 @@ void kineticFeedback(struct CELL *cell, REAL E){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
-    REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
+  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
 	REAL dv = POW( dx, 3.); //m3
-	REAL msn = mstar * param->unit.unit_mass; //kg
+	REAL msn = mstar * param->unit.unit_mass* N_SNII; //kg
 	REAL E  = msn *SN_EGY/dv; //J.m-3
 
-    E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
+  E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
 
 	//REAL s8 	 = param->stars->tlife * 31556926;;		// life time of a massive star (~20 Myr for 8 M0 star)
     //E	     *= exp( -t0*31556926/s8 )/s8;
@@ -396,7 +396,6 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
 #endif
-
 
 	if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
 }
