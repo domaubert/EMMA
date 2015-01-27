@@ -74,21 +74,23 @@ void oct2loct(struct OCT *oct, struct LOCT *loct){
 void dumpFile(char *filename_in, char *filename_out){
 
   FILE *fps[2] = {stdout, NULL};
-
   fps[1]=fopen(filename_out,"w");
-  if(fps[1] == NULL) printf("Cannot open %s\n", filename_in);
+  if(fps[1] == NULL) printf("Cannot open %s\n", filename_out);
+
+  FILE* buf=NULL;
+  buf=fopen(filename_in,"r");
+  if(buf == NULL) printf("Cannot open %s\n", filename_in);
 
   int i;
   for(i=0;i<2;i++){
     FILE *fp = fps[i];
-
-    FILE* buf=fopen(filename_in,"r");
     char ch;
-    while( ( ch = fgetc(buf) ) != EOF )
-      fprintf(fp,"%c",ch);
-    fclose(buf);
+    fseek(buf,0,SEEK_SET);
+    while((ch=fgetc(buf))!=EOF) fprintf(fp,"%c",ch);
   }
+
   fclose(fps[1]);
+  fclose(buf);
 }
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -106,10 +108,11 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
- //   fprintf(fp,"\n");
 
     fprintf(fp, real_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
- //   fprintf(fp,"\n");
+    fprintf(fp, int_format,"level_min",(param->lcoarse) );
+    fprintf(fp, int_format,"level_max",(param->lmax) );
+
 
   #ifdef WRAD
     fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
@@ -129,10 +132,9 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   #endif
 
     fprintf(fp,"\n");
-
-    if (i>0) fclose(fp);
-
   }
+  fclose(fps[1]);
+
 }
 
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
@@ -142,7 +144,92 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpFile("param.mk", "data/param.mk");
   dumpFile(fparam, "data/param.run");
 
+  printf("\n");
   //abort();
+}
+
+void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps){
+
+  if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
+
+
+  int ncell=0;
+  REAL mean_xion=0;
+  REAL mean_T=0;
+
+  REAL max_T=0;
+  REAL max_rho=0;
+
+  int max_level=0;
+
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+	struct OCT *nextoct=firstoct[level-1];
+    do{if(nextoct==NULL) continue;
+      max_level=level;
+      struct OCT *curoct=nextoct;
+      nextoct=curoct->next;
+      int icell;
+      for(icell=0;icell<8;icell++) {
+        struct CELL *curcell = &curoct->cell[icell];
+        if( curcell->child==NULL){
+          mean_xion+=curcell->field.dX/curcell->field.d;
+          mean_T+=curcell->rfield.temp;
+
+          max_T=FMAX(max_T,curcell->rfield.temp);
+          max_rho=FMAX(max_rho,curcell->field.d);
+        }
+      }
+      ncell+=8;
+    }while(nextoct!=NULL);
+  }
+
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm); mean_xion/=cpu->nproc*ncell;
+  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm); mean_T/=cpu->nproc*ncell;
+
+  MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
+#endif
+
+
+
+  char* int_format = "%-8d\t";
+  char* real_format = "%e\t";
+
+  if(cpu->rank==RANK_DISP){
+
+    char* filename = "data/step.avg";
+
+    FILE* fp=NULL;
+
+    if (nsteps==0){
+      fp=fopen(filename,"w");
+      if(fp == NULL) printf("Cannot open %s\n", filename);
+      fprintf(fp,"step\taexp\t\tz\t\tmax_level\tmax_rho\t\tmean_xion\tmean_T\t\tmax_T\t\tstars\n");
+
+    }else{
+      fp=fopen(filename,"a+");
+      if(fp == NULL) printf("Cannot open %s\n", filename);
+    }
+
+    fprintf(fp, "%d\t",nsteps);
+    fprintf(fp, real_format,param->cosmo->aexp);
+    fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+    fprintf(fp, int_format ,max_level);
+    fprintf(fp, real_format,max_rho);
+
+    fprintf(fp, real_format,mean_xion);
+    fprintf(fp, real_format,mean_T);
+    fprintf(fp, real_format,max_T);
+
+    fprintf(fp, int_format ,param->stars->n);
+    fprintf(fp,"\n");
+    fclose(fp);
+
+  }
 }
 
 //====================================================================================================

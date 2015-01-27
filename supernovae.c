@@ -346,7 +346,7 @@ void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	  nextoct=curoct->next;
 	  if(curoct->cpu != cpu->rank) 	continue;
 
-      int icell;
+    int icell;
 	  for(icell=0;icell<8;icell++) {
             struct CELL *curcell = &curoct->cell[icell];
 

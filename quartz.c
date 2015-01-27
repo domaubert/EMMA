@@ -1900,6 +1900,7 @@ blockcounts[0]++; // For SN feedback
     // Loop over time
     for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
 
+
       cpu.nsteps=nsteps;
 
 #ifdef TESTCOSMO
@@ -2038,6 +2039,9 @@ blockcounts[0]++; // For SN feedback
 #endif
 	ndumps++;
       }
+
+    dumpStepInfo(firstoct, &param, &cpu,nsteps);
+
 
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];

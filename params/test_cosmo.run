@@ -1,5 +1,5 @@
 ##==MemoryManagement=========
-max_number_of_octs 			500000
+max_number_of_octs 500000
 max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
