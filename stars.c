@@ -291,7 +291,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 
   /*
-  state = 0 -> DM particle
+  state = 0 -> Dark Matter
   state = 1 -> Radiative Star
   state = 2 -> Supernovae
   state = 3 -> Dead star

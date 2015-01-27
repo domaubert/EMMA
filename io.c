@@ -108,11 +108,9 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
-
     fprintf(fp, real_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
-
 
   #ifdef WRAD
     fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
@@ -152,8 +150,8 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
 
-
   int ncell=0;
+
   REAL mean_xion=0;
   REAL mean_T=0;
 
