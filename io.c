@@ -101,6 +101,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   if(fps[1] == NULL) printf("Cannot open %s\n", filename_info);
 
   char* int_format = "%-24s%d\n";
+  char* float_format = "%-24s%.2f\n";
   char* real_format = "%-24s%e\n";
 
   int i;
@@ -108,10 +109,11 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
-    fprintf(fp, real_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+    fprintf(fp, float_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
 
+  fprintf(fp,"##=Unit_code->SI====================\n" );
   #ifdef WRAD
     fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
     fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
@@ -121,6 +123,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   //  fprintf(fp,"\n");
   #endif
 
+  fprintf(fp,"##=Cosmology========================\n" );
   #ifdef TESTCOSMO
     fprintf(fp, real_format,"om",(param->cosmo->om) );			// Omega matter
     fprintf(fp, real_format,"ov",(param->cosmo->ov) );			// Omega vacuum
@@ -129,7 +132,25 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   //  fprintf(fp,"\n");
   #endif
 
-    fprintf(fp,"\n");
+
+
+    fprintf(fp,"##=Mass=resolution_(Mo)=============\n" );
+    REAL mass_res_star = (param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse + param->stars->mass_res)) * param->unit.unit_mass /1.98e30;
+    REAL mass_res_DM =  ( 1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse))*param->unit.unit_mass /1.98e30;
+
+    fprintf(fp, real_format,"mass_res_star",mass_res_star );
+    fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
+
+
+    fprintf(fp,"##=Spatial_resolution_(Kpc)=========\n" );
+    int level;
+    for(level=param->lcoarse;level<=param->lmax;level++){
+      REAL dx = param->unit.unit_l * POW(2,-level) /1e3/PARSEC;
+      char dxlev[128];
+      sprintf(dxlev,"dx_L%d",level);
+      fprintf(fp, real_format,dxlev,dx);
+    }
+
   }
   fclose(fps[1]);
 
@@ -146,19 +167,20 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   //abort();
 }
 
-void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps){
+void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt){
 
   if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
 
   int ncell=0;
+  int max_level=0;
 
   REAL mean_xion=0;
   REAL mean_T=0;
-
   REAL max_T=0;
   REAL max_rho=0;
 
-  int max_level=0;
+  REAL sfr=0;
+
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -176,6 +198,24 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
           max_T=FMAX(max_T,curcell->rfield.temp);
           max_rho=FMAX(max_rho,curcell->field.d);
+/*
+          //if (param->stars->n)
+          {
+            struct PART *nexp=curcell->phead;
+            do{
+              if(nexp==NULL) continue;
+              struct PART *curp =nexp;
+              nexp=curp->next;
+
+              if (curp->isStar){
+                REAL age =  param->cosmo->tphy-curp->age;
+                if(1){
+                  sfr+=curp->mass*param->unit.unit_mass/2e30 / POW(param->unit.unit_l/1e6/PARSEC,3); //Mo/(MPC
+                }
+              }
+            }while(nexp!=NULL);
+          }
+*/
         }
       }
       ncell+=8;
@@ -188,6 +228,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
+//  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
@@ -224,6 +265,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format,max_T);
 
     fprintf(fp, int_format ,param->stars->n);
+
+//   fprintf(fp, real_format,sfr);
+
+
     fprintf(fp,"\n");
     fclose(fp);
 

@@ -273,14 +273,13 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 #ifdef TESTCOSMO
 	REAL k =(param->stars->density_cond >0)? 1 : -POW(aexp,3.0);
 
-	REAL rhostar		= param->unit.unit_mass/POW(param->unit.unit_l,3) ;
 	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
 
 #ifdef SCHAYE
 	// std value for overdensity = 55.7
-	param->stars->thresh = FMAX(1e6*POW(aexp,3.) *PROTON_MASS/rhostar, param->stars->overdensity_cond* (param->cosmo->ob/param->cosmo->om));
+	param->stars->thresh = FMAX(1e6*POW(aexp,3.) *PROTON_MASS/param->unit.unit_d, param->stars->overdensity_cond* (param->cosmo->ob/param->cosmo->om));
 #else
-	param->stars->thresh    = FMAX( k * rhocrittilde / rhostar, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
+	param->stars->thresh    = FMAX( k * rhocrittilde / param->unit.unit_d, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
 #endif
 
 #endif

@@ -4,8 +4,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "prototypes.h"
 #include <mpi.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
+#include "prototypes.h"
 #include "movie.h"
 //=================================================================================================
 
@@ -17,9 +22,9 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
+	mkdir(ffolder, 0755);
 
 	const int lmap   = param->movie->lmap;
-
 	const REAL xmin  = param->movie->xmin;
 	const REAL xmax  = param->movie->xmax;
 	const REAL ymin  = param->movie->ymin;
@@ -116,6 +121,8 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 	float* mapred = param->movie->map_reduce;
 	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
 	if(cpu->rank==0){
+
+
 
 		char fname[128];
 		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER++);

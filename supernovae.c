@@ -244,7 +244,7 @@ REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, 
 }
 
 REAL massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
-    REAL fact_mass = 0.01;
+    REAL fact_mass =  N_SNII;
 
     REAL mtot_feedback = curp->mass * fact_mass;
     struct OCT* oct = cell2oct(cell);
