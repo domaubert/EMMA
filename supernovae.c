@@ -270,33 +270,31 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 	cell->rfield.snfb = 0;
 
-	if(param->sn->feedback_eff){
+  int Nsn = 0;
+  REAL t0;
 
-		int Nsn = 0;
-		REAL t0;
+  struct PART *nexp=cell->phead;
+  struct PART  *curp;
 
-		struct PART *nexp=cell->phead;
-		struct PART  *curp;
+  if(nexp==NULL) return 0;
+  do{ curp=nexp;
+    nexp=curp->next;
 
-		if(nexp==NULL) return 0;
-	 	do{ curp=nexp;
-			nexp=curp->next;
+    if (curp->isStar==2){
 
-			if (curp->isStar==2){
+      REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
+      REAL fKIN = compute_fkin(param,cell,E,level,aexp);
 
-        REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
-        REAL fKIN = compute_fkin(param,cell,E,level,aexp);
+      massFeedback(cell,curp,param,aexp,level);
+      thermalFeedback(cell, E*(1.-fKIN));
+      kineticFeedback(cell, E*(   fKIN));
 
-        massFeedback(cell,curp,param,aexp,level);
-        thermalFeedback(cell, E*(1.-fKIN));
-        kineticFeedback(cell, E*(   fKIN));
+      Nsn++;
+    }
+  }while(nexp!=NULL);
+  return Nsn;
 
-        Nsn++;
-      }
-    }while(nexp!=NULL);
-		return Nsn;
-	}
-	return 0;
+
 #endif // PIC
 #else // ifdef SNTEST
 
@@ -373,32 +371,33 @@ void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 	}while(nextoct!=NULL);
 }
 
-
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
-	if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
+	if(param->sn->feedback_eff){
 
-	int Nsn = 0;
-	struct OCT  *nextoct=firstoct[level-1];
+    if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
 
-	cleanSNFBfield(firstoct, param, cpu, level);
+    int Nsn = 0;
+    struct OCT  *nextoct=firstoct[level-1];
 
-	do {	if(nextoct==NULL) 		continue;
-	  struct OCT* curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu != cpu->rank) 	continue;
+    cleanSNFBfield(firstoct, param, cpu, level);
 
-    int icell;
-	  for(icell=0;icell<8;icell++) {
-	    struct CELL *curcell = &curoct->cell[icell];
-			Nsn += feedback(curcell, param, cpu, aexp, level, dt);
-		}
-	}while(nextoct!=NULL);
-#ifdef WMPI
-	MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
-#endif
+    do {	if(nextoct==NULL) 		continue;
+      struct OCT* curoct=nextoct;
+      nextoct=curoct->next;
+      if(curoct->cpu != cpu->rank) 	continue;
 
-	if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
+      int icell;
+      for(icell=0;icell<8;icell++) {
+        struct CELL *curcell = &curoct->cell[icell];
+        Nsn += feedback(curcell, param, cpu, aexp, level, dt);
+      }
+    }while(nextoct!=NULL);
+  #ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
+  #endif
+
+    if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
+  }
 }
-
 
 #endif //SUPERNOVAE

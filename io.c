@@ -240,7 +240,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
 
-    char* filename = "data/step.avg";
+    char* filename = "data/param.avg";
 
     FILE* fp=NULL;
 
