@@ -362,7 +362,16 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #ifdef TESTCOSMO
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
-	mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse + param->stars->mass_res)); // coarse mass
+	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse)); // coarse mass
+
+	REAL res = param->stars->mass_res;
+	REAL mlevel=0;
+	if(res>=0){
+    mlevel=param->lcoarse + res;
+	}else{
+    mlevel =level + param->stars->mass_res;
+  }
+  mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*mlevel);
 #endif
 
 	do {	if(nextoct==NULL) 		continue;
