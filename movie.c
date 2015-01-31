@@ -22,7 +22,6 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
-	mkdir(ffolder, 0755);
 
 	const int lmap   = param->movie->lmap;
 	const REAL xmin  = param->movie->xmin;
@@ -123,7 +122,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 	if(cpu->rank==0){
 
 
-
+    mkdir(ffolder, 0755);
 		char fname[128];
 		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER++);
 

@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "prototypes.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "friedmann.h"
 #include "segment.h"
 #include "stars.h"
@@ -661,9 +664,13 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 
   char filenamestar[128];							char filenamepart[128];
   FILE *fstar;												FILE *fpart;
-
+#ifdef MULTIFOLDER
+  sprintf(filenamestar,"data/%05d/star/star.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+	sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
   sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
 
   fstar=fopen(filenamestar,"wb");						fpart=fopen(filenamepart,"wb");
 
@@ -2197,6 +2204,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   REAL tdump,adump;
   char filename[128];
+
   int idir=cpu->rank%8;
 
 #ifndef TESTCOSMO
@@ -2211,10 +2219,30 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	adump=tdump;
 #endif
 
+
+#ifdef MULTIFOLDER
+  char folder_step[128];
+  char folder_field[128];
+  sprintf(folder_step,"data/%05d",*(cpu->ndumps));
+  mkdir(folder_step, 0755);
+#endif
+
 	if(pdump){
 	  // === particle dump
 #ifdef PIC
+
+#ifdef MULTIFOLDER
+#ifdef STARS
+    sprintf(folder_field,"%s/star",folder_step);
+    mkdir(folder_field, 0755);
+#endif // STARS
+    sprintf(folder_field,"%s/part",folder_step);
+    mkdir(folder_field, 0755);
+    sprintf(filename,"%s/part.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
+#else
 	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif
+
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
 	    printf("%s %p\n",filename,cpu->part);
@@ -2225,8 +2253,15 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	}
 	else{
 	  // === Hydro dump
-
+#ifdef MULTIFOLDER
+    sprintf(folder_field,"%s/grid",folder_step);
+    mkdir(folder_field, 0755);
+    sprintf(filename,"%s/grid.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
+#else
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif
+
+
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
 	    printf("%s\n",filename);

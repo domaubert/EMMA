@@ -366,12 +366,9 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 	REAL res = param->stars->mass_res;
 	REAL mlevel=0;
-	if(res>=0){
-    mlevel=param->lcoarse + res;
-	}else{
-    mlevel =level + param->stars->mass_res;
-  }
-  mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*mlevel);
+	if(res>=0){mlevel=param->lcoarse;}
+	else{mlevel=level+1;}
+  mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
 
 	do {	if(nextoct==NULL) 		continue;
