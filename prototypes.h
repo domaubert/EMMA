@@ -101,9 +101,17 @@ typedef double REAL;
 //#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
 //#define N_SNII (1.)
 
-//#define N_SNII (1.736e-2)   // #sn/MO salpeter IMF [6->100MO] Vecchia & Schaye 2012
-#define N_SNII (1.180e-2)   // #sn/MO salpeter IMF [8->100MO] Vecchia & Schaye 2012 in this model SN_EGY=8.73e15 erg.g-1
+//Vecchia & Schaye 2012
 #define SN_EGY (8.73e11)
+//chabrier IMF
+#define N_SNII (1.736e-2)    //[6->100MO]
+//#define N_SNII (1.180e-2)    //[8->100MO]
+
+//Salpeter IMF
+//#define N_SNII (1.107e-2)   //[6->100MO]
+//#define N_SNII (0.742e-2)    //[8->100MO]
+
+
 //=======================================
 
 #define LIFETIME_OF_STARS_IN_TEST (0*3e6)
