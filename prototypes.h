@@ -102,7 +102,7 @@ typedef double REAL;
 //#define N_SNII (1.)
 
 //Vecchia & Schaye 2012
-#define SN_EGY (8.73e11)
+#define SN_EGY (8.73e11/1.736e-2)
 //chabrier IMF
 #define N_SNII (1.736e-2)    //[6->100MO]
 //#define N_SNII (1.180e-2)    //[8->100MO]
