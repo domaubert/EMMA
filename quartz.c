@@ -1969,7 +1969,26 @@ blockcounts[0]++; // For SN feedback
 #endif
 
       // ==================================== dump
-      if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
+      int cond1 = nsteps%param.ndumps==0;
+      int cond2 = 0;
+      int cond3 = tsim+adt[levelcoarse-1]>=tmax;
+
+#ifdef TESTCOSMO
+
+      if (param.dt_dump){
+        cond1=0;
+
+        int offset=0;
+        if (nsteps==0) offset = (int)param.cosmo->tphy/param.dt_dump;
+
+        REAL a=param.cosmo->tphy;
+        REAL b=(int)(ndumps+offset)*param.dt_dump;
+        cond2=a>b;
+        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param.dt_dump);
+      }
+#endif // TESTCOSMO
+
+      if(cond1||cond2||cond3){
 #ifndef EDBERT
 
 	int fdump=8;

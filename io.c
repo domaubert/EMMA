@@ -981,6 +981,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
+      rstat=fscanf(buf,RF,stream,&param->dt_dump);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
       rstat=fscanf(buf,RF,stream,&dummyf);param->dt=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmax=(REAL)dummyf;

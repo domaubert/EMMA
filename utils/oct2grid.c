@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  // getting the field 
+  // getting the field
   sscanf(argv[3],"%d",&field);
 
   //getting the resolution
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     sscanf(argv[14],"%d",&dumpcell);
   }
 
- 
+
 
 
   /// allocating the cube or the map
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   }
 
   // scanning the cpus
-  
+
   int icpustart,icpustop;
   if(mono<0){
     icpustart=0;
@@ -154,8 +154,8 @@ int main(int argc, char *argv[])
   }
 
   for(icpu=icpustart;icpu<icpustop;icpu++){
-    
-    
+
+
     // building the input file name
     strcpy(format,argv[1]);
     strcat(format,".p%05d");
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
     printf("Looking for %s\n",fname);
     fp=fopen(fname,"rb");
-  
+
     if(fp==NULL){
       printf("--ERROR -- file not found\n");
       return 1;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
     else{
       printf("Casting Rays on %dx%dx%d cube from %s\n",nmapx,nmapy,nmapz,fname);
     }
-    
+
     printf("size= %ld\n",nmapx*nmapy*nmapz*sizeof(float)+sizeof(int)*2);
 
     // reading the number of octs
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 
     // alloc the data
     boct=(struct LOCT*)malloc(sizeof(struct LOCT)*noct);
-    
+
 
 
     // reading the time
@@ -282,13 +282,13 @@ int main(int argc, char *argv[])
 				assign_zmap(field,icell,map,imap,jmap,kmap,ii,jj,kk,i0,j0,k0,nmapx,nmapy,nmapz,&oct,&unit);
 			      }
 			    }
-			    
-			    
+
+
 
 			  }
 		      }
 		  }
- 
+
 	      }
 	  }
       }
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
     free(boct);
   }
   printf("done with %d octs\n",ic);
-      
+
   //============= dump
 
 
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 #if 0
   else{
     // silo style
-      
+
     DBfile *dbfile=NULL;
     dbfile=DBCreate(strcat(fname2,".silo"),DB_CLOBBER, DB_LOCAL,"silo file created by Quartz",DB_PDB);
     if(dbfile==NULL){
@@ -335,13 +335,13 @@ int main(int argc, char *argv[])
     float *z;
     int dims[]={nmap+1,nmap+1,nmap+1};
     int ndims=3;
-      
+
     x=(float*)malloc(sizeof(float)*(nmap+1));
     y=(float*)malloc(sizeof(float)*(nmap+1));
     z=(float*)malloc(sizeof(float)*(nmap+1));
 
     float *coords[]={x,y,z};
-      
+
     int i;
     for(i=0;i<=nmap;i++){
       x[i]=((i*1.0)/nmap-0.);
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
 
     int dimsvar[]={nmap,nmap,nmap};
     int ndimsvar=3;
-      
+
 
     DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
     DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
@@ -421,7 +421,7 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
   case 105:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].p;
     break;
-#endif			  
+#endif
 
 #ifdef WRAD
   case 701:
@@ -486,14 +486,14 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
 
   }
 
-  
+
 }
 
 // ===============================================================
 // ===============================================================
 
 void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct LOCT *oct, struct UNITS *unit){
-  
+
   switch(field){
   case 0:
     //map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*oct->level;
@@ -546,7 +546,7 @@ void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap,
   case 105:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*oct->cell[icell].p;
     break;
-#endif			  
+#endif
 
 #ifdef WRAD
   case 701:
@@ -600,7 +600,7 @@ void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap,
 #endif
 #endif
 
-  } 
+  }
 }
 
 

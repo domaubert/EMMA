@@ -187,6 +187,7 @@ struct RUNPARAMS{
   int ngridmax; // the max oct numbers (per process)
   int nbuff; // the mpi buffer size
   int ndumps; // the frequency of outputs
+  REAL dt_dump; // the physical time betwwen 2 dumps in years
   int nsteps; // the maximal number of timesteps
 
   int lcoarse; // the coarse level
