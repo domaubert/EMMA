@@ -112,7 +112,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
-    fprintf(fp, float_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+    fprintf(fp, float_format,"box_size_Mpc/h",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
 
@@ -157,9 +157,9 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
         char mlev[128];
         sprintf(mlev,"mass_star_L%d",level);
         fprintf(fp, real_format,mlev,mass_res_star );
-
       }
     }
+
     fprintf(fp,"##=Spatial_resolution_(Kpc)=========\n" );
     int level;
     for(level=param->lcoarse;level<=param->lmax;level++){
@@ -2215,6 +2215,54 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 
 // ======================================================================
 // ======================================================================
+int copy(char const * const source, char const * const destination) {
+  FILE* fSrc;
+  FILE* fDest;
+  char buffer[512];
+  int NbLus;
+
+  if ((fSrc=fopen(source,"rb"))==NULL) {return 1;}
+
+  if ((fDest=fopen(destination,"wb"))==NULL){
+      fclose(fSrc);
+      return 2;
+  }
+
+  while ((NbLus = fread(buffer, 1, 512, fSrc)) != 0)
+      fwrite(buffer, 1, NbLus, fDest);
+
+  fclose(fDest);
+  fclose(fSrc);
+
+  return 0;
+}
+
+void copy_param(const char *folder){
+  char param[128];
+  char param_src[128];
+  char param_dest[128];
+
+  sprintf(param,"param.run");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
+
+  sprintf(param,"param.mk");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
+
+  sprintf(param,"param.info");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
+
+  sprintf(param,"param.avg");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
+
+}
 
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
 
@@ -2239,7 +2287,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifdef MULTIFOLDER
   char folder_step[128];
   char folder_field[128];
-  sprintf(folder_step,"data/%05d",*(cpu->ndumps));
+  sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
   mkdir(folder_step, 0755);
 #endif
 
@@ -2249,12 +2297,14 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 #ifdef MULTIFOLDER
 #ifdef STARS
-    sprintf(folder_field,"%s/star",folder_step);
+    sprintf(folder_field,"%sstar/",folder_step);
     mkdir(folder_field, 0755);
+    copy_param(folder_field);
 #endif // STARS
-    sprintf(folder_field,"%s/part",folder_step);
+    sprintf(folder_field,"%spart/",folder_step);
     mkdir(folder_field, 0755);
-    sprintf(filename,"%s/part.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
+    copy_param(folder_field);
+    sprintf(filename,"%spart.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
 #else
 	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif
@@ -2270,9 +2320,10 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	else{
 	  // === Hydro dump
 #ifdef MULTIFOLDER
-    sprintf(folder_field,"%s/grid",folder_step);
+    sprintf(folder_field,"%sgrid/",folder_step);
     mkdir(folder_field, 0755);
-    sprintf(filename,"%s/grid.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
+    copy_param(folder_field);
+    sprintf(filename,"%sgrid.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
 #else
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif

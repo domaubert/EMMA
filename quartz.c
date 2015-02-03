@@ -172,7 +172,6 @@ int main(int argc, char *argv[])
 
   size_t rstat;
 
-
   REAL avgdens;
   REAL tmax;
   REAL tdump,adump;
