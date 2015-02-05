@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
   int nref=0,ndes=0;
 
   REAL xc,yc,zc;
-  int hstride; 
+  int hstride;
   int rstride;
  int gstride;
   int ncomp;
@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
   REAL ntotd=0.,nlevd=0.;
 
   REAL disp,mdisp;
-  
+
   int dir;
 
-  char filename[128]; 
+  char filename[128];
   FILE *fd;
   struct PART *nexp;
   struct PART *nexp2;
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
   size_t rstat;
 
 
-  REAL avgdens; 
+  REAL avgdens;
   REAL tmax;
   REAL tdump,adump;
 #ifdef PIC
@@ -198,6 +198,12 @@ int main(int argc, char *argv[])
   struct STARSPARAM stars;
   param.stars=&stars;
 #endif
+
+#ifdef SUPERNOVAE
+  struct SNPARAM sn;
+  param.sn=&sn;
+#endif
+
 
 #ifdef MOVIE
 	struct MOVIEPARAM movie;
@@ -252,12 +258,13 @@ int main(int argc, char *argv[])
 #ifdef MOVIE
 	const int n    = POW(2, param.movie->lmap);
 	param.movie->map = (float*)calloc(4*n*n,sizeof(float));
-	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));		
+	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));
 #endif
   //omp_set_num_threads(param.ompthread);
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
+
 #else
   //in  cosmo case tmax is understood as a maximal expansion factor
   amax=param.tmax;
@@ -276,9 +283,9 @@ int main(int argc, char *argv[])
 #endif
 
   //========= creating a PACKET MPI type =======
-  MPI_Datatype MPI_PACKET,oldtypes[16]; 
+  MPI_Datatype MPI_PACKET,oldtypes[16];
   int          blockcounts[16];
-  
+
   /* MPI_Aint type used to be consistent with syntax of */
   /* MPI_Type_extent routine */
   MPI_Aint    offsets[5], extent;
@@ -290,7 +297,7 @@ int main(int argc, char *argv[])
   base=offsets[0];
   MPI_Address(&_info_pack.key,offsets+1);
   MPI_Address(&_info_pack.level,offsets+2);
-  
+
   offsets[0]=offsets[0]-base;
   offsets[1]=offsets[1]-base;
   offsets[2]=offsets[2]-base;
@@ -311,7 +318,7 @@ int main(int argc, char *argv[])
   offsets[0] = 0;
   oldtypes[0] = MPI_REEL;
   blockcounts[0] = 8; // MODKEY
-  
+
   /* Setup description of the 2 MPI_INT fields key, level */
   /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_REEL, &extent);
@@ -341,7 +348,7 @@ int main(int argc, char *argv[])
   base=offsets[0];
   MPI_Address(&_info.key,offsets+1);
   MPI_Address(&_info.idx,offsets+2);
-  
+
   offsets[0]=offsets[0]-base;
   offsets[1]=offsets[1]-base;
   offsets[2]=offsets[2]-base;
@@ -365,7 +372,7 @@ int main(int argc, char *argv[])
 
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
-  
+
 
 #else
 
@@ -382,7 +389,7 @@ int main(int argc, char *argv[])
   offsets[1] = offsets[0]+blockcounts[0] * extent;
   oldtypes[1] = MPI_DOUBLE;
   blockcounts[1] = 1;
- 
+
   /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
   /* Need to first figure offset by getting size of MPI_REEL */
   MPI_Type_extent(MPI_DOUBLE, &extent);
@@ -408,7 +415,7 @@ int main(int argc, char *argv[])
 
   MPI_Address(&_info_hyd.d,offsets);
   base=offsets[0];
-  
+
   offsets[0]=offsets[0]-base;
 
   oldtypes[0]=MPI_REEL;
@@ -448,7 +455,7 @@ int main(int argc, char *argv[])
 /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
-  
+
 #else
 
   MPI_Datatype MPI_WTYPE;
@@ -490,7 +497,7 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
-  
+
 #endif
 #endif
 
@@ -542,7 +549,7 @@ int main(int argc, char *argv[])
   //========= creating a RAD MPI type =======
   MPI_Datatype MPI_RAD;
   struct RAD_MPI _info_radmpi;
-  
+
   MPI_Address(&_info_radmpi.data[0],offsets);
   base=offsets[0];
   MPI_Address(&_info_radmpi.key,offsets+1);
@@ -559,11 +566,11 @@ int main(int argc, char *argv[])
   blockcounts[0]=8;
   blockcounts[1]=1;
   blockcounts[2]=1;
-  
+
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-  
+
 #else
   /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
   offsets[0] = 0;
@@ -612,7 +619,7 @@ blockcounts[0]++; // For SN feedback
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-  
+
 #endif
 #endif
 
@@ -667,7 +674,7 @@ blockcounts[0]++; // For SN feedback
 #endif
 #endif
 
-  threshold=param.amrthresh;
+  threshold=param.amrthresh0;
 
 #ifdef TESTCOSMO
 #ifndef ZOOM
@@ -675,7 +682,7 @@ blockcounts[0]++; // For SN feedback
 #else
   threshold*=POW(2.0,-3.0*param.lmaxzoom);
 #endif
-  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh, threshold);
+  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh0, threshold);
   param.amrthresh= threshold;
 #endif
 
@@ -693,13 +700,26 @@ blockcounts[0]++; // For SN feedback
 #endif
   //breakmpi();
   //========== allocations ===================
-  
+
   //  if(cpu.rank==RANK_DISP) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
 
-  int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement 
+  cpu.locNoct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the local number of octs per level
+
+  cpu.octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
+  int iLev;
+  for(iLev = 0; iLev<levelcoarse; iLev++){
+    cpu.locNoct[iLev] = POW(2,3*(iLev+1));
+    cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+  }
+  for(iLev = levelcoarse; iLev<levelmax; iLev++){
+	cpu.octList[iLev] = (struct OCT**)calloc(ngridmax,sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+  }
+
+
+  int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
   int lbfg = 2; 				 // load balancing factor for the grid
   int noon = (ncellsmax * lbfg) /cpu.nproc;	 // number of octs needed
@@ -735,18 +755,18 @@ blockcounts[0]++; // For SN feedback
 	printf("\n");
  }
 #endif
- 
-
 
   if(cpu.rank==RANK_DISP){
     printf(" === alloc Memory ===\n");
     printf(" oct size=%f ngridmax=%d\n",sizeof(struct OCT)/1024./1024.,ngridmax);
     printf(" grid = %f MB\n",(ngridmax/(1024*1024.))*sizeof(struct OCT));
+#ifdef PIC
     printf(" part = %f MB\n",(npartmax/(1024*1024.))*sizeof(struct PART));
+#endif
   }
 
   firstoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the firstoct of each level
-  lastoct =	(struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
+  lastoct =	    (struct OCT **)calloc(levelmax,sizeof(struct OCT *)); 		memsize+=levelmax*sizeof(struct OCT *);		// the last oct of each level
   cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));	memsize+=cpu.maxhash*sizeof(struct OCT *);	// the htable keys->oct address
   cpu.noct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of octs per level
   cpu.npart =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of particles* per level	*(DM+stars ifdef STARS)
@@ -758,9 +778,11 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 
+#ifndef PIC
+	part = NULL;
+#endif
 
   lastpart=part-1; // the last particle points before the first at the very beginning
-
 
   //===================================================================================================
 
@@ -768,9 +790,9 @@ blockcounts[0]++; // For SN feedback
 
 
   // allocating the vectorized tree
-  
 
-  
+
+
   // allocating the 6dim stencil
   struct HGRID *stencil;
   struct STENGRAV gstencil;
@@ -792,7 +814,7 @@ blockcounts[0]++; // For SN feedback
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-  
+
 
 #else
   gstencil.d=(REAL *)calloc(gstride*8,sizeof(REAL));
@@ -803,14 +825,14 @@ blockcounts[0]++; // For SN feedback
   gstencil.level=(int *)calloc(gstride,sizeof(int));
   gstencil.cpu=(int *)calloc(gstride,sizeof(int));
   gstencil.valid=(char *)calloc(gstride,sizeof(char));
-  
+
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
 #endif
-  
+
 #endif
 
-  
+
 
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
@@ -837,13 +859,13 @@ blockcounts[0]++; // For SN feedback
     if(cpu.rank==RANK_DISP) printf("gpu alloc Poisson done\n");
 #endif
 
-#ifdef WHYDRO2 
+#ifdef WHYDRO2
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
   //printf("hstencil=%p mem=%f mem/elem=%f \n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.),sizeof(struct HGRID)/(1024.*1024.));
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
-  create_pinned_stencil(&stencil,hstride);  
-  create_hydstencil_GPU(&cpu,hstride); 
-#endif 
+  create_pinned_stencil(&stencil,hstride);
+  create_hydstencil_GPU(&cpu,hstride);
+#endif
 
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
@@ -855,8 +877,8 @@ blockcounts[0]++; // For SN feedback
   //printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
 
   // UNCOMMENT BELOW FOR FASTRT GPU
-  create_pinned_stencil_rad(&rstencil,rstride);  
-  create_radstencil_GPU(&cpu,rstride); 
+  create_pinned_stencil_rad(&rstencil,rstride);
+  create_radstencil_GPU(&cpu,rstride);
 #endif
 
 #ifdef WMPI
@@ -867,7 +889,7 @@ blockcounts[0]++; // For SN feedback
 
   // ====================END GPU ALLOCATIONS ===============
 #endif
-    
+
 
   if(cpu.rank==RANK_DISP) printf("Allocations %f GB done\n",memsize/(1024.*1024*1024));
 
@@ -878,7 +900,7 @@ blockcounts[0]++; // For SN feedback
   cpu.nsend_coarse=NULL;
   cpu.nrecv_coarse=NULL;
 
-  // We segment the oct distributions at levelcoarse 
+  // We segment the oct distributions at levelcoarse
     cpu.bndoct=NULL;
     cpu.mpinei=NULL;
     cpu.dict=NULL;
@@ -899,20 +921,20 @@ blockcounts[0]++; // For SN feedback
 #else
     cpu.allkmin[0]=cpu.kmin;
     cpu.allkmax[0]=cpu.kmax;
-#endif    
-    
+#endif
 
-    
+
+
   //========== building the initial meshes ===
 
   if(cpu.rank==RANK_DISP) printf("building initial mesh\n");
 
   //breakmpi();
   // ZERO WE CREATE A ROOT CELL
-  
+
   struct CELL root;
   root.child=grid;
-  
+
 
   // FIRST WE POPULATE THE ROOT OCT
   grid->x=0.;
@@ -926,7 +948,7 @@ blockcounts[0]++; // For SN feedback
   grid->next=NULL;
 
   // setting the densities in the cells and the index
-  for(icell=0;icell<8;icell++){ 
+  for(icell=0;icell<8;icell++){
     /* grid->cell[icell].density=0.; */
     /* grid->cell[icell].pot=0.; */
     /* grid->cell[icell].temp=0.; */
@@ -954,21 +976,26 @@ blockcounts[0]++; // For SN feedback
     dxcur=1./POW(2,level);
     nextoct=firstoct[level-1];
     noct2=0;
+    int noct3 =0;
     if(nextoct==NULL) continue;
     do // sweeping level
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
+
+    cpu.octList[level-1][noct3++] = curoct;
+
 	for(icell=0;icell<8;icell++){ // sweeping the cells
 
 	  segok=segment_cell(curoct,icell,&cpu,levelcoarse);// the current cell will be splitted according to a segmentation condition
-	  if(segok==1){ 
+	  if(segok==1){
 	    //if(level==levelcoarse-1) printf(" segok=%d\n",segok);
 
 	    noct2++;
+
 	    // the newoct is connected to its mother cell
 	    curoct->cell[icell].child=newoct;
-	    
+
 	    // a newoct is created
 	    newoct->parent=&(curoct->cell[icell]);
 	    newoct->level=curoct->level+1;
@@ -995,11 +1022,11 @@ blockcounts[0]++; // For SN feedback
 	      memset(newoct->cell[icell].f,0,sizeof(REAL)*3);
 #endif
 	    }
-	    
+
 	    //the neighbours
 	    getcellnei(icell, vnei, vcell);
 	    for(ii=0;ii<6;ii++){
-	      if((vnei[ii]!=6)){ 
+	      if((vnei[ii]!=6)){
 		newoct->nei[ii]=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 	      }else{
 		newoct->nei[ii]=&(curoct->cell[vcell[ii]]);
@@ -1009,10 +1036,10 @@ blockcounts[0]++; // For SN feedback
 	    // vector data
 	    /* newoct->vecpos=-1; */
 	    /* newoct->border=0; */
-	    
+
 	    // preparing the next creations on level+1
 	    newoct->next=NULL;
-	    
+
 	    if(firstoct[level]==NULL){
 	      firstoct[level]=newoct;
 	      newoct->prev=NULL;
@@ -1022,20 +1049,24 @@ blockcounts[0]++; // For SN feedback
 	      lastoct[level]->next=newoct;
 	    }
 	    lastoct[level]=newoct;
-
 	    // next oct ready
-	    newoct++; 
+	    newoct++;
+
 	  }
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
+
+ //   setOctList(firstoct[level-1], &cpu, &param,level);
+
   }
 
+
   if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
-  
+
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
-  
+
 #ifdef WMPI
   if(cpu.rank==RANK_DISP) printf("Set up MPI \n");
 
@@ -1079,7 +1110,7 @@ blockcounts[0]++; // For SN feedback
   cpu.psendbuffer=psendbuffer;
   cpu.precvbuffer=precvbuffer;
 
-#endif 
+#endif
 
 #ifdef WHYDRO2
   hsendbuffer=(struct HYDRO_MPI **)(calloc(cpu.nnei,sizeof(struct HYDRO_MPI*)));
@@ -1088,11 +1119,11 @@ blockcounts[0]++; // For SN feedback
     hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
     hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu.nbuff,sizeof(struct HYDRO_MPI)));
   }
-  
+
   cpu.hsendbuffer=hsendbuffer;
   cpu.hrecvbuffer=hrecvbuffer;
 
-#endif 
+#endif
 
 #ifdef WRAD
   Rsendbuffer=(struct RAD_MPI **)(calloc(cpu.nnei,sizeof(struct RAD_MPI*)));
@@ -1101,16 +1132,14 @@ blockcounts[0]++; // For SN feedback
     Rsendbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
     Rrecvbuffer[i]=(struct RAD_MPI *) (calloc(cpu.nbuff,sizeof(struct RAD_MPI)));
   }
-  
+
   cpu.Rsendbuffer=Rsendbuffer;
   cpu.Rrecvbuffer=Rrecvbuffer;
-#endif 
+#endif
 #endif
 
 
 #endif
-
-
 
   // =====================  computing the memory location of the first freeoct and linking the freeocts
 
@@ -1124,13 +1153,12 @@ blockcounts[0]++; // For SN feedback
   }
 
 
-
   //=================================  building the array of timesteps
 
   REAL *adt;
   adt=(REAL *)malloc(sizeof(REAL)*levelmax);
   for(level=1;level<=levelmax;level++) adt[level-1]=param.dt;
-  
+
 #ifdef COARSERAD
   REAL *adt_rad;
   adt_rad=(REAL *)malloc(sizeof(REAL)*levelmax);
@@ -1139,6 +1167,7 @@ blockcounts[0]++; // For SN feedback
 
   int *ndt;
   ndt=(int *)malloc(sizeof(int)*levelmax);
+
 
   // INITIALISATION FROM INITIAL CONDITIONS =========================
   if(param.nrestart==0){
@@ -1158,9 +1187,9 @@ blockcounts[0]++; // For SN feedback
     // ==================================== assigning particles to cells
     //breakmpi();
     if(cpu.rank==RANK_DISP) printf("==> starting part\n");
- 
+
     // initialisation of particles
-  
+
 
 #ifdef PART2
 
@@ -1181,7 +1210,7 @@ blockcounts[0]++; // For SN feedback
 	vx=0.;
 	vy=0.;
 	vz=0.;
-      
+
 	mass=1.0-epsilon;
       }
       else if(ir==1){
@@ -1193,7 +1222,7 @@ blockcounts[0]++; // For SN feedback
 	vx=0.;
 	vy=SQRT((1.-epsilon)/r0)*1.0; // this one is circular
 	vz=0.;
-      
+
 	mass=epsilon/(nr-1);
       }
       else if(ir==2){
@@ -1205,7 +1234,7 @@ blockcounts[0]++; // For SN feedback
 	vy=0.;
 	vx=-SQRT((1.-epsilon)/(r0*0.3))*1.0;//this one is circular
 	vz=0.;
-      
+
 	mass=epsilon/(nr-1);
       }
       else if(ir==3){
@@ -1217,7 +1246,7 @@ blockcounts[0]++; // For SN feedback
 	vx=0.;
 	vy=-SQRT((1.-epsilon)/r0)*vf;
 	vz=0.;
-      
+
 	mass=epsilon/(nr-1);
       }
       else if(ir==4){
@@ -1229,33 +1258,33 @@ blockcounts[0]++; // For SN feedback
 	vy=0.;
 	vx=SQRT((1.-epsilon)/r0)*vf;
 	vz=0.;
-      
+
 	mass=epsilon/(nr-1);
       }
-    
+
       // periodic boundary conditions
-    
-      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-    
+
+      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x);
+      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y);
+      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z);
+
       // it it belongs to the current cpu, we proceed and assign the particle to the particle array
       if(segment_part(x,y,z,&cpu,levelcoarse)){
 	part[ip].x=x;
 	part[ip].y=y;
 	part[ip].z=z;
-      
+
 	part[ip].vx=vx;
 	part[ip].vy=vy;
 	part[ip].vz=vz;
-      
+
 	part[ip].mass=mass;
 	lastpart=part+ip;
 	part[ip].idx=ir;
 	ip++;
       }
     }
-  
+
     npart=ip; // we compute the localnumber of particle
 
 #endif
@@ -1277,7 +1306,7 @@ blockcounts[0]++; // For SN feedback
 	vx=0.;
 	vy=0.;
 	vz=0.;
-      
+
 	mass=1.;
       }
       else{
@@ -1295,33 +1324,33 @@ blockcounts[0]++; // For SN feedback
 	vx=(REAL)(rand())/RAND_MAX*2.-1.;
 	vy=(REAL)(rand())/RAND_MAX*2.-1.;
 	vz=(REAL)(rand())/RAND_MAX*2.-1.;
-      
+
 	mass=0.;
       }
-    
+
       // periodic boundary conditions
-    
-      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
-    
+
+      x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x);
+      y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y);
+      z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z);
+
       // it it belongs to the current cpu, we proceed and assign the particle to the particle array
       if(segment_part(x,y,z,&cpu,levelcoarse)){
 	part[ip].x=x;
 	part[ip].y=y;
 	part[ip].z=z;
-      
+
 	part[ip].vx=vx;
 	part[ip].vy=vy;
 	part[ip].vz=vz;
-      
+
 	part[ip].mass=mass;
 	lastpart=part+ip;
 	part[ip].idx=ir;
 	ip++;
       }
     }
-  
+
     npart=ip; // we compute the localnumber of particle
 
 #endif
@@ -1346,36 +1375,36 @@ blockcounts[0]++; // For SN feedback
       {
 	//fscanf(fd,"%d %f %f %f %f %f %f %f",&part[i].idx,&part[i].mass,&(part[i].x),&(part[i].y),&(part[i].z),&(part[i].vx),&(part[i].vy),&(part[i].vz));
 	fscanf(fd,"%d %f %f %f %f %f %f %f",&dummy,&mass,&x,&y,&z,&vx,&vy,&vz);
-      
+
 	x+=0.5;
 	y+=0.5;
 	z+=0.5;
 	// periodic boundary conditions
-    
-	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x); 
-	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y); 
-	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z); 
+
+	x+=(x<0)*((int)(-x)+1)-(x>1.)*((int)x);
+	y+=(y<0)*((int)(-y)+1)-(y>1.)*((int)y);
+	z+=(z<0)*((int)(-z)+1)-(z>1.)*((int)z);
 
 	// it it belongs to the current cpu, we proceed and assign the particle to the particle array
 	if(segment_part(x,y,z,&cpu,levelcoarse)){
 	  part[ip].x=x;
 	  part[ip].y=y;
 	  part[ip].z=z;
-	
+
 	  part[ip].vx=vx;
 	  part[ip].vy=vy;
 	  part[ip].vz=vz;
-	
+
 	  part[ip].mass=mass;
 	  lastpart=part+ip;
 	  ip++;
 	}
-      
+
       }
     fclose(fd);
     npart=ip; // we compute the localnumber of particle
 
-#endif  
+#endif
 
 #ifdef TESTCOSMO // =================PARTICLE COSMOLOGICAL CASE
 
@@ -1411,13 +1440,13 @@ blockcounts[0]++; // For SN feedback
 
 
 #endif
-  
+
     // we set all the "remaining" particles mass to -1
     for(ii=npart;ii<npartmax;ii++) part[ii].mass=-1.0;
 
     /// assigning PARTICLES TO COARSE GRID
     if(cpu.rank==RANK_DISP) printf("start populating coarse grid with particles\n");
-      
+
     part2grid(part,&cpu,npart);
 
   // ========================  computing the memory location of the first freepart and linking the free parts
@@ -1430,7 +1459,7 @@ blockcounts[0]++; // For SN feedback
       curp->next=NULL;
       if(curp!=(part+npartmax-1)) curp->next=curp+1;
     }
-    
+
 #endif
 
     //===================================================================================================================================
@@ -1446,7 +1475,7 @@ blockcounts[0]++; // For SN feedback
 
 
 #ifdef WHYDRO2
-  
+
 #ifdef GRAFIC
     int ncellhydro;
     ncellhydro=read_grafic_hydro(&cpu,&ainit, &param,param.lcoarse);
@@ -1497,7 +1526,6 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifdef WRADTEST
-
     // SETTING THE RADIATIVE TRANSFER
 
     REAL X0=1./POW(2,levelcoarse);
@@ -1507,8 +1535,8 @@ blockcounts[0]++; // For SN feedback
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
-    param.unit.unit_l=15e3*PARSEC;
-#else
+    param.unit.unit_l= 15e3 *PARSEC;
+#else //TESTCLUMP
     param.unit.unit_l=6.6e3*PARSEC;
     REAL vclump=4./3.*M_PI*POW(0.8e3*PARSEC,3); // clump volume in internal units
     param.unit.unit_mass=200.*(POW(param.unit.unit_l,3)+199.*vclump)*PROTON_MASS*MOLECULAR_MU;
@@ -1516,10 +1544,10 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_d=param.unit.unit_mass/POW(param.unit.unit_l,3);
     REAL pstar;
     pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);
-#endif
+#endif //TESTCLUMP
     param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
     ainit=1.;
-#else
+#else //TESTCOSMO
     ainit=1./(16.);;
     REAL om=0.27;
     REAL ov=0.73;
@@ -1544,9 +1572,9 @@ blockcounts[0]++; // For SN feedback
     param.unit.unit_t=tstar;
     param.unit.unit_n=1.;
 
-#endif
+#endif //TESTCOSMO
 
-    for(level=levelcoarse;level<=levelmax;level++) 
+    for(level=levelcoarse;level<=levelmax;level++)
       {
 	dxcur=POW(0.5,level);
 	nextoct=firstoct[level-1];
@@ -1599,7 +1627,7 @@ blockcounts[0]++; // For SN feedback
 		  }
 #endif
 
-#ifndef TESTCLUMP		
+#ifndef TESTCLUMP
 		  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
 		  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
 		  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
@@ -1607,14 +1635,14 @@ blockcounts[0]++; // For SN feedback
 		  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
 #endif
 
-		  curoct->cell[icell].rfield.nh=nh*POW(param.unit.unit_l,3)/param.unit.unit_n; 
+		  curoct->cell[icell].rfield.nh=nh*POW(param.unit.unit_l,3)/param.unit.unit_n;
 		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
-		  curoct->cell[icell].rfield.eint=eint; 
-		  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh; 
+		  curoct->cell[icell].rfield.eint=eint;
+		  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh;
 		  E2T(&curoct->cell[icell].rfield,1.0,&param);
 
-		
-		
+
+
 #ifdef WRADHYD
 		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
@@ -1623,16 +1651,20 @@ blockcounts[0]++; // For SN feedback
 		  curoct->cell[icell].field.p=eint*(GAMMA-1.);
 		  curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
 		  getE(&(curoct->cell[icell].field));
-		  /* printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar); */
-		  /* abort(); */
+		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
+		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif
 
 #endif
+
+
+
+
 		}
 	      }
 	  }while(nextoct!=NULL);
-      
-      
+
+
       }
 #endif
 #endif
@@ -1648,13 +1680,14 @@ blockcounts[0]++; // For SN feedback
   else{
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
+	printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
-    sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank); 
+    sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
     cpu.freepart=freepart;
 #endif
 
-    sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank); 
+    sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank);
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 
@@ -1711,7 +1744,7 @@ blockcounts[0]++; // For SN feedback
 #endif
       if(cpu.rank==RANK_DISP) printf("computing friedmann tables with ainit=%e amax=%e\n",ainit,amax);
   compute_friedmann(ainit*0.95,amax,NCOSMOTAB,cosmo.om,cosmo.ov,tab_aexp,tab_ttilde,tab_t);
-  
+
   tmax=-0.5*SQRT(cosmo.om)*integ_da_dt_tilde(amax,1.0+1e-6,cosmo.om,cosmo.ov,1e-8);
   if(cpu.rank==RANK_DISP) printf("tmax=%e treal=%e\n",tmax,treal);
   cosmo.tab_aexp=(REAL *)tab_aexp;
@@ -1720,7 +1753,9 @@ blockcounts[0]++; // For SN feedback
 
   param.time_max=tmax;
 
-  if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu);
+
+
+  if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   //#ifdef STARS
 /* #ifndef ZOOM */
@@ -1756,8 +1791,8 @@ blockcounts[0]++; // For SN feedback
 
     //==================================== MAIN LOOP ================================================
     //===============================================================================================
-  
- 
+
+
 
     // preparing freeocts
     cpu.freeoct=freeoct;
@@ -1771,7 +1806,7 @@ blockcounts[0]++; // For SN feedback
 #ifdef GPUAXL
     // creating params on GPU
 #ifdef WRAD
-    create_param_GPU(&param,&cpu); 
+    create_param_GPU(&param,&cpu);
     // Note : present only in radiation routines but could be useful elsewhere ... to check
 #endif
 #endif
@@ -1796,20 +1831,20 @@ blockcounts[0]++; // For SN feedback
 #ifdef ZOOM
     // we trigger the zoom region
     int izoom;
-    
+
     for(izoom=levelcoarse;izoom<=param.lmaxzoom;izoom++){
       zoom_level(levelcoarse,&cpu,&param,firstoct,lastoct);
     }
 
     if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
-      
+
 #if 1
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
 
     struct PART *lpartloc;
-    
+
 
     for(izoom=levelcoarse+1;izoom<=(param.lmaxzoom);izoom++){
       if(cpu.rank==RANK_DISP){
@@ -1822,11 +1857,11 @@ blockcounts[0]++; // For SN feedback
       lpartloc=lastpart+1;
       lastpart=read_grafic_part(lpartloc, &cpu, &munit, &ainit, &npz, &param,izoom);
       printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
-      
+
       part2grid(lpartloc,&cpu,npz);
       mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
       // ========================  computing the memory location of the first freepart and linking the free parts
-      
+
       freepart=lastpart+1; // at this stage the memory is perfectly aligned
       freepart->prev=NULL;
       freepart->next=freepart+1;
@@ -1857,7 +1892,7 @@ blockcounts[0]++; // For SN feedback
     /* tsim=tmax; */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
-    
+
 #endif
 
 #ifndef JUSTIC
@@ -1865,8 +1900,9 @@ blockcounts[0]++; // For SN feedback
     // Loop over time
     for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
 
+
       cpu.nsteps=nsteps;
-      
+
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,(double *)cosmo.tab_aexp,(double *)cosmo.tab_ttilde);
       cosmo.tsim=tsim;
@@ -1874,7 +1910,7 @@ blockcounts[0]++; // For SN feedback
 #else
 #ifndef WRAD
       if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
-#else 
+#else
      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
@@ -1913,7 +1949,7 @@ blockcounts[0]++; // For SN feedback
 	nrad++;
 	if(nrad%10 ==0) if(cpu.rank==RANK_DISP) printf("rad iter=%d trad=%e tsimrad=%e tmax=%e done in %e secs\n",nrad,trad,tsimrad,adt[levelcoarse-1],tcr2-tcr1);
       }
-      
+
       MPI_Barrier(cpu.comm);
       tg4=MPI_Wtime();
 #ifndef GPUAXL
@@ -1933,7 +1969,26 @@ blockcounts[0]++; // For SN feedback
 #endif
 
       // ==================================== dump
-      if((nsteps%(param.ndumps)==0)||((tsim+adt[levelcoarse-1])>=tmax)){
+      int cond1 = nsteps%param.ndumps==0;
+      int cond2 = 0;
+      int cond3 = tsim+adt[levelcoarse-1]>=tmax;
+
+#ifdef TESTCOSMO
+
+      if (param.dt_dump){
+        cond1=0;
+
+        int offset=0;
+        if (nsteps==0) offset = (int)param.cosmo->tphy/param.dt_dump;
+
+        REAL a=param.cosmo->tphy;
+        REAL b=(int)(ndumps+offset)*param.dt_dump;
+        cond2=a>b;
+        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param.dt_dump);
+      }
+#endif // TESTCOSMO
+
+      if(cond1||cond2||cond3){
 #ifndef EDBERT
 
 	int fdump=8;
@@ -1951,7 +2006,7 @@ blockcounts[0]++; // For SN feedback
 	  dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 	}
 #else
-	
+
 #ifndef TESTCOSMO
 #ifdef WRAD
 	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
@@ -1971,12 +2026,12 @@ blockcounts[0]++; // For SN feedback
 	// === Hydro dump
 
 	//printf("tdum=%f\n",tdump);
-	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank); 
+	sprintf(filename,"data/grid.%05d.p%05d",ndumps,cpu.rank);
 	if(cpu.rank==RANK_DISP){
 	  printf("Dumping .......");
 	  printf("%s\n",filename);
 	}
-	dumpgrid(levelmax,firstoct,filename,adump,&param); 
+	dumpgrid(levelmax,firstoct,filename,adump,&param);
 
 	#ifdef PIC
 		sprintf(filename,"data/part.%05d.p%05d",ndumps,cpu.rank);
@@ -1988,7 +2043,7 @@ blockcounts[0]++; // For SN feedback
 	#endif
 
 		// backups for restart
-		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank); 
+		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank);
 		REAL tsave=tdump;
 #ifndef TESTCOSMO
 		tsave=tdump/(param.unit.unit_t/MYR);
@@ -1996,14 +2051,17 @@ blockcounts[0]++; // For SN feedback
 
 		save_amr(filename,firstoct,tsave,tinit,nsteps,ndumps,&param, &cpu,part,adt);
 #ifdef PIC
-		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank); 
+		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank);
 		save_part(filename,firstoct,param.lcoarse,param.lmax,tsave,&cpu,part);
 #endif
 
 #endif
 	ndumps++;
       }
-      
+
+    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt);
+
+
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
@@ -2044,13 +2102,13 @@ blockcounts[0]++; // For SN feedback
 #endif
 
 #ifdef WHYDRO2
-    destroy_pinned_stencil(&stencil,hstride); 
-    destroy_hydstencil_GPU(&cpu,hstride); 
+    destroy_pinned_stencil(&stencil,hstride);
+    destroy_hydstencil_GPU(&cpu,hstride);
 #endif
 
 #ifdef WRAD
-    destroy_pinned_stencil_rad(&rstencil,rstride); 
-    destroy_radstencil_GPU(&cpu,rstride); 
+    destroy_pinned_stencil_rad(&rstencil,rstride);
+    destroy_radstencil_GPU(&cpu,rstride);
 #endif
 
 #endif

@@ -1,5 +1,3 @@
-
-
 #ifdef WMPI
 #include <mpi.h>
 #endif
@@ -51,7 +49,7 @@ typedef double REAL;
 #define FRAC_VAR (0.1)
 
 
-#ifndef WHYDRO2 
+#ifndef WHYDRO2
 #define OMEGAB (0.0)
 #else
 #define OMEGAB (0.049); // 0.049 for PLANCK
@@ -61,6 +59,7 @@ typedef double REAL;
 
 #define NCOSMOTAB (262144)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
+
 
 #ifdef DUAL_E
 
@@ -81,7 +80,7 @@ typedef double REAL;
 
 #ifdef WRAD
 #define NVAR_R (5)
-#define NGRP (3)
+#define NGRP (1)
 #define EMIN (1e-8)
 #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
@@ -98,9 +97,25 @@ typedef double REAL;
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
-#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK	
+
+//#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
+//#define N_SNII (1.)
+
+//Vecchia & Schaye 2012
+#define SN_EGY (8.73e11/1.736e-2)
+//chabrier IMF
+#define N_SNII (1.736e-2)    //[6->100MO]
+//#define N_SNII (1.180e-2)    //[8->100MO]
+
+//Salpeter IMF
+//#define N_SNII (1.107e-2)   //[6->100MO]
+//#define N_SNII (0.742e-2)    //[8->100MO]
+
 
 //=======================================
+
+#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
+
 #ifdef TESTCOSMO
 struct COSMOPARAM{
   REAL aexp;
@@ -116,23 +131,27 @@ struct COSMOPARAM{
 };
 #endif
 
-#ifdef STARS 
+#ifdef STARS
 struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
   REAL density_cond;	// Hydrogen density (m-3)
   REAL tcar;		// caracteristic time (yr)
-  REAL tlife;		// life time of a radiative source (yr) 
-  REAL feedback_eff;	// feedback efficiency
-  REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
-	
+  REAL tlife;		// life time of a radiative source (yr)
+  REAL mass_res;
   //REAL mstars;		// Mass of a stellar particle (PLUS BESOIN)
   int  n;		// total number of stars
   REAL thresh;		// density threshold to allow star formation
 
-  REAL Esnfb;		// total Energy of a SN  
-
 };
 #endif
+
+#ifdef SUPERNOVAE
+struct SNPARAM{
+  REAL feedback_eff;	// feedback efficiency
+  REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
+  REAL Esnfb;		// total Energy of a SN
+};
+#endif // SUPERNOVAE
 
 
 #ifdef MOVIE
@@ -168,13 +187,14 @@ struct RUNPARAMS{
   int ngridmax; // the max oct numbers (per process)
   int nbuff; // the mpi buffer size
   int ndumps; // the frequency of outputs
+  REAL dt_dump; // the physical time betwwen 2 dumps in years
   int nsteps; // the maximal number of timesteps
-  
+
   int lcoarse; // the coarse level
   int lmax; // the max level of refinement
-  
+
   int niter; // the maximal number of iterations for the Poisson solver
-  
+
   int gstride; // the size of the stencil for vector based computations (gravity)
   int hstride; // the size of the stencil for vector based computations (hydro)
 
@@ -183,8 +203,10 @@ struct RUNPARAMS{
   REAL time_max; // for cosmo only : contains the time equivalent to amax (contained in tmax, yeah its obfuscated)
 
   int maxhash; // the hash table size between hilbert keys and oct adress (should be typically = to (2^levelmax-1)^3
-  
+
+  REAL amrthresh0;
   REAL amrthresh; // the refinement criterion (refine if mcell>amrthresh)
+
   int nsmooth; // the number of neighbour refinement steps
 
   REAL poissonacc; // relaxation accuracy for Poisson equation
@@ -203,17 +225,22 @@ struct RUNPARAMS{
   struct STARSPARAM *stars;
 #endif
 
+#ifdef SUPERNOVAE
+  struct SNPARAM *sn;
+#endif // SUPERNOVAE
+
   int nthread; // number of GPU threads
   int nstream; // number of GPU streams
   int ompthread; // numberf of OMP threads
 
+  struct UNITS unit; // contains the units
+
 #ifdef WRAD
   REAL clight; // speed of light in units of the real one
   REAL clightorg; // speed of light in units of the real one // saving the original value
-  struct UNITS unit; // contains the units
   REAL fudgecool; // cooling fraction
   int ncvgcool; // cooling max iterations
-  
+
   REAL denthresh; // density threshold to turn the sources on
   REAL tmpthresh; // temperature threshold to turn the sources on
   REAL srcint; // intensity of the sources
@@ -227,7 +254,7 @@ struct RUNPARAMS{
   REAL egy_0; // the initial energy
   REAL egy_last; // the last integrand for the energy equation (used for trapezoidal rule)
   REAL egy_timelast; // the last time for the integrand (used for trapezoidal rule)
-  REAL egy_totlast; 
+  REAL egy_totlast;
   FILE *fpegy; // the file with egy stats
 
   REAL rzoom; // the inner zoom radius
@@ -274,7 +301,7 @@ struct CPUINFO{
 
   int nebnd; // the number of external boundary octs
   int nnei; // the number of neighbors procs
-  
+
   int *mpinei; // the ranks of the neighbors procs
 
   int *dict; // a hash table to converts ranks in local neighbour index
@@ -284,7 +311,7 @@ struct CPUINFO{
   int *allkmin;
   int *allkmax;
 
-  int nbuff; // the number of buffer cells = to the max of # of buffer cell from 1 neighbor 
+  int nbuff; // the number of buffer cells = to the max of # of buffer cell from 1 neighbor
   int nbufforg; // the max number of buffer cells (set from the parameter file)
   int nbuffpart;  // the number of particles to transmit
 
@@ -302,17 +329,17 @@ struct CPUINFO{
   MPI_Datatype *MPI_PACKET; // the structured type for MPI messages (fields)
   struct PACKET **sendbuffer;
   struct PACKET **recvbuffer;
-  struct PART_MPI **psendbuffer; 
+  struct PART_MPI **psendbuffer;
   struct PART_MPI **precvbuffer;
-  struct HYDRO_MPI **hsendbuffer; 
+  struct HYDRO_MPI **hsendbuffer;
   struct HYDRO_MPI **hrecvbuffer;
-  struct RAD_MPI **Rsendbuffer; 
+  struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; // the structured type for MPI messages (particles)
 #endif
- 
+
 #ifdef WHYDRO2
   MPI_Datatype *MPI_HYDRO; // the structured type for MPI messages (particles)
   MPI_Datatype *MPI_FLUX; // the structured type for MPI messages (particles)
@@ -323,8 +350,8 @@ struct CPUINFO{
 #endif
 
   MPI_Comm comm; // the communicator
-  
-  
+
+
 #endif
 
   int maxhash; // the size of the hashtable between hilbert keys and oct adresses
@@ -343,10 +370,14 @@ struct CPUINFO{
   REAL tinit; // the initial time
   int *ndumps; // the current dump number
 
+
+  int *locNoct; // the local number of octs per levels
+  struct OCT *** octList;
+
 #ifdef GPUAXL
 
 #ifdef WGRAV
-  
+
 #ifndef FASTGRAV
   struct GGRID *dev_stencil;
   REAL *res;
@@ -436,7 +467,7 @@ struct Wtype_MPI{
   REAL w;   // velocity
   REAL p;   // pressure
   REAL a;   // sound speed
-  REAL E; 
+  REAL E;
 #ifdef WRADHYD
   REAL dX;
 #endif
@@ -497,7 +528,7 @@ struct Utype1D{
 // in principle should be 1.
 // lets try
 
-#define DFACT (1.) 
+#define DFACT (1.)
 
 struct PART
 {
@@ -637,23 +668,23 @@ struct LCELL
 {
   REAL marked; // REAL for consistency with physical quantities during communications
   //int idx; //index of the cell within the oct
-  int child; 
+  int child;
 
-#ifdef PIC 
+#ifdef PIC
    // the physical quantities */
   float density; // total density */
- #endif 
-  
-#ifdef WGRAV 
-  //struct Gtype gdata; 
+ #endif
+
+#ifdef WGRAV
+  //struct Gtype gdata;
   float den;
   float pot;
   float res;  // residual */
   float f[3]; // the gravitational force component */
-#endif 
+#endif
 
 
-#ifdef WHYDRO2 
+#ifdef WHYDRO2
   //struct Wtype field;
   float d;
   float u;
@@ -664,7 +695,7 @@ struct LCELL
 #endif
 
 
-#ifdef WRAD 
+#ifdef WRAD
   //  struct Rtype rfield;
   double e[NGRP];
   double fx[NGRP];
@@ -674,7 +705,7 @@ struct LCELL
   float snfb;
   double xion;
   double temp; // is a direct function of eint, nh and xion but stored for conveniency
-#endif 
+#endif
 };
 
 
@@ -695,7 +726,7 @@ struct CELLFLUX
   struct Rtype deltaR;
   struct Rtype rfield;
   struct Rtype rfieldnew;
-  REAL rflux[NFLUX_R]; 
+  REAL rflux[NFLUX_R];
 #endif
 
 };
@@ -707,7 +738,7 @@ struct CELLFLUX_R
   struct Rtype deltaR;
   struct Rtype rfield;
   struct Rtype rfieldnew;
-  REAL rflux[NFLUX_R]; 
+  REAL rflux[NFLUX_R];
 #endif
 
 };
@@ -779,7 +810,7 @@ struct CELLLIGHT_R
 
 struct CELLGRAV
 {
-  struct Gtype gdata; // gravitational data 
+  struct Gtype gdata; // gravitational data
 };
 
 // ----------------------------------------------------------------
@@ -795,8 +826,8 @@ struct OCT
   struct CELL cell[8]; // MUSTN'T BE MOVED !!
 
   struct CELL *nei[6];// neighbor cells at level - 1
-  struct CELL *parent; // parent cell 
- 
+  struct CELL *parent; // parent cell
+
   // the next two pointers are required for sweeps through a single level
   struct OCT *next; // next oct on the same level
   struct OCT *prev; // previous oct on the same level
@@ -808,7 +839,7 @@ struct OCT
   REAL z;
 
   // parallel data
-  int cpu; 
+  int cpu;
   int level;// level of the cells in the oct
 
 };
@@ -819,12 +850,12 @@ struct LOCT
    struct LCELL cell[8]; // MUSTN'T BE MOVED !! */
 
    // the oct position (lowest left corner) */
-   float x; 
-   float y; 
-   float z; 
+   float x;
+   float y;
+   float z;
 
   // parallel data
-  int cpu; 
+  int cpu;
   int level;// level of the cells in the oct
 
 };
@@ -850,7 +881,7 @@ struct OCTLIGHT_R
 struct OCTGRAV
 {
   // the cell properties
-  struct CELLGRAV cell[8]; 
+  struct CELLGRAV cell[8];
 };
 
 // =======================================
@@ -880,7 +911,7 @@ struct STENGRAV{
   REAL *pnew; // new potential [8*stride]
 
   REAL *res; //residual [8*stride]
-  REAL *res2; 
+  REAL *res2;
   REAL *resLR; // low res residual for MG [stride]
 
   int *nei; // neighbour indexes [7*stride] (6 real neighbours plus the middle one)

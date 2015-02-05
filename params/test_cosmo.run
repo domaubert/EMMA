@@ -1,21 +1,21 @@
 ##==MemoryManagement=========
 max_number_of_octs 500000
-max_number_of_part 10000000
+max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 100
-max_nuber_of_steps 300000001
+output_frequency 250
+max_nuber_of_steps 9000
 time_step_max  1e0
-tmax_or_amax 0.2
+tmax_or_amax 0.15
 ##==AMRGrid==================
-level_coarse 7
+level_coarse 6
 level_max 10
 amr_thresh 8
 n_smooth 2
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 1000
+max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3
-mgrid_lmin 4
+mgrid_lmin 3
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
@@ -28,19 +28,21 @@ nthread 16
 nstream 1
 ompthreads 1
 ##==RadTransfert============
-clight 1e0
+clight 1e-1
 dens_threshold 5e20
 temp_threshold 1e5
 src_int 1e15
 ##==StarFormation============
-overdensity_cond 150
+overdensity_cond 500
 density_cond -500
-tcar 4e9   
+tcar 4e9
 tlife 2e7
+mass_res 2
+##==SuperNovae===============
 feedback_eff 1.
 feedback_frac 1.
 ##==Movie====================
-lmap 8
+lmap 9
 xmin 0
 xmax 1
 ymin 0

@@ -51,74 +51,74 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
       if(curoct->nei[vnei[ii]]->child!=NULL){
 	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field),sizeof(struct Wtype));
 
-# 
+#
       }
       else{
 	// the neighbour does not exist we need to interpolate the value at the correct position
 	coarse2fine_hydrolin(curoct->nei[vnei[ii]],Wi);
 	memcpy(&W,Wi+vcell[ii],sizeof(struct Wtype));
-    
+
       }
 
 #ifdef TRANSZM
 	if(ii==4){
 	  if(curoct->z==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSZP
 	if(ii==5){
 	  if((curoct->z+2.*dxcur)==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSXM
 	if(ii==0){
 	  if(curoct->x==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSXP
 	if(ii==1){
 	  if(curoct->x+2.*dxcur==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[ii].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSYM
 	if(ii==2){
 	  if(curoct->y==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSYP
 	if(ii==3){
 	  if(curoct->y+2.*dxcur==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].field),sizeof(struct Wtype));
 	  }
 	}
-#endif 
- 
+#endif
+
     }
-    
+
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-    gradd[ax]+=(W.d*fact);   
+    gradd[ax]+=(W.d*fact);
     /* gradu[ax]+=(W.u*fact); */
     /* gradv[ax]+=(W.v*fact);  */
     /* gradw[ax]+=(W.w*fact);    */
@@ -140,8 +140,8 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   ratio=FMAX(ratio,ratiow);
   ratio=FMAX(ratio,ratiop);
 
-  return ratio; 
-  
+  return ratio;
+
 }
 
 
@@ -190,77 +190,77 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 	/* for(il=0;il<8;il++) memcpy(&Wi[il],&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype));  */
 
 	memcpy(&W,&(curoct->nei[vnei[ii]]->rfield),sizeof(struct Rtype)); // straight injection
-	
+
       }
 
       #ifdef TRANSZM
 	if(ii==4){
 	  if(curoct->z==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSZP
 	if(ii==5){
 	  if((curoct->z+2.*dxcur)==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSXM
 	//printf("clunk3\n");
 	if(ii==0){
 	  //printf("clunk2\n");
 	  if(curoct->x==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    //printf("clunk\n");
 	    memcpy(&W,&(curoct->cell[ii].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSXP
 	if(ii==1){
 	  if(curoct->x+2.*dxcur==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[ii].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSYM
 	if(ii==2){
 	  if(curoct->y==0.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
+#endif
 
 #ifdef TRANSYP
 	if(ii==3){
 	  if(curoct->y+2.*dxcur==1.){
-	    // the neighbor is a periodic mirror 
+	    // the neighbor is a periodic mirror
 	    memcpy(&W,&(curoct->cell[icell].rfield),sizeof(struct Rtype));
 	  }
 	}
-#endif 
- 
- 
-      
+#endif
+
+
+
     }
-    
+
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
-    gradd[ax]+=(W.nhplus*fact);   
+    gradd[ax]+=(W.nhplus*fact);
     avgd[ax]+=W.nhplus*0.5;
-    gradn[ax]+=(W.nh*fact);   
+    gradn[ax]+=(W.nh*fact);
     avgn[ax]+=W.nh*0.5;
-    grade[ax]+=(W.e[0]*fact);   
+    grade[ax]+=(W.e[0]*fact);
     avge[ax]+=W.e[0]*0.5;
   }
 
@@ -277,18 +277,12 @@ REAL comp_grad_rad(struct OCT *curoct, int icell){
 
   ratio=FMAX(ratiox,ratioe);
   ratio=FMAX(ration,ratio);
-  return ratio; 
-  
+  return ratio;
+
 }
 
 #endif
 #endif
-
-
-//========================================================================================================================
-//========================================================================================================================
-
-
 
 //========================================================================================================================
 //========================================================================================================================
@@ -313,7 +307,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   struct PART *nexp;
   struct PART *curp;
 
-#ifdef WHYDRO2  
+#ifdef WHYDRO2
   struct Wtype Wi[8];
 #endif
 
@@ -322,12 +316,12 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 
 
-#ifdef WGRAV  
+#ifdef WGRAV
   struct Gtype Gi[8];
 #endif
 
 
-		  
+
   //if(nsteps==1) abort();
   nref=0;
   ndes=0;
@@ -350,17 +344,17 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		printf("Error newoct level=%d\n",newoct->level);
 		abort();
 	      }
-	  
+
 #if 1
 	      // destroying octs with level>levelcoarse ==========================
 	      if(((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].marked==0))&&(curoct->level>=param->lcoarse)){
 
+
 		if(cpu->rank==curoct->cpu) ndes++;
-		
 
 
 		desoct=curoct->cell[icell].child; // the oct to destroy
-#ifdef PIC		
+#ifdef PIC
 		if(curoct->cell[icell].phead!=NULL){
 		  printf("non void split cell !\n");
 		  abort();
@@ -368,16 +362,16 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 		// we remove the child from the refined cell
 		curoct->cell[icell].child=NULL;
-		
+
 		// we remove the parent from the oct to be destroyed
 		desoct->parent=NULL;
 
 		// we cancels some flags
 		/* desoct->vecpos=-1; */
 		/* desoct->border=0; */
-		
+
 		// we remove the oct from the list
-		
+
 		if(desoct->prev!=NULL){
 		  desoct->prev->next=desoct->next;
 		}
@@ -412,9 +406,9 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		// if destruction, newoct should be updated
 		newoct=freeoct;
 #ifdef PIC
-		//======== dealing with particles
+		///======== dealing with particles
 		// we gather the particles of the oct to be destroyed in the parent cell
-		
+
 		curploc=findlastpart(curoct->cell[icell].phead); // we get the last particle from the parent cell (should be nil in principle)
 		sump=0;
 		sum2=0;
@@ -440,7 +434,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #endif
 	      }
-#endif	      
+#endif
 	      // creation of a new oct ==================
 		// gros test
 
@@ -459,18 +453,18 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
  		}
 #endif
 
- 		getcellnei(icell, vnei, vcell); 
+ 		getcellnei(icell, vnei, vcell);
 
-		 
+
 		// Past here the rule are respected
- 		
- 		
+
+
 		//
 
 
 
 		if(curoct->cpu==cpu->rank) nref++;
-		
+
 		// a new oct is created
 		newoct->parent=&(curoct->cell[icell]);
 		newoct->level=curoct->level+1;
@@ -481,7 +475,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		// the new oct is connected to parent
 		curoct->cell[icell].child=newoct;
-		
+
 		// it shares the same cpu
 		newoct->cpu=curoct->cpu;
 
@@ -493,7 +487,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		for(ii=0;ii<6;ii++){
 		  newoct->nei[ii]=NULL;//
 		  if(vnei[ii]!=6){
-		    if(curoct->nei[vnei[ii]]!=NULL){	
+		    if(curoct->nei[vnei[ii]]!=NULL){
 		      if((curoct->nei[vnei[ii]]->child==NULL)&&(curoct->cpu==cpu->rank)){
 #ifdef TRANSXM
 			continue;
@@ -538,11 +532,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    //curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
 
 		    //coarse2fine_rad2(&(curoct->cell[icell]),Ri);
-  		     for(il=0;il<8;il++){ 
+  		     for(il=0;il<8;il++){
 		       //   Ri[il].src=0.; */
  		       memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
-		       
-		       
+
+
 #ifdef STARS
 		       Ri[il].snfb=0.;
 #endif
@@ -554,12 +548,12 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		       Ri[il].nh= Wi[il].d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
 		       Ri[il].nhplus= Wi[il].dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
 		       Ri[il].eint= Wi[il].p/(GAMMA-1.);
-#endif	       
+#endif
 
 		     }
-		    
+
 		}
-		
+
 #endif
 
 
@@ -587,7 +581,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
-		    memcpy(&(newoct->cell[ii].field),Wi+ii,sizeof(struct Wtype)); 
+		    memcpy(&(newoct->cell[ii].field),Wi+ii,sizeof(struct Wtype));
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
@@ -598,7 +592,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
-		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype)); 
+		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype));
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].rfield),0,sizeof(struct Rtype));
@@ -608,7 +602,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WGRAV
 		  if(cpu->rank==curoct->cpu){
-		    memcpy(&(newoct->cell[ii].gdata),Gi+ii,sizeof(struct Gtype)); 
+		    memcpy(&(newoct->cell[ii].gdata),Gi+ii,sizeof(struct Gtype));
 		    //memset(&(newoct->cell[ii].gdata),0,sizeof(struct Gtype));
 		  }
 		  else{
@@ -617,7 +611,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #endif
 		}
 
-  
+
 #ifdef PIC
 		// splitting the particles
 		nexp=curoct->cell[icell].phead;
@@ -626,7 +620,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		    curp=nexp;
 		    nexp=curp->next;
 
-		    
+
 		    xp=(int)(2*(curp->x-newoct->x)/dxcur);xp=(xp>1?1:xp);xp=(xp<0?0:xp);xp=(xp==2?1:xp);
 		    yp=(int)(2*(curp->y-newoct->y)/dxcur);yp=(yp>1?1:yp);yp=(yp<0?0:yp);yp=(yp==2?1:yp);
 		    zp=(int)(2*(curp->z-newoct->z)/dxcur);zp=(zp>1?1:zp);zp=(zp<0?0:zp);zp=(zp==2?1:zp);
@@ -634,7 +628,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		    //ip=(int)(2*(curp->x-newoct->x)/dxcur)+(int)(2*(curp->y-newoct->y)/dxcur)*2+(int)(2*(curp->z-newoct->z)/dxcur)*4;
 
-		    
+
 		    // actual spliting
 		    if(newoct->cell[ip].phead==NULL)
 		      {
@@ -643,7 +637,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 			//			newoct->cell[ip].density=8./(dxcur*dxcur*dxcur);
 
 			// we remove the particle from the parent cell
-			if(curp->prev!=NULL) curp->prev->next=curp->next; 
+			if(curp->prev!=NULL) curp->prev->next=curp->next;
 			if(curp->next!=NULL) curp->next->prev=curp->prev;
 			if(curp->prev==NULL) curoct->cell[icell].phead=curp->next; // we removed the head
 			curp->prev=NULL;
@@ -655,8 +649,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		      if(curp->prev!=NULL) curp->prev->next=curp->next;
 		      if(curp->next!=NULL) curp->next->prev=curp->prev;
 		      if(curp->prev==NULL) curoct->cell[icell].phead=curp->next; // we removed the head
-		      curp->next=NULL;	
-		      
+		      curp->next=NULL;
+
 		      nexploc=newoct->cell[ip].phead;
 		      do{ //sweeping the particles of the new cell
 			curploc=nexploc;
@@ -668,13 +662,13 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		  }while(nexp!=NULL);
 		}
 
- 
+
 		if(curoct->cell[icell].phead!=NULL){
 		  printf("cell not emptied after split !\n");
 		  abort();
 		};
-#endif		
-		
+#endif
+
 		// preparing the next creations on level+1
 		//printf("%p %p\n",freeoct,freeoct->next);
 		freeoct=newoct->next; // we prepare the new free oct
@@ -703,7 +697,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 		}
 	      }
-	      
+
 	    }
 	  //printf("nextoct=%p endoct=%p\n",nextoct,endoct);
 	}while(nextoct!=NULL);
@@ -742,14 +736,13 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
   int ic;
   REAL dxcur=1./POW(2,level);
 
-
   nextoct=firstoct[level-1];
   if(nextoct!=NULL){
     do // sweeping level
       {
 	curoct=nextoct;
 	nextoct=curoct->next;
-	
+
 	for(icell=0;icell<8;icell++) // looping over cells in oct
 	  {
 	    if(curoct->cell[icell].marked==0) continue;
@@ -766,7 +759,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZM
 	      if((curoct->z==0.)&&(ii==4)) continue;
 #endif
-	      
+
 #ifdef TRANSXP
 	      if((curoct->x+2*dxcur==1.)&&(ii==1)) continue;
 #endif
@@ -776,7 +769,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZP
 	      if((curoct->z+2*dxcur==1.)&&(ii==5)) continue;
 #endif
-	      
+
 	      if((curoct->cpu==cpu->rank)){ // the violation rule is checked only on the current cpu octs
 		if(curoct->nei[ii]->child==NULL){
 		  // refinement rule is violated so skip
@@ -798,7 +791,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZM
 	      if((oct->z==0.)&&(ii2==4)) continue;
 #endif
-	      
+
 #ifdef TRANSXP
 	      if((oct->x+2*dxcur==1.)&&(ii2==1)) continue;
 #endif
@@ -808,7 +801,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZP
 	      if((oct->z+2*dxcur==1.)&&(ii2==5)) continue;
 #endif
-	      
+
 
 		    if(oct->nei[ii2]->child==NULL){
 		      vrule=1;
@@ -828,7 +821,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZM
 	      if((oct2->z==0.)&&(ii3==4)) continue;
 #endif
-	      
+
 #ifdef TRANSXP
 	      if((oct2->x+2*dxcur==1.)&&(ii3==1)) continue;
 #endif
@@ -838,7 +831,7 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 #ifdef TRANSZP
 	      if((oct2->z+2*dxcur==1.)&&(ii3==5)) continue;
 #endif
-	      
+
 
 			if((ii3/2==ii/2)||(ii3/2==ii2/2)) continue;
 			if(oct2->nei[ii3]->child==NULL) vrule=1;
@@ -892,7 +885,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   REAL mmax=0.;
   int stati[3]={0,0,0};
   REAL rin;
-  
+
   if(cpu->rank==RANK_DISP) printf("==> start marking\n");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
   marker=0;
@@ -901,7 +894,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
     {
 	  //printf("level=%d ",level);
 	  dx=1./POW(2,level);
-	  
+
 #ifdef ZOOM
  	  rin=param->rzoom*POW(param->fzoom,param->lmaxzoom-level-1);
 	  //printf("rin=%e\n",rin);
@@ -924,7 +917,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			if((pass==0)&&(ismooth==0)){
 			  if(curoct->cell[icell].marked>0) abort();
 			}
-			
+
 			switch(pass){
 			  //=========================================================
 			case 0: // marking cell already refined or marked marker=1/4
@@ -998,8 +991,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				  }
 #endif
 
-
-
 				  newcell=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
 				  if(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked==0) {
 				    curoct->nei[vnei[ii]]->child->cell[vcell[ii]].marked=marker;
@@ -1032,7 +1023,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 					continue;
 				      }
 #endif
-				      
+
 #ifdef TRANSXP
 				      if((il==1)&&((newoct->x+2.*dx)==1.)){
 					newcell2=NULL;
@@ -1067,7 +1058,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 					continue;
 				      }
 #endif
-				      
+
 
 
 				      newcell2=&(newoct->nei[vnei2[il]]->child->cell[vcell2[il]]);
@@ -1080,7 +1071,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 				      newcell2=NULL;
 				    }
 				  }
-				  
+
 				  // ecah of the 4 side neighbors will mark 2 corners
 				  if(newcell2!=NULL){
 				    desoct=cell2oct(newcell2);
@@ -1100,31 +1091,31 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 					    continue;
 					  }
 #endif
-					  
+
 #ifdef TRANSXP
 					  if((ip==1)&&((desoct->x+2.*dx)==1.)){
 					    continue;
 					  }
 #endif
-					  
+
 #ifdef TRANSYM
 					  if((ip==2)&&(desoct->y==0.)){
 					    continue;
 					  }
 #endif
-					  
+
 #ifdef TRANSYP
 					  if((ip==3)&&(desoct->y+2.*dx==1.)){
 					    continue;
 					  }
 #endif
-					  
+
 #ifdef TRANSZM
 					  if((ip==4)&&(desoct->z==0.)){
 					    continue;
 					  }
 #endif
-					  
+
 #ifdef TRANSZP
 					  if((ip==5)&&(desoct->z+2.*dx==1.)){
 					    continue;
@@ -1132,7 +1123,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 					  if(desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked==0){
 					    desoct->nei[vnei3[ip]]->child->cell[vcell3[ip]].marked=marker;
-					    
+
 					    nmark++;stati[1]++;
 					  }
 					}
@@ -1166,19 +1157,19 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef EVRARD
 			    // ===================== EVRARD TEST ================
 
- 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse); 
+ 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
 
-#else			    
+#else
 			    // ===================== AMR COSMO ================
-			    
+
 			    // First we define the density
-#ifdef TESTCOSMO 
-			    
+#ifdef TESTCOSMO
+
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
 #endif
@@ -1195,10 +1186,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    den=curoct->cell[icell].gdata.d;
 #endif
 
-#endif 
-			    
+#endif
+
 			    // Second we apply a criterion
-			    
+
 #ifdef PIC
 #ifdef EDBERT
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
@@ -1251,7 +1242,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #else
 			    // ===================== AMR NO COSMO ================
 
- 
+
 
 #ifdef WGRAV
 			    mcell=den*(curoct->level>=param->lcoarse);
@@ -1266,47 +1257,63 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WRADTEST
 			    // == START AMR STRATEGY FOR RAD TESTS
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+
 #ifdef TESTCLUMP
 			    REAL den2;
 			    den2=curoct->cell[icell].rfield.nh*param->unit.unit_N;
 			    den=-1;
-			    
+
 			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if((((den<8e-1)&&(den>1e-1))||(den2>250.))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
-			    } 
-			    
+			    }
+
 #else
 			    //mcell=0.;
 			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
 			    //mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    //if(curoct->cell[icell].rfield.src>0.) printf("den=%e\n",den);
-			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
+/*
+			     if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
+			       curoct->cell[icell].marked=marker;
+			       nmark++;stati[2]++;
+			     }
+*/
+/*
+			    if(((curoct->cell[icell].field.d>1.001))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-			    /* mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//\*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05); */
-			    /* if(mcell>mmax) mmax=mcell; */
-			    /* if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) { */
-			    /*   curoct->cell[icell].marked=marker; */
-			    /*   nmark++;stati[2]++; */
-			    /* } */
+*/
+
+			    //~ mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//\*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05); */
+			    //~ if(mcell>mmax) mmax=mcell;
+			    //~ if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      //~ curoct->cell[icell].marked=marker;
+			      //~ nmark++;stati[2]++;
+			    //~ }
+
+
+
+
 #endif
  			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
-			    } 
-			    
+			    }
+
 			    // == END AMR STRATEGY FOR RAD TESTS
 #else
+
 #ifdef WCHEM
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+
 #endif
 #endif
 
@@ -1317,7 +1324,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif
 
 #ifdef TUBE
-			    
+
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
@@ -1325,10 +1332,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 #endif
-#endif			      
+#endif
 
 			  }
-			  
+
 			}
 		      }
 		  }while(nextoct!=NULL);
@@ -1368,12 +1375,12 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 //=============================================================================
 
 void clean_marks(int levelmax,struct OCT **firstoct){
-  
+
   int level;
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
-    
+
     for(level=1;level<=levelmax;level++) // looping over levels
       {
 	nextoct=firstoct[level-1];
@@ -1387,18 +1394,18 @@ void clean_marks(int levelmax,struct OCT **firstoct){
 		curoct->cell[icell].marked=0.;
 	      }
 	  }while(nextoct!=NULL);
-	
+
       }
 }
 //=============================================================================
 //=============================================================================
 
 void L_clean_marks(int level,struct OCT **firstoct){
-  
+
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
-  
+
   nextoct=firstoct[level-1];
   if(nextoct!=NULL){
     do // sweeping level
