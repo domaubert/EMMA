@@ -46,15 +46,40 @@ int countpart(struct PART* phead)
   nexp=phead; //sweeping the particles of the current cell */
   if(nexp!=NULL){ 
     do{  
-      npart++;
       curp=nexp; 
       nexp=curp->next; 
+      npart++;
+    }while(nexp!=NULL); 
+  }
+
+  return npart;
+}
+  // ==========================================
+
+int countpartDM(struct PART* phead)
+{
+  struct PART* curp;
+  struct PART* nexp;
+  int npart=0;
+
+  curp=NULL;
+  nexp=phead; //sweeping the particles of the current cell */
+  if(nexp!=NULL){ 
+    do{  
+      curp=nexp; 
+      nexp=curp->next; 
+#ifdef STARS
+      npart+=(curp->isStar!=1);
+#else
+      npart++;
+#endif
     }while(nexp!=NULL); 
   }
 
   return npart;
 }
 
+//------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
 struct PART* modifpospart(struct PART* phead, REAL len, int dir)

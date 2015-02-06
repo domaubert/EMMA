@@ -1223,7 +1223,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
 #else
 #ifdef PIC
-			    mcell=countpart(curoct->cell[icell].phead);
+			    mcell=countpartDM(curoct->cell[icell].phead);
 			    threshold=param->amrthresh0;
 #else
 			    printf("AMR on particles SET ON without PIC enabled\n");
