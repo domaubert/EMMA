@@ -83,6 +83,26 @@ int gpoiss(REAL lambda){
 //		STARS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+int countstar(struct PART* phead)
+{
+  struct PART* curp;
+  struct PART* nexp;
+  int npart=0;
+
+  curp=NULL;
+  nexp=phead; //sweeping the particles of the current cell */
+  if(nexp!=NULL){ 
+    do{  
+      curp=nexp; 
+      nexp=curp->next; 
+      npart+=(curp->isStar==1);
+    }while(nexp!=NULL); 
+  }
+
+  return npart;
+}
+
+
 void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx, REAL mlevel) {
 
 	star->next  = NULL;

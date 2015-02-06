@@ -216,24 +216,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
           max_T=FMAX(max_T,curcell->rfield.temp);
           max_rho=FMAX(max_rho,curcell->field.d);
-/*
-          //if (param->stars->n)
-          {
-            struct PART *nexp=curcell->phead;
-            do{
-              if(nexp==NULL) continue;
-              struct PART *curp =nexp;
-              nexp=curp->next;
-
-              if (curp->isStar){
-                REAL age =  param->cosmo->tphy-curp->age;
-                if(1){
-                  sfr+=curp->mass*param->unit.unit_mass/2e30 / POW(param->unit.unit_l/1e6/PARSEC,3); //Mo/(MPC
-                }
-              }
-            }while(nexp!=NULL);
-          }
-*/
         }
       }
       ncell+=8;
