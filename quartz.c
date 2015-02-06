@@ -1977,7 +1977,7 @@ blockcounts[0]++; // For SN feedback
         cond1=0;
 
         int offset=0;
-        if (nsteps==0) offset = (int)param.cosmo->tphy/param.dt_dump;
+        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
 
         REAL a=param.cosmo->tphy;
         REAL b=(int)(ndumps+offset)*param.dt_dump;
