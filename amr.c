@@ -1183,6 +1183,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #else
 
 #ifdef WGRAV
+			    // ->> utilise pour la cosmo // le gaz est utilise
 			    den=curoct->cell[icell].gdata.d;
 #endif
 
@@ -1218,23 +1219,22 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    refarea=(curoct->level>=param->lmaxzoom);
 #endif
 
+#ifndef AMRPART
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
+#else
+#ifdef PIC
+			    mcell=countpart(curoct->cell[icell].phead);
+			    threshold=param->amrthresh0;
+#else
+			    printf("AMR on particles SET ON without PIC enabled\n");
+			    abort();
+#endif
+#endif
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
   			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-/* #ifdef WRAD */
-/* 			    // testing refinement around sources */
-/* 			    REAL src; */
-/* 			    //printf("check\n"); */
-/* 			    src=curoct->cell[icell].rfield.src; */
-/* 			    if((src>0)&&(curoct->cell[icell].marked==0)) { */
-/*   			      curoct->cell[icell].marked=marker; */
-/* 			      nmark++;stati[2]++; */
-/* 			    } */
-
-/* #endif */
 
 			    // --------------- MAIN AMR COSMO
 #endif
@@ -1367,7 +1367,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   mmax=MMAX;
 #endif
 
-  if(cpu->rank==RANK_DISP) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,param->amrthresh);
+  if(cpu->rank==RANK_DISP) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,threshold);
 
 }
 

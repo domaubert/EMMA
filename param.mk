@@ -41,6 +41,7 @@ DEFINES  +=  -DGRAFIC
 #------------ PIC OPTIONS ----------------------
 #DEFINES += -DPART_EGY
 #DEFINES += -DPERFECT
+DEFINES += -DAMRPART
 
 #------------ GRAV OPTIONS ----------------------
 #DEFINES  +=  -DFASTGRAV
@@ -80,6 +81,6 @@ DEFINES  += -DCOARSERAD
 
 # ---- OUTPUT--------------
 #DEFINES += -DWDBG
-DEFINES += -DMOVIE
+#DEFINES += -DMOVIE
 DEFINES += -DBKP
-DEFINES += -DMULTIFOLDER
+#DEFINES += -DMULTIFOLDER

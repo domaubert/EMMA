@@ -685,7 +685,6 @@ blockcounts[0]++; // For SN feedback
   if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh0, threshold);
   param.amrthresh= threshold;
 #endif
-
   gstride=FMAX(8,param.gstride);//POW(2,levelcoarse);
   hstride=FMAX(8,param.hstride);//POW(2,levelcoarse);
   rstride=hstride;

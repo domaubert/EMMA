@@ -660,8 +660,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // Overshoot tmax
     dtnew=((param->time_max-tloc)<dtnew?(param->time_max-tloc):dtnew);
-    //printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
-    //printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
+    if(cpu->rank==RANK_DISP){    printf("dtnew=%e %e %e",dtnew,param->time_max,tloc);
+      printf("aexp=%e tloc=%e param->tmax=%e dtnew=%e ",aexp,tloc,param->time_max,dtnew);
+    }
 
     // Free Fall
 #ifdef WGRAV
