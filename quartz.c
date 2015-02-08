@@ -1752,7 +1752,7 @@ blockcounts[0]++; // For SN feedback
   param.time_max=tmax;
 
 
-
+  mkdir("data/", 0755);
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   //#ifdef STARS
