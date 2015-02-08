@@ -1680,12 +1680,12 @@ blockcounts[0]++; // For SN feedback
     MPI_Barrier(cpu.comm);
 	printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
-    sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
+    sprintf(filename,"data/bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
     cpu.freepart=freepart;
 #endif
 
-    sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank);
+    sprintf(filename,"data/bkp/grid.%05d.p%05d",param.nrestart,cpu.rank);
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 

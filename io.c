@@ -2271,7 +2271,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	adump=tdump;
 #endif
 
-
 #ifdef MULTIFOLDER
   char folder_step[128];
   char folder_field[128];
