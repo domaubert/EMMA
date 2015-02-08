@@ -1273,9 +1273,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// periodic boundary conditions
 
-	x+=((x<0.)-(x>1.))*1.; 
-	y+=((y<0.)-(y>1.))*1.; 
-	z+=((z<0.)-(z>1.))*1.; 
+	x+=((x<0.)-(x>1.))*1.;
+	y+=((y<0.)-(y>1.))*1.;
+	z+=((z<0.)-(z>1.))*1.;
 
 	// ugly fix for huge config in SINGLE FLOAT precision
 	// generally affects a tiny fraction of particle (like 1 over 1e7)
@@ -2330,13 +2330,16 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    if(cpu->rank==RANK_DISP){
 	      printf("BACKUP .......#%d\n",*cpu->ndumps%2+1);
 	    }
+      char folder_bkp[128];
+      sprintf(folder_bkp,"data/bkp/");
+      mkdir(folder_bkp, 0755);
 
-	    sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
+	    sprintf(filename,"data/bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
 	    save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 
 #ifdef PIC
 	    // backups for restart
-	    sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
+	    sprintf(filename,"data/bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
 	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 #endif
 
