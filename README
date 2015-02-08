@@ -1,20 +1,11 @@
 How to get:
-	sudo apt-get install git
-	git init
-	git clone https://github.com/domaubert/Quartz.git
-	cd Quartz
+	git clone https://github.com/domaubert/EMMA.git
 
 how to build:
-	sudo apt-get install libopenmpi-dev gfortran
+	cp param_init.mk param.mk
 	make
 
 how to launch
-	on first launch:
-		- create a "data" directory 
-		- create a "data/movie" directory 
-		- create a "bkp" directory 
-	
-	./genIC 
-
-	mpirun -np N ./quartzcpu params/test_cosmo.run
+  cp param_init.run param.run
+	mpirun -np N ./quartzcpu param.run
 
