@@ -1680,12 +1680,12 @@ blockcounts[0]++; // For SN feedback
     MPI_Barrier(cpu.comm);
 	printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
-    sprintf(filename,"bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
+    sprintf(filename,"data/bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
     cpu.freepart=freepart;
 #endif
 
-    sprintf(filename,"bkp/grid.%05d.p%05d",param.nrestart,cpu.rank);
+    sprintf(filename,"data/bkp/grid.%05d.p%05d",param.nrestart,cpu.rank);
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 
@@ -1752,7 +1752,7 @@ blockcounts[0]++; // For SN feedback
   param.time_max=tmax;
 
 
-
+  mkdir("data/", 0755);
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   //#ifdef STARS
@@ -1977,7 +1977,7 @@ blockcounts[0]++; // For SN feedback
         cond1=0;
 
         int offset=0;
-        if (nsteps==0) offset = (int)param.cosmo->tphy/param.dt_dump;
+        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
 
         REAL a=param.cosmo->tphy;
         REAL b=(int)(ndumps+offset)*param.dt_dump;

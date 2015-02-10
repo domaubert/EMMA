@@ -1279,9 +1279,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// periodic boundary conditions
 
-	x+=((x<0.)-(x>1.))*1.; 
-	y+=((y<0.)-(y>1.))*1.; 
-	z+=((z<0.)-(z>1.))*1.; 
+	x+=((x<0.)-(x>1.))*1.;
+	y+=((y<0.)-(y>1.))*1.;
+	z+=((z<0.)-(z>1.))*1.;
 
 	// ugly fix for huge config in SINGLE FLOAT precision
 	// generally affects a tiny fraction of particle (like 1 over 1e7)
@@ -2258,6 +2258,32 @@ void copy_param(const char *folder){
 
 }
 
+void makeFolders(struct CPUINFO *cpu){
+
+  char folder_step[128];
+  char folder_field[128];
+
+  sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
+  mkdir(folder_step, 0755);
+
+  sprintf(folder_field,"%sgrid/",folder_step);
+  mkdir(folder_field, 0755);
+  copy_param(folder_field);
+
+#ifdef PIC
+  sprintf(folder_field,"%spart/",folder_step);
+  mkdir(folder_field, 0755);
+  copy_param(folder_field);
+#endif // PIC
+
+#ifdef STARS
+  sprintf(folder_field,"%sstar/",folder_step);
+  mkdir(folder_field, 0755);
+  copy_param(folder_field);
+#endif // STARS
+
+}
+
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
 
   REAL tdump,adump;
@@ -2277,12 +2303,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	adump=tdump;
 #endif
 
-
 #ifdef MULTIFOLDER
   char folder_step[128];
   char folder_field[128];
   sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
-  mkdir(folder_step, 0755);
+  makeFolders(cpu);
 #endif
 
 	if(pdump){
@@ -2290,14 +2315,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifdef PIC
 
 #ifdef MULTIFOLDER
-#ifdef STARS
-    sprintf(folder_field,"%sstar/",folder_step);
-    mkdir(folder_field, 0755);
-    copy_param(folder_field);
-#endif // STARS
     sprintf(folder_field,"%spart/",folder_step);
-    mkdir(folder_field, 0755);
-    copy_param(folder_field);
     sprintf(filename,"%spart.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
 #else
 	  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
@@ -2307,6 +2325,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("Dumping .......");
 	    printf("%s %p\n",filename,cpu->part);
 	  }
+
 	  dumppart(firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 
 #endif
@@ -2315,13 +2334,10 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  // === Hydro dump
 #ifdef MULTIFOLDER
     sprintf(folder_field,"%sgrid/",folder_step);
-    mkdir(folder_field, 0755);
-    copy_param(folder_field);
     sprintf(filename,"%sgrid.%05d.p%05d",folder_field,*(cpu->ndumps),cpu->rank);
 #else
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif
-
 
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
@@ -2336,13 +2352,16 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    if(cpu->rank==RANK_DISP){
 	      printf("BACKUP .......#%d\n",*cpu->ndumps%2+1);
 	    }
+      char folder_bkp[128];
+      sprintf(folder_bkp,"data/bkp/");
+      mkdir(folder_bkp, 0755);
 
-	    sprintf(filename,"bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
+	    sprintf(filename,"data/bkp/grid.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
 	    save_amr(filename,firstoct,tdump,cpu->tinit,cpu->nsteps,*(cpu->ndumps),param,cpu,cpu->firstpart,adt);
 
 #ifdef PIC
 	    // backups for restart
-	    sprintf(filename,"bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
+	    sprintf(filename,"data/bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
 	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
 #endif
 

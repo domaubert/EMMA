@@ -359,6 +359,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef TESTCOSMO
   aexp=cosmo->aexp;
+	param->cosmo->tphy	= a2t(param, aexp);
 #else
   aexp=1.0;
 #endif
@@ -530,8 +531,27 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // (note fields are dumped in quartz.c
 
 #ifndef EDBERT
+
+      int cond1 = nsteps%param->ndumps==0;
+      int cond2 = 0;
+      int cond3 = tloc>=param->time_max;
+
+#ifdef TESTCOSMO
+
+      if (param->dt_dump){
+        cond1=0;
+
+        int offset=0;
+        if (nsteps==0) offset = (int)(param->cosmo->tphy/param->dt_dump);
+
+        REAL a=param->cosmo->tphy;
+        REAL b=(int)(*(cpu->ndumps)+offset)*param->dt_dump;
+        cond2=a>b;
+        if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param->dt_dump);
+      }
+#endif // TESTCOSMO
     if(level==param->lcoarse){
-      if((cpu->nsteps%(param->ndumps)==0)||(tloc>=param->time_max)){
+if(cond1||cond2||cond3){
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
 	//dumpIO(tloc,param,cpu,firstoct,adt,0);
@@ -995,11 +1015,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
     /* //===================================creating new stars=================================// */
-
-
-#ifdef TESTCOSMO
-	param->cosmo->tphy	= a2t(param, aexp);
-#endif // TESTCOSMO
 
 #ifdef STARS
 #ifdef ZOOM
