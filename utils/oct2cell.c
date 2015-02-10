@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  // getting the field 
+  // getting the field
   sscanf(argv[3],"%d",&field);
 
   //getting the resolution
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   }
 
   // scanning the cpus
-  
+
   int icpustart,icpustop;
   if(mono<0){
     icpustart=0;
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
 
   nc=0;
   for(icpu=icpustart;icpu<icpustop;icpu++){
-    
-    
+
+
     // building the input file name
     strcpy(format,argv[1]);
     strcat(format,".p%05d");
@@ -128,12 +128,12 @@ int main(int argc, char *argv[])
     // counting cells
 
     fp=fopen(fname,"rb");
-  
+
     if(fp==NULL){
       printf("--ERROR -- file not found\n");
       return 1;
     }
-    
+
     // reading the time
     dummy=fread(&tsim,sizeof(REAL),1,fp);
 #ifdef WRAD
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
     // reading the zerooct
     dummy=fread(&zerooct,sizeof(struct OCT *),1,fp);
 
-    
+
     dummy=fread(&oct,sizeof(struct LOCT),1,fp);
     while(!feof(fp)){
       for(icell=0;icell<8;icell++) // looping over cells in oct
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 	      if((zc<zmin)||(zc>zmax)){
 		continue;
 	      }
-	      
+
 	      int flag;
 	      if(mono>=0){
 		flag=(oct.cpu>=0);
@@ -175,17 +175,17 @@ int main(int argc, char *argv[])
 	    }
 	}
       dummy=fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
-    }    
+    }
     fclose(fp);
   }
   printf("Found %ld leaf cells\n",nc);
-  
+
   map=(float *)calloc(nc*NREAL,sizeof(float)); // NREAL=5 3 for pos, 1 for level, 1 for data
 
   ic=0;
   for(icpu=icpustart;icpu<icpustop;icpu++){
-    
-    
+
+
     // building the input file name
     strcpy(format,argv[1]);
     strcat(format,".p%05d");
@@ -199,13 +199,13 @@ int main(int argc, char *argv[])
     // getting data
     printf("Looking for data in %s\n",fname);
     fp=fopen(fname,"rb");
-  
+
     if(fp==NULL){
       printf("--ERROR -- file not found\n");
       return 1;
     }
-    
-    
+
+
     // reading the time
     dummy=fread(&tsim,sizeof(REAL),1,fp);
 #ifdef WRAD
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
     //printf("size of the OCT=%ld\n",sizeof(struct OCT));
 
-    
+
     dummy=fread(&oct,sizeof(struct OCT),1,fp);
     while(!feof(fp)){
       dxcur=1./pow(2.,oct.level);
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 	      if((zc<zmin)||(zc>zmax)){
 		continue;
 	      }
-	      
+
 	      int flag;
 	      if(mono>=0){
 		flag=(oct.cpu>=0);
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 		case 105:
 		  map[ic*NREAL+4]=oct.cell[icell].p;
 		  break;
-#endif			  
+#endif
 
 #ifdef WRAD
 		case 701:
@@ -334,26 +334,26 @@ int main(int argc, char *argv[])
 		  break;
 #endif
 #endif
-			      
+
 		}
 		ic++;
 	      }
 	    }
 	}
       dummy=fread(&oct,sizeof(struct OCT),1,fp); //reading next oct
-    }    
+    }
     fclose(fp);
   }
   printf("done with %d cells\n",ic);
-      
+
   //============= dump
-    
+
     if(!dumpsilo){
       printf("dumping %s with nleaf=%d\n",fname2,nc);
       fp=fopen(fname2,"wb");
       fwrite(&nc,1,sizeof(int),fp);
       fwrite(&tsimf,1,sizeof(float),fp);
-      for(I=0;I<nc;I++) fwrite(map+I*NREAL,sizeof(REAL),NREAL,fp);
+      for(I=0;I<nc;I++) fwrite(map+I*NREAL,sizeof(float),NREAL,fp);
       status=ferror(fp);
       fclose(fp);
     }
@@ -370,13 +370,13 @@ int main(int argc, char *argv[])
       float *z;
       int dims[]={nmap+1,nmap+1,nmap+1};
       int ndims=3;
-      
+
       x=(float*)malloc(sizeof(float)*(nmap+1));
       y=(float*)malloc(sizeof(float)*(nmap+1));
       z=(float*)malloc(sizeof(float)*(nmap+1));
 
       float *coords[]={x,y,z};
-      
+
       int i;
       for(i=0;i<=nmap;i++){
 	x[i]=((i*1.0)/nmap-0.);
@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
 
       int dimsvar[]={nmap,nmap,nmap};
       int ndimsvar=3;
-      
+
       DBPutQuadmesh(dbfile,"quadmesh",NULL,coords,dims,ndims,DB_FLOAT,DB_COLLINEAR,NULL);
       DBPutQuadvar1(dbfile,"monvar","quadmesh",map,dimsvar,ndimsvar,NULL,0,DB_FLOAT,DB_ZONECENT,NULL);
 
@@ -394,5 +394,5 @@ int main(int argc, char *argv[])
     }
   printf("status=%d\n",status);
   free(map);
-  
+
 }
