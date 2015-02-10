@@ -41,7 +41,7 @@ DEFINES  +=  -DGRAFIC
 #------------ PIC OPTIONS ----------------------
 #DEFINES += -DPART_EGY
 #DEFINES += -DPERFECT
-DEFINES += -DAMRPART
+#DEFINES += -DAMRPART
 
 #------------ GRAV OPTIONS ----------------------
 #DEFINES  +=  -DFASTGRAV
