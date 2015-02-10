@@ -12,9 +12,14 @@ rep="./data_4_new_wsrc_ministar_x3/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;n
 rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
 //rep="./data_4_new_wsrc_ministar_x3_mono_vb/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=37; // years
 //rep="./data_4_new_wsrc_ministar_x3_mono_noamr_higheff/";ncpu=32; srcint=5e16; tlife=20e6; sbox=4.;nsnap=25; // years
-rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=14 // years
+//rep="./dataSN/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=36; // years
+//rep="./dataNOSN/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=20; // years
+//rep="./dataNORAD/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=64; // years
+//rep="./dataNOSNNORAD/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=34; // years
+rep="./dataAMR_PART_LONG/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=15; // years
+rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=18; // years
 
-col="green";
+col="yellow";
 lcoarse=7.;
 bint=spanl(1e8,1e9,32);
 

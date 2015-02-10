@@ -189,7 +189,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
 
-  int ncell=0;
   int max_level=0;
 
   REAL mean_xion=0;
@@ -201,36 +200,43 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 
   int level;
+  REAL vweight;
   for(level=param->lcoarse;level<=param->lmax;level++){
-	struct OCT *nextoct=firstoct[level-1];
-    do{if(nextoct==NULL) continue;
-      max_level=level;
+    struct OCT *nextoct=firstoct[level-1];
+    vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
+    do{
+      if(nextoct==NULL) continue;
       struct OCT *curoct=nextoct;
       nextoct=curoct->next;
+      if(curoct->cpu!=cpu->rank) continue;// ne pas compter les quantites des cellules de bord
+      max_level=level;
       int icell;
       for(icell=0;icell<8;icell++) {
-        struct CELL *curcell = &curoct->cell[icell];
-        if( curcell->child==NULL){
-          mean_xion+=curcell->field.dX/curcell->field.d;
-          mean_T+=curcell->rfield.temp;
-
-          max_T=FMAX(max_T,curcell->rfield.temp);
-          max_rho=FMAX(max_rho,curcell->field.d);
-        }
+	struct CELL *curcell = &curoct->cell[icell];
+	if( curcell->child==NULL){
+	  // ajout d'une ponderation en volume, plus conforme a l'idee de moyenne
+	  // note somme(vweight)=1.
+	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
+	  mean_T+=curcell->rfield.temp*vweight;
+	
+	  max_T=FMAX(max_T,curcell->rfield.temp);
+	  max_rho=FMAX(max_rho,curcell->field.d);
+	}
       }
-      ncell+=8;
     }while(nextoct!=NULL);
   }
 
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm); mean_xion/=cpu->nproc*ncell;
-  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm); mean_T/=cpu->nproc*ncell;
-
+  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm); 
+  //mean_xion/=cpu->nproc*ncell; // plus necessaire suite a la ponderation en volume
+  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm); 
+  //mean_T/=cpu->nproc*ncell;
+  
   MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
-//  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
+  //  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
+  //MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm); // plus necessaire suite a la ponderation en volume
+  MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
 
 
