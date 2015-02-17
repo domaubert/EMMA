@@ -279,7 +279,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
   do{ curp=nexp;
     nexp=curp->next;
 
-    if (curp->isStar==2){
+    if (curp->isStar==2 || curp->isStar==3){
 
       REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
       REAL fKIN = compute_fkin(param,cell,E,level,aexp);

@@ -91,12 +91,12 @@ int countstar(struct PART* phead)
 
   curp=NULL;
   nexp=phead; //sweeping the particles of the current cell */
-  if(nexp!=NULL){ 
-    do{  
-      curp=nexp; 
-      nexp=curp->next; 
+  if(nexp!=NULL){
+    do{
+      curp=nexp;
+      nexp=curp->next;
       npart+=(curp->isStar==1);
-    }while(nexp!=NULL); 
+    }while(nexp!=NULL);
   }
 
   return npart;
@@ -113,7 +113,6 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->x = xc + rdm(-0.5,0.5) * dx;
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
-
 
  	star->vx = cell->field.u;
 	star->vy = cell->field.v;
@@ -312,7 +311,9 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   state = 0 -> Dark Matter
   state = 1 -> Radiative Star
   state = 2 -> Supernovae
-  state = 3 -> Dead star
+  state = 3 -> Supernovae + decreasing luminosity
+  state = 4 -> decreasing luminosity
+  state = 5 -> Dead star
   */
 
   struct OCT  *curoct;
@@ -334,28 +335,34 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
         nexp=curp->next;
 
         //------------------------------------------------//
-
-        if(curp->isStar==2){
-          curp->isStar=3;
-
-          /*
-          t0 =  param->cosmo->tphy - curp->age;
-          if(t0>=0){ // for inter-level communications
-            if ( t0 >= (param->stars->tlife*11)){
-              curp->isStar = 3;
-            }
-            else if ( t0 >= param->stars->tlife){
-              curp->isStar = 3;
-          */
-        }
-
-        if(curp->isStar==1){
+        if(curp->isStar){
           REAL t0 =  param->cosmo->tphy - curp->age;
-          if ( t0 >= param->stars->tlife){
-              curp->isStar = 2;
+          REAL tlife = param->stars->tlife;
+
+
+          if( (curp->isStar==4) && (t0>=50*tlife) ){
+            curp->isStar=5; /// decreasing luminosity -> dead star
+          }
+
+
+          if( curp->isStar==3){
+            curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
+            //curently supernovae are instantaneous
+          }
+
+          if(curp->isStar==2){
+            curp->isStar=5; /// supernovae -> dead star
+            //curently supernovae are instantaneous
+          }
+
+          if( (curp->isStar==1) && (t0>=tlife) ){
+#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+            curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
+#else
+            curp->isStar=2; /// radiative -> supernovae
+#endif
           }
         }
-
         //------------------------------------------------//
 
       }while(nexp!=NULL);

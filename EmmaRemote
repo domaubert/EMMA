@@ -23,7 +23,7 @@ def sshcom(command, username, remotehost):
 		print result
 
 def listfile(paramfile):
-	files_to_compress = ["Makefile", paramfile, "quartz"]
+	files_to_compress = ["quartz"]
 	files = os.listdir(".")	
 	for file in files:
 		if file[-2:] == ".h" or file[-2:] == ".c" : 
