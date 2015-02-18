@@ -77,6 +77,41 @@ func readcell(fname,&time){
   return map;
 }
 
+
+func savesplit(fname,field,time){
+  fp=open(fname,"wb");
+  adress=0;
+  nslice=int(dimsof(field)(0));
+  time=float(time);
+  _write,fp,adress,nslice;adress+=sizeof(nslice);
+  _write,fp,adress,time;adress+=sizeof(time);
+  for(i=0;i<nslice/256;i++){
+    i;
+    ff=field(,,i*256+1:(i+1)*256);
+    _write,fp,adress,ff;adress+=sizeof(ff);
+  }
+  close,fp;
+}
+
+func readsplit(fname,&time){
+  fp=open(fname,"rb");
+  adress=0;
+  nslice=array(int);
+  time=array(float);
+  _read,fp,adress,nslice;adress+=sizeof(nslice);
+  _read,fp,adress,time;adress+=sizeof(time);
+  write,"nslice=",nslice;
+  field=array(float,nslice,nslice,nslice);
+  ff=array(float,nslice,nslice,256);
+  for(i=0;i<nslice/256;i++){
+    i;
+    _read,fp,adress,ff;adress+=sizeof(ff);
+    field(,,i*256+1:(i+1)*256)=ff;
+  }
+  close,fp;
+  return field;
+}
+
 func mapcpu(fname,ncpu){
 
   for(i=0;i<ncpu;i++)
