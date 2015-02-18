@@ -225,9 +225,22 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       nss++;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
-      flag=1;
       //printf("SRC= %e\n",cell->rfield.src);
+      flag=1;
     }
+
+#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+    if (curp->isStar==3 || curp->isStar==4){ //Supernovae + decreasing luminosity OR decreasing luminosity
+      nss++;
+      REAL slope = -4.; //slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
+      //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
+      REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
+      REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
+      cell->rfield.src +=  src*POW(t,slope);;
+      //printf("SRC= %e\n",cell->rfield.src);
+      flag=1;
+    }
+#endif
 
   }while(nexp!=NULL);
 

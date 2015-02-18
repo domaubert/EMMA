@@ -6,7 +6,7 @@ import subprocess
 user_default = "deparis"
 host_default = "hpc-login"
 folder_default = "Quartz6/"
-paramfile_default = "params/test_strom.run"
+paramfile_default = "param.run"
 tar = "Emma.tar"
 
 def sshcom(command, username, remotehost):
@@ -23,13 +23,13 @@ def sshcom(command, username, remotehost):
 		print result
 
 def listfile(paramfile):
-	files_to_compress = ["Makefile", paramfile, "quartz"]
+	files_to_compress = ["quartz"]
 	files = os.listdir(".")	
 	for file in files:
 		if file[-2:] == ".h" or file[-2:] == ".c" : 
 			files_to_compress.append(file)
 	files = os.listdir("atomic_data/")
-	for file in files:
+	for file in files:	
 		if file[-2:] == ".h":
 			files_to_compress.append("atomic_data/"+file)
 	return files_to_compress
