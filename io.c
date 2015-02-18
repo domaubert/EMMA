@@ -9,6 +9,7 @@
 #include "friedmann.h"
 #include "segment.h"
 #include "stars.h"
+#include "atomic_data/Atomic.h"
 
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 
@@ -180,8 +181,12 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpInfo("data/param.info", param, cpu);
   dumpFile("param.mk", "data/param.mk");
   dumpFile(fparam, "data/param.run");
-
+#ifdef SRCINT
+  if(cpu->rank==RANK_DISP)
+  printf("srcint set in Atomic.h to %e\n",param->srcint);
+#endif
   printf("\n");
+
   //abort();
 }
 
@@ -218,7 +223,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 	  // note somme(vweight)=1.
 	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
 	  mean_T+=curcell->rfield.temp*vweight;
-	
+
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 	  max_rho=FMAX(max_rho,curcell->field.d);
 	}
@@ -227,11 +232,11 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   }
 
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm); 
+  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm);
   //mean_xion/=cpu->nproc*ncell; // plus necessaire suite a la ponderation en volume
-  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm); 
+  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm);
   //mean_T/=cpu->nproc*ncell;
-  
+
   MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
   //  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
@@ -1080,6 +1085,11 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 #ifdef STARS
     param->stars->n		= 0;
+#endif
+
+
+#ifdef SRCINT
+  param->srcint=SRCINT;
 #endif
 
 }

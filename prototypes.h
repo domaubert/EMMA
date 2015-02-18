@@ -112,6 +112,7 @@ typedef double REAL;
 //#define N_SNII (0.742e-2)    //[8->100MO]
 
 
+
 //=======================================
 
 #define LIFETIME_OF_STARS_IN_TEST (0*3e6)
