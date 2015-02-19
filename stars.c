@@ -339,11 +339,9 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
           REAL t0 =  param->cosmo->tphy - curp->age;
           REAL tlife = param->stars->tlife;
 
-
           if( (curp->isStar==4) && (t0>=50*tlife) ){
             curp->isStar=5; /// decreasing luminosity -> dead star
           }
-
 
           if( curp->isStar==3){
             curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
@@ -394,7 +392,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	REAL res = param->stars->mass_res;
 	REAL mlevel=0;
 	if(res>=0){mlevel=param->lcoarse;}
-	else{mlevel=level+1;}
+	else{mlevel=level+1;res*=-1.;}
   mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
 

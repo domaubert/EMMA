@@ -69,116 +69,128 @@ void thermalFeedback(struct CELL *cell,  REAL E){
 
 void kineticFeedback(struct CELL *cell, REAL E){
 
-    int type = 0;   //oct
- //  int type = 1;   //cardinal
-//    int type = 2;   //cardinal manual
+#if 1
+//oct feedback
+  struct OCT* oct = cell2oct(cell);
 
-    switch(type){
+  int i;
+  for(i=0;i<8;i++){
+      struct CELL* curcell = &oct->cell[i];
 
-        case 0:{
-            struct OCT* oct = cell2oct(cell);
+      REAL e = E/8.;
+      REAL V = SQRT(2.*e/curcell->field.d);
 
-            int i;
-            for(i=0;i<8;i++){
-                struct CELL* curcell = &oct->cell[i];
+      float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
+      float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+      float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
-                REAL e = E/8.;
-                REAL V = SQRT(2.*e/curcell->field.d);
+      curcell->field.u += dir_x[i] * V /2.; // 1/2 = cos45 * cos45
+      curcell->field.v += dir_y[i] * V /2.;
+      curcell->field.w += dir_z[i] * V /2.;
 
-                float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
-                float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-                float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+  }
+#endif
 
-                curcell->field.u += dir_x[i] * V /2.; // 1/2 = cos45 * cos45
-                curcell->field.v += dir_y[i] * V /2.;
-                curcell->field.w += dir_z[i] * V /2.;
+#if 0
+//cardinal feedback
+  struct CELL* neicell[6];
+  getneicell_6(cell, neicell);
 
-            }
-            break;
-        }
+  int i;
+  for(i=0;i<6;i++){
+      struct CELL* curcell = neicell[i];
 
-        case 1:{
+      if (curcell!=NULL) {
+          REAL dir_x[]={-1., 1., 0., 0., 0., 0.};
+          REAL dir_y[]={ 0., 0.,-1., 1., 0., 0.};
+          REAL dir_z[]={ 0., 0., 0., 0.,-1., 1.};
 
-            struct CELL* neicell[6];
-            getneicell_6(cell, neicell);
+          REAL e = E/6.;
+          REAL dv = SQRT(2.*e/curcell->field.d);
 
-            int i;
-            for(i=0;i<6;i++){
-                struct CELL* curcell = neicell[i];
+          curcell->field.u += dir_x[i]*dv;
+          curcell->field.v += dir_y[i]*dv;
+          curcell->field.w += dir_z[i]*dv;
+      }
+  }
+#endif
 
+}
 
-                if (curcell!=NULL) {
-                    REAL dir_x[]={-1., 1., 0., 0., 0., 0.};
-                    REAL dir_y[]={ 0., 0.,-1., 1., 0., 0.};
-                    REAL dir_z[]={ 0., 0., 0., 0.,-1., 1.};
+void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
 
-                    REAL e = E/6.;
-                    REAL dv = SQRT(2.*e/curcell->field.d);
+    //REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
 
-                    curcell->field.u += dir_x[i]*dv;
-                    curcell->field.v += dir_y[i]*dv;
-                    curcell->field.w += dir_z[i]*dv;
+    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+    struct OCT* oct = cell2oct(cell);
 
-//                    curcell->field.u += 1;
-//                    curcell->field.v += 1;
-//                    curcell->field.w += 1;
+    REAL dx = POW(2.,-level) *  aexp;
+    REAL dv = POW(dx,3.);
 
-
-
-//                REAL u = curcell->field.u;
-//                REAL v = curcell->field.v;
-//                REAL w = curcell->field.w;
-//
-//                REAL x = cell2oct(neicell[i])->x *64;
-//                REAL y = cell2oct(neicell[i])->y *64;
-//                REAL z = cell2oct(neicell[i])->z *64;
-//
-//                REAL dx = dir_x[i];
-//                REAL dy = dir_y[i];
-//                REAL dz = dir_z[i];
-
-                REAL stop = 0;
-                }
-            }
-            break;
-        }
-
-
-        case 2:{
-
-            struct OCT* curoct = cell2oct(cell);
-            struct CELL* curcell = NULL;
-
-            REAL e = E/6.;
-
-            //xm
-            curcell =  &(curoct->nei[0]->child->cell[1]);
-            REAL dv = SQRT(2.*e/curcell->field.d);
-            curcell->field.u += -dv;
-
-            //xp
-            curcell =  &(curoct->cell[1]);
-            curcell->field.u += dv;
-
-
-            curcell =  &(curoct->nei[2]->child->cell[2]);
-            curcell->field.v += -dv;
-
-            curcell =  &(curoct->cell[2]);
-            curcell->field.v += dv;
-
-            curcell =  &(curoct->nei[4]->child->cell[4]);
-            curcell->field.w += -dv;
-
-            curcell =  &(curoct->cell[4]);
-            curcell->field.w += dv;
-
-            break;
-        }
+    int i;
+    for(i=0;i<8;i++){
+        struct CELL* curcell = &oct->cell[i];
+        REAL m = mtot_feedback/8.;
+        curcell->field.d += m/dv;
     }
+    curp->mass -= mtot_feedback;
 }
 
 
+void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level){
+
+  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
+	REAL dv = POW( dx, 3.); //m3
+
+	REAL mass = curp->mass * param->unit.unit_mass/(1e6*2e30); //kg
+
+	REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+  egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
+
+	REAL E  = mass/dv *egy ; //J.m-3
+
+
+  struct OCT* oct = cell2oct(cell);
+
+  REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+  curp->mass -= mtot_feedback;
+
+  dx = POW(2.,-level) *  aexp;
+  dv = POW(dx,3.);
+
+  int i;
+  for(i=0;i<8;i++){
+    struct CELL* curcell = &oct->cell[i];
+
+    REAL e = E/8.;
+    REAL me = mtot_feedback/8.; //mass ejecta
+    REAL mi= curcell->field.d*dv; //initial mass
+    curcell->field.d += me/dv;
+
+    REAL vxi = curcell->field.u; // initial velocity
+    REAL vyi = curcell->field.v;
+    REAL vzi = curcell->field.w;
+
+    REAL pxi = vxi * mi;
+    REAL pyi = vyi * mi;
+    REAL pzi = vzi * mi;
+
+    float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
+    float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+
+    REAL aaa=1./((mi+me)*(mi*me));
+
+//    curcell->field.u = ( mi*vxi + dir_x[i]*SQRT(2.*me*e)/2. ) /(mi+me); // * 1/2 -> cos45*cos45
+//    curcell->field.v = ( mi*vyi + dir_y[i]*SQRT(2.*me*e)/2. ) /(mi+me);
+//    curcell->field.w = ( mi*vzi + dir_y[i]*SQRT(2.*me*e)/2. ) /(mi+me);
+
+    curcell->field.u = SQRT(aaa *(pxi*pxi*me + mi*2*me*E *dir_x[i]/2.));
+    curcell->field.v = SQRT(aaa *(pyi*pyi*me + mi*2*me*E *dir_y[i]/2.));
+    curcell->field.w = SQRT(aaa *(pzi*pzi*me + mi*2*me*E *dir_z[i]/2.));
+
+  }
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
@@ -243,25 +255,6 @@ REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, 
   return fKIN;
 }
 
-void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
-
-    //REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
-
-    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-    struct OCT* oct = cell2oct(cell);
-
-    REAL dx = POW(2.,-level) *  aexp;
-    REAL dv = POW(dx,3.);
-
-    int i;
-    for(i=0;i<8;i++){
-        struct CELL* curcell = &oct->cell[i];
-        REAL m = mtot_feedback/8.;
-        curcell->field.d += m/dv;
-    }
-    curp->mass -= mtot_feedback;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int SN_TMP_PARAM = 1;
@@ -286,10 +279,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
       REAL fKIN = compute_fkin(param,cell,E,level,aexp);
 
-      massFeedback(cell,curp,param,aexp,level);
-      thermalFeedback(cell, E*(1.-fKIN));
-      kineticFeedback(cell, E*(   fKIN));
-
+   //   massFeedback(cell,curp,param,aexp,level);
+   //   thermalFeedback(cell, E*(1.-fKIN));
+   //   kineticFeedback(cell, E*(   fKIN));
+      kineticFeedback2(param, cell,curp,aexp,level);
       Nsn++;
     }
   }while(nexp!=NULL);

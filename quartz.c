@@ -2057,7 +2057,7 @@ blockcounts[0]++; // For SN feedback
 	ndumps++;
       }
 
-    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt);
+    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1]);
 
 
       //==================================== timestep completed, looping
