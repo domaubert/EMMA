@@ -235,7 +235,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       if(nexp==NULL) continue;
       curp=nexp;
       nexp=curp->next;
-      if(curp->isStar>1){
+      if(curp->isStar==2||curp->isStar==3){
         Nsn++;
       }
         //------------------------------------------------//
@@ -285,15 +285,15 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
     fprintf(fp, real_format,dt);
-    fprintf(fp, int_format ,max_level);
+    fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);
 
     fprintf(fp, real_format,mean_xion);
     fprintf(fp, real_format,mean_T);
     fprintf(fp, real_format,max_T);
 
-    fprintf(fp, int_format ,param->stars->n);
-    fprintf(fp, int_format ,Nsn);
+    fprintf(fp, real_format ,(float)param->stars->n);
+    fprintf(fp, real_format ,(float)Nsn);
 
 //   fprintf(fp, real_format,sfr);
 

@@ -119,9 +119,9 @@ void kineticFeedback(struct CELL *cell, REAL E){
 
 void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
 
-    //REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
+    REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
 
-    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+    //REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
     struct OCT* oct = cell2oct(cell);
 
     REAL dx = POW(2.,-level) *  aexp;
@@ -137,26 +137,15 @@ void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, 
 }
 
 
-void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level){
-
-  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
-	REAL dv = POW( dx, 3.); //m3
-
-	REAL mass = curp->mass * param->unit.unit_mass/(1e6*2e30); //kg
-
-	REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
-  egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
-
-	REAL E  = mass/dv *egy ; //J.m-3
-
+void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
 
   struct OCT* oct = cell2oct(cell);
 
   REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
   curp->mass -= mtot_feedback;
 
-  dx = POW(2.,-level) *  aexp;
-  dv = POW(dx,3.);
+  REAL dx = POW(2.,-level)*aexp;
+  REAL dv = POW(dx,3.);
 
   int i;
   for(i=0;i<8;i++){
@@ -164,36 +153,34 @@ void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *cu
 
     REAL e = E/8.;
     REAL me = mtot_feedback/8.; //mass ejecta
-    REAL mi= curcell->field.d*dv; //initial mass
-    curcell->field.d += me/dv;
+    REAL rho_e = me/dv; // density ejecta
+    REAL rho_i = curcell->field.d; //initial density
+    curcell->field.d += rho_e; //new density
 
     REAL vxi = curcell->field.u; // initial velocity
     REAL vyi = curcell->field.v;
     REAL vzi = curcell->field.w;
 
-    REAL pxi = vxi * mi;
-    REAL pyi = vyi * mi;
-    REAL pzi = vzi * mi;
+    REAL ve = SQRT(2.*e/rho_e);//vitess ejecta
 
-    float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
-    float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-    float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
+    REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
-    REAL aaa=1./((mi+me)*(mi*me));
+    REAL vxe = ve*dir_x[i]/2.; // projection on axis, cos45*cos45 = 1/2
+    REAL vye = ve*dir_y[i]/2.;
+    REAL vze = ve*dir_z[i]/2.;
 
-//    curcell->field.u = ( mi*vxi + dir_x[i]*SQRT(2.*me*e)/2. ) /(mi+me); // * 1/2 -> cos45*cos45
-//    curcell->field.v = ( mi*vyi + dir_y[i]*SQRT(2.*me*e)/2. ) /(mi+me);
-//    curcell->field.w = ( mi*vzi + dir_y[i]*SQRT(2.*me*e)/2. ) /(mi+me);
-
-    curcell->field.u = SQRT(aaa *(pxi*pxi*me + mi*2*me*E *dir_x[i]/2.));
-    curcell->field.v = SQRT(aaa *(pyi*pyi*me + mi*2*me*E *dir_y[i]/2.));
-    curcell->field.w = SQRT(aaa *(pzi*pzi*me + mi*2*me*E *dir_z[i]/2.));
-
+    curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
+    curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
+    curcell->field.w = (vzi*rho_i + vze*rho_e)/(rho_i+rho_e);
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
+
+/*
   REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
 	REAL dv = POW( dx, 3.); //m3
 	REAL msn = mstar * param->unit.unit_mass* N_SNII; //kg
@@ -203,6 +190,17 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
 
 	//REAL s8 	 = param->stars->tlife * 31556926;;		// life time of a massive star (~20 Myr for 8 M0 star)
     //E	     *= exp( -t0*31556926/s8 )/s8;
+*/
+
+  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
+	REAL dv = POW( dx, 3.); //m3
+	REAL mass = mstar * param->unit.unit_mass/(1e6*2e30); //kg
+
+	REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+  egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
+
+	REAL E  = mass *egy/dv ; //J
+
 
 	return E;
 }
@@ -279,10 +277,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL E = computeFeedbackEnergy(param, t0, aexp, level, curp->mass);
       REAL fKIN = compute_fkin(param,cell,E,level,aexp);
 
-   //   massFeedback(cell,curp,param,aexp,level);
-   //   thermalFeedback(cell, E*(1.-fKIN));
-   //   kineticFeedback(cell, E*(   fKIN));
-      kineticFeedback2(param, cell,curp,aexp,level);
+      /*massFeedback(cell,curp,param,aexp,level);
+      thermalFeedback(cell, E*(1.-fKIN));
+      kineticFeedback(cell, E*(   fKIN));
+    */  kineticFeedback2(param, cell,curp,aexp,level,E);
       Nsn++;
     }
   }while(nexp!=NULL);
