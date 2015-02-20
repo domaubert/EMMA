@@ -305,6 +305,9 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 
+	if(cpu->rank == RANK_DISP) printf("setting states\n");
+
+
   /*
   state = 0 -> Dark Matter
   state = 1 -> Radiative Star
@@ -325,11 +328,10 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     int icell;
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
-      struct PART *curp;
       struct PART *nexp=curcell->phead;
       do{
         if(nexp==NULL) continue;
-        curp=nexp;
+        struct PART *curp=nexp;
         nexp=curp->next;
 
         //------------------------------------------------//
@@ -393,7 +395,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	REAL res = param->stars->mass_res;
 	REAL mlevel=0;
 	if(res>=0){mlevel=param->lcoarse;}
-	else{mlevel=level+1;res*=-1.;}
+	else{mlevel=level-1;res*=-1.;}
   mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
 

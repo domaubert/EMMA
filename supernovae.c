@@ -139,37 +139,37 @@ void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, 
 
 void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
 
-  struct OCT* oct = cell2oct(cell);
-
-  REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-  curp->mass -= mtot_feedback;
-
-  REAL dx = POW(2.,-level)*aexp;
-  REAL dv = POW(dx,3.);
-
   int i;
   for(i=0;i<8;i++){
+    struct OCT* oct = cell2oct(cell);
     struct CELL* curcell = &oct->cell[i];
 
-    REAL e = E/8.;
-    REAL me = mtot_feedback/8.; //mass ejecta
-    REAL rho_e = me/dv; // density ejecta
+    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+    curp->mass -= mtot_feedback;
+
+    REAL e = E/8.; //uniform energy distribution
+    REAL me = mtot_feedback/8.; //uniform ejecta distribution
+
+    REAL dx = POW(2.,-level);
+    REAL dv = POW(dx,3.);
+
     REAL rho_i = curcell->field.d; //initial density
+    REAL rho_e = me/dv; // density ejecta
     curcell->field.d += rho_e; //new density
 
     REAL vxi = curcell->field.u; // initial velocity
     REAL vyi = curcell->field.v;
     REAL vzi = curcell->field.w;
 
-    REAL ve = SQRT(2.*e/rho_e);//vitess ejecta
+    REAL ve = SQRT(2.*e/rho_e);//velocity ejecta
 
     REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
     REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
     REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
-    REAL vxe = ve*dir_x[i]/2.; // projection on axis, cos45*cos45 = 1/2
-    REAL vye = ve*dir_y[i]/2.;
-    REAL vze = ve*dir_z[i]/2.;
+    REAL vxe = vxi + ve*dir_x[i]/2.; // projection on axis in the fluid framework
+    REAL vye = vyi + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
+    REAL vze = vzi + ve*dir_z[i]/2.;
 
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
     curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
