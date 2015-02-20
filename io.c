@@ -195,6 +195,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
 
   int max_level=0;
+  int Nsn=0;
 
   REAL mean_xion=0;
   REAL mean_T=0;
@@ -226,6 +227,20 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 	  max_rho=FMAX(max_rho,curcell->field.d);
+
+
+    struct PART *curp;
+    struct PART *nexp=curcell->phead;
+    do{
+      if(nexp==NULL) continue;
+      curp=nexp;
+      nexp=curp->next;
+      if(curp->isStar==2||curp->isStar==3){
+        Nsn++;
+      }
+        //------------------------------------------------//
+
+    }while(nexp!=NULL);
 	}
       }
     }while(nextoct!=NULL);
@@ -242,6 +257,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   //  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
   //MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm); // plus necessaire suite a la ponderation en volume
   MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
 
 
@@ -258,7 +274,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     if (nsteps==0){
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
-      fprintf(fp,"step\taexp\t\tz\t\tmax_level\tmax_rho\t\tmean_xion\tmean_T\t\tmax_T\t\tstars\n");
+      fprintf(fp,"step\taexp\t\tz\t\tdt\t\tmax_level\tmax_rho\t\tmean_xion\tmean_T\t\tmax_T\t\tstars\t\tSN\n");
 
     }else{
       fp=fopen(filename,"a+");
@@ -268,14 +284,16 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, "%d\t",nsteps);
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
-    fprintf(fp, int_format ,max_level);
+    fprintf(fp, real_format,dt);
+    fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);
 
     fprintf(fp, real_format,mean_xion);
     fprintf(fp, real_format,mean_T);
     fprintf(fp, real_format,max_T);
 
-    fprintf(fp, int_format ,param->stars->n);
+    fprintf(fp, real_format ,(float)param->stars->n);
+    fprintf(fp, real_format ,(float)Nsn);
 
 //   fprintf(fp, real_format,sfr);
 
@@ -1089,7 +1107,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 
 #ifdef SRCINT
-  param->srcint=SRCINT;
+  param->srcint*=SRCINT;
 #endif
 
 }

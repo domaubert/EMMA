@@ -247,12 +247,10 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 	struct PART *star = cpu->freepart;
 
 	if (star==NULL){
-		if( cpu->rank==RANK_DISP){
-			printf("\n");
-			printf("----------------------------\n");
-			printf("No more memory for particles\n");
-			printf("----------------------------\n");
-		}
+    printf("\n");
+    printf("----------------------------\n");
+    printf("No more memory for particles\n");
+    printf("----------------------------\n");
 		exit(0);
 	}else{
 
@@ -337,30 +335,31 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
         //------------------------------------------------//
         if(curp->isStar){
           REAL t0 =  param->cosmo->tphy - curp->age;
-          REAL tlife = param->stars->tlife;
+          if(t0>=0){ // for inter-level communications
+            REAL tlife = param->stars->tlife;
 
+            if( (curp->isStar==4) && (t0>=50*tlife) ){
+              curp->isStar=5; /// decreasing luminosity -> dead star
+            }
 
-          if( (curp->isStar==4) && (t0>=50*tlife) ){
-            curp->isStar=5; /// decreasing luminosity -> dead star
-          }
+            if( curp->isStar==3){
+              curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
+              //curently supernovae are instantaneous
+            }
 
+            if(curp->isStar==2){
+              curp->isStar=5; /// supernovae -> dead star
+              //curently supernovae are instantaneous
+            }
 
-          if( curp->isStar==3){
-            curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
-            //curently supernovae are instantaneous
-          }
+            if( (curp->isStar==1) && (t0>=tlife) ){
+  #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+              curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
+  #else
+              curp->isStar=2; /// radiative -> supernovae
+  #endif
 
-          if(curp->isStar==2){
-            curp->isStar=5; /// supernovae -> dead star
-            //curently supernovae are instantaneous
-          }
-
-          if( (curp->isStar==1) && (t0>=tlife) ){
-#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-            curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
-#else
-            curp->isStar=2; /// radiative -> supernovae
-#endif
+            }
           }
         }
         //------------------------------------------------//
@@ -394,7 +393,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	REAL res = param->stars->mass_res;
 	REAL mlevel=0;
 	if(res>=0){mlevel=param->lcoarse;}
-	else{mlevel=level+1;}
+	else{mlevel=level+1;res*=-1.;}
   mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
 

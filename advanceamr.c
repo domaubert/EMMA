@@ -813,6 +813,9 @@ if(cond1||cond2||cond3){
       }
     }
 #endif
+#ifdef TESTCOSMO
+	param->cosmo->tphy	= a2t(param, aexp);
+#endif
 
 #ifdef WMPI
     tdum=0.;
