@@ -1,6 +1,6 @@
 struct PART* findlastpart(struct PART* phead);
 int countpart(struct PART* phead);
-int countpartDM(struct PART* phead);
+int countpartDM(struct CELL* cell, int *npart);
 struct PART* modifpospart(struct PART* phead, REAL len, int dir);
 REAL movepart(int levelcoarse,int levelmax,struct OCT** firstoct, REAL dt, struct CPUINFO *cpu);
 void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct);

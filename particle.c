@@ -56,27 +56,32 @@ int countpart(struct PART* phead)
 }
   // ==========================================
 
-int countpartDM(struct PART* phead)
+int countpartDM(struct CELL* cell, int *npart)
 {
   struct PART* curp;
   struct PART* nexp;
-  int npart=0;
-
-  curp=NULL;
-  nexp=phead; //sweeping the particles of the current cell */
-  if(nexp!=NULL){ 
-    do{  
-      curp=nexp; 
-      nexp=curp->next; 
+  
+  if(cell->child==NULL){ // tree leaf -> explore particle
+    curp=NULL;
+    nexp=cell->phead; //sweeping the particles of the current cell */
+    if(nexp!=NULL){ 
+      do{  
+	curp=nexp; 
+	nexp=curp->next; 
 #ifdef STARS
-      npart+=(curp->isStar!=1);
+	(*npart)+=(curp->isStar!=1);
 #else
-      npart++;
+	(*npart)++;
 #endif
-    }while(nexp!=NULL); 
+      }while(nexp!=NULL); 
+    }
   }
-
-  return npart;
+  else{
+    int icell;
+    for(icell=0;icell<8;icell++){
+      countpartDM(&cell->child->cell[icell],npart);
+    }
+  }
 }
 
 //------------------------------------------------------------------------

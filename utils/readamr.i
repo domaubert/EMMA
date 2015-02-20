@@ -87,7 +87,7 @@ func savesplit(fname,field,time){
   _write,fp,adress,time;adress+=sizeof(time);
   for(i=0;i<nslice/256;i++){
     i;
-    ff=field(,,i*256+1:(i+1)*256);
+    ff=float(field(,,i*256+1:(i+1)*256));
     _write,fp,adress,ff;adress+=sizeof(ff);
   }
   close,fp;
@@ -112,6 +112,8 @@ func readsplit(fname,&time){
   return field;
 }
 
+// ====================================================================
+// ====================================================================
 func mapcpu(fname,ncpu){
 
   for(i=0;i<ncpu;i++)
