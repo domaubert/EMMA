@@ -119,33 +119,33 @@ void kineticFeedback(struct CELL *cell, REAL E){
 
 void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
 
-    REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
-
-    //REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-    struct OCT* oct = cell2oct(cell);
-
-    REAL dx = POW(2.,-level) *  aexp;
-    REAL dv = POW(dx,3.);
+    //REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
+    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+    curp->mass -= mtot_feedback;
 
     int i;
     for(i=0;i<8;i++){
-        struct CELL* curcell = &oct->cell[i];
-        REAL m = mtot_feedback/8.;
-        curcell->field.d += m/dv;
+      struct OCT* oct = cell2oct(cell);
+      struct CELL* curcell = &oct->cell[i];
+
+      REAL dx = POW(2.,-level);
+      REAL dv = POW(dx,3.);
+
+      REAL m = mtot_feedback/8.;
+      curcell->field.d += m/dv;
     }
-    curp->mass -= mtot_feedback;
 }
 
 
 void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
 
+  REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+  curp->mass -= mtot_feedback;
+
   int i;
   for(i=0;i<8;i++){
     struct OCT* oct = cell2oct(cell);
     struct CELL* curcell = &oct->cell[i];
-
-    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-    curp->mass -= mtot_feedback;
 
     REAL e = E/8.; //uniform energy distribution
     REAL me = mtot_feedback/8.; //uniform ejecta distribution
@@ -185,6 +185,7 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
 	REAL dv = POW( dx, 3.); //m3
 	REAL msn = mstar * param->unit.unit_mass* N_SNII; //kg
 	REAL E  = msn *SN_EGY/dv; //J.m-3
+
 
   E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
 

@@ -150,10 +150,9 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     }else{
       int level;
       for(level=param->lcoarse;level<=param->lmax;level++){
-        REAL mlevel=0;
-        if(res>=0){mlevel=param->lcoarse;}
-        else{mlevel=level+1;}
-        REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
+        REAL mlevel=level-1;
+        REAL restmp=-param->stars->mass_res;
+        REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+restmp));
         REAL mass_res_star = mstars_level * param->unit.unit_mass /1.98e30;
         char mlev[128];
         sprintf(mlev,"mass_star_L%d",level);

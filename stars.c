@@ -340,7 +340,7 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
           if(t0>=0){ // for inter-level communications
             REAL tlife = param->stars->tlife;
 
-            if( (curp->isStar==4) && (t0>=50*tlife) ){
+            if( (curp->isStar==4) && (t0>=100*tlife) ){
               curp->isStar=5; /// decreasing luminosity -> dead star
             }
 
@@ -392,10 +392,16 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse)); // coarse mass
 
-	REAL res = param->stars->mass_res;
-	REAL mlevel=0;
-	if(res>=0){mlevel=param->lcoarse;}
-	else{mlevel=level-1;res*=-1.;}
+
+  REAL mlevel=0;
+  REAL res=0;
+	if(res>=0){
+    mlevel=param->lcoarse;
+    res=param->stars->mass_res;
+  }else{
+    mlevel=level-1;
+    res=-param->stars->mass_res;
+  }
   mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
 
