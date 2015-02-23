@@ -9,6 +9,7 @@
 #include "friedmann.h"
 #include "segment.h"
 #include "stars.h"
+#include "hydro_utils.h"
 #include "atomic_data/Atomic.h"
 
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
@@ -183,7 +184,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpFile(fparam, "data/param.run");
 #ifdef SRCINT
   if(cpu->rank==RANK_DISP)
-  printf("srcint set in Atomic.h to %e\n",param->srcint);
+    printf("srcint set in Atomic.h to %e\n",param->srcint);
 #endif
   printf("\n");
 

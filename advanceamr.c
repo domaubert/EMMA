@@ -3,6 +3,8 @@
 #include <math.h>
 #include "prototypes.h"
 #include "amr.h"
+#include "oct.h"
+#include "io.h"
 #include "hydro_utils.h"
 #include "poisson_utils.h"
 #include "tools.h"
@@ -13,15 +15,13 @@
 #include "friedmann.h"
 #include "cic.h"
 #include "particle.h"
-
-
 #include "communication.h"
 
 #ifdef STARS
 #include "stars.h"
 #endif
 
-#ifdef SN
+#ifdef SUPERNOVAE
 #include "supernovae.h"
 #endif // SN
 
@@ -983,7 +983,15 @@ if(cond1||cond2||cond3){
 
     //=============== Radiation Update ======================
 #ifndef COARSERAD
-    RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+    REAL time_rad;
+    time_rad=RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU RAD TOTAL TIME =%e\n",time_rad);
+#else
+      printf(" === GPU RAD TOTAL TIME =%e\n",time_rad);
+#endif
+    }
 #endif
 
     //printf("cpu #%d ready 4\n",cpu->rank);
@@ -1023,10 +1031,10 @@ if(cond1||cond2||cond3){
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif //ZOOM
-{
-      createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
-      setStarsState(firstoct, param, cpu, level);
-}
+      {
+	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
+	setStarsState(firstoct, param, cpu, level);
+      }
 #endif // STARS
 
 #ifdef SUPERNOVAE
@@ -1101,7 +1109,7 @@ if(cond1||cond2||cond3){
 #ifdef WRAD
 #ifdef COARSERAD
 
-  REAL Advance_level_RAD(int level,REAL dtmax, REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int nsteps, REAL tloc){
+  REAL Advance_level_RAD(int level,REAL dtmax, REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int nsteps, REAL tloc, int nrad){
 
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
@@ -1213,7 +1221,7 @@ if(cond1||cond2||cond3){
     if(level<param->lmax){
       if(nlevel>0){
 	REAL dtfine;
-	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc);
+	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc,nrad);
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
@@ -1272,7 +1280,19 @@ if(cond1||cond2||cond3){
 
       //=============== Radiation Update ======================
       int chemonly=0;
-      RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+      REAL time_rad;
+      time_rad=RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
+      
+      if(nrad%10==0){
+	if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+	  printf("==== CPU RAD TOTAL TIME =%e\n",time_rad);
+#else
+	  printf(" === GPU RAD TOTAL TIME =%e\n",time_rad);
+#endif
+	}
+      }
+  
 
 #ifdef WMPI
       MPI_Barrier(cpu->comm);

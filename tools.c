@@ -4,7 +4,7 @@
 #include <string.h>
 #include "hilbert.h"
 #include "prototypes.h"
-
+#include <unistd.h>
 
 void breakmpi()
 {

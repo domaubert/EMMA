@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "prototypes.h"
 #include <string.h>
-
+#include "cic.h"
 
 // returns the cells on a neighbour face given by idx
 

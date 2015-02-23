@@ -15,6 +15,7 @@
 #include "particle.h"
 
 #include "hydro_utils.h"
+#include "poisson_utils.h"
 
 #ifdef ZOOM
 #include "zoom.h"

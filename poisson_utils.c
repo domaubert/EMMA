@@ -10,6 +10,10 @@
 #include "poisson_utils_gpu.h"
 #endif
 
+#ifdef WMPI
+#include "communication.h"
+#endif
+
 
 #ifdef WGRAV
 //================================================================
@@ -609,9 +613,9 @@ struct OCT *gatherstencilgrav(struct OCT *octstart, struct GGRID *stencil, int s
   int icell;
   //int ioct[7]={12,14,10,16,4,22,13};
 
-  static int ix[6]={-1,1,0,0,0,0};
-  static int iy[6]={0,0,-1,1,0,0};
-  static int iz[6]={0,0,0,0,-1,1};
+  /* static int ix[6]={-1,1,0,0,0,0}; */
+  /* static int iy[6]={0,0,-1,1,0,0}; */
+  /* static int iz[6]={0,0,0,0,-1,1}; */
   char visit[7]={0,0,0,0,0,0,0};
   int ioct;
 

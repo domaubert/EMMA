@@ -7,6 +7,8 @@
 #include "cic.h"
 #include "segment.h"
 #include "particle.h"
+#include "hydro_utils.h"
+#include "tools.h"
 
 #ifdef WMPI
 #include <mpi.h>

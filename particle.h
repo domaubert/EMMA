@@ -13,3 +13,4 @@ void L_partcellreorg(int level,struct OCT **firstoct);
 void L_levpart(int level,struct OCT** firstoct,int is);
 REAL L_egypart(int level,struct OCT **firstoct);
 void egypart(struct CPUINFO *cpu, REAL *ekintot, REAL *epottot,struct RUNPARAMS *param, REAL tsim);
+void L_reset_is_part(int level,struct OCT** firstoct);
