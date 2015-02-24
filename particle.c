@@ -69,7 +69,7 @@ int countpartDM(struct PART* phead)
       curp=nexp;
       nexp=curp->next;
 #ifdef STARS
-      npart+=(curp->isStar==0);
+      npart+=!(curp->isStar);
 #else
       npart++;
 #endif
