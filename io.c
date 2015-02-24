@@ -182,9 +182,16 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpInfo("data/param.info", param, cpu);
   dumpFile("param.mk", "data/param.mk");
   dumpFile(fparam, "data/param.run");
-#ifdef SRCINT
   if(cpu->rank==RANK_DISP)
-    printf("srcint set in Atomic.h to %e\n",param->srcint);
+    printf("SRCINT set to %e\n",param->srcint);
+#ifndef SRCINT
+  if(param->srcint<2.){
+    // it is likely to be an error
+    if(cpu->rank==RANK_DISP){
+      printf("ERROR FLAG SRCINT NOT DEFINED: param->srcint = %e Photons/s/kg\n. ",param->srcint);
+    }
+    abort();
+  }
 #endif
   printf("\n");
 
