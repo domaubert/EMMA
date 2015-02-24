@@ -77,6 +77,9 @@ int main(int argc, char *argv[])
 
 
   // silo file
+  // Note dumpsilo is kept for consistency 
+  // but is deprecated --> should be removed
+
   int dumpsilo=0;
   sscanf(argv[6],"%d",&dumpsilo);
   float zmin,zmax,xmin,xmax,ymin,ymax;

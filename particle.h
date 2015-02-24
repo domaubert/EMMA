@@ -1,6 +1,6 @@
 struct PART* findlastpart(struct PART* phead);
 int countpart(struct PART* phead);
-int countpartDM(struct PART* phead);
+int countpartDM(struct CELL* cell, int *npart);
 struct PART* modifpospart(struct PART* phead, REAL len, int dir);
 REAL movepart(int levelcoarse,int levelmax,struct OCT** firstoct, REAL dt, struct CPUINFO *cpu);
 void  partcellreorg(int levelcoarse,int levelmax,struct OCT **firstoct);
@@ -13,3 +13,4 @@ void L_partcellreorg(int level,struct OCT **firstoct);
 void L_levpart(int level,struct OCT** firstoct,int is);
 REAL L_egypart(int level,struct OCT **firstoct);
 void egypart(struct CPUINFO *cpu, REAL *ekintot, REAL *epottot,struct RUNPARAMS *param, REAL tsim);
+void L_reset_is_part(int level,struct OCT** firstoct);

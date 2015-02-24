@@ -11,3 +11,8 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu);
 void coarse2fine_hydrolin(struct CELL *cell, struct Wtype *Wi);
 void coarse2fine_hydro(struct CELL *cell, struct Wtype *Wi);
+void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi);
+void getE(struct Wtype *W);
+void W2U(struct Wtype *W, struct Utype *U);
+void U2W(struct Utype *U, struct Wtype *W);
+

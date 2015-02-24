@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include <mpi.h>
+#include "hydro_utils.h"
 
 #ifdef WCHEM
 #include "chem_utils.h"
@@ -1833,7 +1834,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 // =================================================================================================
 
 
-void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp, int chemonly){
+REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp, int chemonly){
 
   int nread,nreadtot;;
   struct OCT *curoct;
@@ -1963,13 +1964,8 @@ void RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   }
 
   t[9]=MPI_Wtime();
-  if(cpu->rank==RANK_DISP){
-#ifndef GPUAXL
-    printf("==== CPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
-#else
-    printf(" === GPU RAD TOTAL TIME =%e\n",t[9]-t[0]);
-#endif
-  }
+  return (REAL)(t[9]-t[0]);
+  
 }
 
 

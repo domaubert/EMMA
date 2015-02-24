@@ -15,6 +15,7 @@
 #include "particle.h"
 
 #include "hydro_utils.h"
+#include "poisson_utils.h"
 
 #ifdef ZOOM
 #include "zoom.h"
@@ -1223,7 +1224,11 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
 #else
 #ifdef PIC
-			    mcell=countpartDM(curoct->cell[icell].phead);
+			    int npart=0;
+			    if(curoct->level>=param->lcoarse){
+			      countpartDM(&curoct->cell[icell],&npart);
+			    }
+			    mcell=npart;
 			    threshold=param->amrthresh0;
 #else
 			    printf("AMR on particles SET ON without PIC enabled\n");

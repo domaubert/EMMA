@@ -1,6 +1,6 @@
 ##########################################
 ARCH = CPU
-C_LIBS =  -O2 -lm #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
+C_LIBS =  -O2 -lm -Wimplicit #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o zoom.o supernovae.o movie.o
 DEFINES  =
@@ -36,7 +36,9 @@ all:$(C_OBJS) $(CUDA_OBJS)
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
 alloct:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/alloct utils/alloct.c utils/silo/lib/libsilo.a -lm
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/alloct utils/alloct.c -lm
+cube2silo:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/cube2silo utils/cube2silo.c utils/libsilo.a -lm
 
 clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~

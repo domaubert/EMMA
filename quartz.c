@@ -18,6 +18,9 @@
 #include <time.h>
 #include <mpi.h>
 #include "stars.h"
+#include "supernovae.h"
+#include <unistd.h>
+#include <sys/stat.h>
 
 #ifdef WGPU
 #include "interface.h"
@@ -1678,7 +1681,8 @@ blockcounts[0]++; // For SN feedback
   else{
     //==================================== Restart =================================================
     MPI_Barrier(cpu.comm);
-	printf("Restarting from snap #%d\n", param.nrestart);
+    if(cpu.rank==RANK_DISP)
+      printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
     sprintf(filename,"data/bkp/part.%05d.p%05d",param.nrestart,cpu.rank);
     freepart=restore_part(filename,firstoct,&tsim,&param,&cpu,part);
@@ -1769,6 +1773,18 @@ blockcounts[0]++; // For SN feedback
 	/* param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J] */
 	/* if(cpu.rank==RANK_DISP) printf("Esnfb set to %e\n",param.stars->Esnfb); */
   //#endif
+  if(cpu.rank==RANK_DISP){
+    for(level=7;level<13;level++){
+      REAL egy = 9.68e11;// J per stellar kg
+      REAL dv = POW(0.5,3*level); //code unit
+      REAL mass = (param.cosmo->ob/param.cosmo->om) * POW(0.5,3.0*(param.lcoarse+param.stars->mass_res));
+      egy *= POW(aexp,5)*param.unit.unit_l/(param.unit.unit_n*param.unit.unit_t); //code unit
+      REAL E  = mass *egy/dv ; //code unit
+      printf("E=%e ,dv=%e, mass=%e aexp=%e\n",E,dv,mass,aexp);
+    }
+  }
+  //  abort();
+
 
   //================================================================================
   //================================================================================
@@ -1939,7 +1955,7 @@ blockcounts[0]++; // For SN feedback
 	double tcr1,tcr2;
 	MPI_Barrier(cpu.comm);
 	tcr1=MPI_Wtime();
-	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad);
+	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad,nrad);
 	MPI_Barrier(cpu.comm);
 	tcr2=MPI_Wtime();
 	trad+=adt_rad[levelcoarse-1];

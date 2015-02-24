@@ -14,6 +14,8 @@
 #include "hydro_utils_gpu.h"
 #endif
 
+#include "poisson_utils.h"
+
 #define NITERMAX 10
 #define ERRTOL 1e-10
 
