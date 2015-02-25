@@ -67,77 +67,7 @@ void thermalFeedback(struct CELL *cell,  REAL E){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void kineticFeedback(struct CELL *cell, REAL E){
-
-#if 1
-//oct feedback
-  struct OCT* oct = cell2oct(cell);
-
-  int i;
-  for(i=0;i<8;i++){
-      struct CELL* curcell = &oct->cell[i];
-
-      REAL e = E/8.;
-      REAL V = SQRT(2.*e/curcell->field.d);
-
-      float dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
-      float dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-      float dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
-
-      curcell->field.u += dir_x[i] * V /2.; // 1/2 = cos45 * cos45
-      curcell->field.v += dir_y[i] * V /2.;
-      curcell->field.w += dir_z[i] * V /2.;
-
-  }
-#endif
-
-#if 0
-//cardinal feedback
-  struct CELL* neicell[6];
-  getneicell_6(cell, neicell);
-
-  int i;
-  for(i=0;i<6;i++){
-      struct CELL* curcell = neicell[i];
-
-      if (curcell!=NULL) {
-          REAL dir_x[]={-1., 1., 0., 0., 0., 0.};
-          REAL dir_y[]={ 0., 0.,-1., 1., 0., 0.};
-          REAL dir_z[]={ 0., 0., 0., 0.,-1., 1.};
-
-          REAL e = E/6.;
-          REAL dv = SQRT(2.*e/curcell->field.d);
-
-          curcell->field.u += dir_x[i]*dv;
-          curcell->field.v += dir_y[i]*dv;
-          curcell->field.w += dir_z[i]*dv;
-      }
-  }
-#endif
-
-}
-
-void massFeedback(struct CELL *cell,struct PART *curp, struct RUNPARAMS *param, REAL aexp, int level){
-
-    //REAL mtot_feedback = curp->mass*N_SNII;  // 1Mo/SN
-    REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-    curp->mass -= mtot_feedback;
-
-    int i;
-    for(i=0;i<8;i++){
-      struct OCT* oct = cell2oct(cell);
-      struct CELL* curcell = &oct->cell[i];
-
-      REAL dx = POW(2.,-level);
-      REAL dv = POW(dx,3.);
-
-      REAL m = mtot_feedback/8.;
-      curcell->field.d += m/dv;
-    }
-}
-
-
-void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
+void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
 
   REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
   curp->mass -= mtot_feedback;
@@ -178,63 +108,22 @@ void kineticFeedback2(struct RUNPARAMS *param, struct CELL *cell,struct PART *cu
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int level, REAL mstar){
+REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL mstar){
 
-/*
-  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
-	REAL dv = POW( dx, 3.); //m3
-	REAL msn = mstar * param->unit.unit_mass* N_SNII; //kg
-	REAL E  = msn *SN_EGY/dv; //J.m-3
+  REAL egy = 1.936421963946603e+55; // erg/1e6M0 from http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+  egy *= 1e-7/(1e6*1.989e30); // j/kg
 
+  // egy *= a5/(d*v2)*mass ;  // j/kg in code unit
+  // mass/d = l3
+  // egy *= a5/v2*l3;
+  // l3/v2 = l3/l2*t2 = l*t2
+  // egy *= a5*l*t2
 
-  E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
+  egy *= POW(aexp,5)*param->unit.unit_l*POW(param->unit.unit_l,2);  // j/kg in code unit
+  egy *= mstar; // j in code unit
+  egy /= POW(2.,-3*level); // j/m3 in code unit
 
-	//REAL s8 	 = param->stars->tlife * 31556926;;		// life time of a massive star (~20 Myr for 8 M0 star)
-    //E	     *= exp( -t0*31556926/s8 )/s8;
-*/
-
-  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
-  REAL dv = POW( dx, 3.); //m3
-  REAL mass = mstar * param->unit.unit_mass/(1e6*2e30); //kg
-  
-  REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
-  egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
-
-  REAL E  = mass *egy/dv ; //J
-
-
-  return E;
-}
-
-REAL computeFeedbackEnergyHOTFIX(struct RUNPARAMS *param, REAL dt, REAL aexp, int level, REAL mstar){
-
-/*
-  REAL dx = POW(2.,-level) * param->unit.unit_l * aexp; //m
-	REAL dv = POW( dx, 3.); //m3
-	REAL msn = mstar * param->unit.unit_mass* N_SNII; //kg
-	REAL E  = msn *SN_EGY/dv; //J.m-3
-
-  E *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
-
-	//REAL s8 	 = param->stars->tlife * 31556926;;		// life time of a massive star (~20 Myr for 8 M0 star)
-    //E	     *= exp( -t0*31556926/s8 )/s8;
-*/
-
-//  REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
-
-  // A DISCUTER VERIFIER : COMMENT l'ENERGIE DOIT ETRE INJECTEE (TOUT D'un coup) ??
-  // ou progressivement ?
-  // sous quelle forme E doit il etre sorti (unite code ou reelle)
-  // et verifier les conversions
-
-  REAL egy = 1e-3;// J per stellar kg per sec approximated from fig. 115 SB99 je suppose une duree de vie de 30 Myr 
-
-  REAL dv = POW(0.5,3*level); //code unit
-  REAL mass = mstar; //code unit
-    
-  REAL E=mass*egy/dv*dt * POW(aexp,4)*param->unit.unit_t/(POW(param->unit.unit_v,2)); //code unit
-
-  return E; // energy/unit volume code units
+  return egy;
 }
 
 // =======================================================================
@@ -313,17 +202,13 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
     if (curp->isStar==2 || curp->isStar==3){
 
-      REAL E = computeFeedbackEnergyHOTFIX(param, dt, aexp, level, curp->mass);
-      printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
+      REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
+      REAL fKIN = compute_fkin(param,cell,E,level,aexp);
+      //printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
 
-      /*
-	REAL fKIN = compute_fkin(param,cell,E,level,aexp);
-	massFeedback(cell,curp,param,aexp,level);
-	thermalFeedback(cell, E*(1.-fKIN));
-	kineticFeedback(cell, E*(   fKIN));
-    */  
+      thermalFeedback(cell, E*(1.-fKIN));
+      kineticFeedback(param, cell,curp,aexp,level, E*(   fKIN));
 
-      kineticFeedback2(param, cell,curp,aexp,level,E);
       Nsn++;
     }
   }while(nexp!=NULL);
@@ -408,7 +293,7 @@ void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUI
 
 //======================================================
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
-  
+
   if(param->sn->feedback_eff){
     if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
 
@@ -417,7 +302,7 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 
     cleanSNFBfield(firstoct, param, cpu, level);
 
-    do {	
+    do {
       if(nextoct==NULL) continue;
       struct OCT* curoct=nextoct;
       nextoct=curoct->next;
@@ -430,7 +315,7 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
         Nsn += feedback(curcell, param, cpu, aexp, level, dt);
       }
     }while(nextoct!=NULL);
-    
+
   #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
   #endif

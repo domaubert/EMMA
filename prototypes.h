@@ -150,7 +150,7 @@ struct STARSPARAM{
 struct SNPARAM{
   REAL feedback_eff;	// feedback efficiency
   REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
-  REAL Esnfb;		// total Energy of a SN
+  REAL Esnfb;		//  total Energy of a SN
 };
 #endif // SUPERNOVAE
 
@@ -188,7 +188,7 @@ struct RUNPARAMS{
   int ngridmax; // the max oct numbers (per process)
   int nbuff; // the mpi buffer size
   int ndumps; // the frequency of outputs
-  REAL dt_dump; // the physical time betwwen 2 dumps in years
+  REAL dt_dump; // the physical time between 2 dumps in years
   int nsteps; // the maximal number of timesteps
 
   int lcoarse; // the coarse level
