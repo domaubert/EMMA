@@ -10,16 +10,17 @@
 #include <mpi.h>
 #endif
 
-
-// src http://cdsads.u-strasbg.fr/abs/2009A%26A...495..389B
-// L(M) = 9.315613314066386e+16 photon/s/kg
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void thermalFeedback(struct CELL *cell,  REAL E){
+void thermalFeedbackCell(struct CELL *cell,  REAL E){
 #ifdef WRAD
+        cell->field.E += E;
+        cell->field.p += E*(GAMMA-1.);
+#endif
+}
 
-/*
+void thermalFeedbackOct(struct CELL *cell,  REAL E){
+#ifdef WRAD
     struct OCT* oct = cell2oct(cell);
     int i;
     for(i=0;i<8;i++){
@@ -28,15 +29,7 @@ void thermalFeedback(struct CELL *cell,  REAL E){
         REAL e = E/8.;
         curcell->field.E += E;
         curcell->field.p += E*(GAMMA-1.);
-
-        //cell->rfield.snfb =1;
-
     }
-*/
-
-        cell->field.E += E;
-        cell->field.p += E*(GAMMA-1.);
-
 #endif
 }
 
@@ -112,60 +105,6 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
   return egy;
 }
 
-// =======================================================================
-// =======================================================================
-
-REAL computetPDS(REAL E51, REAL n0, REAL Z){
-    REAL tPDS;
-    if(Z<0.01){
-        tPDS = 3.06 * 1e2 * POW(E51, 1./8.)* POW(n0, -3./4.);
-    }else{
-        tPDS = 26.5 * POW(E51, 3./14.)*POW(n0, -4./7.)*POW(Z, -5./14.);
-    }
-    return tPDS;
-}
-
-// =======================================================================
-// =======================================================================
-
-REAL computeRPDS(REAL E51, REAL n0, REAL Z){
-    REAL RPDS;
-    if(Z<0.01){
-        RPDS = 49.3 * POW(E51, 1./4.)* POW(n0, -1./2.);
-    }else{
-        RPDS = 18.5 * POW(E51, 2./7.)*POW(n0, -3./7.)*POW(Z, -1./7.);
-    }
-
-    return RPDS * PARSEC;
-}
-
-REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, REAL aexp){
-/*
-  REAL Z=0;
-  REAL unit_E = POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2));
-  REAL E51 = E/(1e51*1e-7*unit_E);
-  REAL dx = POW(2.,-level)*param->unit.unit_l*aexp*PARSEC; //m
-
-  REAL mu = MOLECULAR_MU *PROTON_MASS;
-  REAL n0 = cell->field.d*param->unit.unit_d/PROTON_MASS*1e6; //cm-3
-
-  REAL tPDS = computetPDS(E51,n0,Z);
-  REAL RPDS = computeRPDS(E51,n0,Z);
-
-  REAL fKIN = 3.97e-6 * mu*n0* POW(RPDS,7.)*pow(tPDS,-2.)*POW(dx,-2.)*POW(E51,-1.) ;
-
-  printf("FKIN = %e\n",fKIN);
-
-*/
-
-  REAL fKIN = param->sn->feedback_frac;
-
-// REAL dx = POW(2.,-level) *  aexp * param->unit.unit_l /PARSEC; //m
-// fKIN = dx>100?1:0;
-
-  return fKIN;
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int SN_TMP_PARAM = 1;
@@ -187,9 +126,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     if (curp->isStar==2 || curp->isStar==3){
 
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
-      REAL fKIN = compute_fkin(param,cell,E,level,aexp);
+      fKIN = param->sn->feedback_frac;
       //printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
-      thermalFeedback(cell, E*(1.-fKIN));
+      thermalFeedbackOct(cell, E*(1.-fKIN));
       kineticFeedback(param, cell,curp,aexp,level, E*fKIN);
 
       Nsn++;
@@ -216,6 +155,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 		if ( t >= LIFETIME_OF_STARS_IN_TEST && SN_TMP_PARAM ){
 			SN_TMP_PARAM = 0;
+
+// src http://cdsads.u-strasbg.fr/abs/2009A%26A...495..389B
+// L(M) = 9.315613314066386e+16 photon/s/kg
 
 //    REAL msn = 7.6e6 * 2e30 ; //kg L=1.42e61
       REAL msn = 26.84 * 2e30 ; //kg L=5e48
