@@ -13,6 +13,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedbackCell(struct CELL *cell,  REAL E){
+// ----------------------------------------------------------//
+// Inject an energy "E" in the cell "cell" on thermal form.
+// ----------------------------------------------------------//
+
 #ifdef WRAD
         cell->field.E += E;
         cell->field.p += E*(GAMMA-1.);
@@ -20,6 +24,10 @@ void thermalFeedbackCell(struct CELL *cell,  REAL E){
 }
 
 void thermalFeedbackOct(struct CELL *cell,  REAL E){
+// ----------------------------------------------------------//
+// Inject an energy "E" in all cells of the oct contening the cell "cell" on thermal form.
+// ----------------------------------------------------------//
+
 #ifdef WRAD
     struct OCT* oct = cell2oct(cell);
     int i;
@@ -36,6 +44,9 @@ void thermalFeedbackOct(struct CELL *cell,  REAL E){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
+// ----------------------------------------------------------//
+// Inject an energy "E" in all cells of the oct contening the cell "cell" on kinetic form, radially to the center of the oct and uniformly in all cells
+// ----------------------------------------------------------//
 
   REAL mtot_feedback = curp->mass*0.5260172663907063;  // http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
   curp->mass -= mtot_feedback;
@@ -88,6 +99,9 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL mstar){
+// ----------------------------------------------------------//
+// Compute the total Enegy of feedback
+// ----------------------------------------------------------//
 
   REAL egy = 1.936421963946603e+55; // erg/1e6M0 from http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
   egy *= 1e-7/(1e6*1.989e30); // j/kg
@@ -111,7 +125,10 @@ int SN_TMP_PARAM = 1;
 #ifndef SNTEST
 #ifdef PIC
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-  cell->rfield.snfb = 0;
+// ----------------------------------------------------------//
+// Parcour all particles and look for supernovae
+// If found compute energy and inject it
+// ----------------------------------------------------------//
 
   int Nsn = 0;
   REAL t0;
@@ -139,6 +156,11 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 #endif // PIC
 #else // ifdef SNTEST
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
+// ----------------------------------------------------------//
+// For sedov test
+// A supernovae explode in a uniform medium
+// ----------------------------------------------------------//
+
 
 	struct OCT* oct = cell2oct(cell);
 
@@ -177,6 +199,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 #endif // SNTEST
 
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+// ----------------------------------------------------------//
+// Call the feedback function for all cells of the grid
+// ----------------------------------------------------------//
+
 
   if(param->sn->feedback_eff){
     if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
