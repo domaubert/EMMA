@@ -38,7 +38,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   struct PART *curp;
   REAL mtot;
   REAL Mtot=0;
-  
+
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
   int *vnpart=cpu->npart;
@@ -85,7 +85,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 	//      if(rank==0) printf("np=%d nlev\n",nlev);
 	      for(icell=0;icell<8;icell++) // looping over cells in oct
 		{
-	      
+
 //		  xc=curoct->x+(icell&1)*dx+dx*0.5;
 //		  yc=curoct->y+((icell>>1)&1)*dx+dx*0.5;
 //		  zc=curoct->z+(icell>>2)*dx+dx*0.5;
@@ -102,11 +102,11 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 			printf("Negative value for density -> abort in multicheck\n");
 			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
 			abort();
-		  }	
+		  }
 #endif
 
 #ifdef PIC
-	     
+
 		  //if(rank==0) printf("ic=%d %p\n",icell,nexp);
 		  if((curoct->cell[icell].child!=NULL)&&(curoct->cell[icell].phead!=NULL)){
 		    printf("check: split cell with particles !\n");
@@ -116,7 +116,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 		  nexp=curoct->cell[icell].phead; //sweeping the particles of the current cell
 		  if(nexp==NULL)continue;
-		  do{ 
+		  do{
 		    curp=nexp;
 		    nexp=curp->next;
 
@@ -137,7 +137,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 	  noct++;
 	}while(nextoct!=NULL);
       //if((noct!=0)&&(level>=levelcoarse)) printf("proc %d level=%d npart=%d npartd=%f noct=%d\n",cpu->rank,level,nlev,nlevd,noct);
-      
+
       if(level==levelcoarse) mtot=nlevd;
       vnoct[level-1] =noct;
       vnpart[level-1]=nlev;
@@ -151,7 +151,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
-  
+
   /* if(  FABS(dm) > 1e-6 && cpu->rank==RANK_DISP){ */
   /*   printf("\n=================================================\n"); */
   /*   printf("\tTotal Baryonic Mass \t\t %lf\n",Mtot); */
@@ -162,7 +162,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   /* } */
 
 
-//printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);  
+//printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);
 //printf("nPart %d\tnStar %d\n",npart[0], npart[1]);
 
 #ifdef PIC
@@ -189,7 +189,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
  MPI_Barrier(cpu->comm);
  if(rank==0) printf("Check done \n");
 #endif
- 
+
   return mtot;
 }
  //------------------------------------------------------------------------
@@ -206,7 +206,7 @@ void myradixsort(int *a,int n)
       if(a[i]>m)
 	m=a[i];
     }
-  
+
   while(m/exp>0)
     {
       int bucket[10]={0};
@@ -219,7 +219,7 @@ void myradixsort(int *a,int n)
       for(i=0;i<n;i++)
 	a[i]=b[i];
       exp*=10;
-    }		
+    }
   free(b);
 }
 
@@ -322,3 +322,53 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 }
 
 
+REAL rdm(REAL a, REAL b){
+/// return a random number between a and b
+	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
+}
+
+int gpoiss(REAL lambda){
+/// Poisson distribution
+
+	int k=1;
+	REAL p = rdm(0,1);
+	REAL P = exp(-lambda);
+	REAL sum=P;
+	if (sum>=p){
+	  k=0;
+	}
+	else{
+	  do { 	P*=lambda/(REAL)k;
+	    sum+=P;
+	    if (sum>=p) break;
+	    k++;
+	  }while(k<1e6);
+	}
+	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+	return k;
+}
+
+#ifdef TESTCOSMO
+REAL a2t(struct RUNPARAMS *param, REAL az ){
+/// Compute the equivalent time of a given scale factor
+/// function from Ned Wright http://www.astro.ucla.edu/~wright/CC.python
+
+	REAL age = 0.;
+	REAL a, adot;
+	REAL h = param->cosmo->H0/100;
+
+	REAL or = 4.165e-5/(h*h);
+	REAL ok = 1. - param->cosmo->om - or - param->cosmo->ov;
+
+	int i, n=1000;
+	for (i=0; i<n;i++){
+		a = az*(i+0.5)/n;
+		adot = SQRT(ok+(param->cosmo->om / a)+(or/ (a*a) )+ (param->cosmo->ov*a*a) );
+		age = age + 1./adot;
+	}
+	REAL zage = az*age/n;
+	REAL zage_Gyr = (977.8 /param->cosmo->H0)*zage;
+
+	return zage_Gyr*1e9;
+}
+#endif

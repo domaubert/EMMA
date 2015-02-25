@@ -8,7 +8,7 @@
 #include "particle.h"
 #include "oct.h"
 #include "hydro_utils.h"
-
+#include "tools.h"
 #include "cic.h"
 #include "segment.h"
 
@@ -16,129 +16,68 @@
 #include <mpi.h>
 #endif
 
-
-/*
-known t_car :
- 2.1 Gyr (Kennicutt 1998)
- 2.4 Gyr (Rownd & Young 1999)
- 3.0 Gyr (Rasera & Teyssier 2006)
- 3.2 Gyr (Springel & Hernquist 2003)
-*/
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// 		SOME FONCTIONS
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifdef TESTCOSMO
-REAL a2t(struct RUNPARAMS *param, REAL az ){
-//  	from Ned Wright http://www.astro.ucla.edu/~wright/CC.python
-
-	REAL age = 0.;
-	REAL a, adot;
-	REAL h = param->cosmo->H0/100;
-
-	REAL or = 4.165e-5/(h*h);
-	REAL ok = 1. - param->cosmo->om - or - param->cosmo->ov;
-
-	int i, n=1000;
-	for (i=0; i<n;i++){
-		a = az*(i+0.5)/n;
-		adot = SQRT(ok+(param->cosmo->om / a)+(or/ (a*a) )+ (param->cosmo->ov*a*a) );
-		age = age + 1./adot;
-	}
-	REAL zage = az*age/n;
-	REAL zage_Gyr = (977.8 /param->cosmo->H0)*zage;
-
-	return zage_Gyr*1e9;
-}
-#endif
-
-
-REAL rdm(REAL a, REAL b){
-	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
-}
-
-int gpoiss(REAL lambda){
-	int k=1;
-	REAL p = rdm(0,1);
-	REAL P = exp(-lambda);
-	REAL sum=P;
-	if (sum>=p){
-	  k=0;
-	}
-	else{
-	  do { 	P*=lambda/(REAL)k;
-	    sum+=P;
-	    if (sum>=p) break;
-	    k++;
-	  }while(k<1e6);
-	}
-	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
-	return k;
-}
+/// ----------------------------------------------------------//
+/// ----------------------------------------------------------//
+/// This file contain the stars functions
+/// Documentation on the implementation can be found at :
+/// https://github.com/domaubert/EMMA/wiki/Stars
+/// ----------------------------------------------------------//
+/// ----------------------------------------------------------//
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//		STARS
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-int countstar(struct PART* phead)
-{
-  struct PART* curp;
-  struct PART* nexp;
-  int npart=0;
-
-  curp=NULL;
-  nexp=phead; //sweeping the particles of the current cell */
-  if(nexp!=NULL){
-    do{
-      curp=nexp;
-      nexp=curp->next;
-      npart+=(curp->isStar==1);
-    }while(nexp!=NULL);
-  }
-
-  return npart;
-}
-
 
 void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, int level, REAL xc, REAL yc, REAL zc,int idx, REAL aexp, int is, REAL dt,REAL dx, REAL mlevel) {
+/// ----------------------------------------------------------//
+/// compute the initial state of star particle
+/// ----------------------------------------------------------//
 
-	star->next  = NULL;
-	star->idx   = idx;
+  /// some parameters
+	star->next = NULL;
+	star->idx = idx;
 	star->level = level;
-	star->is    = is;
+	star->is = is;
+	star->isStar = 1;
+  star->rhocell = cell->field.d;
 
+  /// random position
 	star->x = xc + rdm(-0.5,0.5) * dx;
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
+  /// velocity
  	star->vx = cell->field.u;
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
-	REAL r 		= rdm(0,1) * cell->field.a ;
-	REAL theta   	= acos(rdm(-1,1));
-	REAL phi 	= rdm(0,2*PI);
+  /// random component
+	REAL r = rdm(0,1) * cell->field.a ;
+	REAL theta  = acos(rdm(-1,1));
+	REAL phi = rdm(0,2*PI);
 
+  /// random velocity
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
 
+  ///mass
 	star->mass  = mlevel;
 
+  ///energy
 	star->epot = 0.0;
 	star->ekin = 0.5 * star->mass * (POW(star->vx,2) + POW(star->vy,2) + POW(star->vz,2));
 
-	star->isStar = 1;
+  /// age
 #ifdef TESTCOSMO
 	star->age = param->cosmo->tphy;
 #endif
-	star->rhocell = cell->field.d;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *param, REAL aexp, int level){
+/// ----------------------------------------------------------//
+/// test if a cell is elligible to form star
+/// ----------------------------------------------------------//
 
 	if (cell->child != NULL) return 0;
 	int A,B;
@@ -156,6 +95,9 @@ int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *pa
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *star, REAL dx, REAL aexp, REAL mlevel){
+/// ----------------------------------------------------------//
+/// compute the conservations equations after a star is created
+/// ----------------------------------------------------------//
 
 	REAL drho = mlevel / POW(dx,3.);
 	struct Utype U;
@@ -194,9 +136,10 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL aexp, int level, REAL mlevel){
-
-	REAL gas_efficiency = 1e0;	// maybe need to be passed in param??
-
+/// ----------------------------------------------------------//
+/// Compute the number of stars to create in a given cell
+/// lambda is the mean number of a random draw in a Poisson law
+/// ----------------------------------------------------------//
 
 #ifdef SCHAYE
 	/* REAL A=1.515e-4; // Ms/yr/kpc2 */
@@ -221,23 +164,28 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	REAL tstartilde = 1;
 #endif
 
-	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level);
+	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell
 
 	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
 
-	int N 		= gpoiss(lambda);
+	int N = gpoiss(lambda); //Poisson drawing
 
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 
 	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
+  // while (N * mlevel >= M_in_cell ) N--; // to prevent void cells
 
 	return N;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars, REAL mlevel){
+/// ----------------------------------------------------------//
+/// Add a stellar particle in the double linked list
+/// Call the initialisation and the conservation functions
+/// ----------------------------------------------------------//
+
 #ifdef PIC
 	struct PART *star = cpu->freepart;
 
@@ -249,18 +197,18 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 		exit(0);
 	}else{
 
-		cpu->freepart 		= cpu->freepart->next;
-		cpu->freepart->prev 	= NULL;
+		cpu->freepart = cpu->freepart->next;
+		cpu->freepart->prev = NULL;
 
 		if (cell->phead==NULL){
-			cell->phead 		= star;
-			star->prev 		= NULL;
+			cell->phead = star;
+			star->prev = NULL;
 			star->next =NULL;
 		}else{
-			struct PART *lasp 	= findlastpart(cell->phead);
-			lasp->next 		= star;
-			star->prev 		= lasp;
-			star->next=NULL;
+			struct PART *lasp = findlastpart(cell->phead);
+			lasp->next = star;
+			star->prev = lasp;
+			star->next = NULL;
 		}
 
 		cpu->npart[level-1]++;
@@ -276,10 +224,12 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
 #endif
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void initThresh(struct RUNPARAMS *param,  REAL aexp){
+/// ----------------------------------------------------------//
+/// Compute the density threshold of star formation
+/// ----------------------------------------------------------//
 
 #ifdef TESTCOSMO
 	REAL k =(param->stars->density_cond >0)? 1 : -POW(aexp,3.0);
@@ -299,18 +249,20 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
+/// ----------------------------------------------------------//
+/// Define the state of a particle in function of his age
+/// State are defined as follow:
+///
+///  state = 0 -> Dark Matter
+///  state = 1 -> Radiative Star
+///  state = 2 -> Supernovae
+///  state = 3 -> Supernovae + decreasing luminosity
+///  state = 4 -> Decreasing luminosity
+///  state = 5 -> Dead star
+///
+/// ----------------------------------------------------------//
 
 	if(cpu->rank == RANK_DISP) printf("setting states\n");
-
-
-  /*
-  state = 0 -> Dark Matter
-  state = 1 -> Radiative Star
-  state = 2 -> Supernovae
-  state = 3 -> Supernovae + decreasing luminosity
-  state = 4 -> decreasing luminosity
-  state = 5 -> Dead star
-  */
 
   struct OCT  *curoct;
 	struct OCT  *nextoct=firstoct[level-1];
@@ -365,22 +317,12 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   }while(nextoct!=NULL);
   return 0;
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
-
-	if(cpu->rank == RANK_DISP) printf("STARS\n");
-
-	struct OCT  *nextoct=firstoct[level-1];
-
-	REAL dx = POW(2.0,-level);
-	REAL mmax = 0;
+REAL setmStar(struct RUNPARAMS *param,int level){
+/// ----------------------------------------------------------//
+/// Compute the stellar particle mass
+/// ----------------------------------------------------------//
   REAL mstars_level=0; // mass of stars at level
-	int nstars = 0;
-	int nsl = 0;
-
-	initThresh(param, aexp);
-
 #ifdef TESTCOSMO
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
@@ -397,6 +339,29 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   }
   mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
+  return mstars_level;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+/// ----------------------------------------------------------//
+/// The stars creation function.
+/// Scan if cell is allowed to form star
+/// If true, compute how many star are needed
+/// and add them to the linked list
+/// ----------------------------------------------------------//
+
+	if(cpu->rank == RANK_DISP) printf("STARS\n");
+
+	struct OCT  *nextoct=firstoct[level-1];
+
+	REAL dx = POW(2.0,-level);
+	REAL mmax = 0;
+	int nstars = 0;
+	int nsl = 0;
+
+	initThresh(param, aexp);
+  REAL mstars_level = setmStar(param,level);
 
 	do {	if(nextoct==NULL) 		continue;
 	  struct OCT  *curoct=nextoct;

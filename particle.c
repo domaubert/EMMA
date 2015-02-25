@@ -83,6 +83,26 @@ int countpartDM(struct CELL* cell, int *npart)
     }
   }
 }
+
+int countstar(struct PART* phead)
+{
+  struct PART* curp;
+  struct PART* nexp;
+  int npart=0;
+
+  curp=NULL;
+  nexp=phead; //sweeping the particles of the current cell */
+  if(nexp!=NULL){
+    do{
+      curp=nexp;
+      nexp=curp->next;
+      npart+=(curp->isStar==1);
+    }while(nexp!=NULL);
+  }
+
+  return npart;
+}
+
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------
 

@@ -14,7 +14,7 @@
   =========================================================================================
 
   Friedmann Models from Martel & Shapiro 1997 Supercomoving coordinates
-  
+
   t_tilde(aexp=1.0)-t_tilde(aexp)=sqrt(omegam)/2.*integ(faexp_tilde,aexp,1.0,omegam,omegav);
   t      (aexp=1.0)-t      (aexp)=(1./H0        )*integ(faexp      ,aexp,1.0,omegam,omegav);
 
@@ -31,15 +31,15 @@
 // =====================================================================================
 double faexp_tilde(double a, double om, double ov){
 
-  // For conversion between aexp and t_tilde 
-  
+  // For conversion between aexp and t_tilde
+
   return 1./sqrt((1.0-om-ov)*a*a*a*a+om*a*a*a+ov*a*a*a*a*a*a);
 }
 
 // =====================================================================================
 
 double faexp(double a, double om, double ov){
-  
+
   // For conversion between aexp and t
 
   return a*a/sqrt((1.0-om-ov)*a*a*a*a+om*a*a*a+ov*a*a*a*a*a*a);
@@ -95,7 +95,7 @@ double integ_da_dt_tilde(double a, double b, double om, double ov,double tol)
   if((i>MAXITER)&&(fabs(error)>tol)){
     printf("ROMBINT FAILED TO CONVERGE integ=%e error=%e\n",res,error);
   }
-  
+
   return res;
 
 }
@@ -149,7 +149,7 @@ double integ_da_dt(double a, double b, double om, double ov,double tol)
   if((i>MAXITER)&&(fabs(error)>tol)){
     printf("ROMBINT FAILED TO CONVERGE integ=%e error=%e\n",res,error);
   }
-  
+
   return res;
 
 }
@@ -164,7 +164,7 @@ double interp_aexp(double ttilde,double *tab_aexp,double *tab_ttilde){
   }
 
   return tab_aexp[iloc-1]+(ttilde-tab_ttilde[iloc-1])*(tab_aexp[iloc]-tab_aexp[iloc-1])/(tab_ttilde[iloc]-tab_ttilde[iloc-1]);
-  
+
 }
 
 // =====================================================================================
@@ -204,7 +204,7 @@ double ddplus(double a,double omegam, double omegav)
 {
   double eta;
   double res;
-  
+
   if(a==0.) return 0.;
   eta=sqrt(omegam/a+omegav*a*a+1.-omegam-omegav);
   res=2.5/(eta*eta*eta);
@@ -261,7 +261,7 @@ double integ_ddplus(double a, double b, double om, double ov,double tol)
   if((i>MAXITER)&&(fabs(error)>tol)){
     printf("ROMBINT FAILED TO CONVERGE integ=%e error=%e\n",res,error);
   }
-  
+
   return res;
 
 }
@@ -279,12 +279,12 @@ double dplus(double a, double omegam, double omegav)
 double fomega(double a, double omegam, double omegav)
 {
   double omegak,eta,res;
-  
+
   if((omegam==1.0)&&(omegav==0.)){
     res=1.0;
     return res;
   }
-  
+
   omegak=1.-omegam-omegav;
   eta=sqrt(omegam/a+omegav*a*a+omegak);
   res=(2.5/dplus(a,omegam,omegav)-1.5*omegam/a-omegak)/(eta*eta);
@@ -294,9 +294,3 @@ double fomega(double a, double omegam, double omegav)
 }
 
 // ========================================================================================
-
-
-
-
-
-
