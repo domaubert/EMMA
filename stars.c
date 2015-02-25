@@ -212,7 +212,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	//printf("A=%e E=%e P=%e p=%e c=%e tstars=%e\n",A,E,P,cell->field.p,param->unit.unit_d,tstars/(3600.*24*265*1e9));
 	//	abort();
 #else
-	REAL tstars 	= param->stars->tcar * 31556926 / SQRT(cell->field.d / param->stars->thresh );
+	REAL tstars 	= 2e9 * 31556926 / SQRT(cell->field.d / param->stars->thresh );
 #endif //SCHAYE
 
 #ifdef WRADHYD
@@ -223,7 +223,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level);
 
-	REAL lambda =  gas_efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
+	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
 
 	int N 		= gpoiss(lambda);
 

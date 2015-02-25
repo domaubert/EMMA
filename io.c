@@ -1059,7 +1059,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef STARS
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->efficiency=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;
 
