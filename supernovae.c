@@ -89,7 +89,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
     getE(&curcell->field); //compute new total energy
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-    curcell->field.p=curcell->field.E*(GAMMA-1.); // compute new pressure
+  //  curcell->field.p=curcell->field.E*(GAMMA-1.); // compute new pressure
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

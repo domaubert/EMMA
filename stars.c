@@ -187,7 +187,6 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 //	total energy
 	getE(&(W));
 	W.a=SQRT(GAMMA*W.p/W.d);
-  W.p=W.E/(GAMMA-1.);
 	memcpy(field,&W,sizeof(struct Wtype));
 
 }
@@ -356,7 +355,6 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   #else
               curp->isStar=2; /// radiative -> supernovae
   #endif
-
             }
           }
         }

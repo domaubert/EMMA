@@ -69,8 +69,7 @@ int countpartDM(struct CELL* cell, int *npart)
 	curp=nexp;
 	nexp=curp->next;
 #ifdef STARS
-	(*npart)+=(curp->isStar!=1);
-	//(*npart)+=(!curp->isStar);
+	(*npart)+=(!curp->isStar);
 #else
 	(*npart)++;
 #endif
