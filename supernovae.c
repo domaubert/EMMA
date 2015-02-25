@@ -97,9 +97,9 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
     REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
-    REAL vxe = vxi + ve*dir_x[i]/2.; // projection on axis in the fluid framework
-    REAL vye = vyi + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
-    REAL vze = vzi + ve*dir_z[i]/2.;
+    REAL vxe = curp->vx + ve*dir_x[i]/2.; // projection on axis in the particle framework
+    REAL vye = curp->vy + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
+    REAL vze = curp->vz + ve*dir_z[i]/2.;
 
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
     curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
@@ -205,9 +205,8 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
       REAL fKIN = compute_fkin(param,cell,E,level,aexp);
       //printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
-
       thermalFeedback(cell, E*(1.-fKIN));
-      kineticFeedback(param, cell,curp,aexp,level, E*(   fKIN));
+      kineticFeedback(param, cell,curp,aexp,level, E*fKIN);
 
       Nsn++;
     }
