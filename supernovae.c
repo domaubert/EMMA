@@ -4,6 +4,7 @@
 
 #include "prototypes.h"
 #include "oct.h"
+#include "hydro_utils.h"
 
 #ifdef WMPI
 #include <mpi.h>
@@ -85,7 +86,6 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
     REAL rho_i = curcell->field.d; //initial density
     REAL rho_e = me/dv; // density ejecta
-    curcell->field.d += rho_e; //new density
 
     REAL vxi = curcell->field.u; // initial velocity
     REAL vyi = curcell->field.v;
@@ -101,9 +101,23 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL vye = curp->vy + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
     REAL vze = curp->vz + ve*dir_z[i]/2.;
 
+
+    curcell->field.d += rho_e; //new density
+
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
     curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
     curcell->field.w = (vzi*rho_i + vze*rho_e)/(rho_i+rho_e);
+
+    //Energy conservation
+
+    struct Utype U; // conservative field structure
+    W2U(&curcell->field, &U); // primitive to conservative
+    U.eint=U.eint*(1.+me/curcell->field.d); // compute new internal energy
+    U2W(&U, &curcell->field); // back to primitive
+
+    getE(&curcell->field); //compute new total energy
+    curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
+
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

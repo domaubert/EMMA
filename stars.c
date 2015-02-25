@@ -181,8 +181,6 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U.dw -= star->vz * drho;
 
 //	internal energy
-//	???????????????
-
 	U.eint=U.eint*(1.-drho/W.d);
 
 
