@@ -14,32 +14,6 @@
 // src http://cdsads.u-strasbg.fr/abs/2009A%26A...495..389B
 // L(M) = 9.315613314066386e+16 photon/s/kg
 
-//============== STEP 9228 tsim=4.085313e+03 [2.000045e+02 Myr] ================
-
-
-#ifdef SUPERNOVAE
-void cleanSNFBfield(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
-#ifdef WRAD
-	struct OCT  *nextoct=firstoct[level-1];
-
-	do {	if(nextoct==NULL) 		continue;
-	  struct OCT  *curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu != cpu->rank) 	continue;
-
-		int icell;
-	  for(icell=0;icell<8;icell++) {
-	    struct CELL *curcell = &curoct->cell[icell];
-
-//			curcell->rfield.snfb = 0;
-//			curcell->rfield.src   =0.;
-//			curcell->rfieldnew.src=0.;
-
-		}
-	}while(nextoct!=NULL);
-#endif
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedback(struct CELL *cell,  REAL E){
@@ -81,8 +55,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL e = E/8.; //uniform energy distribution
     REAL me = mtot_feedback/8.; //uniform ejecta distribution
 
-    REAL dx = POW(2.,-level);
-    REAL dv = POW(dx,3.);
+    REAL dv = POW(2.,-3*level);
 
     REAL rho_i = curcell->field.d; //initial density
     REAL rho_e = me/dv; // density ejecta
@@ -101,7 +74,6 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL vye = curp->vy + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
     REAL vze = curp->vz + ve*dir_z[i]/2.;
 
-
     curcell->field.d += rho_e; //new density
 
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
@@ -112,12 +84,12 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
     struct Utype U; // conservative field structure
     W2U(&curcell->field, &U); // primitive to conservative
-    U.eint=U.eint*(1.+me/curcell->field.d); // compute new internal energy
+    U.eint*=1.+me/curcell->field.d; // compute new internal energy
     U2W(&U, &curcell->field); // back to primitive
 
     getE(&curcell->field); //compute new total energy
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-
+    curcell->field.p=curcell->field.E*(GAMMA-1.); // compute new pressure
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,11 +169,9 @@ REAL compute_fkin(struct RUNPARAMS *param,struct CELL *cell, REAL E, int level, 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int SN_TMP_PARAM = 1;
-int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-
 #ifndef SNTEST
 #ifdef PIC
-
+int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
   cell->rfield.snfb = 0;
 
   int Nsn = 0;
@@ -226,10 +196,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     }
   }while(nexp!=NULL);
   return Nsn;
-
-
+}
 #endif // PIC
 #else // ifdef SNTEST
+int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
 
 	struct OCT* oct = cell2oct(cell);
 
@@ -261,50 +231,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     }
     return 1;
   }
+}
 #endif // SNTEST
-}
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//		FEEDBACK
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void checksupernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is, int *N){
-
-	struct OCT  *nextoct=firstoct[level-1];
-
-	do {	if(nextoct==NULL) 		continue;
-	  struct OCT* curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu != cpu->rank) 	continue;
-
-    int icell;
-	  for(icell=0;icell<8;icell++) {
-            struct CELL *curcell = &curoct->cell[icell];
-
-            if (curcell->field.u || curcell->field.v || curcell->field.w ){
-
-                REAL dx = POW(2.0,-curoct->level);
-
-                REAL xc=curoct->x+( curcell->idx    & 1)*dx;
-                REAL yc=curoct->y+((curcell->idx>>1)& 1)*dx;
-                REAL zc=curoct->z+( curcell->idx>>2    )*dx;
-
-                printf("%f %f %f\t",xc,yc,zc);
-
-                REAL vx = curcell->field.u;
-                REAL vy = curcell->field.v;
-                REAL vz = curcell->field.w;
-
-                printf("%f %f %f\n",vx,vy,vz);
-
-                (*N)++;
-                REAL stop = 0;
-            }
-		}
-	}while(nextoct!=NULL);
-}
-
-//======================================================
 void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 
   if(param->sn->feedback_eff){
@@ -312,8 +241,6 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 
     int Nsn = 0;
     struct OCT  *nextoct=firstoct[level-1];
-
-    cleanSNFBfield(firstoct, param, cpu, level);
 
     do {
       if(nextoct==NULL) continue;
@@ -336,5 +263,3 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
     if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
   }
 }
-
-#endif //SUPERNOVAE

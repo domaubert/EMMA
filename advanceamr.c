@@ -23,7 +23,7 @@
 
 #ifdef SUPERNOVAE
 #include "supernovae.h"
-#endif // SN
+#endif
 
 #include "movie.h"
 
@@ -1282,7 +1282,7 @@ if(cond1||cond2||cond3){
       int chemonly=0;
       REAL time_rad;
       time_rad=RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
-      
+
       if(nrad%10==0){
 	if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
@@ -1292,7 +1292,7 @@ if(cond1||cond2||cond3){
 #endif
 	}
       }
-  
+
 
 #ifdef WMPI
       MPI_Barrier(cpu->comm);

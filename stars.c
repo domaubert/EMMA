@@ -1,5 +1,3 @@
-#ifdef STARS
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -189,7 +187,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 //	total energy
 	getE(&(W));
 	W.a=SQRT(GAMMA*W.p/W.d);
-
+  W.p=W.E/(GAMMA-1.);
 	memcpy(field,&W,sizeof(struct Wtype));
 
 }
@@ -462,4 +460,3 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 //	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }
-#endif
