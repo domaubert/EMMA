@@ -231,11 +231,9 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
     int Nsn = 0;
     struct OCT  *nextoct=firstoct[level-1];
 
-    do {
-      if(nextoct==NULL) continue;
-      struct OCT* curoct=nextoct;
-      nextoct=curoct->next;
-      if(curoct->cpu != cpu->rank) continue;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *curoct=cpu->octList[level-1][iOct];
 
       int icell;
       for(icell=0;icell<8;icell++) {
@@ -243,7 +241,7 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
 
         Nsn += feedback(curcell, param, cpu, aexp, level, dt);
       }
-    }while(nextoct!=NULL);
+    }
 
   #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
