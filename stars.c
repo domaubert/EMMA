@@ -155,7 +155,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	//printf("A=%e E=%e P=%e p=%e c=%e tstars=%e\n",A,E,P,cell->field.p,param->unit.unit_d,tstars/(3600.*24*265*1e9));
 	//	abort();
 #else
-	REAL tstars 	= 2e9 * 31556926 / SQRT(cell->field.d / param->stars->thresh );
+	REAL tstars 	= 2.1e9 * 31556926 / SQRT(cell->field.d / param->stars->thresh );
 #endif //SCHAYE
 
 #ifdef WRADHYD
@@ -173,7 +173,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 
 	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
-  // while (N * mlevel >= M_in_cell ) N--; // to prevent void cells
+  // while (N * mlevel >= 0.9*M_in_cell ) N--; // to prevent void cells
 
 	return N;
 }
@@ -363,10 +363,9 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	initThresh(param, aexp);
   REAL mstars_level = setmStar(param,level);
 
-	do {	if(nextoct==NULL) 		continue;
-	  struct OCT  *curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu != cpu->rank) 	continue;
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=cpu->octList[level-1][iOct];
 
     int icell;
 	  for(icell=0;icell<8;icell++) {
@@ -391,7 +390,7 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #endif //SNTEST
 	    mmax = FMAX(curcell->field.d, mmax);
 	  }
-	}while(nextoct!=NULL);
+	}
 
 
 #ifdef WMPI
