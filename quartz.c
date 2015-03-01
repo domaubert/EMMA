@@ -17,8 +17,6 @@
 #include "friedmann.h"
 #include <time.h>
 #include <mpi.h>
-#include "stars.h"
-#include "supernovae.h"
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -93,7 +91,7 @@ int main(int argc, char *argv[])
   struct OCT **firstoct;
   struct OCT **lastoct;
 
-  int level,levelcoarse,levelmax,levelmin;
+    int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
   int nrelax;
   int ngridmax,ngrid;

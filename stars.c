@@ -2,15 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #include "prototypes.h"
-#include "particle.h"
-#include "oct.h"
-#include "hydro_utils.h"
-#include "tools.h"
-#include "cic.h"
-#include "segment.h"
+#include "particle.h" //findlastpart
+#include "hydro_utils.h" // W2U and U2W
+#include "tools.h" // rdm and gpoiss
 
 #ifdef WMPI
 #include <mpi.h>
@@ -44,7 +40,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->y = yc + rdm(-0.5,0.5) * dx;
 	star->z = zc + rdm(-0.5,0.5) * dx;
 
-  /// velocity
+  /// set star velocity to fluid velocity
  	star->vx = cell->field.u;
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
@@ -54,13 +50,13 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	REAL theta  = acos(rdm(-1,1));
 	REAL phi = rdm(0,2*PI);
 
-  /// random velocity
+  /// add random component
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
 
   ///mass
-	star->mass  = mlevel;
+	star->mass = mlevel;
 
   ///energy
 	star->epot = 0.0;
@@ -69,6 +65,8 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
   /// age
 #ifdef TESTCOSMO
 	star->age = param->cosmo->tphy;
+#else
+//TODO fix age of star ifndef TESTCOSMO
 #endif
 }
 
@@ -194,7 +192,7 @@ void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPU
     printf("----------------------------\n");
     printf("No more memory for particles\n");
     printf("----------------------------\n");
-		exit(0);
+	//	exit(0);
 	}else{
 
 		cpu->freepart = cpu->freepart->next;
@@ -248,7 +246,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
+int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 /// ----------------------------------------------------------//
 /// Define the state of a particle in function of his age
 /// State are defined as follow:
@@ -262,59 +260,59 @@ int setStarsState(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 ///
 /// ----------------------------------------------------------//
 
-	if(cpu->rank == RANK_DISP) printf("setting states\n");
+  if (param->stars->n){
 
-  struct OCT  *curoct;
-	struct OCT  *nextoct=firstoct[level-1];
+    if(cpu->rank == RANK_DISP) printf("setting states\n");
 
-	do{
-    if(nextoct==NULL) 		continue;
-	  curoct=nextoct;
-	  nextoct=curoct->next;
-	  if(curoct->cpu != cpu->rank) 	continue;
-    int icell;
-	  for(icell=0;icell<8;icell++) {
-	    struct CELL *curcell = &curoct->cell[icell];
-      struct PART *nexp=curcell->phead;
-      do{
-        if(nexp==NULL) continue;
-        struct PART *curp=nexp;
-        nexp=curp->next;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *curoct=cpu->octList[level-1][iOct];
 
-        //------------------------------------------------//
-        if(curp->isStar){
-          REAL t0 =  param->cosmo->tphy - curp->age;
-          if(t0>=0){ // for inter-level communications
-            REAL tlife = param->stars->tlife;
+      int icell;
+      for(icell=0;icell<8;icell++) {
+        struct CELL *curcell = &curoct->cell[icell];
+        struct PART *nexp=curcell->phead;
+        do{
+          if(nexp==NULL) continue;
+          struct PART *curp=nexp;
+          nexp=curp->next;
 
-            if( (curp->isStar==4) && (t0>=100*tlife) ){
-              curp->isStar=5; /// decreasing luminosity -> dead star
-            }
+          //------------------------------------------------//
+          if(curp->isStar < 5){ /// Star not dead
 
-            if( curp->isStar==3){
-              curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
-              //curently supernovae are instantaneous
-            }
+            REAL t0 =  param->cosmo->tphy - curp->age;
+            if(t0>=0){ // for inter-level communications
+              REAL tlife = param->stars->tlife;
 
-            if(curp->isStar==2){
-              curp->isStar=5; /// supernovae -> dead star
-              //curently supernovae are instantaneous
-            }
+              if( (curp->isStar==4) && (t0>=100*tlife) ){
+                curp->isStar=5; /// decreasing luminosity -> dead star
+              }
 
-            if( (curp->isStar==1) && (t0>=tlife) ){
-  #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-              curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
-  #else
-              curp->isStar=2; /// radiative -> supernovae
-  #endif
+              if( curp->isStar==3){
+                curp->isStar=4; ///Supernovae + decreasing luminosity -> decreasing luminosity
+                //curently supernovae are instantaneous
+              }
+
+              if(curp->isStar==2){
+                curp->isStar=5; /// supernovae -> dead star
+                //curently supernovae are instantaneous
+              }
+
+              if( (curp->isStar==1) && (t0>=tlife) ){
+    #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+                curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
+    #else
+                curp->isStar=2; /// radiative -> supernovae
+    #endif
+              }
             }
           }
-        }
-        //------------------------------------------------//
+          //------------------------------------------------//
 
-      }while(nexp!=NULL);
+        }while(nexp!=NULL);
+      }
     }
-  }while(nextoct!=NULL);
+  }
   return 0;
 }
 
@@ -343,7 +341,7 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 /// ----------------------------------------------------------//
 /// The stars creation function.
 /// Scan if cell is allowed to form star
@@ -351,9 +349,9 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 /// and add them to the linked list
 /// ----------------------------------------------------------//
 
-	if(cpu->rank == RANK_DISP) printf("STARS\n");
+	setStarsState(param, cpu, level);
 
-	struct OCT  *nextoct=firstoct[level-1];
+	if(cpu->rank == RANK_DISP) printf("STARS\n");
 
 	REAL dx = POW(2.0,-level);
 	REAL mmax = 0;
@@ -392,7 +390,6 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	  }
 	}
 
-
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,	MPI_MAX,cpu->comm);
@@ -405,9 +402,8 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       printf("%d stars added on level %d \n", nstars, level);
       printf("%d stars in total\n",param->stars->n);
     }
-		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS\t%e\n",1./aexp-1.);
+		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
 		if(param->stars->n>0) cpu->trigstar=1;
-//		printf("\n");
 	}
 
   int l;
@@ -416,9 +412,5 @@ void createStars(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
 	  MPI_Barrier(cpu->comm);
 #endif
-	  //if(cpu->rank==RANK_DISP && nsl) {	printf("%d stars on level %d \n", nsl, l);	}
 	}
-
-
-//	if(cpu->rank==RANK_DISP) {	printf("\n");}
 }

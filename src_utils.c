@@ -1,15 +1,19 @@
 #ifdef WRAD
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 #include "prototypes.h"
 #include "oct.h"
-#include <string.h>
-#include <mpi.h>
 #include "atomic_data/Atomic.h"
-#include "stars.h"
 #include "chem_utils.h"
+#include "tools.h"
+
+#ifdef WMPI
+#include <mpi.h>
+#endif // WMPI
 
 #ifdef COARSERAD
 #ifdef STARS

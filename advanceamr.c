@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include "prototypes.h"
 #include "amr.h"
 #include "oct.h"
@@ -25,8 +26,9 @@
 #include "supernovae.h"
 #endif
 
+#ifdef MOVIE
 #include "movie.h"
-
+#endif // MOVIE
 // ===============================================================
 // ===============================================================
 
@@ -1027,21 +1029,30 @@ if(cond1||cond2||cond3){
 
     /* //===================================creating new stars=================================// */
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
+
 #ifdef STARS
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif //ZOOM
       {
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
-	setStarsState(firstoct, param, cpu, level);
+	Stars(param,cpu, adt[level-1], aexp, level, is);
       }
 #endif // STARS
 
+    /* //===================================Supernovae=========================================// */
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif
+
 #ifdef SUPERNOVAE
 #ifndef SNTEST
-    supernovae(firstoct,param,cpu, adt[level-1], aexp, level, is);
+    supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
-    supernovae(firstoct,param,cpu, adt[level-1], tloc, level, is);
+    supernovae(param,cpu, adt[level-1], tloc, level, is);
 #endif // SNTEST
 #endif // SUPERNOVAE
 

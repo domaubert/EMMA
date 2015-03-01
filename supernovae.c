@@ -1,14 +1,14 @@
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #ifdef WMPI
 #include <mpi.h>
 #endif
 
 #include "prototypes.h"
-#include "oct.h"
-#include "hydro_utils.h"
+#include "oct.h" //cell2oct
+#include "hydro_utils.h" // W2U and U2W
 
 /// ----------------------------------------------------------//
 /// ----------------------------------------------------------//
@@ -47,8 +47,8 @@ void thermalFeedbackOct(struct CELL *cell,  REAL E){
     for(i=0;i<8;i++){
         struct CELL* curcell = &oct->cell[i];
         REAL e = E/8.;
-        curcell->field.E += E;
-        curcell->field.p += E*(GAMMA-1.);
+        curcell->field.E += e;
+        curcell->field.p += e*(GAMMA-1.);
     }
 #endif
 }
@@ -75,7 +75,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL e = E/8.; //uniform energy distribution
     REAL me = mtot_feedback/8.; //uniform ejecta distribution
 
-    REAL dv = POW(2.,-3*level);
+    REAL dv = POW(2.,-3*level);// curent volume
 
     REAL rho_i = curcell->field.d; //initial density
     REAL rho_e = me/dv; // density ejecta
@@ -86,7 +86,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
     REAL ve = SQRT(2.*e/rho_e);//velocity ejecta
 
-    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};
+    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
     REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
     REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
@@ -105,12 +105,11 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
     struct Utype U; // conservative field structure
     W2U(&curcell->field, &U); // primitive to conservative
-    U.eint*=1.+me/curcell->field.d; // compute new internal energy
+    U.eint*=1.+rho_e/curcell->field.d; // compute new internal energy
     U2W(&U, &curcell->field); // back to primitive
 
     getE(&curcell->field); //compute new total energy
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-  //  curcell->field.p=curcell->field.E*(GAMMA-1.); // compute new pressure
   }
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,19 +121,24 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 /// http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
 /// ----------------------------------------------------------//
 
-  REAL egy = 1.936421963946603e+55; // erg/1e6M0
-  egy *= 1e-7/(1e6*1.989e30); // j/kg
+  //REAL egy = 1.936421963946603e+55 *1e-7/(1e6*SOLAR_MASS); // erg/1e6M0 -> j/kg
 
-  // egy *= a5/(d*v2)*mass ;  // j/kg in code unit
-  // mass/d = l3
-  // egy *= a5/v2*l3;
-  // l3/v2 = l3/l2*t2 = l*t2
-  // egy *= a5*l*t2
+/*
+  REAL dx = POW(0.5,level) * aexp * param->unit.unit_l;
+  REAL dv = POW(dx,3);
 
-  egy *= POW(aexp,5)*param->unit.unit_l*POW(param->unit.unit_l,2);  // j/kg in code unit
-  egy *= mstar; // j in code unit
-  egy /= POW(2.,-3*level); // j/m3 in code unit
+  REAL egy = 9.73565592733335e11; // j/kg
+  egy *= mstar * param->unit.unit_mass; // j
+  egy /= dv; // j/m3
+  egy *= POW(aexp,5.)/(param->unit.unit_d *POW(param->unit.unit_v,2.)) ; // j/m3 in code unit
+*/
 
+
+
+  //REAL dv = POW(0.5,3*level) *  POW(aexp,3) *  POW(param->unit.unit_l,3);
+
+  REAL egy = 9.73565592733335e11; // j/kg
+  egy *= mstar* POW(aexp,2.) / ( POW(0.5,3*level) *  POW(param->unit.unit_v,2.) ) ; // j/m3 in code unit
   return egy;
 }
 
@@ -151,17 +155,19 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
   int Nsn = 0;
 
   struct PART *nexp=cell->phead;
-  struct PART  *curp;
 
   if(nexp==NULL) return 0;
-  do{ curp=nexp;
+  do{
+    struct PART *curp=nexp;
     nexp=curp->next;
 
-    if (curp->isStar==2 || curp->isStar==3){
+    if (curp->isStar==2 || curp->isStar==3){ // if curp is in SN state
 
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
 
-      //printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
+      printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
+      //abort();
+
       thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
       kineticFeedback(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
 
@@ -220,7 +226,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
+void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 /// ----------------------------------------------------------//
 /// Call the feedback function for all cells of the grid
 /// ----------------------------------------------------------//
@@ -229,7 +235,6 @@ void supernovae(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *
     if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
 
     int Nsn = 0;
-    struct OCT  *nextoct=firstoct[level-1];
 
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
