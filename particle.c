@@ -84,6 +84,7 @@ int countpartDM(struct CELL* cell, int *npart)
   }
 }
 
+#ifdef STARS
 int countstar(struct PART* phead)
 {
   struct PART* curp;
@@ -96,12 +97,13 @@ int countstar(struct PART* phead)
     do{
       curp=nexp;
       nexp=curp->next;
-      npart+=(curp->isStar==1);
+      npart+=(curp->isStar);
     }while(nexp!=NULL);
   }
 
   return npart;
 }
+#endif // STARS
 
 //------------------------------------------------------------------------
 //------------------------------------------------------------------------

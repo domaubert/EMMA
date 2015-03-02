@@ -278,7 +278,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
           nexp=curp->next;
 
           //------------------------------------------------//
-          if(curp->isStar < 5){ /// Star not dead
+          if(curp->isStar && curp->isStar < 5){ /// Star not dead
 
             REAL t0 =  param->cosmo->tphy - curp->age;
             if(t0>=0){ // for inter-level communications
@@ -349,9 +349,8 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 /// and add them to the linked list
 /// ----------------------------------------------------------//
 
-	setStarsState(param, cpu, level);
-
 	if(cpu->rank == RANK_DISP) printf("STARS\n");
+	setStarsState(param, cpu, level);
 
 	REAL dx = POW(2.0,-level);
 	REAL mmax = 0;

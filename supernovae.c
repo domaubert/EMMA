@@ -84,7 +84,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL vyi = curcell->field.v;
     REAL vzi = curcell->field.w;
 
-    REAL ve = SQRT(2.*e/rho_e);//velocity ejecta
+    REAL ve = SQRT(2.*e/rho_e);// ejecta velocity
 
     REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
     REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
@@ -123,22 +123,8 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 
   //REAL egy = 1.936421963946603e+55 *1e-7/(1e6*SOLAR_MASS); // erg/1e6M0 -> j/kg
 
-/*
-  REAL dx = POW(0.5,level) * aexp * param->unit.unit_l;
-  REAL dv = POW(dx,3);
-
   REAL egy = 9.73565592733335e11; // j/kg
-  egy *= mstar * param->unit.unit_mass; // j
-  egy /= dv; // j/m3
-  egy *= POW(aexp,5.)/(param->unit.unit_d *POW(param->unit.unit_v,2.)) ; // j/m3 in code unit
-*/
-
-
-
-  //REAL dv = POW(0.5,3*level) *  POW(aexp,3) *  POW(param->unit.unit_l,3);
-
-  REAL egy = 9.73565592733335e11; // j/kg
-  egy *= mstar* POW(aexp,2.) / ( POW(0.5,3*level) *  POW(param->unit.unit_v,2.) ) ; // j/m3 in code unit
+  egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
   return egy;
 }
 
@@ -165,7 +151,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
 
-      printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
+      printf("Energy injected =%e mass=%e aexp=%e cellE=%e\n",E,curp->mass,aexp, cell->field.E);
       //abort();
 
       thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
