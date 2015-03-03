@@ -416,7 +416,6 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 	for (l = param->lcoarse; l<=param->lmax;l++){
 #ifdef WMPI
 	  MPI_Allreduce(&cpu->nstar[l-1],&nsl,1,MPI_INT,   MPI_SUM,cpu->comm);
-	  MPI_Barrier(cpu->comm);
 #endif
 	}
 }

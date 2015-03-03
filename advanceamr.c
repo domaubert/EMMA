@@ -1029,11 +1029,10 @@ if(cond1||cond2||cond3){
 
     /* //===================================creating new stars=================================// */
 
+#ifdef STARS
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
-#endif
-
-#ifdef STARS
+#endif // WMPI
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif //ZOOM
@@ -1044,11 +1043,10 @@ if(cond1||cond2||cond3){
 
     /* //===================================Supernovae=========================================// */
 
+#ifdef SUPERNOVAE
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
-#endif
-
-#ifdef SUPERNOVAE
+#endif // WMPI
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
