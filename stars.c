@@ -170,8 +170,8 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 
-	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
-  // while (N * mlevel >= 0.9*M_in_cell ) N--; // to prevent void cells
+	//if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
+   while (N * mlevel >= 0.9*M_in_cell ) N--; // to prevent void cells
 
 	return N;
 }
@@ -327,17 +327,16 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse)); // coarse mass
 
   REAL mlevel=0;
-  REAL res=0;
+  REAL res=param->stars->mass_res;
 
   if(res>100){
     mstars_level = param->stars->mass_res*SOLAR_MASS/param->unit.unit_mass;
   }else{
     if(res>=0){
       mlevel=param->lcoarse;
-      res=param->stars->mass_res;
     }else{
       mlevel=level-1;
-      res=-param->stars->mass_res;
+      res*=-1;
     }
     mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
   }
@@ -383,7 +382,7 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 
 	      int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 
-	      //	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+  //      if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
         int ipart;
 	      for (ipart=0;ipart< N; ipart++){
 #ifdef PIC
