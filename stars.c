@@ -328,15 +328,22 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 
   REAL mlevel=0;
   REAL res=0;
-	if(res>=0){
-    mlevel=param->lcoarse;
-    res=param->stars->mass_res;
+
+  if(res>100){
+    mstars_level = param->stars->mass_res*SOLAR_MASS/param->unit.unit_mass;
   }else{
-    mlevel=level-1;
-    res=-param->stars->mass_res;
+    if(res>=0){
+      mlevel=param->lcoarse;
+      res=param->stars->mass_res;
+    }else{
+      mlevel=level-1;
+      res=-param->stars->mass_res;
+    }
+    mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
   }
-  mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
 #endif
+
+
   return mstars_level;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
