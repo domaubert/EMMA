@@ -229,7 +229,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 /// ----------------------------------------------------------//
 
 #ifdef TESTCOSMO
-	REAL k =(param->stars->density_cond >0.)? 1. : -POW(aexp,3.0);
+	REAL k =(param->stars->density_cond >0.)? -POW(aexp,3.0) : -1.;
 
 	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
 
