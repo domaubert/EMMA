@@ -97,6 +97,7 @@ typedef double REAL;
 #define NEWTON_G (6.67384e-11) // SI
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
+#define SOLAR_MASS (1.989e30) //kg
 
 //#define SN_EGY (3.7e11) 		// 3.7e15 erg.g-1 -> 3.7e11 J.kg-1 ->  Kay 2002   // 4e48 erg.Mo-1 springel hernquist 2003 -> OK
 //#define N_SNII (1.)
@@ -136,7 +137,7 @@ struct COSMOPARAM{
 struct STARSPARAM{
   REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
   REAL density_cond;	// Hydrogen density (m-3)
-  REAL tcar;		// caracteristic time (yr)
+  REAL efficiency;		// efficiency of star formation proccess
   REAL tlife;		// life time of a radiative source (yr)
   REAL mass_res;
   //REAL mstars;		// Mass of a stellar particle (PLUS BESOIN)
@@ -150,7 +151,7 @@ struct STARSPARAM{
 struct SNPARAM{
   REAL feedback_eff;	// feedback efficiency
   REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
-  REAL Esnfb;		// total Energy of a SN
+  REAL Esnfb;		//  total Energy of a SN
 };
 #endif // SUPERNOVAE
 
@@ -188,7 +189,7 @@ struct RUNPARAMS{
   int ngridmax; // the max oct numbers (per process)
   int nbuff; // the mpi buffer size
   int ndumps; // the frequency of outputs
-  REAL dt_dump; // the physical time betwwen 2 dumps in years
+  REAL dt_dump; // the physical time between 2 dumps in years
   int nsteps; // the maximal number of timesteps
 
   int lcoarse; // the coarse level

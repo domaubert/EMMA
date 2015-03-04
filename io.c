@@ -140,25 +140,29 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 
 
     fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
-    REAL mass_res_DM =  ( 1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse))*param->unit.unit_mass /1.98e30;
+    REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse))*param->unit.unit_mass/SOLAR_MASS;
     fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
 
     REAL res = param->stars->mass_res;
-    if(res>=0){
-      REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res));
-      REAL mass_res_star = mstars_level * param->unit.unit_mass /1.98e30;
-      fprintf(fp, real_format,"mass_res_star",mass_res_star);
+    if(res>100){
+        fprintf(fp, real_format,"mass_res_star",param->stars->mass_res);
     }else{
-      int level;
-      for(level=param->lcoarse;level<=param->lmax;level++){
-        REAL mlevel=0;
-        if(res>=0){mlevel=param->lcoarse;}
-        else{mlevel=level+1;}
-        REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
-        REAL mass_res_star = mstars_level * param->unit.unit_mass /1.98e30;
-        char mlev[128];
-        sprintf(mlev,"mass_star_L%d",level);
-        fprintf(fp, real_format,mlev,mass_res_star );
+
+      if(res>=0){
+        REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res));
+        REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS;
+        fprintf(fp, real_format,"mass_res_star",mass_res_star);
+      }else{
+        int level;
+        for(level=param->lcoarse;level<=param->lmax;level++){
+          REAL mlevel=level-1;
+          REAL restmp=-param->stars->mass_res;
+          REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+restmp));
+          REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS;
+          char mlev[128];
+          sprintf(mlev,"mass_star_L%d",level);
+          fprintf(fp, real_format,mlev,mass_res_star );
+        }
       }
     }
 
@@ -1060,7 +1064,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef STARS
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tcar=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->efficiency=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;
 

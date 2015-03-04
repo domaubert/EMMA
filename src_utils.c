@@ -1,15 +1,19 @@
 #ifdef WRAD
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 #include "prototypes.h"
 #include "oct.h"
-#include <string.h>
-#include <mpi.h>
 #include "atomic_data/Atomic.h"
-#include "stars.h"
 #include "chem_utils.h"
+#include "tools.h"
+
+#ifdef WMPI
+#include <mpi.h>
+#endif // WMPI
 
 #ifdef COARSERAD
 #ifdef STARS
@@ -235,12 +239,17 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
     if (curp->isStar==3 || curp->isStar==4){ //Supernovae + decreasing luminosity OR decreasing luminosity
+    /// --------------------------------------------------------------------------///
+    /// decreasing luminosity state, at the and of their life star still radiate
+    /// with a luminosity function of a decreasing power law of time.
+    /// Slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
+    /// --------------------------------------------------------------------------///
       nss++;
-      REAL slope = -4.; //slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
+      REAL slope = -4.;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  src*POW(t,slope);;
+      cell->rfield.src +=  src*POW(t,slope);
       //printf("SRC= %e\n",cell->rfield.src);
       flag=1;
     }

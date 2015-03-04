@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include "prototypes.h"
 #include "amr.h"
 #include "oct.h"
@@ -23,9 +24,16 @@
 
 #ifdef SUPERNOVAE
 #include "supernovae.h"
-#endif // SN
+#endif
 
+#ifdef MOVIE
 #include "movie.h"
+#endif // MOVIE
+
+
+ #ifdef CURIE
+ #include "ccc_user.h"
+ #endif // CURIE
 
 // ===============================================================
 // ===============================================================
@@ -1028,20 +1036,27 @@ if(cond1||cond2||cond3){
     /* //===================================creating new stars=================================// */
 
 #ifdef STARS
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
 #endif //ZOOM
       {
-	createStars(firstoct,param,cpu, adt[level-1], aexp, level, is);
-	setStarsState(firstoct, param, cpu, level);
+	Stars(param,cpu, adt[level-1], aexp, level, is);
       }
 #endif // STARS
 
+    /* //===================================Supernovae=========================================// */
+
 #ifdef SUPERNOVAE
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
 #ifndef SNTEST
-    supernovae(firstoct,param,cpu, adt[level-1], aexp, level, is);
+    supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
-    supernovae(firstoct,param,cpu, adt[level-1], tloc, level, is);
+    supernovae(param,cpu, adt[level-1], tloc, level, is);
 #endif // SNTEST
 #endif // SUPERNOVAE
 
@@ -1282,7 +1297,7 @@ if(cond1||cond2||cond3){
       int chemonly=0;
       REAL time_rad;
       time_rad=RadSolver(level,param,firstoct,cpu,rstencil,hstride,adt[level-1],aexp,chemonly);
-      
+
       if(nrad%10==0){
 	if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
@@ -1292,7 +1307,14 @@ if(cond1||cond2||cond3){
 #endif
 	}
       }
-  
+
+#ifdef CURIE
+REAL time_remain;
+int error;
+error = ccc_tremain(&time_remain)
+ if (!error) printf("Time remaining :%lf\n", time_remain);
+#endif // CURIE
+
 
 #ifdef WMPI
       MPI_Barrier(cpu->comm);
