@@ -29,6 +29,12 @@
 #ifdef MOVIE
 #include "movie.h"
 #endif // MOVIE
+
+
+ #ifdef CURIE
+ #include "ccc_user.h"
+ #endif // CURIE
+
 // ===============================================================
 // ===============================================================
 
@@ -1301,6 +1307,13 @@ if(cond1||cond2||cond3){
 #endif
 	}
       }
+
+#ifdef CURIE
+REAL time_remain;
+int error;
+error = ccc_tremain(&time_remain)
+ if (!error) printf("Time remaining :%lf\n", time_remain);
+#endif // CURIE
 
 
 #ifdef WMPI
