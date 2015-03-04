@@ -196,13 +196,26 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL t0, REAL aexp, int leve
   REAL dv = POW( dx, 3.); //m3
   REAL mass = mstar * param->unit.unit_mass/(1e6*2e30); //kg
   
-  REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+  REAL egy =1.936421963946603e+55 * 1e-7; //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html // Joules pour 1e6 ms
   egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2)); //code unit
 
   REAL E  = mass *egy/dv ; //J
 
+  //===========================
+  //===========================
+  // => A CONFIRMER
+  /* REAL dx = POW(2.,-level); */
+  /* REAL dv = POW( dx, 3.); //m3 */
+  /* REAL mass = mstar; */
+  
+  /* REAL egy =1.936421963946603e+55 * 1e-7/(1e6*2e30); //http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html // Joules/kg */
+  /* egy *= POW(aexp,5)/(param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2))*param->unit.unit_mass; //energy code unit/kg */
+  /* egy *= POW(aexp,5)*POW(param->unit.unit_t,2)*param->unit.unit_l; //energy code unit/kg */ // => A DOUBLE CHECKER
+  /* E=mstar*egy/dv; */
 
-  return E;
+  /* REAL E  = mass *egy/dv ; //J */
+
+  /* return E; */
 }
 
 REAL computeFeedbackEnergyHOTFIX(struct RUNPARAMS *param, REAL dt, REAL aexp, int level, REAL mstar){
@@ -312,7 +325,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
     if (curp->isStar==2 || curp->isStar==3){
 
-      REAL E = computeFeedbackEnergyHOTFIX(param, dt, aexp, level, curp->mass);
+      //REAL E = computeFeedbackEnergyHOTFIX(param, dt, aexp, level, curp->mass);
+      REAL E = computeFeedbackEnergy(param, dt, aexp, level, curp->mass);
+      // E = energy per unit volume (code units)
       printf("Energy injected =%e mass=%e aexp=%e\n",E,curp->mass,aexp);
 
       /*
