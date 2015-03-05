@@ -154,10 +154,8 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	//	abort();
 #else
   REAL t_car = 2.1e9 * 31556926;
-  //REAL t_ff = SQRT(3.*PI/(32. * NEWTON_G ))*SQRT(cell->field.d * param->unit.unit_d);
-  //printf("real free fall time =%e",t_ff);
-  REAL t_ff = SQRT(cell->field.d / param->stars->thresh );
-  //printf("approx free fall time =%e",t_ff);
+  REAL t_ff = SQRT(3.*PI/(32. * NEWTON_G )) * SQRT(cell->field.d / param->stars->thresh );
+
 	REAL tstars = t_car/ t_ff;
 
 #endif //SCHAYE
@@ -371,8 +369,8 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
     int icell;
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
-      REAL dx = POW(2.0,-level);
 
+      REAL dx = POW(2.0,-level);
 	    if( testCond(curcell, dt, dx, param, aexp, level) ) {
 	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
