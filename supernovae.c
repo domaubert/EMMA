@@ -10,6 +10,8 @@
 #include "oct.h" //cell2oct
 #include "hydro_utils.h" // W2U and U2W
 
+
+#ifdef SUPERNOVAE
 /// ----------------------------------------------------------//
 /// ----------------------------------------------------------//
 
@@ -240,3 +242,6 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
     if(cpu->rank==RANK_DISP && Nsn) {printf("%d\tActive SN\n",Nsn);}
   }
 }
+
+
+#endif // SUPERNOVAE

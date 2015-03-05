@@ -42,5 +42,5 @@ cube2silo:
 part2silo:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/part2silo utils/part2silo.c utils/libsilo.a -lm
 
-clean:par
+clean:
 	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~
