@@ -1899,12 +1899,6 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  // Update
 	  memcpy(&(curoct->cell[icell].rfield),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype));
 
-
-	  /* if((curoct->cell[icell].rfield.e[0]<1e-40)&&(curoct->cell[icell].rfield.e[0]>0)){ */
-	  /*   printf("OUHLALALA\n"); */
-	  /* } */
-
-
 #ifdef WRADHYD
 	  // inject back thermal energy into the hydro
 

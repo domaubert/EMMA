@@ -95,6 +95,10 @@ void collectE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param
       cellcoarse->rfield.fy[igrp]  +=cell->rfield.fy[igrp]*fact;
       cellcoarse->rfield.fz[igrp]  +=cell->rfield.fz[igrp]*fact;
     }
+    // below is essentially for outputs
+    cellcoarse->rfield.nhplus +=cell->rfield.nhplus*fact; 
+     cellcoarse->rfield.eint +=cell->rfield.eint*fact; 
+
   }
   else{
     // recursive call
