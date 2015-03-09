@@ -79,7 +79,7 @@ typedef double REAL;
 
 
 #ifdef WRAD
-#define NGRP (3)
+#define NGRP (1)
 #define NVAR_R (5)
 #define EMIN (1e-8)
 #define NFLUX_R (6*NGRP*NVAR_R)

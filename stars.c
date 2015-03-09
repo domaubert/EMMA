@@ -72,16 +72,20 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int testCond(struct CELL *cell, REAL dttilde, REAL dxtilde, struct RUNPARAMS *param, REAL aexp, int level){
+int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 /// ----------------------------------------------------------//
 /// test if a cell is elligible to form star
 /// ----------------------------------------------------------//
 
 	if (cell->child != NULL) return 0;
 	int A,B;
+
+	// test if density is over the threshold
 	A = 	cell->field.d > param->stars->thresh;
 #ifdef WGRAV
-	B = 0?	cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) 				: 1;
+  // test the Jeans criterion
+	B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
+  B = 1;
 #else
 	B = 1;
 #endif
@@ -132,7 +136,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, REAL aexp, int level, REAL mlevel){
+int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL aexp, int level, REAL mlevel){
 /// ----------------------------------------------------------//
 /// Compute the number of stars to create in a given cell
 /// lambda is the mean number of a random draw in a Poisson law
@@ -143,7 +147,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	/* A=A*(2e30)/(3600.*24.*365)/POW(1e3*PARSEC,2.); // kg/sec/m2 */
 	REAL A=1.0028e-20; // Kag/sec/m2
 	REAL E=1.; // Ms/pc2
-	E=E*2e30/POW(PARSEC,2.);
+	E=E*SOLAR_MASS/POW(PARSEC,2.);
 
 	REAL P=cell->field.p/POW(aexp,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // Physical Pressure (S.I)
 	REAL geff=5./3.;
@@ -151,25 +155,46 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dttilde, R
 	REAL tstars 	= 1./(A*POW(E,-1.4)*POW(geff/NEWTON_G*P,(1.4-1.)/2.));
 	//printf("A=%e E=%e P=%e p=%e c=%e tstars=%e\n",A,E,P,cell->field.p,param->unit.unit_d,tstars/(3600.*24*265*1e9));
 	//	abort();
-#else
-  REAL t_car = 2.1e9 * 31556926;
-  REAL t_ff = SQRT(3.*PI/(32. * NEWTON_G )) * SQRT(cell->field.d / param->stars->thresh );
 
-	REAL tstars = t_car/ t_ff;
+	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t; //tstars in code unit
+
+	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
+
+	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dt/ tstartilde; // Average number of stars created
+#else
+  // local free fall time in seconde in code unit
+  // REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
+  //printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
+
+  REAL dx = POW(0.5,level);
+  REAL dv = POW(0.5,3*level);
+
+  REAL rho_m = cell->gdata.d / param->stars->thresh;
+  REAL rho_b = cell->field.d / param->stars->thresh;
+
+  REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
+  REAL fact_t = POW(aexp,2) * param->unit.unit_t;
+
+  /// local free fall time in seconde in code unit
+  REAL t_ff = SQRT(3.*PI/(32.*NEWTON_G * rho_m/ fact_rho));
+  t_ff /= fact_t;
+
+  /// local Jeans time in seconde in code unit
+  REAL t_j = dx/cell->field.a;
+
+	/// star formation rate in kg/s/m3 in code unit
+  REAL SFR = param->stars->efficiency * cell->field.d  / t_ff  * t_j/t_ff;
+
+  /// Average number of stars created
+	REAL lambda =  SFR  / mlevel * dt * dv;
+	printf("rho=%e tff=%e tj=%e SFR=%e\n",cell->field.d, t_ff, t_j, SFR);
 
 #endif //SCHAYE
 
-	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t;
-
-	REAL M_in_cell 	= cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell
-
-	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dttilde/ tstartilde; // Average number of stars created
-
 	int N = gpoiss(lambda); //Poisson drawing
-
-	//printf("AVG star creation =%e /eff %d\n",lambda,N);
-
-	if(N * mlevel >= M_in_cell ) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
+	printf("AVG star creation =%e /eff %d\n",lambda,N);
+  REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
+	if(N * mlevel >= M_in_cell) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
 	return N;
 }
@@ -228,14 +253,17 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 /// ----------------------------------------------------------//
 
 #ifdef TESTCOSMO
-	REAL k =(param->stars->density_cond >0.)? POW(aexp,3.0) : -1.;
-	REAL rhocrittilde 	= param->stars->density_cond * PROTON_MASS;
-
 #ifdef SCHAYE
 	// std value for overdensity = 55.7
 	param->stars->thresh = FMAX(1e6*POW(aexp,3.) *PROTON_MASS/param->unit.unit_d, param->stars->overdensity_cond* (param->cosmo->ob/param->cosmo->om));
 #else
-	param->stars->thresh    = FMAX( k * rhocrittilde / param->unit.unit_d, param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om));
+
+  REAL   k=-1;                                      /// Comoving density case
+  if (param->stars->density_cond>0) k=POW(aexp,3);  /// Physical density case
+
+  REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d;
+  REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
+	param->stars->thresh = FMAX(thresh_1,thresh_2);
 #endif
 
 #endif
@@ -296,11 +324,15 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
               }
 
               if( (curp->isStar==1) && (t0>=tlife) ){
-    #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+#ifdef SUPERNOVAE
+  #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
                 curp->isStar=3; /// radiative -> supernovae + decreasing luminosity
-    #else
+  #else
                 curp->isStar=2; /// radiative -> supernovae
-    #endif
+  #endif
+#else
+                curp->isStar=4; /// radiative -> decreasing luminosity
+#endif // SUPERNOVAE
               }
             }
           }
@@ -330,9 +362,9 @@ REAL setmStar(struct RUNPARAMS *param,int level){
     mstars_level = param->stars->mass_res*SOLAR_MASS/param->unit.unit_mass;
   }else{
     if(res>=0){
-      mlevel=param->lcoarse;
+      mlevel=param->lcoarse; // Fix mass
     }else{
-      mlevel=level-1;
+      mlevel=level-1; //Adaptative mass
       res*=-1;
     }
     mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
@@ -370,7 +402,7 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 	    struct CELL *curcell = &curoct->cell[icell];
 
       REAL dx = POW(2.0,-level);
-	    if( testCond(curcell, dt, dx, param, aexp, level) ) {
+	    if( testCond(curcell, param, aexp, level) ) {
 	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	      REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
