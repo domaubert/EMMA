@@ -187,12 +187,12 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
   /// Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
-	printf("rho=%e tff=%e tj=%e SFR=%e\n",cell->field.d, t_ff, t_j, SFR);
+	//printf("rho=%e tff=%e tj=%e SFR=%e\n",cell->field.d, t_ff, t_j, SFR);
 
 #endif //SCHAYE
 
 	int N = gpoiss(lambda); //Poisson drawing
-	printf("AVG star creation =%e /eff %d\n",lambda,N);
+	//printf("AVG star creation =%e /eff %d\n",lambda,N);
   REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
 	if(N * mlevel >= M_in_cell) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
