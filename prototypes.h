@@ -107,6 +107,12 @@ struct UNITS{
   REAL unit_N; // number density unit [typically Omegam*rhoc/mp in 1./m3]
 };
 
+struct UVBACKGROUND{
+  int N;
+  float *redshift;
+  float *Nphot;
+};
+
 //=======================================
 
 struct RUNPARAMS{
@@ -190,6 +196,10 @@ struct RUNPARAMS{
 
 #ifdef MOVIE
 	struct MOVIEPARAM *movie;
+#endif
+
+#ifdef UVBKG
+  struct UVBACKGROUND uv;
 #endif
 };
 

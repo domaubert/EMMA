@@ -288,10 +288,34 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 
 	  // Poor FIT to Haardt & MAdau 2012
+	  /*
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
 	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
 	  }
+	  */
+
+    // linear fit of Haardt & MAdau 2012
+    for(igrp=0;igrp<NGRP;igrp++){
+      REAL curz = 1./aexp - 1.;
+
+      int i;
+      for(i=0; i<param->uv.N; i++){
+        if(curz <= param->uv.redshift[i]){
+
+          REAL y1 = param->uv.Nphot[i];
+          REAL y2 = param->uv.Nphot[i-1];
+          REAL x1 = param->uv.redshift[i];
+          REAL x2 = param->uv.redshift[i-1];
+          REAL fact = (y2-y1)/(x2-x1);
+
+          //ebkg[igrp] = param->uv.Nphot[i];
+          ebkg[igrp] = (curz-x1) * fact + y1;
+          break;
+        }
+      }
+    }
+
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -359,9 +383,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(test)
 	    {
-	      fudgecool=fudgecool/10.; 
-	      continue;	
-	    } 
+	      fudgecool=fudgecool/10.;
+	      continue;
+	    }
 
 	  // IONISATION
 #ifndef S_X
@@ -427,7 +451,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    if (R.snfb) Cool = 0; // Stop the cooling if supernovae
 	    if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool);
 #endif
-	    
+
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
@@ -554,3 +578,4 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 #endif
 #endif
+

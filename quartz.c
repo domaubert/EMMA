@@ -214,7 +214,6 @@ int main(int argc, char *argv[])
   gdb_debug();
 #endif
 
-
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
   int rtag=0;
@@ -264,7 +263,6 @@ int main(int argc, char *argv[])
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
-
 #else
   //in  cosmo case tmax is understood as a maximal expansion factor
   amax=param.tmax;

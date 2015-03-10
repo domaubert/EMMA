@@ -48,8 +48,6 @@
 #define MOLECULAR_MU (1.0)
 #define SOLAR_MASS (1.989e30) //kg
 
-#define PI 3.14159265
-
 
 // ================= SUPERNOVAE ===========================
 

@@ -11,6 +11,7 @@
 #include "stars.h"
 #include "hydro_utils.h"
 #include "atomic_data/Atomic.h"
+#include "tools.h"
 
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 
@@ -1121,6 +1122,11 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef SRCINT
   param->srcint*=SRCINT;
 #endif
+
+#ifdef UVBKG
+  setUVBKG(param, "uvbkg.dat");
+  abort();
+#endif // UVBKG
 
 }
 

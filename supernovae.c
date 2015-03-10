@@ -153,7 +153,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
 
-      printf("Energy injected =%e mass=%e aexp=%e cellE=%e\n",E,curp->mass,aexp, cell->field.E);
+      //printf("Energy injected =%e mass=%e aexp=%e cellE=%e\n",E,curp->mass,aexp, cell->field.E);
 
       thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
       kineticFeedback(param, cell,curp,aexp,level, E*param->sn->feedback_frac);

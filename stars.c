@@ -48,7 +48,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
   /// random component
 	REAL r = rdm(0,1) * cell->field.a ;
 	REAL theta  = acos(rdm(-1,1));
-	REAL phi = rdm(0,2*PI);
+	REAL phi = rdm(0,2*M_PI);
 
   /// add random component
 	star->vx += r * sin(theta) * cos(phi);
@@ -176,7 +176,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 
   /// local free fall time in seconde in code unit
-  REAL t_ff = SQRT(3.*PI/(32.*NEWTON_G * rho_m/ fact_rho));
+  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho));
   t_ff /= fact_t;
 
   /// local Jeans time in seconde in code unit
@@ -426,6 +426,7 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 #ifdef WMPI
 	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
 	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,	MPI_MAX,cpu->comm);
+	MPI_Allreduce(MPI_IN_PLACE,&percentvol,  1,MPI_REEL,	MPI_SUM,cpu->comm);
 #endif
 
 	param->stars->n += nstars ;
