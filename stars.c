@@ -84,7 +84,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	A = 	cell->field.d > param->stars->thresh;
 #ifdef WGRAV
   // test the Jeans criterion
-	B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
+	//B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
   B = 1;
 #else
 	B = 1;
@@ -388,6 +388,7 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 	setStarsState(param, cpu, level);
 
 	REAL mmax = 0;
+	REAL percentvol =0;
 	int nstars = 0;
 
 	initThresh(param, aexp);
@@ -401,11 +402,14 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
 
-      REAL dx = POW(2.0,-level);
+
 	    if( testCond(curcell, param, aexp, level) ) {
+        REAL dx = POW(2.0,-level);
 	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	      REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
+
+        percentvol += POW(dx,3);
 
 	      int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 
@@ -426,7 +430,7 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 
 	param->stars->n += nstars ;
 	if(cpu->rank==RANK_DISP) {
-		printf("Mmax=%e\tthresh=%e\n", mmax, param->stars->thresh );
+		printf("Mmax=%e\tthresh=%e\tvol=%e\n", mmax, param->stars->thresh, percentvol );
 		if (nstars){
       printf("%d stars added on level %d \n", nstars, level);
       printf("%d stars in total\n",param->stars->n);
