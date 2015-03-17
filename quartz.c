@@ -1,4 +1,10 @@
-
+/**
+ * \file quartz.c
+ * \brief main file of EMMA
+ *
+ *
+ *
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

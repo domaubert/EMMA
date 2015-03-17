@@ -215,7 +215,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d;
 #endif
   REAL xorg;
-  for(i=0;i<nread;i++){ // we scan the octs
+  for(i=0;i<nread;i++){  // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
 
       if(stencil[i].oct[6].cell[icell].split) continue; // we dont treat split cells
@@ -295,27 +295,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  }
 	  */
 
-    // linear fit of Haardt & MAdau 2012
-    for(igrp=0;igrp<NGRP;igrp++){
-      REAL curz = 1./aexp - 1.;
-
-      int i;
-      for(i=0; i<param->uv.N; i++){
-        if(curz <= param->uv.redshift[i]){
-
-          REAL y1 = param->uv.Nphot[i];
-          REAL y2 = param->uv.Nphot[i-1];
-          REAL x1 = param->uv.redshift[i];
-          REAL x2 = param->uv.redshift[i-1];
-          REAL fact = (y2-y1)/(x2-x1);
-
-          //ebkg[igrp] = param->uv.Nphot[i];
-          ebkg[igrp] = (curz-x1) * fact + y1;
-          break;
-        }
-      }
-    }
-
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -325,7 +304,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #else
 	  REAL hubblet=0.;
 #endif
-
 
 
 	  //if(eint[idloc]!=E0) printf("2!\n");

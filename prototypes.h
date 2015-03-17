@@ -1,3 +1,12 @@
+/**
+  * \file prototypes.h
+  *
+  *
+  */
+
+#include <stdio.h>
+#include <math.h>
+
 #ifdef WMPI
 #include <mpi.h>
 #endif
@@ -60,23 +69,40 @@ struct COSMOPARAM{
 
 #ifdef STARS
 struct STARSPARAM{
-  REAL overdensity_cond;// need overdensity_cond times the mean density to begin star formation
-  REAL density_cond;	// Hydrogen density (m-3)
-  REAL efficiency;		// efficiency of star formation proccess
-  REAL tlife;		// life time of a radiative source (yr)
+  /// need overdensity_cond times the mean density to begin star formation
+  REAL overdensity_cond;
+
+  /// Hydrogen density (m-3)
+  REAL density_cond;
+
+  /// efficiency of star formation proccess
+  REAL efficiency;
+
+  /// life time of a radiative source (yr)
+  REAL tlife;
+
+  /// the mass resolution
   REAL mass_res;
-  //REAL mstars;		// Mass of a stellar particle (PLUS BESOIN)
-  int  n;		// total number of stars
-  REAL thresh;		// density threshold to allow star formation
+
+  /// total number of stars
+  int  n;
+
+  /// density threshold to allow star formation
+  REAL thresh;
 
 };
 #endif
 
 #ifdef SUPERNOVAE
 struct SNPARAM{
-  REAL feedback_eff;	// feedback efficiency
-  REAL feedback_frac;	// fraction of thermal feedback over kinetic feedback
-  REAL Esnfb;		//  total Energy of a SN
+  /// feedback efficiency
+  REAL feedback_eff;
+
+  /// fraction of thermal feedback over kinetic feedback
+  REAL feedback_frac;
+
+  ///  total Energy of a SN
+  REAL Esnfb;
 };
 #endif // SUPERNOVAE
 
@@ -98,19 +124,45 @@ struct MOVIEPARAM{
 #endif
 
 struct UNITS{
-  REAL unit_l; // comoving length size of the box [meters]
-  REAL unit_v; // unit velocity
-  REAL unit_t; // unit time [seconds]
-  REAL unit_n; // unit number [moles typically]
-  REAL unit_mass; // unit mass [in kg, total mass is equal to one in unit codes]
-  REAL unit_d; // density unit [typically Omegam*rhoc in kg/m3]
-  REAL unit_N; // number density unit [typically Omegam*rhoc/mp in 1./m3]
+  /// comoving length size of the box [meters]
+  REAL unit_l;
+
+  /// unit velocity
+  REAL unit_v;
+
+  /// unit time [seconds]
+  REAL unit_t;
+
+  /// unit number [moles typically]
+  REAL unit_n;
+
+  /// unit mass [in kg, total mass is equal to one in unit codes]
+  REAL unit_mass;
+
+  /// density unit [typically Omegam*rhoc in kg/m3]
+  REAL unit_d;
+
+  /// number density unit [typically Omegam*rhoc/mp in 1./m3]
+  REAL unit_N;
+};
+
+struct SCALE{
+  REAL l;
+  REAL v;
+  REAL t;
+  REAL d;
+  REAL p;
+  REAL E;
+  REAL n;
+  REAL mass;
+  REAL N;
 };
 
 struct UVBACKGROUND{
   int N;
-  float *redshift;
-  float *Nphot;
+  REAL *redshift;
+  REAL *Nphot;
+  REAL *value;
 };
 
 //=======================================
@@ -167,6 +219,7 @@ struct RUNPARAMS{
   int ompthread; // numberf of OMP threads
 
   struct UNITS unit; // contains the units
+  struct SCALE scale; // contains the scaling factor for units convertion (function of aexp)
 
 #ifdef WRAD
   REAL clight; // speed of light in units of the real one
@@ -542,13 +595,16 @@ struct PART_MPI // For mpi communications
 struct HYDRO_MPI{
   struct Wtype data[8]; // the data to be transfered (8 since we transmit data per octs)
   //unsigned long long key; // the destination hilbert key
-  double key; // the destination hilbert key MODKEY
-  int level; // the level of the destination (to remove the key degeneracy)
+  /// the destination hilbert key MODKEY
+  double key;
+  /// the level of the destination (to remove the key degeneracy)
+  int level;
 };
 
 #ifdef WRAD
 struct RAD_MPI{
-  struct Rtype data[8]; // the data to be transfered (8 since we transmit data per octs)
+  /// the data to be transfered (8 since we transmit data per octs)
+  struct Rtype data[8];
   //unsigned long long key; // the destination hilbert key MODKEY
   double key; // the destination hilbert key
   int level; // the level of the destination (to remove the key degeneracy)
@@ -569,14 +625,15 @@ struct CELL
 {
   struct OCT *child;
   REAL marked; // REAL for consistency with physical quantities during communications
-  int idx; //index of the cell within the oct
+  ///index of the cell within the oct
+  int idx;
 
 #ifdef PIC
-  // the head particle
+  /// the head particle
   struct PART * phead;
 
-  // the physical quantities
-  REAL density; // total density
+  /// the physical quantities
+  REAL density;
   //REAL temp;
 #endif
 
@@ -595,8 +652,8 @@ struct CELL
 
 
 #ifdef WRAD
-  struct Rtype rfield;
-  struct Rtype rfieldnew;
+  struct Rtype rfield; //photons/s/m3
+  struct Rtype rfieldnew; //photons/s/m3
 #endif
 };
 

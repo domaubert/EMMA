@@ -1125,7 +1125,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 #ifdef UVBKG
   setUVBKG(param, "uvbkg.dat");
-  abort();
 #endif // UVBKG
 
 }

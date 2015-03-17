@@ -373,30 +373,3 @@ REAL a2t(struct RUNPARAMS *param, REAL az ){
 }
 #endif
 
-#ifdef UVBKG
-void setUVBKG(struct RUNPARAMS *param, char *fname){
-
-  printf("Reading UVBKG from file :%s\n",fname);
-
-  FILE *buf;
-  buf=fopen(fname,"r");
-  if(buf==NULL){
-    printf("ERROR : cannot open the file (%s given), please check\n",fname);
-    abort();
-  }else{
-
-    char stream[256];
-    size_t rstat;
-
-    rstat=fscanf(buf,"%d",param->uv.N);
-
-    param->uv.redshift=(float*)calloc(param->uv.N,sizeof(float));
-    param->uv.Nphot=(float*)calloc(param->uv.N,sizeof(float));
-
-    int i;
-    for(i=0; i<param->uv.N; i++){
-      rstat=fscanf(buf,"%f %f",&param->uv.redshift[i],&param->uv.Nphot[i]);
-    }
-  }
-}
-#endif

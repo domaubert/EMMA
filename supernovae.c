@@ -1,3 +1,13 @@
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+/// \file supernovae.c
+/// \brief contain functions for supernovae and stellar wind
+///
+/// More documentation can be found on the wiki :
+/// https://github.com/domaubert/EMMA/wiki/Supernovae
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -9,25 +19,16 @@
 #include "prototypes.h"
 #include "oct.h" //cell2oct
 #include "hydro_utils.h" // W2U and U2W
-
+#include "convert.h"
 
 #ifdef SUPERNOVAE
-/// ----------------------------------------------------------//
-/// ----------------------------------------------------------//
-
-/// This file contain functions for supernovae and stellar wind
-/// More documentation can be found on the wiki :
-/// https://github.com/domaubert/EMMA/wiki/Supernovae
-
-/// ----------------------------------------------------------//
-/// ----------------------------------------------------------//
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedbackCell(struct CELL *cell,  REAL E){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------
 /// Inject an energy "E" in the cell "cell" on thermal form.
-/// ----------------------------------------------------------//
+//----------------------------------------------------------
 
 #ifdef WRAD
         cell->field.E += E;
@@ -38,10 +39,10 @@ void thermalFeedbackCell(struct CELL *cell,  REAL E){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void thermalFeedbackOct(struct CELL *cell,  REAL E){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------
 /// Inject an energy "E" in all cells of the oct contening
 /// the cell "cell" uniformly on thermal form.
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------
 
 #ifdef WRAD
     struct OCT* oct = cell2oct(cell);
@@ -58,13 +59,13 @@ void thermalFeedbackOct(struct CELL *cell,  REAL E){
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 /// Inject an energy "E" in all cells of the oct contening
 /// the cell "cell" on kinetic form, radially to the center
 /// of the oct and uniformly in all cells
 /// The proportion of ejecta follow fig 109 of Starburst99 model:
 /// http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 
   REAL ejecta_proportion = 0.5260172663907063;
   REAL mtot_feedback = curp->mass* ejecta_proportion;
@@ -117,11 +118,11 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL mstar){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 /// Compute the total feedback energy following fig 115 of the
 /// Starburst99 model :
 /// http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 
   //REAL egy = 1.936421963946603e+55 *1e-7/(1e6*SOLAR_MASS); // erg/1e6M0 -> j/kg
 
@@ -135,10 +136,10 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 #ifndef SNTEST
 #ifdef PIC
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 /// Scan all particles of cell "cell" and look for supernovae
 /// If SN found, compute energy and inject it
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 
   int Nsn = 0;
 
@@ -170,10 +171,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 #else // ifdef SNTEST
 int SN_TMP_PARAM = 1;
 int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 /// For sedov test
 /// A supernovae explode in a uniform medium
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 
 	struct OCT* oct = cell2oct(cell);
 
@@ -214,9 +215,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 /// Call the feedback function for all cells of the grid
-/// ----------------------------------------------------------//
+// ----------------------------------------------------------//
 
   if(param->sn->feedback_eff){
     if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
