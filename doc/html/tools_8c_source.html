@@ -106,15 +106,15 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="title">/home/deparis/Quartz/tools.c</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
+<a href="tools_8c.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &lt;math.h&gt;</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;hilbert.h&quot;</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="hilbert_8h.html">hilbert.h</a>&quot;</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="prototypes_8h.html">prototypes.h</a>&quot;</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &lt;unistd.h&gt;</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="keywordtype">void</span> breakmpi()</div>
+<div class="line"><a name="l00009"></a><span class="lineno"><a class="line" href="tools_8h.html#a6a4b2478caba7aed2fc1bc079a94f40b">    9</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="tools_8c.html#a6a4b2478caba7aed2fc1bc079a94f40b">breakmpi</a>()</div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;{</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;  {</div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    <span class="keywordtype">int</span> i = 0;</div>
@@ -131,25 +131,25 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; <span class="comment">//------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;REAL multicheck(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> **firstoct,<span class="keywordtype">int</span> *npart,<span class="keywordtype">int</span> levelcoarse, <span class="keywordtype">int</span> levelmax, <span class="keywordtype">int</span> rank, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu,<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> label){</div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="tools_8h.html#aca5ce822deca08eba2f5b6ac1538286b">   26</a></span>&#160;<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> <a class="code" href="tools_8c.html#ad6d913c42b06abfac22ac0e544372e65">multicheck</a>(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> **firstoct,<span class="keywordtype">int</span> *npart,<span class="keywordtype">int</span> levelcoarse, <span class="keywordtype">int</span> levelmax, <span class="keywordtype">int</span> rank, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu,<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> label){</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;  <span class="keywordtype">int</span> ntot;</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  REAL ntotd;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  REAL nlevd;</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> ntotd;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> nlevd;</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;  <span class="keywordtype">int</span> level;</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a> *nextoct;</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a> *curoct;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  REAL dx,dv;</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> dx,dv;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;  <span class="keywordtype">int</span> nlev,noct;</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;  <span class="keywordtype">int</span> icell;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_p_a_r_t.html">PART</a> *nexp;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_p_a_r_t.html">PART</a> *curp;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  REAL mtot;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  REAL Mtot=0;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> mtot;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> Mtot=0;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  REAL xc,yc,zc;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">int</span> *vnoct=cpu-&gt;noct;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">int</span> *vnpart=cpu-&gt;npart;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> xc,yc,zc;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">int</span> *vnoct=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a08414eab4fc388aab74e5011d9ce4ef9">noct</a>;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">int</span> *vnpart=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a190348fb2eefe24db6c0d966148e975d">npart</a>;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <span class="keywordflow">if</span>(rank==0) printf(<span class="stringliteral">&quot;Check\n&quot;</span>);</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;  ntot=0.;</div>
@@ -159,7 +159,7 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  <span class="keywordtype">int</span> slev=0;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <span class="keywordtype">int</span> stot=0;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">int</span> *vnstar=cpu-&gt;nstar;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">int</span> *vnstar=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a2937dfcc643be7204fdc1d3c2d226827">nstar</a>;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordflow">for</span>(level=1;level&lt;=levelmax;level++)</div>
@@ -185,8 +185,8 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;      <span class="keywordflow">do</span> <span class="comment">// sweeping level</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    {</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      curoct=nextoct;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      nextoct=curoct-&gt;next;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      <span class="keywordflow">if</span>(curoct-&gt;cpu!=rank) <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      nextoct=curoct-&gt;<a class="code" href="struct_o_c_t.html#a48c65524e30f40438f3a15734eafb894">next</a>;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;      <span class="keywordflow">if</span>(curoct-&gt;<a class="code" href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">cpu</a>!=rank) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;      <span class="keywordflow">if</span>(level&gt;=levelcoarse)</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        {</div>
@@ -199,16 +199,16 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment">//        zc=curoct-&gt;z+(icell&gt;&gt;2)*dx+dx*0.5;</span></div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor">#ifdef WGRAV</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;          ntotd+=curoct-&gt;cell[icell].<a class="code" href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">density</a>*dv;</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;          nlevd+=curoct-&gt;cell[icell].<a class="code" href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">density</a>*dv;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;          ntotd+=curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">density</a>*dv;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;          nlevd+=curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">density</a>*dv;</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor">#ifdef WHYDRO2</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;          <span class="keywordflow">if</span>(curoct-&gt;cell[icell].child==NULL) Mtot +=curoct-&gt;cell[icell].field.d*dv;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;          <span class="keywordflow">if</span>(curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">child</a>==NULL) Mtot +=curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a37fa8e706c4eeb22e9d37c005261633d">d</a>*dv;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;          <span class="keywordflow">if</span>(curoct-&gt;cell[icell].field.d&lt;=0) {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;          <span class="keywordflow">if</span>(curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a37fa8e706c4eeb22e9d37c005261633d">d</a>&lt;=0) {</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;            printf(<span class="stringliteral">&quot;Negative value for density -&gt; abort in multicheck\n&quot;</span>);</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            printf(<span class="stringliteral">&quot;%e\t%e\t%e\t%e\t%e\t%e\t&quot;</span>, curoct-&gt;cell[icell].field.d,curoct-&gt;cell[icell].field.u,curoct-&gt;cell[icell].field.v,curoct-&gt;cell[icell].field.w,curoct-&gt;cell[icell].field.p,curoct-&gt;cell[icell].field.E);</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            printf(<span class="stringliteral">&quot;%e\t%e\t%e\t%e\t%e\t%e\t&quot;</span>, curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a37fa8e706c4eeb22e9d37c005261633d">d</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a81feead60849099fc1a371aa682e9bbe">u</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a289065f973efac360cf6703e414fd14f">v</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a808336c0a21e3226ec6dba1af663879d">w</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#a6a2b29414937cf13c06be245e7a4aa46">p</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">field</a>.<a class="code" href="struct_wtype.html#abb95084208bf19d32d01dc99e10a52aa">E</a>);</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            abort();</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;          }</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">#endif</span></div>
@@ -216,25 +216,25 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor">#ifdef PIC</span></div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          <span class="comment">//if(rank==0) printf(&quot;ic=%d %p\n&quot;,icell,nexp);</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;          <span class="keywordflow">if</span>((curoct-&gt;cell[icell].child!=NULL)&amp;&amp;(curoct-&gt;cell[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>!=NULL)){</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;          <span class="keywordflow">if</span>((curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">child</a>!=NULL)&amp;&amp;(curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>!=NULL)){</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;            printf(<span class="stringliteral">&quot;check: split cell with particles !\n&quot;</span>);</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            printf(<span class="stringliteral">&quot;curoct-&gt;cpu = %d curoct-&gt;level=%d\n&quot;</span>,curoct-&gt;cpu,curoct-&gt;level);</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;            printf(<span class="stringliteral">&quot;curoct-&gt;cpu = %d curoct-&gt;level=%d\n&quot;</span>,curoct-&gt;<a class="code" href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">cpu</a>,curoct-&gt;<a class="code" href="struct_o_c_t.html#acf4d33ee4cff36f69b924471174dcb11">level</a>);</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;            abort();</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;          }</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;          nexp=curoct-&gt;cell[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>; <span class="comment">//sweeping the particles of the current cell</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;          nexp=curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>; <span class="comment">//sweeping the particles of the current cell</span></div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;          <span class="keywordflow">if</span>(nexp==NULL)<span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;          <span class="keywordflow">do</span>{</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;            curp=nexp;</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            nexp=curp-&gt;next;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            nexp=curp-&gt;<a class="code" href="struct_p_a_r_t.html#ad12309285b14d1887bdb05a814502a9f">next</a>;</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;            nlev++;</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;            ntot++;</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;            <span class="keywordflow">if</span> (curp-&gt;isStar){</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;            <span class="keywordflow">if</span> (curp-&gt;<a class="code" href="struct_p_a_r_t.html#ad979bba01774d2df4f748e3d56ca71c7">isStar</a>){</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;            slev++;</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;            stot++;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            Mtot+=curp-&gt;mass;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            Mtot+=curp-&gt;<a class="code" href="struct_p_a_r_t.html#a7709794c305d62392e3311b11def51d2">mass</a>;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;            }</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;          }<span class="keywordflow">while</span>(nexp!=NULL);</div>
@@ -254,7 +254,7 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    }</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;Mtot,1,MPI_REEL,MPI_SUM,cpu-&gt;comm);</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;Mtot,1,MPI_REEL,MPI_SUM,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;  <span class="comment">/* REAL tmw = param-&gt;cosmo-&gt;ob/param-&gt;cosmo-&gt;om ; */</span></div>
@@ -278,12 +278,12 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;  <span class="keywordflow">if</span>(npart[0]!=0){ <span class="comment">// for initial call to multicheck that always provide a zero</span></div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;  <span class="keywordflow">if</span>(ntot!=npart[0]) {</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    printf(<span class="stringliteral">&quot;ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n&quot;</span>,npart[0],ntot,cpu-&gt;rank,label);</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    printf(<span class="stringliteral">&quot;ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n&quot;</span>,npart[0],ntot,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>,label);</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    abort();</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;  }</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;  <span class="keywordflow">if</span>(stot!=npart[1]) {</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    printf(<span class="stringliteral">&quot;ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n&quot;</span>,npart[1],stot,cpu-&gt;rank,label);</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    printf(<span class="stringliteral">&quot;ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n&quot;</span>,npart[1],stot,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>,label);</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    abort();</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;  }</div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor">#endif</span></div>
@@ -294,7 +294,7 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="preprocessor">#ifdef WMPI</span></div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; MPI_Barrier(cpu-&gt;comm);</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160; MPI_Barrier(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160; <span class="keywordflow">if</span>(rank==0) printf(<span class="stringliteral">&quot;Check done \n&quot;</span>);</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;</div>
@@ -304,7 +304,7 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160; <span class="comment">//------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="keywordtype">void</span> myradixsort(<span class="keywordtype">int</span> *a,<span class="keywordtype">int</span> n)</div>
+<div class="line"><a name="l00199"></a><span class="lineno"><a class="line" href="tools_8h.html#a04efdcf9306ba5d02bb96605e6b9d8ce">  199</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="tools_8c.html#a04efdcf9306ba5d02bb96605e6b9d8ce">myradixsort</a>(<span class="keywordtype">int</span> *a,<span class="keywordtype">int</span> n)</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;{</div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;  <span class="keywordtype">int</span> *b;</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;  <span class="keywordtype">int</span> i,m=0,exp=1;</div>
@@ -335,9 +335,9 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="comment">//============================================================================</span></div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="keywordtype">void</span> grid_census(<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu){</div>
+<div class="line"><a name="l00230"></a><span class="lineno"><a class="line" href="tools_8h.html#a9de943b2719aa2255545beab4efa357a">  230</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="tools_8c.html#a9de943b2719aa2255545beab4efa357a">grid_census</a>(<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu){</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <span class="keywordtype">int</span> level;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;  <span class="keywordtype">int</span> <a class="code" href="struct_p_a_r_t.html#acf4d33ee4cff36f69b924471174dcb11">level</a>;</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;  <span class="keywordtype">int</span> ltot,gtot=0,nomax,nomin;</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;  <span class="keywordtype">int</span> lpart,ptot=0;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
@@ -345,39 +345,39 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP){</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP){</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    printf(<span class="stringliteral">&quot;===============================================================\n&quot;</span>);</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;  }</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;  <span class="keywordflow">for</span>(level=2;level&lt;=param-&gt;lmax;level++){</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    ltot =cpu-&gt;noct[level-1];</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    lpart=cpu-&gt;npart[level-1];</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;  <span class="keywordflow">for</span>(level=2;level&lt;=param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a880eb260d9da52a83b315907eef5a40f">lmax</a>;level++){</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    ltot =cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a08414eab4fc388aab74e5011d9ce4ef9">noct</a>[level-1];</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    lpart=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a190348fb2eefe24db6c0d966148e975d">npart</a>[level-1];</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    lstar=cpu-&gt;nstar[level-1];</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    lstar=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a2937dfcc643be7204fdc1d3c2d226827">nstar</a>[level-1];</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    nomax=ltot;</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    nomin=ltot;</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    gtot+=ltot;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    ptot+=lpart;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="preprocessor">#ifdef WMPI</span></div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    MPI_Allreduce(&amp;ltot,&amp;nomax,1,MPI_INT,MPI_MAX,cpu-&gt;comm);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    MPI_Allreduce(&amp;ltot,&amp;nomin,1,MPI_INT,MPI_MIN,cpu-&gt;comm);</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;ltot,1,MPI_INT,MPI_SUM,cpu-&gt;comm);</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;lpart,1,MPI_INT,MPI_SUM,cpu-&gt;comm);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    MPI_Allreduce(&amp;ltot,&amp;nomax,1,MPI_INT,MPI_MAX,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    MPI_Allreduce(&amp;ltot,&amp;nomin,1,MPI_INT,MPI_MIN,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;ltot,1,MPI_INT,MPI_SUM,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;lpart,1,MPI_INT,MPI_SUM,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;lstar,1,MPI_INT,MPI_SUM,cpu-&gt;comm);</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keywordflow">if</span>(lstar&gt;0) cpu-&gt;trigstar=1;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    MPI_Allreduce(MPI_IN_PLACE,&amp;lstar,1,MPI_INT,MPI_SUM,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keywordflow">if</span>(lstar&gt;0) cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ad0196fe498ca5894357bcec052af23e8">trigstar</a>=1;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    lpart-=lstar;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP){</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP){</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;      <span class="keywordflow">if</span>(ltot!=0) {printf(<span class="stringliteral">&quot;level=%2d noct=%9d min=%9d max=%9d npart=%9d&quot;</span>,level,ltot,nomin,nomax,lpart);</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;<span class="preprocessor">#ifdef STARS</span></div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    printf(<span class="stringliteral">&quot; nstar=%9d&quot;</span>,lstar);</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    <span class="keywordtype">int</span> I;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    REAL frac=(ltot/(1.0*POW(2,3*(level-1))))*100.;</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> frac=(ltot/(1.0*POW(2,3*(level-1))))*100.;</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    printf(<span class="stringliteral">&quot; [&quot;</span>);</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keywordflow">for</span>(I=0;I&lt;12;I++) printf(<span class="stringliteral">&quot;%c&quot;</span>,(I/12.*100&lt;frac?<span class="charliteral">&#39;*&#39;</span>:<span class="charliteral">&#39; &#39;</span>));</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    printf(<span class="stringliteral">&quot;]\n&quot;</span>);</div>
@@ -385,13 +385,13 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    }</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;  }</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor">#ifdef WMPI</span></div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;gtot,1,MPI_INT,MPI_MAX,cpu-&gt;comm);</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;gtot,1,MPI_INT,MPI_MAX,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP) printf(<span class="stringliteral">&quot;\n&quot;</span>);</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP) printf(<span class="stringliteral">&quot;\n&quot;</span>);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP){</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP){</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;    <span class="keywordtype">int</span> I;</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    REAL frac=(gtot/(1.0*param-&gt;ngridmax))*100.;</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> frac=(gtot/(1.0*param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a7cbcc55f8da5ef28b0ce7f92a786e8b4">ngridmax</a>))*100.;</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    printf(<span class="stringliteral">&quot;grid occupancy=%6.1f [&quot;</span>,frac);</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    <span class="keywordflow">for</span>(I=0;I&lt;24;I++) printf(<span class="stringliteral">&quot;%c&quot;</span>,(I/24.*100&lt;frac?<span class="charliteral">&#39;*&#39;</span>:<span class="charliteral">&#39; &#39;</span>));</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    printf(<span class="stringliteral">&quot;]\n&quot;</span>);</div>
@@ -399,21 +399,21 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor">#ifdef PIC</span></div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">#ifdef WMPI</span></div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;ptot,1,MPI_INT,MPI_MAX,cpu-&gt;comm);</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;  MPI_Allreduce(MPI_IN_PLACE,&amp;ptot,1,MPI_INT,MPI_MAX,cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">comm</a>);</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP){</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP){</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    <span class="keywordtype">int</span> I;</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    REAL frac=(ptot/(1.0*param-&gt;npartmax))*100.;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> frac=(ptot/(1.0*param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#aa7c568810150462a57a03b3b16a55244">npartmax</a>))*100.;</div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    printf(<span class="stringliteral">&quot;part occupancy=%6.1f [&quot;</span>,frac);</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    <span class="keywordflow">for</span>(I=0;I&lt;24;I++) printf(<span class="stringliteral">&quot;%c&quot;</span>,(I/24.*100&lt;frac?<span class="charliteral">&#39;*&#39;</span>:<span class="charliteral">&#39; &#39;</span>));</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    printf(<span class="stringliteral">&quot;]\n&quot;</span>);</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;  }</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;rank==RANK_DISP){</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;  <span class="keywordflow">if</span>(cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>==RANK_DISP){</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="keywordtype">int</span> I;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    REAL frac=(gtot/(1.0*POW(2,(param-&gt;lmax-1)*3)))*100.;</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> frac=(gtot/(1.0*POW(2,(param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a880eb260d9da52a83b315907eef5a40f">lmax</a>-1)*3)))*100.;</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    printf(<span class="stringliteral">&quot;comp factor   =%6.1f [&quot;</span>,frac);</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keywordflow">for</span>(I=0;I&lt;24;I++) printf(<span class="stringliteral">&quot;%c&quot;</span>,(I/24.*100&lt;frac?<span class="charliteral">&#39;*&#39;</span>:<span class="charliteral">&#39; &#39;</span>));</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    printf(<span class="stringliteral">&quot;]\n\n&quot;</span>);</div>
@@ -430,21 +430,21 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;}</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;REAL rdm(REAL a, REAL b){</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="keywordflow">return</span>  (rand()/(REAL)RAND_MAX ) * (b-a) + a ;</div>
+<div class="line"><a name="l00325"></a><span class="lineno"><a class="line" href="tools_8h.html#a91f42832539ff8d981da345bd9d56c16">  325</a></span>&#160;<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> <a class="code" href="tools_8c.html#a91f42832539ff8d981da345bd9d56c16">rdm</a>(<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> a, <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> b){</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="keywordflow">return</span>  (rand()/(<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a>)RAND_MAX ) * (b-a) + a ;</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;}</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="keywordtype">int</span> gpoiss(REAL lambda){</div>
+<div class="line"><a name="l00330"></a><span class="lineno"><a class="line" href="tools_8h.html#a4677851cebd2907b9555c72bfba5e8d9">  330</a></span>&#160;<span class="keywordtype">int</span> <a class="code" href="tools_8c.html#a4677851cebd2907b9555c72bfba5e8d9">gpoiss</a>(<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> lambda){</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keywordtype">int</span> k=1;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    REAL p = rdm(0,1);</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    REAL P = exp(-lambda);</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    REAL sum=P;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> p = <a class="code" href="tools_8c.html#a91f42832539ff8d981da345bd9d56c16">rdm</a>(0,1);</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> P = exp(-lambda);</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> sum=P;</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keywordflow">if</span> (sum&gt;=p){</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;      k=0;</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    }</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="keywordflow">do</span> {  P*=lambda/(REAL)k;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="keywordflow">do</span> {  P*=lambda/(<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a>)k;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        sum+=P;</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keywordflow">if</span> (sum&gt;=p) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        k++;</div>
@@ -455,42 +455,81 @@ $(document).ready(function(){initNavTree('tools_8c_source.html','');});
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;}</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#ifdef TESTCOSMO</span></div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;REAL a2t(<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, REAL az ){</div>
+<div class="line"><a name="l00352"></a><span class="lineno"><a class="line" href="tools_8h.html#ad4cc2e6299d46ff6d90977cad9c84418">  352</a></span>&#160;<a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> <a class="code" href="tools_8c.html#ad4cc2e6299d46ff6d90977cad9c84418">a2t</a>(<span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> az ){</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    REAL age = 0.;</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    REAL a, adot;</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    REAL h = param-&gt;cosmo-&gt;H0/100;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> <a class="code" href="struct_p_a_r_t.html#a822c40046048138c489a2caac4f4f4d9">age</a> = 0.;</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> a, adot;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> h = param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#a9c1ab3ce618df0cb86fcb0d8a2c2abb8">H0</a>/100;</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    REAL or = 4.165e-5/(h*h);</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    REAL ok = 1. - param-&gt;cosmo-&gt;om - or - param-&gt;cosmo-&gt;ov;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> or = 4.165e-5/(h*h);</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> ok = 1. - param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#a74082c7ddfa5e90335cc6aad34036395">om</a> - or - param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#ac64c38b1254e63aec1203bbdb12544f7">ov</a>;</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    <span class="keywordtype">int</span> i, n=1000;</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keywordflow">for</span> (i=0; i&lt;n;i++){</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;        a = az*(i+0.5)/n;</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        adot = SQRT(ok+(param-&gt;cosmo-&gt;om / a)+(or/ (a*a) )+ (param-&gt;cosmo-&gt;ov*a*a) );</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        adot = SQRT(ok+(param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#a74082c7ddfa5e90335cc6aad34036395">om</a> / a)+(or/ (a*a) )+ (param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#ac64c38b1254e63aec1203bbdb12544f7">ov</a>*a*a) );</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;        age = age + 1./adot;</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    }</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    REAL zage = az*age/n;</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    REAL zage_Gyr = (977.8 /param-&gt;cosmo-&gt;H0)*zage;</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> zage = az*age/n;</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> zage_Gyr = (977.8 /param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">cosmo</a>-&gt;<a class="code" href="struct_c_o_s_m_o_p_a_r_a_m.html#a9c1ab3ce618df0cb86fcb0d8a2c2abb8">H0</a>)*zage;</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keywordflow">return</span> zage_Gyr*1e9;</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;}</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;</div>
-<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00279">prototypes.h:279</a></div></div>
+<div class="ttc" id="struct_wtype_html_abb95084208bf19d32d01dc99e10a52aa"><div class="ttname"><a href="struct_wtype.html#abb95084208bf19d32d01dc99e10a52aa">Wtype::E</a></div><div class="ttdeci">REAL E</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00420">prototypes.h:420</a></div></div>
+<div class="ttc" id="tools_8c_html_ad4cc2e6299d46ff6d90977cad9c84418"><div class="ttname"><a href="tools_8c.html#ad4cc2e6299d46ff6d90977cad9c84418">a2t</a></div><div class="ttdeci">REAL a2t(struct RUNPARAMS *param, REAL az)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00352">tools.c:352</a></div></div>
+<div class="ttc" id="tools_8c_html_a4677851cebd2907b9555c72bfba5e8d9"><div class="ttname"><a href="tools_8c.html#a4677851cebd2907b9555c72bfba5e8d9">gpoiss</a></div><div class="ttdeci">int gpoiss(REAL lambda)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00330">tools.c:330</a></div></div>
+<div class="ttc" id="tools_8c_html_a9de943b2719aa2255545beab4efa357a"><div class="ttname"><a href="tools_8c.html#a9de943b2719aa2255545beab4efa357a">grid_census</a></div><div class="ttdeci">void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00230">tools.c:230</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00250">prototypes.h:250</a></div></div>
+<div class="ttc" id="prototypes_8h_html_a5821460e95a0800cf9f24c38915cbbde"><div class="ttname"><a href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a></div><div class="ttdeci">float REAL</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00019">prototypes.h:19</a></div></div>
 <div class="ttc" id="prototypes_8h_html"><div class="ttname"><a href="prototypes_8h.html">prototypes.h</a></div></div>
-<div class="ttc" id="struct_c_e_l_l_html_a8fc589e80cb7213afcfc32d8a32be1ae"><div class="ttname"><a href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">CELL::density</a></div><div class="ttdeci">REAL density</div><div class="ttdoc">the physical quantities </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00636">prototypes.h:636</a></div></div>
-<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00817">prototypes.h:817</a></div></div>
-<div class="ttc" id="struct_p_a_r_t_html"><div class="ttname"><a href="struct_p_a_r_t.html">PART</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00523">prototypes.h:523</a></div></div>
-<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00170">prototypes.h:170</a></div></div>
-<div class="ttc" id="struct_c_e_l_l_html_a231b96e3f458c52f1a3d0e0f6259001c"><div class="ttname"><a href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">CELL::phead</a></div><div class="ttdeci">struct PART * phead</div><div class="ttdoc">the head particle </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00633">prototypes.h:633</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html_a880eb260d9da52a83b315907eef5a40f"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html#a880eb260d9da52a83b315907eef5a40f">RUNPARAMS::lmax</a></div><div class="ttdeci">int lmax</div><div class="ttdoc">the max level of refinement </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00150">prototypes.h:150</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_ad12309285b14d1887bdb05a814502a9f"><div class="ttname"><a href="struct_p_a_r_t.html#ad12309285b14d1887bdb05a814502a9f">PART::next</a></div><div class="ttdeci">struct PART * next</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00514">prototypes.h:514</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_a822c40046048138c489a2caac4f4f4d9"><div class="ttname"><a href="struct_p_a_r_t.html#a822c40046048138c489a2caac4f4f4d9">PART::age</a></div><div class="ttdeci">REAL age</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00529">prototypes.h:529</a></div></div>
+<div class="ttc" id="struct_c_o_s_m_o_p_a_r_a_m_html_ac64c38b1254e63aec1203bbdb12544f7"><div class="ttname"><a href="struct_c_o_s_m_o_p_a_r_a_m.html#ac64c38b1254e63aec1203bbdb12544f7">COSMOPARAM::ov</a></div><div class="ttdeci">REAL ov</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00059">prototypes.h:59</a></div></div>
+<div class="ttc" id="tools_8c_html_a04efdcf9306ba5d02bb96605e6b9d8ce"><div class="ttname"><a href="tools_8c.html#a04efdcf9306ba5d02bb96605e6b9d8ce">myradixsort</a></div><div class="ttdeci">void myradixsort(int *a, int n)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00199">tools.c:199</a></div></div>
+<div class="ttc" id="struct_wtype_html_a81feead60849099fc1a371aa682e9bbe"><div class="ttname"><a href="struct_wtype.html#a81feead60849099fc1a371aa682e9bbe">Wtype::u</a></div><div class="ttdeci">REAL u</div><div class="ttdoc">velocity </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00415">prototypes.h:415</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html_a5d352784b8b509be8729cddbeb2d23be"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be">RUNPARAMS::cosmo</a></div><div class="ttdeci">struct COSMOPARAM * cosmo</div><div class="ttdoc">the cosmological parameters </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00177">prototypes.h:177</a></div></div>
+<div class="ttc" id="struct_c_o_s_m_o_p_a_r_a_m_html_a74082c7ddfa5e90335cc6aad34036395"><div class="ttname"><a href="struct_c_o_s_m_o_p_a_r_a_m.html#a74082c7ddfa5e90335cc6aad34036395">COSMOPARAM::om</a></div><div class="ttdeci">REAL om</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00058">prototypes.h:58</a></div></div>
+<div class="ttc" id="struct_wtype_html_a808336c0a21e3226ec6dba1af663879d"><div class="ttname"><a href="struct_wtype.html#a808336c0a21e3226ec6dba1af663879d">Wtype::w</a></div><div class="ttdeci">REAL w</div><div class="ttdoc">velocity </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00417">prototypes.h:417</a></div></div>
+<div class="ttc" id="struct_wtype_html_a6a2b29414937cf13c06be245e7a4aa46"><div class="ttname"><a href="struct_wtype.html#a6a2b29414937cf13c06be245e7a4aa46">Wtype::p</a></div><div class="ttdeci">REAL p</div><div class="ttdoc">pressure </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00418">prototypes.h:418</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a8fc589e80cb7213afcfc32d8a32be1ae"><div class="ttname"><a href="struct_c_e_l_l.html#a8fc589e80cb7213afcfc32d8a32be1ae">CELL::density</a></div><div class="ttdeci">REAL density</div><div class="ttdoc">the physical quantities </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00604">prototypes.h:604</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html_a7cbcc55f8da5ef28b0ce7f92a786e8b4"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html#a7cbcc55f8da5ef28b0ce7f92a786e8b4">RUNPARAMS::ngridmax</a></div><div class="ttdeci">int ngridmax</div><div class="ttdoc">the max oct numbers (per process) </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00143">prototypes.h:143</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_ab048c6f9fcbcfaa57ce68b00263dbebe"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#ab048c6f9fcbcfaa57ce68b00263dbebe">CPUINFO::comm</a></div><div class="ttdeci">MPI_Comm comm</div><div class="ttdoc">the communicator </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00313">prototypes.h:313</a></div></div>
+<div class="ttc" id="tools_8c_html_ad6d913c42b06abfac22ac0e544372e65"><div class="ttname"><a href="tools_8c.html#ad6d913c42b06abfac22ac0e544372e65">multicheck</a></div><div class="ttdeci">REAL multicheck(struct OCT **firstoct, int *npart, int levelcoarse, int levelmax, int rank, struct CPUINFO *cpu, struct RUNPARAMS *param, int label)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00026">tools.c:26</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a2937dfcc643be7204fdc1d3c2d226827"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a2937dfcc643be7204fdc1d3c2d226827">CPUINFO::nstar</a></div><div class="ttdeci">int * nstar</div><div class="ttdoc">the number of stars per levels </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00322">prototypes.h:322</a></div></div>
+<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00785">prototypes.h:785</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html"><div class="ttname"><a href="struct_p_a_r_t.html">PART</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00498">prototypes.h:498</a></div></div>
+<div class="ttc" id="struct_wtype_html_a289065f973efac360cf6703e414fd14f"><div class="ttname"><a href="struct_wtype.html#a289065f973efac360cf6703e414fd14f">Wtype::v</a></div><div class="ttdeci">REAL v</div><div class="ttdoc">velocity </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00416">prototypes.h:416</a></div></div>
+<div class="ttc" id="hilbert_8h_html"><div class="ttname"><a href="hilbert_8h.html">hilbert.h</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_abfac147f3903fb0ff391eef2c8c08cf5"><div class="ttname"><a href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">OCT::cell</a></div><div class="ttdeci">struct CELL cell[8]</div><div class="ttdoc">the cell properties </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00788">prototypes.h:788</a></div></div>
+<div class="ttc" id="tools_8c_html_a91f42832539ff8d981da345bd9d56c16"><div class="ttname"><a href="tools_8c.html#a91f42832539ff8d981da345bd9d56c16">rdm</a></div><div class="ttdeci">REAL rdm(REAL a, REAL b)</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00325">tools.c:325</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_a41a58b7c4446ab1abce89f43531cd523"><div class="ttname"><a href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">OCT::cpu</a></div><div class="ttdeci">int cpu</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00804">prototypes.h:804</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00141">prototypes.h:141</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_ad979bba01774d2df4f748e3d56ca71c7"><div class="ttname"><a href="struct_p_a_r_t.html#ad979bba01774d2df4f748e3d56ca71c7">PART::isStar</a></div><div class="ttdeci">int isStar</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00527">prototypes.h:527</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_acf4d33ee4cff36f69b924471174dcb11"><div class="ttname"><a href="struct_p_a_r_t.html#acf4d33ee4cff36f69b924471174dcb11">PART::level</a></div><div class="ttdeci">int level</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00520">prototypes.h:520</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a8a1589e29703f9be75944022e81ccae4"><div class="ttname"><a href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">CELL::child</a></div><div class="ttdeci">struct OCT * child</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00598">prototypes.h:598</a></div></div>
+<div class="ttc" id="struct_wtype_html_a37fa8e706c4eeb22e9d37c005261633d"><div class="ttname"><a href="struct_wtype.html#a37fa8e706c4eeb22e9d37c005261633d">Wtype::d</a></div><div class="ttdeci">REAL d</div><div class="ttdoc">density </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00414">prototypes.h:414</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a190348fb2eefe24db6c0d966148e975d"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a190348fb2eefe24db6c0d966148e975d">CPUINFO::npart</a></div><div class="ttdeci">int * npart</div><div class="ttdoc">the number of particles per levels </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00320">prototypes.h:320</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a6cfd95afd0afebd625b889fb6e58371c"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">CPUINFO::rank</a></div><div class="ttdeci">int rank</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00251">prototypes.h:251</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a231b96e3f458c52f1a3d0e0f6259001c"><div class="ttname"><a href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">CELL::phead</a></div><div class="ttdeci">struct PART * phead</div><div class="ttdoc">the head particle </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00603">prototypes.h:603</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_acf4d33ee4cff36f69b924471174dcb11"><div class="ttname"><a href="struct_o_c_t.html#acf4d33ee4cff36f69b924471174dcb11">OCT::level</a></div><div class="ttdeci">int level</div><div class="ttdoc">level of the cells in the oct </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00805">prototypes.h:805</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a19f4f5299f1b9f41374dd0e852bef2c8"><div class="ttname"><a href="struct_c_e_l_l.html#a19f4f5299f1b9f41374dd0e852bef2c8">CELL::field</a></div><div class="ttdeci">struct Wtype field</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00617">prototypes.h:617</a></div></div>
+<div class="ttc" id="tools_8c_html_a6a4b2478caba7aed2fc1bc079a94f40b"><div class="ttname"><a href="tools_8c.html#a6a4b2478caba7aed2fc1bc079a94f40b">breakmpi</a></div><div class="ttdeci">void breakmpi()</div><div class="ttdef"><b>Definition:</b> <a href="tools_8c_source.html#l00009">tools.c:9</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_a48c65524e30f40438f3a15734eafb894"><div class="ttname"><a href="struct_o_c_t.html#a48c65524e30f40438f3a15734eafb894">OCT::next</a></div><div class="ttdeci">struct OCT * next</div><div class="ttdoc">next oct on the same level </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00794">prototypes.h:794</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_a7709794c305d62392e3311b11def51d2"><div class="ttname"><a href="struct_p_a_r_t.html#a7709794c305d62392e3311b11def51d2">PART::mass</a></div><div class="ttdeci">REAL mass</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00517">prototypes.h:517</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_ad0196fe498ca5894357bcec052af23e8"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#ad0196fe498ca5894357bcec052af23e8">CPUINFO::trigstar</a></div><div class="ttdeci">int trigstar</div><div class="ttdoc">set to 1 after the first star has been formed </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00323">prototypes.h:323</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a08414eab4fc388aab74e5011d9ce4ef9"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a08414eab4fc388aab74e5011d9ce4ef9">CPUINFO::noct</a></div><div class="ttdeci">int * noct</div><div class="ttdoc">the number of octs per levels </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00319">prototypes.h:319</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html_aa7c568810150462a57a03b3b16a55244"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html#aa7c568810150462a57a03b3b16a55244">RUNPARAMS::npartmax</a></div><div class="ttdeci">int npartmax</div><div class="ttdoc">the max particles number (per process) </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00142">prototypes.h:142</a></div></div>
+<div class="ttc" id="struct_c_o_s_m_o_p_a_r_a_m_html_a9c1ab3ce618df0cb86fcb0d8a2c2abb8"><div class="ttname"><a href="struct_c_o_s_m_o_p_a_r_a_m.html#a9c1ab3ce618df0cb86fcb0d8a2c2abb8">COSMOPARAM::H0</a></div><div class="ttdeci">REAL H0</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00061">prototypes.h:61</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>tools.c</b></li>
-    <li class="footer">Generated on Tue Mar 17 2015 04:56:59 for EMMA by
+    <li class="navelem"><a class="el" href="tools_8c.html">tools.c</a></li>
+    <li class="footer">Generated on Tue Mar 17 2015 11:49:16 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

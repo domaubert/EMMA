@@ -106,17 +106,17 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="title">/home/deparis/Quartz/oct.c</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
+<a href="oct_8c.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#include &lt;math.h&gt;</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;stdlib.h&gt;</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="prototypes_8h.html">prototypes.h</a>&quot;</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &lt;string.h&gt;</span></div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &quot;cic.h&quot;</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="cic_8h.html">cic.h</a>&quot;</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">// returns the cells on a neighbour face given by idx</span></div>
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="keywordtype">void</span> getfcell(<span class="keywordtype">int</span> <a class="code" href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">idx</a>, <span class="keywordtype">int</span> *fcell){</div>
+<div class="line"><a name="l00011"></a><span class="lineno"><a class="line" href="oct_8c.html#a5b60bcd2ab09c60a44b8430f76d8617e">   11</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a5b60bcd2ab09c60a44b8430f76d8617e">getfcell</a>(<span class="keywordtype">int</span> <a class="code" href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">idx</a>, <span class="keywordtype">int</span> *fcell){</div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;  <span class="keywordflow">switch</span>(idx){</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;  <span class="keywordflow">case</span> 0:</div>
@@ -160,7 +160,7 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">// it flips the cell along a certain direction for transmissive boundary conditions</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordtype">void</span> flipcell(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> *oct, <span class="keywordtype">int</span> dir){</div>
+<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="oct_8c.html#aa99f4821afaa075540694b41934d6172">   56</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#aa99f4821afaa075540694b41934d6172">flipcell</a>(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> *oct, <span class="keywordtype">int</span> dir){</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keywordtype">int</span> i;</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_c_e_l_l.html">CELL</a> temp;</div>
@@ -171,9 +171,9 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;      <span class="keywordtype">char</span> c1[4]={0,2,4,6};</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;      <span class="keywordtype">char</span> c2[4]={1,3,5,7};</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;      <span class="keywordflow">for</span>(i=0;i&lt;4;i++){</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    temp=oct-&gt;cell[c1[i]];</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    memcpy(&amp;(oct-&gt;cell[c1[i]]),&amp;(oct-&gt;cell[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        memcpy(&amp;(oct-&gt;cell[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    temp=oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]];</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]]),&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;      }</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    }</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">break</span>;</div>
@@ -182,9 +182,9 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordtype">char</span> c1[4]={0,1,4,5};</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">char</span> c2[4]={2,3,6,7};</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">for</span>(i=0;i&lt;4;i++){</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;      temp=oct-&gt;cell[c1[i]];</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      memcpy(&amp;(oct-&gt;cell[c1[i]]),&amp;(oct-&gt;cell[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      memcpy(&amp;(oct-&gt;cell[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;      temp=oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]];</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;      memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]]),&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;      memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    }</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    }</div>
@@ -193,9 +193,9 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;      <span class="keywordtype">char</span> c1[4]={0,1,2,3};</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;      <span class="keywordtype">char</span> c2[4]={4,5,6,7};</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;      <span class="keywordflow">for</span>(i=0;i&lt;4;i++){</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    temp=oct-&gt;cell[c1[i]];</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    memcpy(&amp;(oct-&gt;cell[c1[i]]),&amp;(oct-&gt;cell[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    memcpy(&amp;(oct-&gt;cell[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    temp=oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]];</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c1[i]]),&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    memcpy(&amp;(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[c2[i]]),&amp;temp,<span class="keyword">sizeof</span>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>));</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;      }</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;      <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    }</div>
@@ -207,7 +207,7 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="comment">// This function returns the parent oct of a given cell</span></div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* cell2oct(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>* cell)</div>
+<div class="line"><a name="l00103"></a><span class="lineno"><a class="line" href="oct_8h.html#a1fb4cba38b27e10f9e8c0ec38ebd4737">  103</a></span>&#160;<span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* <a class="code" href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737">cell2oct</a>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>* <a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>)</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;{</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;  <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">int</span> adress;</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a> *poct;</div>
@@ -220,7 +220,7 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">//------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="keywordtype">void</span> getcellnei(<span class="keywordtype">int</span> cindex, <span class="keywordtype">int</span> *neip, <span class="keywordtype">int</span> *cell)</div>
+<div class="line"><a name="l00116"></a><span class="lineno"><a class="line" href="oct_8h.html#a20add264fc085467b9fceb1d3d24a596">  116</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596">getcellnei</a>(<span class="keywordtype">int</span> cindex, <span class="keywordtype">int</span> *neip, <span class="keywordtype">int</span> *<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>)</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;{</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;  <span class="keywordflow">switch</span>(cindex){</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  <span class="keywordflow">case</span> 0:</div>
@@ -291,13 +291,13 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;</div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;}</div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="keywordtype">void</span> getneicell_6(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a> *cell, <span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>** neicell ){</div>
+<div class="line"><a name="l00187"></a><span class="lineno"><a class="line" href="oct_8c.html#a23d28e2f73ad896e051e9fb7c1a6ed16">  187</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a23d28e2f73ad896e051e9fb7c1a6ed16">getneicell_6</a>(<span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a> *<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>, <span class="keyword">struct</span> <a class="code" href="struct_c_e_l_l.html">CELL</a>** neicell ){</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="comment">// return a pointer table with the 6 neighbors of a given cell</span></div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keywordtype">int</span> vnei[6],vcell[6];</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    getcellnei(cell-&gt;<a class="code" href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">idx</a>, vnei, vcell);</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <a class="code" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596">getcellnei</a>(cell-&gt;<a class="code" href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">idx</a>, vnei, vcell);</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* curoct = cell2oct(cell);</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* curoct = <a class="code" href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737">cell2oct</a>(cell);</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* neioct[6];</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;</div>
@@ -305,11 +305,11 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    <span class="keywordflow">for</span>(i=0;i&lt;6;i++){</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        neicell[i] = NULL;</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;        <span class="keywordflow">if</span>(vnei[i]==6){</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            neicell[i] = &amp;curoct-&gt;cell[vcell[i]];</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            neicell[i] = &amp;curoct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[vcell[i]];</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        }<span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* neioct = curoct-&gt;nei[vnei[i]]-&gt;child;</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;            <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>* neioct = curoct-&gt;<a class="code" href="struct_o_c_t.html#af8090d90955d299c3eb6fe1ccc535705">nei</a>[vnei[i]]-&gt;<a class="code" href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">child</a>;</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            <span class="keywordflow">if</span>(neioct != NULL){</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                neicell[i] = &amp;neioct-&gt;cell[vcell[i]];</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;                neicell[i] = &amp;neioct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[vcell[i]];</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;            }</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        }</div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    }</div>
@@ -319,25 +319,25 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;<span class="comment">//------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;<span class="preprocessor">#ifdef PIC</span></div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;<span class="keywordtype">void</span> cic_child(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a>* oct,<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a>* octorg, <span class="keywordtype">int</span> icellorg)</div>
+<div class="line"><a name="l00215"></a><span class="lineno"><a class="line" href="oct_8h.html#a2576bba3bc305a971dd6d874a00a5ed8">  215</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a2576bba3bc305a971dd6d874a00a5ed8">cic_child</a>(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a>* oct,<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a>* octorg, <span class="keywordtype">int</span> icellorg)</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;{</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_p_a_r_t.html">PART</a> *nexp;</div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_p_a_r_t.html">PART</a> *curp;</div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;  <span class="keywordtype">int</span> icell;</div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;</div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;  <span class="keywordflow">for</span>(icell=0;icell&lt;8;icell++){</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">if</span>(oct-&gt;cell[icell].child==NULL){</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;      nexp=oct-&gt;cell[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>; <span class="comment">//sweeping the particles of the current cell */</span></div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keywordflow">if</span>(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">child</a>==NULL){</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;      nexp=oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">phead</a>; <span class="comment">//sweeping the particles of the current cell */</span></div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;      <span class="keywordflow">if</span>(nexp!=NULL){</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordflow">do</span>{</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;      curp=nexp;</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;      nexp=curp-&gt;next;</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;      part2cell_cic(curp, octorg, icellorg,1);</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;      nexp=curp-&gt;<a class="code" href="struct_p_a_r_t.html#ad12309285b14d1887bdb05a814502a9f">next</a>;</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;      <a class="code" href="cic_8c.html#a274f741bd8f953c27aa75c57ceedfbe5">part2cell_cic</a>(curp, octorg, icellorg,1);</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    }<span class="keywordflow">while</span>(nexp!=NULL);</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;      }</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    }</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordflow">else</span>{</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;      cic_child(oct-&gt;cell[icell].child,octorg,icellorg);</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;      <a class="code" href="oct_8c.html#a2576bba3bc305a971dd6d874a00a5ed8">cic_child</a>(oct-&gt;<a class="code" href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">cell</a>[icell].<a class="code" href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">child</a>,octorg,icellorg);</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    }</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;  }</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;}</div>
@@ -348,50 +348,71 @@ $(document).ready(function(){initNavTree('oct_8c_source.html','');});
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="keywordtype">void</span> cleanOctList(<span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, <span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> level){</div>
+<div class="line"><a name="l00244"></a><span class="lineno"><a class="line" href="oct_8c.html#a4e2b4f563f714e52b4d3bfe587187d00">  244</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a4e2b4f563f714e52b4d3bfe587187d00">cleanOctList</a>(<span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, <span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> <a class="code" href="struct_p_a_r_t.html#acf4d33ee4cff36f69b924471174dcb11">level</a>){</div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;  <span class="keywordtype">int</span> i;</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="keywordflow">for</span>(i=0;i&lt;param-&gt;ngridmax; i++)  cpu-&gt;octList[level-1][i] = NULL;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;  <span class="keywordflow">for</span>(i=0;i&lt;param-&gt;<a class="code" href="struct_r_u_n_p_a_r_a_m_s.html#a7cbcc55f8da5ef28b0ce7f92a786e8b4">ngridmax</a>; i++)  cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ae983ab7e7f4f572cf12727d87642956f">octList</a>[level-1][i] = NULL;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;}</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="keywordtype">void</span> setOctList(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> *firstoct, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, <span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> level){</div>
+<div class="line"><a name="l00250"></a><span class="lineno"><a class="line" href="oct_8h.html#a6880a95458ae34fb292d8758b7379421">  250</a></span>&#160;<span class="keywordtype">void</span> <a class="code" href="oct_8c.html#a6880a95458ae34fb292d8758b7379421">setOctList</a>(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> *firstoct, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, <span class="keyword">struct</span> <a class="code" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, <span class="keywordtype">int</span> <a class="code" href="struct_p_a_r_t.html#acf4d33ee4cff36f69b924471174dcb11">level</a>){</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160; <span class="comment">// printf(&quot;Building octList\n&quot;);</span></div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>  *nextoct = firstoct;</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;  <span class="keyword">struct </span><a class="code" href="struct_o_c_t.html">OCT</a>  *curoct;</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  cleanOctList(cpu,param,level);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;  <a class="code" href="oct_8c.html#a4e2b4f563f714e52b4d3bfe587187d00">cleanOctList</a>(cpu,param,level);</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;  <span class="keywordtype">int</span> nOct = 0;</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;  <span class="keywordflow">do</span>{ <span class="keywordflow">if</span>(nextoct==NULL)         <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;      curoct=nextoct;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;      nextoct=curoct-&gt;next;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;      <span class="keywordflow">if</span>(curoct-&gt;cpu!=cpu-&gt;rank) <span class="keywordflow">continue</span>;</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;      nextoct=curoct-&gt;<a class="code" href="struct_o_c_t.html#a48c65524e30f40438f3a15734eafb894">next</a>;</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;      <span class="keywordflow">if</span>(curoct-&gt;<a class="code" href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">cpu</a>!=cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">rank</a>) <span class="keywordflow">continue</span>;</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;      cpu-&gt;octList[level-1][nOct++] = curoct;</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;      cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#ae983ab7e7f4f572cf12727d87642956f">octList</a>[level-1][nOct++] = curoct;</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;  }<span class="keywordflow">while</span>(nextoct!=NULL);</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  cpu-&gt;locNoct[level-1] = nOct;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;  cpu-&gt;<a class="code" href="struct_c_p_u_i_n_f_o.html#a179581ac7d5262dabf4e35be210acc26">locNoct</a>[level-1] = nOct;</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="comment">//  printf(&quot;nOct = %d on level %d by cpu %d\n&quot;,nOct, level, cpu-&gt;rank);</span></div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;}</div>
-<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00279">prototypes.h:279</a></div></div>
+<div class="ttc" id="oct_8c_html_a23d28e2f73ad896e051e9fb7c1a6ed16"><div class="ttname"><a href="oct_8c.html#a23d28e2f73ad896e051e9fb7c1a6ed16">getneicell_6</a></div><div class="ttdeci">void getneicell_6(struct CELL *cell, struct CELL **neicell)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00187">oct.c:187</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00250">prototypes.h:250</a></div></div>
 <div class="ttc" id="prototypes_8h_html"><div class="ttname"><a href="prototypes_8h.html">prototypes.h</a></div></div>
-<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00817">prototypes.h:817</a></div></div>
-<div class="ttc" id="struct_p_a_r_t_html"><div class="ttname"><a href="struct_p_a_r_t.html">PART</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00523">prototypes.h:523</a></div></div>
-<div class="ttc" id="struct_c_e_l_l_html_ae40354a1051342eb5a9db005715dcfa9"><div class="ttname"><a href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">CELL::idx</a></div><div class="ttdeci">int idx</div><div class="ttdoc">index of the cell within the oct </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00629">prototypes.h:629</a></div></div>
-<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00170">prototypes.h:170</a></div></div>
-<div class="ttc" id="struct_c_e_l_l_html_a231b96e3f458c52f1a3d0e0f6259001c"><div class="ttname"><a href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">CELL::phead</a></div><div class="ttdeci">struct PART * phead</div><div class="ttdoc">the head particle </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00633">prototypes.h:633</a></div></div>
-<div class="ttc" id="struct_c_e_l_l_html"><div class="ttname"><a href="struct_c_e_l_l.html">CELL</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00624">prototypes.h:624</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_ad12309285b14d1887bdb05a814502a9f"><div class="ttname"><a href="struct_p_a_r_t.html#ad12309285b14d1887bdb05a814502a9f">PART::next</a></div><div class="ttdeci">struct PART * next</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00514">prototypes.h:514</a></div></div>
+<div class="ttc" id="oct_8c_html_aa99f4821afaa075540694b41934d6172"><div class="ttname"><a href="oct_8c.html#aa99f4821afaa075540694b41934d6172">flipcell</a></div><div class="ttdeci">void flipcell(struct OCT *oct, int dir)</div><div class="ttdoc"> </div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00056">oct.c:56</a></div></div>
+<div class="ttc" id="oct_8c_html_a5b60bcd2ab09c60a44b8430f76d8617e"><div class="ttname"><a href="oct_8c.html#a5b60bcd2ab09c60a44b8430f76d8617e">getfcell</a></div><div class="ttdeci">void getfcell(int idx, int *fcell)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00011">oct.c:11</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html_a7cbcc55f8da5ef28b0ce7f92a786e8b4"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html#a7cbcc55f8da5ef28b0ce7f92a786e8b4">RUNPARAMS::ngridmax</a></div><div class="ttdeci">int ngridmax</div><div class="ttdoc">the max oct numbers (per process) </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00143">prototypes.h:143</a></div></div>
+<div class="ttc" id="oct_8c_html_a4e2b4f563f714e52b4d3bfe587187d00"><div class="ttname"><a href="oct_8c.html#a4e2b4f563f714e52b4d3bfe587187d00">cleanOctList</a></div><div class="ttdeci">void cleanOctList(struct CPUINFO *cpu, struct RUNPARAMS *param, int level)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00244">oct.c:244</a></div></div>
+<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00785">prototypes.h:785</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html"><div class="ttname"><a href="struct_p_a_r_t.html">PART</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00498">prototypes.h:498</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a179581ac7d5262dabf4e35be210acc26"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a179581ac7d5262dabf4e35be210acc26">CPUINFO::locNoct</a></div><div class="ttdeci">int * locNoct</div><div class="ttdoc">the local number of octs per levels </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00335">prototypes.h:335</a></div></div>
+<div class="ttc" id="oct_8c_html_a6880a95458ae34fb292d8758b7379421"><div class="ttname"><a href="oct_8c.html#a6880a95458ae34fb292d8758b7379421">setOctList</a></div><div class="ttdeci">void setOctList(struct OCT *firstoct, struct CPUINFO *cpu, struct RUNPARAMS *param, int level)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00250">oct.c:250</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_abfac147f3903fb0ff391eef2c8c08cf5"><div class="ttname"><a href="struct_o_c_t.html#abfac147f3903fb0ff391eef2c8c08cf5">OCT::cell</a></div><div class="ttdeci">struct CELL cell[8]</div><div class="ttdoc">the cell properties </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00788">prototypes.h:788</a></div></div>
+<div class="ttc" id="oct_8c_html_a1fb4cba38b27e10f9e8c0ec38ebd4737"><div class="ttname"><a href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737">cell2oct</a></div><div class="ttdeci">struct OCT * cell2oct(struct CELL *cell)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00103">oct.c:103</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_a41a58b7c4446ab1abce89f43531cd523"><div class="ttname"><a href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">OCT::cpu</a></div><div class="ttdeci">int cpu</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00804">prototypes.h:804</a></div></div>
+<div class="ttc" id="oct_8c_html_a2576bba3bc305a971dd6d874a00a5ed8"><div class="ttname"><a href="oct_8c.html#a2576bba3bc305a971dd6d874a00a5ed8">cic_child</a></div><div class="ttdeci">void cic_child(struct OCT *oct, struct OCT *octorg, int icellorg)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00215">oct.c:215</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_ae40354a1051342eb5a9db005715dcfa9"><div class="ttname"><a href="struct_c_e_l_l.html#ae40354a1051342eb5a9db005715dcfa9">CELL::idx</a></div><div class="ttdeci">int idx</div><div class="ttdoc">index of the cell within the oct </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00600">prototypes.h:600</a></div></div>
+<div class="ttc" id="cic_8c_html_a274f741bd8f953c27aa75c57ceedfbe5"><div class="ttname"><a href="cic_8c.html#a274f741bd8f953c27aa75c57ceedfbe5">part2cell_cic</a></div><div class="ttdeci">void part2cell_cic(struct PART *curp, struct OCT *curoct, int icell, char full)</div><div class="ttdef"><b>Definition:</b> <a href="cic_8c_source.html#l00011">cic.c:11</a></div></div>
+<div class="ttc" id="struct_r_u_n_p_a_r_a_m_s_html"><div class="ttname"><a href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00141">prototypes.h:141</a></div></div>
+<div class="ttc" id="struct_p_a_r_t_html_acf4d33ee4cff36f69b924471174dcb11"><div class="ttname"><a href="struct_p_a_r_t.html#acf4d33ee4cff36f69b924471174dcb11">PART::level</a></div><div class="ttdeci">int level</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00520">prototypes.h:520</a></div></div>
+<div class="ttc" id="cic_8h_html"><div class="ttname"><a href="cic_8h.html">cic.h</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_af8090d90955d299c3eb6fe1ccc535705"><div class="ttname"><a href="struct_o_c_t.html#af8090d90955d299c3eb6fe1ccc535705">OCT::nei</a></div><div class="ttdeci">struct CELL * nei[6]</div><div class="ttdoc">neighbor cells at level - 1 </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00790">prototypes.h:790</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a8a1589e29703f9be75944022e81ccae4"><div class="ttname"><a href="struct_c_e_l_l.html#a8a1589e29703f9be75944022e81ccae4">CELL::child</a></div><div class="ttdeci">struct OCT * child</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00598">prototypes.h:598</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_a6cfd95afd0afebd625b889fb6e58371c"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#a6cfd95afd0afebd625b889fb6e58371c">CPUINFO::rank</a></div><div class="ttdeci">int rank</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00251">prototypes.h:251</a></div></div>
+<div class="ttc" id="oct_8c_html_a20add264fc085467b9fceb1d3d24a596"><div class="ttname"><a href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596">getcellnei</a></div><div class="ttdeci">void getcellnei(int cindex, int *neip, int *cell)</div><div class="ttdef"><b>Definition:</b> <a href="oct_8c_source.html#l00116">oct.c:116</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html_a231b96e3f458c52f1a3d0e0f6259001c"><div class="ttname"><a href="struct_c_e_l_l.html#a231b96e3f458c52f1a3d0e0f6259001c">CELL::phead</a></div><div class="ttdeci">struct PART * phead</div><div class="ttdoc">the head particle </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00603">prototypes.h:603</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html_ae983ab7e7f4f572cf12727d87642956f"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html#ae983ab7e7f4f572cf12727d87642956f">CPUINFO::octList</a></div><div class="ttdeci">struct OCT *** octList</div><div class="ttdoc">the dictionnary of all oct of the current cpu </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00336">prototypes.h:336</a></div></div>
+<div class="ttc" id="struct_c_e_l_l_html"><div class="ttname"><a href="struct_c_e_l_l.html">CELL</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00596">prototypes.h:596</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_a48c65524e30f40438f3a15734eafb894"><div class="ttname"><a href="struct_o_c_t.html#a48c65524e30f40438f3a15734eafb894">OCT::next</a></div><div class="ttdeci">struct OCT * next</div><div class="ttdoc">next oct on the same level </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00794">prototypes.h:794</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>oct.c</b></li>
-    <li class="footer">Generated on Tue Mar 17 2015 04:56:59 for EMMA by
+    <li class="navelem"><a class="el" href="oct_8c.html">oct.c</a></li>
+    <li class="footer">Generated on Tue Mar 17 2015 11:49:16 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

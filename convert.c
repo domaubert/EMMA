@@ -1,6 +1,6 @@
 /**
   * \file convert.c
-  * \brief Contain unity convertion fonction
+  * \brief Contain unity convertion fonctions
   *
   */
 
@@ -8,10 +8,13 @@
 
 void setScale(struct RUNPARAMS *param, REAL aexp){
 /**
-  * Compute all the scaling factors between physical unit and code unit.
+  * Compute all the scaling factors between physical unit and code unit
+  * according to Martel & Shapiro 1998
+  *
   * Need to be called each time aexp change.
   */
 
+#ifdef TESTCOSMO
   param->scale.l = 1./(aexp * param->unit.unit_l);
   param->scale.d = POW(aexp,3) /(param->unit.unit_d);
   param->scale.v = aexp / param->unit.unit_v;
@@ -21,6 +24,9 @@ void setScale(struct RUNPARAMS *param, REAL aexp){
   param->scale.mass = 1. /(param->unit.unit_d*POW(param->unit.unit_l,3));
   param->scale.n = 1.;
   param->scale.N = 1.;
+#else
+  // TODO consider the non cosmological case.
+#endif
 }
 
 // ----------------------------------------------------------//

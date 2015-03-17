@@ -1,4 +1,30 @@
 var searchData=
 [
-  ['getnstars2create',['getNstars2create',['../stars_8c.html#ae97560922413aa76666786bf8d4b3638',1,'stars.c']]]
+  ['d2code',['d2code',['../convert_8c.html#a83b673ce1a3031e693ad0608f6884504',1,'d2code(struct RUNPARAMS *param, REAL d):&#160;convert.c'],['../convert_8h.html#a83b673ce1a3031e693ad0608f6884504',1,'d2code(struct RUNPARAMS *param, REAL d):&#160;convert.c']]],
+  ['ddplus',['ddplus',['../friedmann_8c.html#a8f50b1f585ed67c3ccb52dc959e72544',1,'ddplus(double a, double omegam, double omegav):&#160;friedmann.c'],['../friedmann_8h.html#a8f50b1f585ed67c3ccb52dc959e72544',1,'ddplus(double a, double omegam, double omegav):&#160;friedmann.c']]],
+  ['destroy_5fgravstencil_5fgpu',['destroy_gravstencil_GPU',['../poisson__utils__gpu_8h.html#a4b3a3d8b90735e1159b40a073fb462ed',1,'poisson_utils_gpu.h']]],
+  ['destroy_5fhydstencil_5fgpu',['destroy_hydstencil_GPU',['../hydro__utils__gpu_8h.html#af0e8edc6b90fcacf8993856d96cd5201',1,'hydro_utils_gpu.h']]],
+  ['destroy_5fpinned_5fgravstencil',['destroy_pinned_gravstencil',['../poisson__utils__gpu_8h.html#a1c9419d52e9d8762fff780d152499003',1,'poisson_utils_gpu.h']]],
+  ['destroy_5fpinned_5fstencil',['destroy_pinned_stencil',['../hydro__utils__gpu_8h.html#a096c9b930d68b06e482f76b5476c89ed',1,'hydro_utils_gpu.h']]],
+  ['destroy_5fpinned_5fstencil_5frad',['destroy_pinned_stencil_rad',['../rad__utils__gpu_8h.html#ab64de7fc1a40443395c1c84774883008',1,'rad_utils_gpu.h']]],
+  ['destroy_5fradstencil_5fgpu',['destroy_radstencil_GPU',['../rad__utils__gpu_8h.html#af3188200fd56d57446e0c3e88f76483d',1,'rad_utils_gpu.h']]],
+  ['diffforce',['diffforce',['../poisson__utils_8c.html#ac232561d0f52ad7c42830cc7fd29ef8e',1,'poisson_utils.c']]],
+  ['diffr',['diffR',['../rad__utils_8c.html#a3a6e2b5f36b06ef3838f6a19d4610dec',1,'rad_utils.c']]],
+  ['diffu',['diffU',['../hydro__utils_8c.html#ad7911563707c791d077e96657f78f0e9',1,'hydro_utils.c']]],
+  ['diffugrav',['diffUgrav',['../poisson__utils_8c.html#ae9ddfb7a0966c431cc9298953df4bc89',1,'poisson_utils.c']]],
+  ['diffw',['diffW',['../hydro__utils_8c.html#a97cd92437975ee1bb497c3b86c63e86e',1,'hydro_utils.c']]],
+  ['dispndt',['dispndt',['../advanceamr_8c.html#a66cdea0d8c36dbb67e451c1c7b0a5c71',1,'advanceamr.c']]],
+  ['distribe',['distribE',['../rad__utils_8c.html#aa8d31c9a48e9a1001e21c3b76f64e86d',1,'rad_utils.c']]],
+  ['dladt',['dladt',['../friedmann_8c.html#aca312d16b055336528ac695df58b5ed3',1,'dladt(double a, double omegam, double omegav):&#160;friedmann.c'],['../friedmann_8h.html#aca312d16b055336528ac695df58b5ed3',1,'dladt(double a, double omegam, double omegav):&#160;friedmann.c']]],
+  ['dplus',['dplus',['../friedmann_8c.html#abb887f67ef3fcdbed1194ab91e362780',1,'dplus(double a, double omegam, double omegav):&#160;friedmann.c'],['../friedmann_8h.html#abb887f67ef3fcdbed1194ab91e362780',1,'dplus(double a, double omegam, double omegav):&#160;friedmann.c']]],
+  ['dumpcube',['dumpcube',['../io_8h.html#a4282bb1b4209ba27ec88eb2e56bb9e85',1,'io.h']]],
+  ['dumpfile',['dumpFile',['../io_8c.html#a51e9b143508efe60f98a07511310fc24',1,'io.c']]],
+  ['dumpgrid',['dumpgrid',['../io_8c.html#a33d1ff73e6267de086307136feaad0c0',1,'dumpgrid(int levelmax, struct OCT **firstoct, char filename[], REAL tsim, struct RUNPARAMS *param):&#160;io.c'],['../io_8h.html#a33d1ff73e6267de086307136feaad0c0',1,'dumpgrid(int levelmax, struct OCT **firstoct, char filename[], REAL tsim, struct RUNPARAMS *param):&#160;io.c']]],
+  ['dumpheader',['dumpHeader',['../io_8c.html#aa04371dde77dbc1acfb833b624866f87',1,'dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu, char *fparam):&#160;io.c'],['../io_8h.html#aa04371dde77dbc1acfb833b624866f87',1,'dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu, char *fparam):&#160;io.c']]],
+  ['dumpinfo',['dumpInfo',['../io_8c.html#aaa588595c394f97378d37de7505adaa7',1,'io.c']]],
+  ['dumpio',['dumpIO',['../io_8c.html#adb96e82559e746bb9cfcfa77ba9afa1a',1,'dumpIO(REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump):&#160;io.c'],['../io_8h.html#adb96e82559e746bb9cfcfa77ba9afa1a',1,'dumpIO(REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump):&#160;io.c']]],
+  ['dumpmap',['dumpmap',['../io_8h.html#add7946083eecca08f011bc80710bd020',1,'io.h']]],
+  ['dumpmovie',['dumpMovie',['../movie_8c.html#a8d066609653c0fb4457e7ede91a64081',1,'dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp):&#160;movie.c'],['../movie_8h.html#a8d066609653c0fb4457e7ede91a64081',1,'dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp):&#160;movie.c']]],
+  ['dumppart',['dumppart',['../io_8c.html#aaab4dec6e2b7a4cb4f1de0583d614e7f',1,'dumppart(struct OCT **firstoct, char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu):&#160;io.c'],['../io_8h.html#aaab4dec6e2b7a4cb4f1de0583d614e7f',1,'dumppart(struct OCT **firstoct, char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu):&#160;io.c']]],
+  ['dumpstepinfo',['dumpStepInfo',['../io_8c.html#a34a122cd34ec0928d55010c853cad4e1',1,'dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps, REAL dt):&#160;io.c'],['../io_8h.html#a34a122cd34ec0928d55010c853cad4e1',1,'dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps, REAL dt):&#160;io.c']]]
 ];

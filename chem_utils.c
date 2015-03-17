@@ -1,3 +1,6 @@
+/**
+  * \file chem_utils.c
+  */
 
 #ifdef WRAD
 #ifdef WCHEM
@@ -40,7 +43,7 @@ REAL cucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_b=2.753e-14*POW(lambda,1.5)/POW(1e0+POW(lambda/2.740,0.407),2.242); //cm3/s
 #ifdef TESTCOSMO
-  alpha_b=alpha_b*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
+  alpha_b=alpha_b*1e-6*unit_number;//(aexp*aexp*aexp); //m3/s
 #else
   alpha_b=alpha_b*1e-6*unit_number; //m3/s
 #endif
@@ -59,7 +62,7 @@ REAL cucompute_alpha_a(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_a=1.269e-13*POW(lambda,1.503)/POW(1e0+POW(lambda/0.522,0.470),1.923); //cm3/s
 #ifdef TESTCOSMO
-  alpha_a=alpha_a*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
+  alpha_a=alpha_a*1e-6*unit_number;//(aexp*aexp*aexp); //m3/s
 #else
   alpha_a=alpha_a*1e-6*unit_number; //m3/s
 #endif
@@ -77,7 +80,7 @@ REAL cucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   T5=temp/1e5;
   beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*exp(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
-  beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
+  beta=beta*1e-6*unit_number;//(aexp*aexp*aexp); // !m3/s
 #else
   beta=beta*1e-6*unit_number; // !m3/s
 #endif
@@ -250,7 +253,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       // at this stage we are ready to do the calculations
 
-      /// DEALING WITH CLUMPING ----------------------
+      // DEALING WITH CLUMPING ----------------------
 #ifdef WCLUMP
       REAL CLUMPF2=FMIN(FMAX(POW(nH[idloc]/6.,0.7),1.),40.);
       REAL CLUMPI=1.;

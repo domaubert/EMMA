@@ -106,7 +106,7 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="title">/home/deparis/Quartz/hilbert.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* C header file for Hilbert curve functions */</span></div>
+<a href="hilbert_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* C header file for Hilbert curve functions */</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#if !defined(_hilbert_h_)</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#define _hilbert_h_</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;</div>
@@ -115,9 +115,9 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;</div>
 <div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">/* define the bitmask_t type as an integer of sufficient size */</span></div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> bitmask_t;</div>
+<div class="line"><a name="l00010"></a><span class="lineno"><a class="line" href="hilbert_8h.html#a70b63bbf0d6d91e766f01ac3e7e72db5">   10</a></span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> <a class="code" href="hilbert_8h.html#a70b63bbf0d6d91e766f01ac3e7e72db5">bitmask_t</a>;</div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">/* define the halfmask_t type as an integer of 1/2 the size of bitmask_t */</span></div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> halfmask_t;</div>
+<div class="line"><a name="l00012"></a><span class="lineno"><a class="line" href="hilbert_8h.html#a1ee4eaa7ed7ce5d4226ae8fb7a9edf1b">   12</a></span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <a class="code" href="hilbert_8h.html#a1ee4eaa7ed7ce5d4226ae8fb7a9edf1b">halfmask_t</a>;</div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment">/*****************************************************************</span></div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"> * hilbert_i2c</span></div>
@@ -133,7 +133,7 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="comment"> *      nDims*nBits &lt;= (sizeof index) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keywordtype">void</span> hilbert_i2c(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t index, bitmask_t coord[]);</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keywordtype">void</span> <a class="code" href="hilbert_8h.html#aec86dd5bd73fa19e268dd20ff344b154">hilbert_i2c</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t index, bitmask_t coord[]);</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="comment">/*****************************************************************</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> * hilbert_c2i</span></div>
@@ -149,7 +149,7 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment"> *      nDims*nBits &lt;= (sizeof bitmask_t) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;bitmask_t hilbert_c2i(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t <span class="keyword">const</span> coord[]);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;bitmask_t <a class="code" href="hilbert_8h.html#af2e250677ec295ceec93a14d269d0ec9">hilbert_c2i</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t <span class="keyword">const</span> coord[]);</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">/*****************************************************************</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="comment"> * hilbert_cmp, hilbert_ieee_cmp</span></div>
@@ -168,8 +168,8 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="comment"> *      nBits &lt;= (sizeof bitmask_t) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordtype">int</span> hilbert_cmp(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits, <span class="keywordtype">void</span> <span class="keyword">const</span>* coord1, <span class="keywordtype">void</span> <span class="keyword">const</span>* coord2);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordtype">int</span> hilbert_ieee_cmp(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">double</span> <span class="keyword">const</span>* coord1, <span class="keywordtype">double</span> <span class="keyword">const</span>* coord2);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordtype">int</span> <a class="code" href="hilbert_8h.html#a4092bfcb30454cec37c1bc73194440f4">hilbert_cmp</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits, <span class="keywordtype">void</span> <span class="keyword">const</span>* coord1, <span class="keywordtype">void</span> <span class="keyword">const</span>* coord2);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordtype">int</span> <a class="code" href="hilbert_8h.html#a678c268f67e396af4c366a0be56093c8">hilbert_ieee_cmp</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">double</span> <span class="keyword">const</span>* coord1, <span class="keywordtype">double</span> <span class="keyword">const</span>* coord2);</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">/*****************************************************************</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment"> * hilbert_box_vtx</span></div>
@@ -190,10 +190,10 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="comment"> *      nBits &lt;= (sizeof bitmask_t) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keywordtype">unsigned</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;hilbert_box_vtx(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<a class="code" href="hilbert_8h.html#a266500ca34411fc0173246e2f48503a7">hilbert_box_vtx</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        <span class="keywordtype">int</span> findMin, <span class="keywordtype">void</span>* c1, <span class="keywordtype">void</span>* c2);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordtype">unsigned</span></div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;hilbert_ieee_box_vtx(<span class="keywordtype">unsigned</span> nDims,</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<a class="code" href="hilbert_8h.html#acb269fc88e853671149e5a8cf38a38e1">hilbert_ieee_box_vtx</a>(<span class="keywordtype">unsigned</span> nDims,</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;             <span class="keywordtype">int</span> findMin, <span class="keywordtype">double</span>* c1, <span class="keywordtype">double</span>* c2);</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment">/*****************************************************************</span></div>
@@ -213,10 +213,10 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="comment"> *      nBits &lt;= (sizeof bitmask_t) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="keywordtype">unsigned</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;hilbert_box_pt(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<a class="code" href="hilbert_8h.html#a55754798344a6b1966d40faab41d0aa6">hilbert_box_pt</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;           <span class="keywordtype">int</span> findMin, <span class="keywordtype">void</span>* coord1, <span class="keywordtype">void</span>* coord2);</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keywordtype">unsigned</span></div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;hilbert_ieee_box_pt(<span class="keywordtype">unsigned</span> nDims,</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<a class="code" href="hilbert_8h.html#a1806e5dffab358fdb35c5ce8b9bcaa68">hilbert_ieee_box_pt</a>(<span class="keywordtype">unsigned</span> nDims,</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;            <span class="keywordtype">int</span> findMin, <span class="keywordtype">double</span>* c1, <span class="keywordtype">double</span>* c2);</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="comment">/*****************************************************************</span></div>
@@ -241,7 +241,7 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="comment"> *      nBits &lt;= (sizeof bitmask_t) * (bits_per_byte)</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="keywordtype">int</span></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;hilbert_nextinbox(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<a class="code" href="hilbert_8h.html#a765f950311472e7539cede11ccce0680">hilbert_nextinbox</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBytes, <span class="keywordtype">unsigned</span> nBits,</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;          <span class="keywordtype">int</span> findPrev, <span class="keywordtype">void</span>* coord1, <span class="keywordtype">void</span>* coord2,</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;          <span class="keywordtype">void</span> <span class="keyword">const</span>* point);</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;</div>
@@ -260,20 +260,32 @@ $(document).ready(function(){initNavTree('hilbert_8h_source.html','');});
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="keywordtype">void</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;hilbert_incr(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t coord[]);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<a class="code" href="hilbert_8h.html#a58bde052a98c16045f6f0053a6563f01">hilbert_incr</a>(<span class="keywordtype">unsigned</span> nDims, <span class="keywordtype">unsigned</span> nBits, bitmask_t coord[]);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;}</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* _hilbert_h_ */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="hilbert_8h_html_a1ee4eaa7ed7ce5d4226ae8fb7a9edf1b"><div class="ttname"><a href="hilbert_8h.html#a1ee4eaa7ed7ce5d4226ae8fb7a9edf1b">halfmask_t</a></div><div class="ttdeci">unsigned long halfmask_t</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8h_source.html#l00012">hilbert.h:12</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a55754798344a6b1966d40faab41d0aa6"><div class="ttname"><a href="hilbert_8h.html#a55754798344a6b1966d40faab41d0aa6">hilbert_box_pt</a></div><div class="ttdeci">unsigned hilbert_box_pt(unsigned nDims, unsigned nBytes, unsigned nBits, int findMin, void *coord1, void *coord2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00786">hilbert.c:786</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a58bde052a98c16045f6f0053a6563f01"><div class="ttname"><a href="hilbert_8h.html#a58bde052a98c16045f6f0053a6563f01">hilbert_incr</a></div><div class="ttdeci">void hilbert_incr(unsigned nDims, unsigned nBits, bitmask_t coord[])</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l01048">hilbert.c:1048</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a765f950311472e7539cede11ccce0680"><div class="ttname"><a href="hilbert_8h.html#a765f950311472e7539cede11ccce0680">hilbert_nextinbox</a></div><div class="ttdeci">int hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits, int findPrev, void *coord1, void *coord2, void const *point)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00854">hilbert.c:854</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a266500ca34411fc0173246e2f48503a7"><div class="ttname"><a href="hilbert_8h.html#a266500ca34411fc0173246e2f48503a7">hilbert_box_vtx</a></div><div class="ttdeci">unsigned hilbert_box_vtx(unsigned nDims, unsigned nBytes, unsigned nBits, int findMin, void *c1, void *c2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00676">hilbert.c:676</a></div></div>
+<div class="ttc" id="hilbert_8h_html_af2e250677ec295ceec93a14d269d0ec9"><div class="ttname"><a href="hilbert_8h.html#af2e250677ec295ceec93a14d269d0ec9">hilbert_c2i</a></div><div class="ttdeci">bitmask_t hilbert_c2i(unsigned nDims, unsigned nBits, bitmask_t const coord[])</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00196">hilbert.c:196</a></div></div>
+<div class="ttc" id="hilbert_8h_html_acb269fc88e853671149e5a8cf38a38e1"><div class="ttname"><a href="hilbert_8h.html#acb269fc88e853671149e5a8cf38a38e1">hilbert_ieee_box_vtx</a></div><div class="ttdeci">unsigned hilbert_ieee_box_vtx(unsigned nDims, int findMin, double *c1, double *c2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00687">hilbert.c:687</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a678c268f67e396af4c366a0be56093c8"><div class="ttname"><a href="hilbert_8h.html#a678c268f67e396af4c366a0be56093c8">hilbert_ieee_cmp</a></div><div class="ttdeci">int hilbert_ieee_cmp(unsigned nDims, double const *coord1, double const *coord2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00576">hilbert.c:576</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a1806e5dffab358fdb35c5ce8b9bcaa68"><div class="ttname"><a href="hilbert_8h.html#a1806e5dffab358fdb35c5ce8b9bcaa68">hilbert_ieee_box_pt</a></div><div class="ttdeci">unsigned hilbert_ieee_box_pt(unsigned nDims, int findMin, double *c1, double *c2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00798">hilbert.c:798</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a70b63bbf0d6d91e766f01ac3e7e72db5"><div class="ttname"><a href="hilbert_8h.html#a70b63bbf0d6d91e766f01ac3e7e72db5">bitmask_t</a></div><div class="ttdeci">unsigned long long bitmask_t</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8h_source.html#l00010">hilbert.h:10</a></div></div>
+<div class="ttc" id="hilbert_8h_html_aec86dd5bd73fa19e268dd20ff344b154"><div class="ttname"><a href="hilbert_8h.html#aec86dd5bd73fa19e268dd20ff344b154">hilbert_i2c</a></div><div class="ttdeci">void hilbert_i2c(unsigned nDims, unsigned nBits, bitmask_t index, bitmask_t coord[])</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00138">hilbert.c:138</a></div></div>
+<div class="ttc" id="hilbert_8h_html_a4092bfcb30454cec37c1bc73194440f4"><div class="ttname"><a href="hilbert_8h.html#a4092bfcb30454cec37c1bc73194440f4">hilbert_cmp</a></div><div class="ttdeci">int hilbert_cmp(unsigned nDims, unsigned nBytes, unsigned nBits, void const *coord1, void const *coord2)</div><div class="ttdef"><b>Definition:</b> <a href="hilbert_8c_source.html#l00565">hilbert.c:565</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>hilbert.h</b></li>
-    <li class="footer">Generated on Tue Mar 17 2015 04:56:59 for EMMA by
+    <li class="navelem"><a class="el" href="hilbert_8h.html">hilbert.h</a></li>
+    <li class="footer">Generated on Tue Mar 17 2015 11:49:16 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

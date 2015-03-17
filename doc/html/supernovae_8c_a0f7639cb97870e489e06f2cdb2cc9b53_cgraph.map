@@ -2,5 +2,9 @@
 <area shape="rect" id="node2" href="$supernovae_8c.html#a1863655f8673f7e11a485896f5c54569" title="feedback" alt="" coords="143,56,217,83"/>
 <area shape="rect" id="node3" href="$supernovae_8c.html#aa694e64d4aeb51705362445d1c971b3b" title="computeFeedbackEnergy" alt="" coords="265,5,436,32"/>
 <area shape="rect" id="node4" href="$supernovae_8c.html#a3480ad7ed95745ee23452bd599ecb45e" title="thermalFeedbackOct" alt="" coords="279,56,422,83"/>
-<area shape="rect" id="node5" href="$supernovae_8c.html#af4c7a9bbb42db3cfa776e364684a1282" title="kineticFeedback" alt="" coords="292,107,409,133"/>
+<area shape="rect" id="node6" href="$supernovae_8c.html#af4c7a9bbb42db3cfa776e364684a1282" title="kineticFeedback" alt="" coords="292,107,409,133"/>
+<area shape="rect" id="node5" href="$oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="484,56,551,83"/>
+<area shape="rect" id="node7" href="$hydro__utils_8c.html#a14c3f5f01ec3fdcbb98608130856f417" title="W2U" alt="" coords="491,107,543,133"/>
+<area shape="rect" id="node8" href="$hydro__utils_8c.html#a6e7519f0b84c3255bf960bd9642116d2" title="U2W" alt="" coords="491,157,543,184"/>
+<area shape="rect" id="node9" href="$hydro__utils_8c.html#acaf6384f4acbec9da5e8e3189303fa23" title="getE" alt="" coords="493,208,542,235"/>
 </map>

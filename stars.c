@@ -141,8 +141,8 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 
 int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL aexp, int level, REAL mlevel){
 // ----------------------------------------------------------//
-/// Compute the number of stars to create in a given cell
-/// lambda is the mean number of a random draw in a Poisson law
+/// Compute the number of stars to create in a given cell\n
+/// And do a random draw in a Poisson law
 // ----------------------------------------------------------//
 
 #ifdef SCHAYE
@@ -206,7 +206,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
 void addStar(struct CELL *cell, int level, REAL xc, REAL yc, REAL zc, struct CPUINFO *cpu, REAL dttilde, struct RUNPARAMS *param, REAL aexp, int is,  int nstars, REAL mlevel){
 // ----------------------------------------------------------//
-/// Add a stellar particle in the double linked list
+/// Add a stellar particle in the double linked list\n
 /// Call the initialisation and the conservation functions
 // ----------------------------------------------------------//
 
@@ -276,16 +276,15 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 // ----------------------------------------------------------//
-/// Define the state of a particle in function of his age
-/// State are defined as follow:
+/// Define the state of a particle in function of his age\n
+/// State are defined as follow:\n
 ///
-///  state = 0 -> Dark Matter
-///  state = 1 -> Radiative Star
-///  state = 2 -> Supernovae
-///  state = 3 -> Supernovae + decreasing luminosity
-///  state = 4 -> Decreasing luminosity
+///  state = 0 -> Dark Matter\n
+///  state = 1 -> Radiative Star\n
+///  state = 2 -> Supernovae\n
+///  state = 3 -> Supernovae + decreasing luminosity\n
+///  state = 4 -> Decreasing luminosity\n
 ///  state = 5 -> Dead star
-///
 // ----------------------------------------------------------//
 
   if (param->stars->n){
@@ -381,10 +380,10 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 
 void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level, int is){
 // ----------------------------------------------------------//
-/// The stars creation function.
-/// Scan if cell is allowed to form star
-/// If true, compute how many star are needed
-/// and add them to the linked list
+/// The stars creation function.\n
+/// Scan if cell is allowed to form star\n
+/// If true, compute how many star are needed\n
+/// and add them to the linked list\n
 // ----------------------------------------------------------//
 
 	if(cpu->rank == RANK_DISP) printf("STARS\n");

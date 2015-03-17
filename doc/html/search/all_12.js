@@ -1,13 +1,23 @@
 var searchData=
 [
-  ['unit_5fd',['unit_d',['../struct_u_n_i_t_s.html#a83fe5003b4f5f196a3c227e99838b49d',1,'UNITS']]],
-  ['unit_5fl',['unit_l',['../struct_u_n_i_t_s.html#a0a015843a439d6d4746e14486409a1e6',1,'UNITS']]],
-  ['unit_5fmass',['unit_mass',['../struct_u_n_i_t_s.html#a06905e425b8ea4d5d6920fdd64598aeb',1,'UNITS']]],
-  ['unit_5fn',['unit_n',['../struct_u_n_i_t_s.html#a95383a5545af8d1a97c3f152cffcbedb',1,'UNITS::unit_n()'],['../struct_u_n_i_t_s.html#a03ea96dec3db51b6bcb7be84f360eddb',1,'UNITS::unit_N()']]],
-  ['unit_5ft',['unit_t',['../struct_u_n_i_t_s.html#a395f5740a41782789f3d7ebcf37c1944',1,'UNITS']]],
-  ['unit_5fv',['unit_v',['../struct_u_n_i_t_s.html#ad8fa59d5d6573e44b9cc91bda792ad7e',1,'UNITS']]],
-  ['units',['UNITS',['../struct_u_n_i_t_s.html',1,'']]],
-  ['utype',['Utype',['../struct_utype.html',1,'']]],
-  ['utype1d',['Utype1D',['../struct_utype1_d.html',1,'']]],
-  ['uvbackground',['UVBACKGROUND',['../struct_u_v_b_a_c_k_g_r_o_u_n_d.html',1,'']]]
+  ['t',['t',['../struct_s_c_a_l_e.html#a61787117e25ec7c6bc84492653c8afe8',1,'SCALE']]],
+  ['t2code',['t2code',['../convert_8c.html#a1a9be3ddb6e1ddbe77217da489c1ee7d',1,'t2code(struct RUNPARAMS *param, REAL t):&#160;convert.c'],['../convert_8h.html#a1a9be3ddb6e1ddbe77217da489c1ee7d',1,'t2code(struct RUNPARAMS *param, REAL t):&#160;convert.c']]],
+  ['tab_5faexp',['tab_aexp',['../struct_c_o_s_m_o_p_a_r_a_m.html#aff48cf556217c6cfd820c1bb57556ba4',1,'COSMOPARAM']]],
+  ['tab_5fttilde',['tab_ttilde',['../struct_c_o_s_m_o_p_a_r_a_m.html#a71b75cb9d8a8e5a24236f2acdc0e48f7',1,'COSMOPARAM']]],
+  ['temp',['temp',['../struct_rtype.html#a12f7dd2b34f754117f6566f257209571',1,'Rtype::temp()'],['../struct_l_c_e_l_l.html#a9fb78358ae4b0a049a0d1b37dc4cffec',1,'LCELL::temp()']]],
+  ['testcond',['testCond',['../stars_8c.html#a12944c15601e5822d590e325495a819b',1,'stars.c']]],
+  ['thecudpp',['theCudpp',['../struct_c_u_p_a_r_a_m.html#a318cf46cffd87098ab2b2b4d38f9814f',1,'CUPARAM']]],
+  ['thermalfeedbackcell',['thermalFeedbackCell',['../supernovae_8c.html#abfb9450c76487d2f36dfbab6e9357df3',1,'supernovae.c']]],
+  ['thermalfeedbackoct',['thermalFeedbackOct',['../supernovae_8c.html#a3480ad7ed95745ee23452bd599ecb45e',1,'supernovae.c']]],
+  ['thresh',['thresh',['../struct_s_t_a_r_s_p_a_r_a_m.html#a212127ae382a19eb19fbfc7fcbb97f98',1,'STARSPARAM']]],
+  ['time_5fmax',['time_max',['../struct_r_u_n_p_a_r_a_m_s.html#a50c0efd54baa48b81b472aae62940199',1,'RUNPARAMS']]],
+  ['tinit',['tinit',['../struct_c_p_u_i_n_f_o.html#afa1a400b96d95ffb44b82187b1a5ae60',1,'CPUINFO']]],
+  ['tlife',['tlife',['../struct_s_t_a_r_s_p_a_r_a_m.html#a68198c30530787407f47e0a3d58fb463',1,'STARSPARAM']]],
+  ['tmax',['tmax',['../struct_r_u_n_p_a_r_a_m_s.html#a6059599b21333cbe4417146826babb53',1,'RUNPARAMS']]],
+  ['tmpthresh',['tmpthresh',['../struct_r_u_n_p_a_r_a_m_s.html#a5ea24a5036999f73d07bb0a1dcc08e3f',1,'RUNPARAMS']]],
+  ['tools_2ec',['tools.c',['../tools_8c.html',1,'']]],
+  ['tools_2eh',['tools.h',['../tools_8h.html',1,'']]],
+  ['tphy',['tphy',['../struct_c_o_s_m_o_p_a_r_a_m.html#a20c63932d3ebd352247c4b3de3fe65ab',1,'COSMOPARAM']]],
+  ['trigstar',['trigstar',['../struct_c_p_u_i_n_f_o.html#ad0196fe498ca5894357bcec052af23e8',1,'CPUINFO']]],
+  ['tsim',['tsim',['../struct_c_o_s_m_o_p_a_r_a_m.html#ab34fc8018400f84c7d905e73ce059262',1,'COSMOPARAM']]]
 ];

@@ -1,4 +1,4 @@
 <map id="CELLLIGHT" name="CELLLIGHT">
 <area shape="rect" id="node2" href="$struct_rtype.html" title="Rtype" alt="" coords="5,5,63,32"/>
-<area shape="rect" id="node3" href="$struct_wtype.html" title="Wtype" alt="" coords="87,5,147,32"/>
+<area shape="rect" id="node3" href="$struct_wtype.html" title="local primitive hydro quantities " alt="" coords="87,5,147,32"/>
 </map>
