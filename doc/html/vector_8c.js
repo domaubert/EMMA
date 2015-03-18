@@ -1,0 +1,28 @@
+var vector_8c =
+[
+    [ "checknei", "vector_8c.html#a74232bc9f5cda69a5c78c3e115d5c88e", null ],
+    [ "clean_pot", "vector_8c.html#ac64c72c51ad356148bab89aec167efd8", null ],
+    [ "clean_vec", "vector_8c.html#a3e9afb3db78405b4b9b881f6acb36fc4", null ],
+    [ "countvecocts", "vector_8c.html#aa3209b12e1a312ddec2c8b869a32fe41", null ],
+    [ "gathercomp", "vector_8c.html#abd5f2ab61ada778749044727ef726762", null ],
+    [ "gathervec", "vector_8c.html#a896507b59ea5f48c0b390672cb63ca30", null ],
+    [ "gathervec2", "vector_8c.html#a1b965993a5aa78cac04818064278290b", null ],
+    [ "gathervec2_light", "vector_8c.html#ad4f6c45a06fbfacb2ae2e4117230ba92", null ],
+    [ "gathervecnei", "vector_8c.html#aafa23d0d2e70863023d2397a84cf4ec9", null ],
+    [ "gathervecnei2", "vector_8c.html#aa37815364dc38774596989d1aa84a715", null ],
+    [ "grad", "vector_8c.html#a11cdaf55e2f398f77adad50e5c32c069", null ],
+    [ "laplacian", "vector_8c.html#a2bf89f40c2f43f963aee05e7561c5493", null ],
+    [ "laplacian_vec", "vector_8c.html#a3e45789d3c8585063638d85a58d1e455", null ],
+    [ "laplacian_vec2", "vector_8c.html#a4ab01fd49fd3e0b4ebee64839cfe7e22", null ],
+    [ "laplaciancosmo", "vector_8c.html#aaad26e5207cc4186a04fd48ae9884e0a", null ],
+    [ "remove_avg", "vector_8c.html#a369102983d3299b14878dfaf739bd7b5", null ],
+    [ "remove_valvec", "vector_8c.html#aba032d42333a351971173271fb564992", null ],
+    [ "residual_vec2", "vector_8c.html#a44b4fe8641870faa65aaa2ccb9495ea7", null ],
+    [ "scattercomp", "vector_8c.html#afc5fbc109de21176cfb65de29bd89a7a", null ],
+    [ "scattervec", "vector_8c.html#a4e18eac84f12d8d60f1df14170e368b0", null ],
+    [ "scattervec_light", "vector_8c.html#a67d6d8a3f8c90e0d44ddb52e2499c63c", null ],
+    [ "scattervechydro", "vector_8c.html#a6e1e74a888bfbd126601551d4b5458d0", null ],
+    [ "square", "vector_8c.html#a400946044c9b8f8e446480d7ac0cbade", null ],
+    [ "square_res", "vector_8c.html#a950b2f03d73ac9ce16f68ec7e4e55498", null ],
+    [ "square_vec", "vector_8c.html#ae7e3bbd6349be3f722359cc2056d9863", null ]
+];

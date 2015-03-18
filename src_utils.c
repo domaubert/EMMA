@@ -149,6 +149,7 @@ int putE2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, R
 int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur, struct OCT *curoct,  struct CPUINFO *cpu){
   REAL X0=1./POW(2,param->lcoarse);
   REAL  dxcur=POW(0.5,curoct->level);
+  REAL  dvcur=POW(dxcur,3);
   int flag;
 
 #ifdef WRADTEST
@@ -218,10 +219,13 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
 
 #ifdef UVBKG
-  setScale(param,aexp);
+ /*
+  * set uvbkg according to the value in uvbkg.dat
+  */
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
     //(comoving photons/s/m3)
+
     cell->rfield.src += param->uv.value[igrp] * param->unit.unit_t*POW(aexp,5);
     cell->rfieldnew.src=cell->rfield.src;
   }

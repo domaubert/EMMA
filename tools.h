@@ -8,5 +8,3 @@ void myradixsort(int *a,int n);
 REAL rdm(REAL a, REAL b);
 int gpoiss(REAL lambda);
 REAL a2t(struct RUNPARAMS *param, REAL az );
-
-void setUVBKG(struct RUNPARAMS *param,char *fname);

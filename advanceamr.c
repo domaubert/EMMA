@@ -1236,7 +1236,11 @@ if(cond1||cond2||cond3){
     if(level<param->lmax){
       if(nlevel>0){
 	REAL dtfine;
+#ifdef RAD
+#ifdef COARSERAD
 	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc,nrad);
+#endif // COARSERAD
+#endif // RAD
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one

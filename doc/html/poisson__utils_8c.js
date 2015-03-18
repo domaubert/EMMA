@@ -1,0 +1,27 @@
+var poisson__utils_8c =
+[
+    [ "clean_vecpos", "poisson__utils_8c.html#ac4ba10aef395d97f56a485e9e6723738", null ],
+    [ "coarse2fine_forcelin", "poisson__utils_8c.html#aa220a49ce6ff4247282d0dfb8d6e0561", null ],
+    [ "coarse2fine_grav", "poisson__utils_8c.html#aa7891c6169399a08fe55a8092f4ed105", null ],
+    [ "coarse2fine_gravlin", "poisson__utils_8c.html#a31df37d29e630a695260c529c0c5fffd", null ],
+    [ "comp_residual", "poisson__utils_8c.html#a69e3b9a364c48ac7d022e48a35a86c9d", null ],
+    [ "diffforce", "poisson__utils_8c.html#ac232561d0f52ad7c42830cc7fd29ef8e", null ],
+    [ "diffUgrav", "poisson__utils_8c.html#ae9ddfb7a0966c431cc9298953df4bc89", null ],
+    [ "FillDens", "poisson__utils_8c.html#a39287b7a3efdef7da8aac1ec1d55ccfd", null ],
+    [ "gatherstencilgrav", "poisson__utils_8c.html#aa97d1b2057981c406a71b3e2d3df9b3a", null ],
+    [ "interpforce", "poisson__utils_8c.html#ad7ae72da557b6b2f2fc32bd9475a77b0", null ],
+    [ "interpminmodgrav", "poisson__utils_8c.html#a2308292c99bbbaa5da8607432d02482d", null ],
+    [ "minmod2grav", "poisson__utils_8c.html#aac922587fc9bb7f7154edd6e0c53621f", null ],
+    [ "minmod2grav_mix", "poisson__utils_8c.html#a209cbd10ad15e85f241c49cff77ec05b", null ],
+    [ "PoissonCG", "poisson__utils_8c.html#ad532d42be71fcc2dba3f2836f65b8ea4", null ],
+    [ "PoissonForce", "poisson__utils_8c.html#a602a127013816e707d814268131170f8", null ],
+    [ "PoissonJacobi", "poisson__utils_8c.html#a92fc68435b6a4e3675b7505aa171b98f", null ],
+    [ "PoissonJacobi_single", "poisson__utils_8c.html#a3e824536e6af2fe8e4ec5d32e554b32e", null ],
+    [ "PoissonMgrid", "poisson__utils_8c.html#a03573a290e72351deb23811dff62c8ca", null ],
+    [ "PoissonSolver", "poisson__utils_8c.html#a063bf052ee884cb1f4aee36fb70833ec", null ],
+    [ "Pot2Force", "poisson__utils_8c.html#a73d6dca76fe5555bad3446818db71086", null ],
+    [ "recursive_neighbor_gather_oct_grav", "poisson__utils_8c.html#a5b3a0e7c87d606a5be5c05120b8e2adf", null ],
+    [ "scatterstencilforce", "poisson__utils_8c.html#aa1f955afdc29739ce9caa1eb4c30794a", null ],
+    [ "scatterstencilgrav", "poisson__utils_8c.html#ad405475eddcba623e1c0a6a53925b102", null ],
+    [ "update_pot_in_tree", "poisson__utils_8c.html#aee724c4ebee5f5aa10fdc20d3038541b", null ]
+];

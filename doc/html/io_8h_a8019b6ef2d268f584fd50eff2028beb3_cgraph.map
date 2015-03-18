@@ -1,0 +1,10 @@
+<map id="read_grafic_part" name="read_grafic_part">
+<area shape="rect" id="node2" href="$friedmann_8c.html#aba5eeca2531a0bd3f9d7496945bdfc4f" title="fomega" alt="" coords="190,5,255,32"/>
+<area shape="rect" id="node6" href="$friedmann_8c.html#aca312d16b055336528ac695df58b5ed3" title="dladt" alt="" coords="197,56,248,83"/>
+<area shape="rect" id="node7" href="$segment_8c.html#a3c252852d9be4376e68fe97e88d386b5" title="segment_part" alt="" coords="172,107,273,133"/>
+<area shape="rect" id="node9" href="$zoom_8c.html#a777e7b23eb193a01a44e7285036da293" title="pos2levelzoom" alt="" coords="168,157,277,184"/>
+<area shape="rect" id="node3" href="$friedmann_8c.html#abb887f67ef3fcdbed1194ab91e362780" title="dplus" alt="" coords="339,5,393,32"/>
+<area shape="rect" id="node4" href="$friedmann_8c.html#afe3ca2778334ebdc04fdb8dc40ae2355" title="integ_ddplus" alt="" coords="455,5,549,32"/>
+<area shape="rect" id="node5" href="$friedmann_8c.html#a8f50b1f585ed67c3ccb52dc959e72544" title="ddplus" alt="" coords="597,5,657,32"/>
+<area shape="rect" id="node8" href="$hilbert_8c.html#af2e250677ec295ceec93a14d269d0ec9" title="hilbert_c2i" alt="" coords="325,107,407,133"/>
+</map>

@@ -11,7 +11,7 @@
 #include "stars.h"
 #include "hydro_utils.h"
 #include "atomic_data/Atomic.h"
-#include "tools.h"
+#include "src_utils.h" // setUVBKG
 
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 
@@ -187,8 +187,11 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpInfo("data/param.info", param, cpu);
   dumpFile("param.mk", "data/param.mk");
   dumpFile(fparam, "data/param.run");
+
+#ifdef RAD
   if(cpu->rank==RANK_DISP)
     printf("SRCINT set to %e\n",param->srcint);
+
 #ifndef SRCINT
   if(param->srcint<2.){
     // it is likely to be an error
@@ -199,7 +202,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   }
 #endif
   printf("\n");
-
+#endif
   //abort();
 }
 
@@ -215,7 +218,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   REAL max_T=0;
   REAL max_rho=0;
 
-  REAL sfr=0;
+  REAL src=0;
 
 
   int level;
@@ -235,10 +238,15 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 	if( curcell->child==NULL){
 	  // ajout d'une ponderation en volume, plus conforme a l'idee de moyenne
 	  // note somme(vweight)=1.
+#ifdef WRADHYD
 	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
-	  mean_T+=curcell->rfield.temp*vweight;
+#endif // WRADHYD
 
+#ifdef RAD
+	  mean_T+=curcell->rfield.temp*vweight;
+    src+=curcell->rfield.src*vweight;
 	  max_T=FMAX(max_T,curcell->rfield.temp);
+#endif // RAD
 	  max_rho=FMAX(max_rho,curcell->field.d);
 
 
@@ -261,14 +269,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm);
-  //mean_xion/=cpu->nproc*ncell; // plus necessaire suite a la ponderation en volume
   MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm);
-  //mean_T/=cpu->nproc*ncell;
-
   MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
-  //  MPI_Allreduce(MPI_IN_PLACE,&sfr,1,MPI_REEL,MPI_SUM,cpu->comm);
-  //MPI_Allreduce(MPI_IN_PLACE,&ncell,1,MPI_INT,MPI_SUM,cpu->comm); // plus necessaire suite a la ponderation en volume
+  MPI_Allreduce(MPI_IN_PLACE,&src,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
@@ -287,7 +291,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     if (nsteps==0){
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
-      fprintf(fp,"step\taexp\t\tz\t\tdt\t\tmax_level\tmax_rho\t\tmean_xion\tmean_T\t\tmax_T\t\tstars\t\tSN\n");
+      fprintf(fp,"step\taexp\t\tz\t\tdt\t\tmax_level\tmax_rho\t\tmean_xion\tmean_T\t\tmax_T\t\tstars\t\tSN\t\tsrc\n");
 
     }else{
       fp=fopen(filename,"a+");
@@ -307,9 +311,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, real_format ,(float)param->stars->n);
     fprintf(fp, real_format ,(float)Nsn);
-
-//   fprintf(fp, real_format,sfr);
-
+    fprintf(fp, real_format ,(float)src);
 
     fprintf(fp,"\n");
     fclose(fp);
@@ -1070,7 +1072,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;
 
 #else
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
       rstat=fscanf(buf,"%s",stream);
@@ -1118,15 +1120,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
     param->stars->n		= 0;
 #endif
 
-
 #ifdef SRCINT
   param->srcint*=SRCINT;
 #endif
 
+#ifdef RAD
 #ifdef UVBKG
   setUVBKG(param, "uvbkg.dat");
 #endif // UVBKG
-
+#endif // RAD
 }
 
 //==================================================================================

@@ -1,0 +1,8 @@
+<map id="mpi_cic_correct" name="mpi_cic_correct">
+<area shape="rect" id="node2" href="$communication_8c.html#a28bba8013fbf773cf166dab11fff39fd" title="clean_mpibuff" alt="" coords="168,5,271,32"/>
+<area shape="rect" id="node3" href="$communication_8c.html#aa29314ec5b6646e7641e742ed5134f14" title="gather_ex" alt="" coords="180,56,259,83"/>
+<area shape="rect" id="node6" href="$communication_8c.html#a7efb9983b7224f49c7bdb755a0d828dd" title="scatter_mpi" alt="" coords="174,107,265,133"/>
+<area shape="rect" id="node4" href="$segment_8c.html#a154e8a2fbfdc5d7328f2e45216e62117" title="oct2key" alt="" coords="319,56,387,83"/>
+<area shape="rect" id="node5" href="$hilbert_8c.html#af2e250677ec295ceec93a14d269d0ec9" title="hilbert_c2i" alt="" coords="435,56,516,83"/>
+<area shape="rect" id="node7" href="$segment_8c.html#ad8cbbe0ede3326f99fb1da6f8e8e022e" title="hfun" alt="" coords="329,107,376,133"/>
+</map>

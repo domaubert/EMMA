@@ -1946,6 +1946,7 @@ blockcounts[0]++; // For SN feedback
       MPI_Barrier(cpu.comm);
       tg3=MPI_Wtime();
 
+#ifdef RAD
 #ifdef COARSERAD
       // inner loop on radiation
       REAL trad=0.;
@@ -1974,6 +1975,7 @@ blockcounts[0]++; // For SN feedback
       if(cpu.rank==RANK_DISP) printf("GPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
 #endif
 #endif
+#endif // RAD
 
 
       MPI_Barrier(cpu.comm);
