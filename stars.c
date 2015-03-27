@@ -1,13 +1,18 @@
 // ----------------------------------------------------------
 // ----------------------------------------------------------
-/// \file stars.c
-/// \brief contain the stars functions
-///
-/// Documentation on the implementation can be found at :
-/// https://github.com/domaubert/EMMA/wiki/Stars
+/** \file stars.c
+  * \brief contain the stars functions
+  * \author Nicolas Deparis
+  *
+  * Need the STARS preprocessor flag
+  *
+  * Documentation on the implementation can be found at :
+  * https://github.com/domaubert/EMMA/wiki/Stars
+  */
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 
+#ifdef STARS
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,14 +184,17 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 
   // local free fall time in seconde in code unit
-  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho));
+  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); // TODO find the expression in the case of a cosmological Poisson equation
   t_ff /= fact_t;
 
   // local Jeans time in seconde in code unit
   REAL t_j = dx/cell->field.a;
 
 	// star formation rate in kg/s/m3 in code unit
-  REAL SFR = param->stars->efficiency * cell->field.d  / t_ff  * t_j/t_ff;
+  REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
+
+  // Jeans efficiency
+  SFR *= t_j/t_ff;
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
@@ -264,8 +272,12 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
   REAL   k=-1;                                      // Comoving density case
   if (param->stars->density_cond>0) k=POW(aexp,3);  // Physical density case
 
-  REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d;
+  // Hydrogen atom per cubic meter in code unit
+  REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d*param->unit.unit_N;
+  // overdensity
   REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
+
+  // final threshold
 	param->stars->thresh = FMAX(thresh_1,thresh_2);
 #endif
 
@@ -331,7 +343,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
                 curp->isStar=3; // radiative -> supernovae + decreasing luminosity
   #else
                 curp->isStar=2; // radiative -> supernovae
-  #endif
+  #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
 #else
                 curp->isStar=4; // radiative -> decreasing luminosity
 #endif // SUPERNOVAE
@@ -371,7 +383,9 @@ REAL setmStar(struct RUNPARAMS *param,int level){
     }
     mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
   }
-#endif
+#endif // TESTCOSMO
+
+// TODO considere ifndef TESTCOSMO
 
 
   return mstars_level;
@@ -403,7 +417,6 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
     int icell;
 	  for(icell=0;icell<8;icell++) {
 	    struct CELL *curcell = &curoct->cell[icell];
-
 
 	    if( testCond(curcell, param, aexp, level) ) {
         REAL dx = POW(2.0,-level);
@@ -442,3 +455,4 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 		if(param->stars->n>0) cpu->trigstar=1;
 	}
 }
+#endif//STARS

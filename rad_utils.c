@@ -1959,7 +1959,7 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
   t[9]=MPI_Wtime();
   return (REAL)(t[9]-t[0]);
-  
+
 }
 
 

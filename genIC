@@ -59,7 +59,7 @@ def inputplanck(size,folder):
 	f.write("\n")
 	f.write("\n")
 	f.write("0\n")
-	f.write("555555555\n")
+	f.write("111111111\n")
 	f.write("0\n")
 
 	f.close

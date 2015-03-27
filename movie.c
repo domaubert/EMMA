@@ -1,3 +1,26 @@
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+/** \file movie.c
+  * \brief contain functions for movie files output
+  * \author Nicolas Deparis
+  *
+  * Movie mode need the MOVIE preprocessor flag\n
+  * It dump a 2D array a each time step containing
+  * the projection of some physical field
+  *
+  * format:\n
+  * int x (size along x axis)\n
+  * int y (size along y axis)\n
+  * float aexp (scale factor)\n
+  * x*y float (potential)\n
+  * x*y float (density)\n
+  * x*y float (ionisation fraction)\n
+  * x*y float (temperature)\n
+  */
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+
+
 #ifdef MOVIE
 
 #include <stdio.h>
@@ -5,8 +28,6 @@
 #include <math.h>
 #include <string.h>
 #include <mpi.h>
-
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #include "prototypes.h"
@@ -136,4 +157,4 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
   if(cpu->rank==0) printf("done\n");
 }
 
-#endif
+#endif//MOVIE

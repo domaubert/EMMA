@@ -11,6 +11,7 @@ var searchData=
   ['dev_5fstencil',['dev_stencil',['../struct_c_p_u_i_n_f_o.html#abbae4d98289cd8273345958abb7f3d04',1,'CPUINFO::dev_stencil()'],['../struct_c_p_u_i_n_f_o.html#a227e704e8655ba61752642a9d24b2b8d',1,'CPUINFO::dev_stencil()']]],
   ['dict',['dict',['../struct_c_p_u_i_n_f_o.html#abecfbcf6a31a59875466f186091ac29a',1,'CPUINFO']]],
   ['divu',['divu',['../struct_c_e_l_l_f_l_u_x.html#a4c4426abcf4207105ca672429bee2bce',1,'CELLFLUX::divu()'],['../struct_c_e_l_l_f_l_u_x___h.html#a4c4426abcf4207105ca672429bee2bce',1,'CELLFLUX_H::divu()']]],
+  ['dm_5fres',['DM_res',['../struct_r_u_n_p_a_r_a_m_s.html#a985629809c336012fe12151f7753d1c8',1,'RUNPARAMS']]],
   ['dparam',['dparam',['../struct_c_p_u_i_n_f_o.html#a55c470359b2761a391866d0ffb5d715b',1,'CPUINFO']]],
   ['dt',['dt',['../struct_r_u_n_p_a_r_a_m_s.html#a5e1871a93f4e706230c7cac8b05d6dc0',1,'RUNPARAMS']]],
   ['dt_5fdump',['dt_dump',['../struct_r_u_n_p_a_r_a_m_s.html#ab25932015e34a3a426d174b0fb150bb0',1,'RUNPARAMS']]],

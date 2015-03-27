@@ -122,6 +122,9 @@ Functions</h2></td></tr>
 <tr class="separator:a443f7a173bd5553bf99c314253d9a2d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9c07fb9e3376cc37d709331ddd739fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="src__utils_8h.html#aa9c07fb9e3376cc37d709331ddd739fd">cleansource</a> (struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, struct <a class="el" href="struct_o_c_t.html">OCT</a> **firstoct, struct <a class="el" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu)</td></tr>
 <tr class="separator:aa9c07fb9e3376cc37d709331ddd739fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bd6797689be9a1c9e2d6660c0ae3b2e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="src__utils_8h.html#a9bd6797689be9a1c9e2d6660c0ae3b2e">setUVBKG</a> (struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, char *fname)</td></tr>
+<tr class="memdesc:a9bd6797689be9a1c9e2d6660c0ae3b2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a UV background from uvbkg.dat and store it.  <a href="#a9bd6797689be9a1c9e2d6660c0ae3b2e">More...</a><br /></td></tr>
+<tr class="separator:a9bd6797689be9a1c9e2d6660c0ae3b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="aa9c07fb9e3376cc37d709331ddd739fd"></a>
@@ -154,7 +157,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00347">347</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
+<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00352">352</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
 
 </div>
 </div>
@@ -212,7 +215,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00454">454</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
+<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00459">459</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
 
 <p><div class="dynheader">
 Here is the call graph for this function:</div>
@@ -223,9 +226,8 @@ Here is the call graph for this function:</div>
 <area shape="rect" id="node3" href="src__utils_8c.html#acad3d1a272a116cbe4c2fba61909fb82" title="Linear fit of UV background. " alt="" coords="118,56,209,83"/>
 <area shape="rect" id="node4" href="src__utils_8c.html#a4c423b7d3ceb62e6e65789ee451916b9" title="putE2coarse" alt="" coords="116,107,211,133"/>
 <area shape="rect" id="node6" href="src__utils_8c.html#a415f5629e9ef62d4800e798f8b39288b" title="putsource" alt="" coords="124,157,203,184"/>
-<area shape="rect" id="node8" href="chem__utils_8c.html#ac9dce21c64431f0b322b44953f5aae85" title="E2T" alt="" coords="140,208,187,235"/>
-<area shape="rect" id="node5" href="src__utils_8c.html#a8c337fac455ad361c72ff7f8185c861a" title="collectE" alt="" coords="261,107,330,133"/>
-<area shape="rect" id="node7" href="convert_8c.html#a26a98e712364536ac3ec63f1ee6e1077" title="setScale" alt="" coords="259,157,332,184"/>
+<area shape="rect" id="node7" href="chem__utils_8c.html#ac9dce21c64431f0b322b44953f5aae85" title="E2T" alt="" coords="140,208,187,235"/>
+<area shape="rect" id="node5" href="src__utils_8c.html#a8c337fac455ad361c72ff7f8185c861a" title="collectE" alt="" coords="259,107,328,133"/>
 </map>
 </div>
 </p>
@@ -268,7 +270,39 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00300">300</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
+<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00305">305</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a9bd6797689be9a1c9e2d6660c0ae3b2e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void setUVBKG </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *&#160;</td>
+          <td class="paramname"><em>param</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>fname</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read a UV background from uvbkg.dat and store it. </p>
+<p>input values must be in phot/s/m^3</p>
+<p>uvbkg.dat format: 1 int N : number of samples N lines of 2 floats: (redshift) and (comoving photons/s/m3) </p>
+
+<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00393">393</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
 
 </div>
 </div>
@@ -299,7 +333,7 @@ Here is the call graph for this function:</div>
 <p>Linear fit of UV background. </p>
 <p>Made a linear interpolation of the data from uvbkg.dat to get a value at current aexp. </p>
 
-<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00421">421</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
+<p>Definition at line <a class="el" href="src__utils_8c_source.html#l00426">426</a> of file <a class="el" href="src__utils_8c_source.html">src_utils.c</a>.</p>
 
 </div>
 </div>
@@ -309,7 +343,7 @@ Here is the call graph for this function:</div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="src__utils_8h.html">src_utils.h</a></li>
-    <li class="footer">Generated on Tue Mar 17 2015 11:49:17 for EMMA by
+    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

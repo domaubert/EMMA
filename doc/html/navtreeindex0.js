@@ -1,12 +1,10 @@
 var NAVTREEINDEX0 =
 {
 "advanceamr_8c.html":[1,0,0],
-"advanceamr_8c.html#a0ed479518630ee8a6b7b61618440d5df":[1,0,0,0],
-"advanceamr_8c.html#a1e7c097218b5b670af5d8ebc537f2816":[1,0,0,2],
-"advanceamr_8c.html#a5e072e047d4a21d4f721db8ca14d11a8":[1,0,0,5],
-"advanceamr_8c.html#a66cdea0d8c36dbb67e451c1c7b0a5c71":[1,0,0,1],
-"advanceamr_8c.html#abfcb29f6ec7c0f4541d769904ea2a145":[1,0,0,4],
-"advanceamr_8c.html#aff6a92642e4c5a2e040e2f745a9a597e":[1,0,0,3],
+"advanceamr_8c.html#a1e7c097218b5b670af5d8ebc537f2816":[1,0,0,1],
+"advanceamr_8c.html#a66cdea0d8c36dbb67e451c1c7b0a5c71":[1,0,0,0],
+"advanceamr_8c.html#abfcb29f6ec7c0f4541d769904ea2a145":[1,0,0,3],
+"advanceamr_8c.html#aff6a92642e4c5a2e040e2f745a9a597e":[1,0,0,2],
 "advanceamr_8c_source.html":[1,0,0],
 "advanceamr_8h.html":[1,0,1],
 "advanceamr_8h.html#a0ed479518630ee8a6b7b61618440d5df":[1,0,1,0],
@@ -249,5 +247,7 @@ var NAVTREEINDEX0 =
 "globals_e.html":[1,1,0,4],
 "globals_eval.html":[1,1,4],
 "globals_f.html":[1,1,0,5],
-"globals_func.html":[1,1,1]
+"globals_func.html":[1,1,1,0],
+"globals_func.html":[1,1,1],
+"globals_func_b.html":[1,1,1,1]
 };

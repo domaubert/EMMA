@@ -1,13 +1,18 @@
 // ----------------------------------------------------------
 // ----------------------------------------------------------
-/// \file supernovae.c
-/// \brief contain functions for supernovae and stellar wind
-///
-/// More documentation can be found on the wiki :
-/// https://github.com/domaubert/EMMA/wiki/Supernovae
+/** \file supernovae.c
+  * \brief contain functions for supernovae and stellar wind
+  * \author Nicolas Deparis
+  *
+  * Need the SUPERNOVAE preprocessor flag
+  *
+  * More documentation can be found on the wiki :
+  * https://github.com/domaubert/EMMA/wiki/Supernovae
+  */
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 
+#ifdef SUPERNOVAE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -21,7 +26,6 @@
 #include "hydro_utils.h" // W2U and U2W
 #include "convert.h"
 
-#ifdef SUPERNOVAE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

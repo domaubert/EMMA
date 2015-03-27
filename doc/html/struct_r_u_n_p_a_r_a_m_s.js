@@ -7,6 +7,7 @@ var struct_r_u_n_p_a_r_a_m_s =
     [ "clightorg", "struct_r_u_n_p_a_r_a_m_s.html#a9935a8f14eba53eb93a4250d140d1357", null ],
     [ "cosmo", "struct_r_u_n_p_a_r_a_m_s.html#a5d352784b8b509be8729cddbeb2d23be", null ],
     [ "denthresh", "struct_r_u_n_p_a_r_a_m_s.html#a7f8aec27a8ffd81ed3264fc8d49d954a", null ],
+    [ "DM_res", "struct_r_u_n_p_a_r_a_m_s.html#a985629809c336012fe12151f7753d1c8", null ],
     [ "dt", "struct_r_u_n_p_a_r_a_m_s.html#a5e1871a93f4e706230c7cac8b05d6dc0", null ],
     [ "dt_dump", "struct_r_u_n_p_a_r_a_m_s.html#ab25932015e34a3a426d174b0fb150bb0", null ],
     [ "egy_0", "struct_r_u_n_p_a_r_a_m_s.html#a225c51c80631364b8fe864b8f9cce5ff", null ],

@@ -150,7 +150,11 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   REAL X0=1./POW(2,param->lcoarse);
   REAL  dxcur=POW(0.5,curoct->level);
   REAL  dvcur=POW(dxcur,3);
-  int flag;
+  int flag=0;
+
+  // cleaning sources field
+  cell->rfield.src=0.;
+  cell->rfieldnew.src=0.;
 
 #ifdef WRADTEST
   // ========================== FOR TESTS ============================
@@ -220,31 +224,30 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
 #ifdef UVBKG
  /*
-  * set uvbkg according to the value in uvbkg.dat
+  * set UV background according to the value in uvbkg.dat
   */
+
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
-    //(comoving photons/s/m3)
-
-    cell->rfield.src += param->uv.value[igrp] * param->unit.unit_t*POW(aexp,5);
+    cell->rfield.src = param->uv.value[igrp]/param->unit.unit_N * param->unit.unit_t*POW(aexp,2);
     cell->rfieldnew.src=cell->rfield.src;
+    flag=1;
   }
+
 #else
 #ifdef STARS
 
   REAL srcint = param->srcint;
 
-  struct PART *nexp;
-  struct PART *curp;
-
-  cell->rfield.src   =0.;
+  cell->rfield.src=0.;
   cell->rfieldnew.src=0.;
   flag=0;
 
-  nexp=cell->phead;
+  struct PART *nexp=cell->phead;
   if(nexp==NULL) return 0;
   int nss=0;
-  do{ 	curp=nexp;
+  do{
+   	struct PART *curp=nexp;
     nexp=curp->next;
 
     if ((curp->isStar==1)){
@@ -258,7 +261,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
     if (curp->isStar==3 || curp->isStar==4){ //Supernovae + decreasing luminosity OR decreasing luminosity
    /* --------------------------------------------------------------------------
-    * decreasing luminosity state, at the and of their life star still radiate
+    * decreasing luminosity state, at the end of their life star still radiate
     * with a luminosity function of a decreasing power law of time.
     * Slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
     * --------------------------------------------------------------------------
@@ -382,7 +385,7 @@ void cleansource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINF
 /**
   * \brief Read a UV background from uvbkg.dat and store it.
   *
-  * input values must be in phot/s/m^3
+  * input values must be in comoving phot/s/m^3
   *
   * uvbkg.dat format:
   * 1 int N : number of samples
@@ -418,7 +421,7 @@ void setUVBKG(struct RUNPARAMS *param, char *fname){
 /**
   * \brief Linear fit of UV background
   *
-  * Made a linear interpolation of the data from uvbkg.dat
+  * Linear interpolation of the data from uvbkg.dat
   * to get a value at current aexp.
   */
 // ----------------------------------------------------------//
@@ -470,7 +473,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #ifdef TESTCOSMO
   REAL tcur=a2t(param,aexp);
 #else
-  REAL tcur=tloc; // PROBABLY NEEDS TO BE FIXED FOR NON COSMO RUN WITH STARS (LATER....)
+  REAL tcur=tloc; // TODO PROBABLY NEEDS TO BE FIXED FOR NON COSMO RUN WITH STARS (LATER....)
 #endif
   //if(cpu->rank==RANK_DISP) printf("Building Source field\n");
 

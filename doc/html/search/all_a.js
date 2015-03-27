@@ -11,7 +11,6 @@ var searchData=
   ['l_5fcomptstep_5fff',['L_comptstep_ff',['../advanceamr_8c.html#a1e7c097218b5b670af5d8ebc537f2816',1,'advanceamr.c']]],
   ['l_5fcomptstep_5fhydro',['L_comptstep_hydro',['../advanceamr_8c.html#aff6a92642e4c5a2e040e2f745a9a597e',1,'advanceamr.c']]],
   ['l_5fcomptstep_5frad',['L_comptstep_rad',['../advanceamr_8c.html#abfcb29f6ec7c0f4541d769904ea2a145',1,'advanceamr.c']]],
-  ['l_5fcomptstep_5fradfront',['L_comptstep_radfront',['../advanceamr_8c.html#a5e072e047d4a21d4f721db8ca14d11a8',1,'advanceamr.c']]],
   ['l_5fegypart',['L_egypart',['../particle_8h.html#af0feb9d71f50ce8c70f4614f8a25fc75',1,'particle.h']]],
   ['l_5flevpart',['L_levpart',['../particle_8c.html#a00711a4fa086e7f7568e93bacb0e6d97',1,'L_levpart(int level, struct OCT **firstoct, int is):&#160;particle.c'],['../particle_8h.html#a00711a4fa086e7f7568e93bacb0e6d97',1,'L_levpart(int level, struct OCT **firstoct, int is):&#160;particle.c']]],
   ['l_5fmark_5fcells',['L_mark_cells',['../amr_8c.html#a49ad3f654f368879161ada8d9834a218',1,'L_mark_cells(int level, struct RUNPARAMS *param, struct OCT **firstoct, int nsmooth, REAL threshold, struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer):&#160;amr.c'],['../amr_8h.html#a49ad3f654f368879161ada8d9834a218',1,'L_mark_cells(int level, struct RUNPARAMS *param, struct OCT **firstoct, int nsmooth, REAL threshold, struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer):&#160;amr.c']]],

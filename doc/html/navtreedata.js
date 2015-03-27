@@ -25,9 +25,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "advanceamr_8c.html",
-"globals_func.html",
-"particle_8c.html#ae790831e26042f3f5502dda75e70ab70",
-"struct_c_p_u_i_n_f_o.html#a4e312fc1ff3b6f901f571f6ae9e043fe",
+"globals_func_c.html",
+"particle_8c.html#af0760bb080b47965edbfbe6d60422a3c",
+"struct_c_p_u_i_n_f_o.html#a50914f229acef500902e2a588e5ff61f",
 "struct_rtype.html#ade843c4ef0993aa91849cd1225ba8add"
 ];
 

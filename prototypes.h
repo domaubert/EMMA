@@ -46,6 +46,27 @@ typedef double REAL;
 #define CUDPP_REAL CUDPP_DOUBLE
 
 #endif // SINGLEPRECISION
+#ifdef DUAL_E
+  #ifndef WRADHYD
+    #define NVAR (6)
+  #else
+    #define NVAR (7)
+  #endif
+#else
+  #define NVAR (5)
+#endif
+
+#define NFLUX (6*NVAR)
+
+#ifndef WHYDRO2
+  #define OMEGAB (0.0)
+#else
+  #define OMEGAB (0.049); // 0.049 for PLANCK
+#endif
+
+#ifdef WRAD
+  #define NFLUX_R (6*NGRP*NVAR_R)
+#endif
 
 
 //=======================================
@@ -163,6 +184,8 @@ struct RUNPARAMS{
   REAL amrthresh0;
   REAL amrthresh; ///< the refinement criterion (refine if mcell>amrthresh)
 
+  int DM_res; ///< resolution of dark matter particle (equivalent level of lcoarse + DM_res)
+
   int nsmooth; ///< the number of neighbour refinement steps
 
   REAL poissonacc; ///< relaxation accuracy for Poisson equation
@@ -248,8 +271,8 @@ struct PACKET{
 
 
 struct CPUINFO{
-  int rank;
-  int nproc;
+  int rank; ///< the local processor ID
+  int nproc; ///< the total number of processors
 
   unsigned long long  kmin;
   unsigned long long  kmax;
@@ -438,6 +461,10 @@ struct Wtype_MPI{
 #endif
 };
 
+/**
+  * \stuct Utype
+  * \brief local conservative hydro quantities
+  */
 
 struct Utype{
   REAL d;    ///< density

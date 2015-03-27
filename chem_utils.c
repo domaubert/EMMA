@@ -192,6 +192,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL F2[NGRP];
 #endif
 
+
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
 
@@ -230,6 +231,25 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       R.src=param->bkg;
 #endif
 
+
+	  //if(eint[idloc]!=E0) printf("1!\n");
+	  /// ==================== UV Background
+#ifdef UVBKG
+	  if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
+	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
+
+	  // Poor FIT to Haardt & MAdau 2012
+  /*
+	  for(igrp=0;igrp<NGRP;igrp++){
+	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
+	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
+	  }
+  */
+
+#else
+	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
+#endif
+
       // switch to physical units, chemistry remains unchanged with and without cosmo
       for (igrp=0;igrp<NGRP;igrp++)
 	{
@@ -247,7 +267,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3);
+      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+// R.src phot/unit_t/unit_dv (comobile)
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);
 
@@ -283,24 +304,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       while(currentcool_t<dt)
 	{
 
-	  z=1./aexp-1.;
-	  //if(eint[idloc]!=E0) printf("1!\n");
-	  /// ==================== UV Background
-#ifdef UVBKG
-	  if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
-	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 
-	  // Poor FIT to Haardt & MAdau 2012
-	  /*
-	  for(igrp=0;igrp<NGRP;igrp++){
-	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
-	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
-	  }
-	  */
-
-#else
-	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
-#endif
 	  /// Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
 	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
@@ -355,6 +359,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 		if((et[igrp]<0)||(isnan(et[igrp]))){
 		  test=1;
+      printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
+
 		}
 		p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+4.*hubblet)*dtcool);
 	      }

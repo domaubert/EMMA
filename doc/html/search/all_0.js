@@ -3,7 +3,7 @@ var searchData=
   ['a',['a',['../struct_wtype.html#a4cbe18f79def5e46d14a7d5ab8b9317b',1,'Wtype::a()'],['../struct_wtype___m_p_i.html#a4cbe18f79def5e46d14a7d5ab8b9317b',1,'Wtype_MPI::a()'],['../struct_wtype1_d.html#a4cbe18f79def5e46d14a7d5ab8b9317b',1,'Wtype1D::a()'],['../struct_wtype1_d__double.html#a1031d0e0a97a340abfe0a6ab9e831045',1,'Wtype1D_double::a()']]],
   ['a2t',['a2t',['../tools_8c.html#ad4cc2e6299d46ff6d90977cad9c84418',1,'a2t(struct RUNPARAMS *param, REAL az):&#160;tools.c'],['../tools_8h.html#ad4cc2e6299d46ff6d90977cad9c84418',1,'a2t(struct RUNPARAMS *param, REAL az):&#160;tools.c']]],
   ['addstar',['addStar',['../stars_8c.html#a30be9b20b3f2f9996398faa7bbfc3b35',1,'stars.c']]],
-  ['advance_5flevel',['Advance_level',['../advanceamr_8c.html#a0ed479518630ee8a6b7b61618440d5df',1,'Advance_level(int level, REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct, struct OCT **lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int *ndt, int nsteps, REAL tloc):&#160;advanceamr.c'],['../advanceamr_8h.html#a0ed479518630ee8a6b7b61618440d5df',1,'Advance_level(int level, REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct, struct OCT **lastoct, struct HGRID *stencil, struct STENGRAV *gstencil, struct RGRID *rstencil, int *ndt, int nsteps, REAL tloc):&#160;advanceamr.c']]],
+  ['advance_5flevel',['Advance_level',['../advanceamr_8h.html#a0ed479518630ee8a6b7b61618440d5df',1,'advanceamr.h']]],
   ['advance_5flevel_5frad',['Advance_level_RAD',['../advanceamr_8h.html#af387465d404fea3d5881af16e0bcfb7b',1,'advanceamr.h']]],
   ['advanceamr_2ec',['advanceamr.c',['../advanceamr_8c.html',1,'']]],
   ['advanceamr_2eh',['advanceamr.h',['../advanceamr_8h.html',1,'']]],

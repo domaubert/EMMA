@@ -189,15 +189,20 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   // setting the first oct
 #ifdef STARS
 #ifdef ACCEL_RAD_STAR
-  if((cpu->trigstar==0)){
+  if((cpu->trigstar==0))
+  {
     param->clight=1e-4;
   }
   else{
     param->clight=param->clightorg;
     //    printf("SWITCH VEL %e %e\n",param->clight,param->clightorg);
   }
-#endif
-#endif
+#endif // ACCEL_RAD_STAR
+#endif // STARS
+
+#ifdef UVBKG
+    param->clight=1e-4;
+#endif // UVBKG
 
   //nextoct=firstoct[level-1];
 
@@ -1236,11 +1241,7 @@ if(cond1||cond2||cond3){
     if(level<param->lmax){
       if(nlevel>0){
 	REAL dtfine;
-#ifdef RAD
-#ifdef COARSERAD
 	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc,nrad);
-#endif // COARSERAD
-#endif // RAD
 	// coarse and finer level must be synchronized now
 	adt[level-1]=dtfine;
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one

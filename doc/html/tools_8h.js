@@ -7,6 +7,5 @@ var tools_8h =
     [ "grid_census", "tools_8h.html#a9de943b2719aa2255545beab4efa357a", null ],
     [ "multicheck", "tools_8h.html#aca5ce822deca08eba2f5b6ac1538286b", null ],
     [ "myradixsort", "tools_8h.html#a04efdcf9306ba5d02bb96605e6b9d8ce", null ],
-    [ "rdm", "tools_8h.html#a91f42832539ff8d981da345bd9d56c16", null ],
-    [ "setUVBKG", "tools_8h.html#a9bd6797689be9a1c9e2d6660c0ae3b2e", null ]
+    [ "rdm", "tools_8h.html#a91f42832539ff8d981da345bd9d56c16", null ]
 ];

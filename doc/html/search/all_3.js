@@ -27,6 +27,7 @@ var searchData=
   ['distribe',['distribE',['../rad__utils_8c.html#aa8d31c9a48e9a1001e21c3b76f64e86d',1,'rad_utils.c']]],
   ['divu',['divu',['../struct_c_e_l_l_f_l_u_x.html#a4c4426abcf4207105ca672429bee2bce',1,'CELLFLUX::divu()'],['../struct_c_e_l_l_f_l_u_x___h.html#a4c4426abcf4207105ca672429bee2bce',1,'CELLFLUX_H::divu()']]],
   ['dladt',['dladt',['../friedmann_8c.html#aca312d16b055336528ac695df58b5ed3',1,'dladt(double a, double omegam, double omegav):&#160;friedmann.c'],['../friedmann_8h.html#aca312d16b055336528ac695df58b5ed3',1,'dladt(double a, double omegam, double omegav):&#160;friedmann.c']]],
+  ['dm_5fres',['DM_res',['../struct_r_u_n_p_a_r_a_m_s.html#a985629809c336012fe12151f7753d1c8',1,'RUNPARAMS']]],
   ['dparam',['dparam',['../struct_c_p_u_i_n_f_o.html#a55c470359b2761a391866d0ffb5d715b',1,'CPUINFO']]],
   ['dplus',['dplus',['../friedmann_8c.html#abb887f67ef3fcdbed1194ab91e362780',1,'dplus(double a, double omegam, double omegav):&#160;friedmann.c'],['../friedmann_8h.html#abb887f67ef3fcdbed1194ab91e362780',1,'dplus(double a, double omegam, double omegav):&#160;friedmann.c']]],
   ['dt',['dt',['../struct_r_u_n_p_a_r_a_m_s.html#a5e1871a93f4e706230c7cac8b05d6dc0',1,'RUNPARAMS']]],

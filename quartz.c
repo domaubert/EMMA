@@ -25,6 +25,7 @@
 #include <mpi.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "parameters.h"
 
 #ifdef WGPU
 #include "interface.h"
@@ -777,7 +778,7 @@ blockcounts[0]++; // For SN feedback
   cpu.nstar=	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the number of stars per level
   cpu.trigstar=0;
   //  srand(time(NULL));
-  srand(4569);
+  srand(SEED);
 #endif
 
 
@@ -1425,19 +1426,15 @@ blockcounts[0]++; // For SN feedback
     REAL lbox;
 
 #ifdef GRAFIC // ==================== read grafic file
-
     lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
-    printf("read part =%d diff p=%ld\n",npart,lastpart-part+1);
+    printf("cpu %d\tread part =%d diff p=%ld\n",cpu.rank,npart,lastpart-part+1);
 #endif
 
-
 #ifdef ZELDOVICH // ==================== read ZELDOVICH file
-
     lastpart=read_zeldovich_part(part, &cpu, &munit, &ainit, &npart, &param,firstoct);
 #endif
 
 #ifdef EDBERT // ==================== read ZELDOVICH file
-
     lastpart=read_edbert_part(part, &cpu, &munit, &ainit, &npart, &param,firstoct);
 #endif
 
@@ -1526,7 +1523,7 @@ blockcounts[0]++; // For SN feedback
       printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
       abort();
     }
-#endif
+#endif // WCHEM
 
 #ifdef WRADTEST
     // SETTING THE RADIATIVE TRANSFER
@@ -1602,23 +1599,24 @@ blockcounts[0]++; // For SN feedback
 		  xion=1.2e-3;
 #else
 #ifndef TESTCLUMP
-		  temperature=1e2;
-		  xion=1e-6;
+      temperature=1e2;
+      xion=1e-6;
 #else
-		  temperature=8000.;
-		  xion=1e-5;
-#endif
-#endif
+      temperature=8000.;
+      xion=1e-5;
+#endif // TESTCLUMP
+#endif // COOLING
+
 
 #ifndef TESTCOSMO
 #ifndef TESTCLUMP
 		  nh=1000.;
 #else
 		  nh=200.;
-#endif
+#endif // TESTCLUMP
 #else
 		  nh=0.2;
-#endif
+#endif // TESTCOSMO
 
 #ifdef TESTCLUMP
 		  // defining the clump
@@ -1628,7 +1626,7 @@ blockcounts[0]++; // For SN feedback
 		    temperature=40.;
 		    nh=40000.;
 		  }
-#endif
+#endif // TESTCLUMP
 
 #ifndef TESTCLUMP
 		  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
@@ -1644,8 +1642,6 @@ blockcounts[0]++; // For SN feedback
 		  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh;
 		  E2T(&curoct->cell[icell].rfield,1.0,&param);
 
-
-
 #ifdef WRADHYD
 		  curoct->cell[icell].field.d=curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  curoct->cell[icell].field.u=0.0;
@@ -1658,10 +1654,7 @@ blockcounts[0]++; // For SN feedback
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif
 
-#endif
-
-
-
+#endif // WCHEM
 
 		}
 	      }
@@ -1669,8 +1662,8 @@ blockcounts[0]++; // For SN feedback
 
 
       }
-#endif
-#endif
+#endif // WRADTEST
+#endif // WRAD
 
     // saving the absolute initial time
 #ifdef TESTCOSMO
@@ -1775,6 +1768,8 @@ blockcounts[0]++; // For SN feedback
 	/* param.stars->Esnfb = param.stars->mstars * param.unit.unit_mass * SN_EGY * param.stars->feedback_eff; // [J] */
 	/* if(cpu.rank==RANK_DISP) printf("Esnfb set to %e\n",param.stars->Esnfb); */
   //#endif
+
+  #ifdef STARS
   if(cpu.rank==RANK_DISP){
     for(level=7;level<13;level++){
       REAL egy = 9.68e11;// J per stellar kg
@@ -1785,6 +1780,7 @@ blockcounts[0]++; // For SN feedback
       printf("E=%e ,dv=%e, mass=%e aexp=%e\n",E,dv,mass,aexp);
     }
   }
+  #endif // STARS
   //  abort();
 
 
@@ -1946,7 +1942,7 @@ blockcounts[0]++; // For SN feedback
       MPI_Barrier(cpu.comm);
       tg3=MPI_Wtime();
 
-#ifdef RAD
+#ifdef WRAD
 #ifdef COARSERAD
       // inner loop on radiation
       REAL trad=0.;
