@@ -452,7 +452,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"max_level\t");
       fprintf(fp,"max_rho\t\t");
       fprintf(fp,"mean_xion\t");
-      fprintf(fp,"tmean_T\t\t");
+      fprintf(fp,"mean_T\t\t");
       fprintf(fp,"max_T\t\t");
       fprintf(fp,"stars\t\t");
       fprintf(fp,"SN\t\t");

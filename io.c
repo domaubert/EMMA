@@ -6,71 +6,10 @@
 
 #include "prototypes.h"
 #include "friedmann.h"
+#include "oct.h"
 #include "parameters.h"
 #include "restart.h"
 
-void cell2lcell(struct CELL *cell, struct LCELL *lcell){
-
-  lcell->marked=cell->marked;
-  lcell->child=(cell->child!=NULL);
-#ifdef PIC
-  lcell->density=cell->density;
-#endif
-
-#ifdef WGRAV
-  lcell->den=cell->gdata.d;
-  lcell->pot=cell->gdata.p;
-  lcell->res=cell->res;
-
-  lcell->f[0]=cell->f[0];
-  lcell->f[1]=cell->f[1];
-  lcell->f[2]=cell->f[2];
-#endif
-
-#ifdef WHYDRO2
-  lcell->d=cell->field.d;
-  lcell->u=cell->field.u;
-  lcell->v=cell->field.v;
-  lcell->w=cell->field.w;
-  lcell->p=cell->field.p;
-#ifdef WRADHYD
-  lcell->dX=cell->field.dX;
-#endif
-#endif
-
-#ifdef WRAD
-  int igrp;
-  for(igrp=0;igrp<NGRP;igrp++){
-    lcell->e[igrp]=cell->rfield.e[igrp];
-    lcell->fx[igrp]=cell->rfield.fx[igrp];
-    lcell->fy[igrp]=cell->rfield.fy[igrp];
-    lcell->fz[igrp]=cell->rfield.fz[igrp];
-  }
-  lcell->src=cell->rfield.src;
-#ifdef STARS
-  lcell->snfb=cell->rfield.snfb;
-#endif
-  lcell->xion=cell->rfield.nhplus/cell->rfield.nh;
-  lcell->temp=cell->rfield.temp;
-#endif
-
-}
-
-void oct2loct(struct OCT *oct, struct LOCT *loct){
-  int icell;
-
-  for(icell=0;icell<8;icell++){
-    cell2lcell(&oct->cell[icell],&loct->cell[icell]);
-    //    memcpy(&loct->cell[icell],&oct->cell[icell],sizeof(struct CELL));
-  }
-
-  loct->x=oct->x;
-  loct->y=oct->y;
-  loct->z=oct->z;
-
-  loct->cpu=oct->cpu;
-  loct->level=oct->level;
-}
 
 //====================================================================================================
 
@@ -357,9 +296,9 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    // backups for restart
 	    sprintf(filename,"data/bkp/part.%05d.p%05d",*(cpu->ndumps)%2+1,cpu->rank);
 	    save_part(filename,firstoct,param->lcoarse,param->lmax,tdump,cpu,cpu->firstpart);
-#endif
+#endif // PIC
 
 	  }
-#endif
+#endif // BKP
 	}
 }

@@ -65,6 +65,10 @@
 #include "zoom.h"
 #endif
 
+#ifndef COARSERAD
+#define RADSTEP
+#endif // COARSERAD
+
 
 void gdb_debug()
 {
@@ -687,7 +691,6 @@ blockcounts[0]++; // For SN feedback
 #else
   threshold*=POW(2.0,-3.0*param.lmaxzoom);
 #endif
-  if (cpu.rank == 0) printf("amrthresh : maximum number of part in a cell before refinement : %d -> compute density thresold of %e \n ", (int)param.amrthresh0, threshold);
   param.amrthresh= threshold;
 #endif
   gstride=FMAX(8,param.gstride);//POW(2,levelcoarse);

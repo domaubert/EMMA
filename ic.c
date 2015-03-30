@@ -7,17 +7,13 @@
 #include "segment.h"
 #include "hydro_utils.h"
 
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
-// INITIALS CONDITION
-//------------------------------------------------------------------------
-//------------------------------------------------------------------------
 
-//==================================================================================
-// GRAFIC
-//==================================================================================
+
+
 #ifdef PIC
+//==================================================================================
 #ifdef GRAFIC
+//==================================================================================
 struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
   FILE *fx = NULL;
@@ -301,14 +297,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 }
 #endif
 
-
-
-
-// ========================== ZELDOVICH
-// ====================================
-// ====================================
-
+//==================================================================================
 #ifdef ZELDOVICH
+//==================================================================================
 struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param, struct OCT **firstoct)
 {
   FILE *fd;
@@ -513,11 +504,9 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 #endif
 
 
-
-// =====================================================================================
-// =====================================================================================
-
+//==================================================================================
 #ifdef EDBERT
+//==================================================================================
 struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param, struct OCT **firstoct)
 {
   float astart,om,ov,h0,ob;
@@ -670,14 +659,12 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
 #endif
-//==================================================================================
-//==================================================================================
 
 #ifdef WHYDRO2
 
+//==================================================================================
 #ifdef TUBE
-// =====================================================================================================
-// =====================================================================================================
+//==================================================================================
 
 void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, struct OCT **firstoct)
 {
@@ -743,7 +730,9 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 }
 #endif
 
+//==================================================================================
 #ifdef EVRARD
+//==================================================================================
 int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAMS *param){
 
   int level;
@@ -806,7 +795,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 
 
 #ifdef TESTCOSMO
+//==================================================================================
 #ifdef GRAFIC
+//==================================================================================
  int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param,int level){
 
   FILE *fx = NULL;

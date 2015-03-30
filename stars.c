@@ -74,7 +74,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 #ifdef TESTCOSMO
 	star->age = param->cosmo->tphy;
 #else
-//TODO fix age of star ifndef TESTCOSMO
+/// TODO fix age of star ifndef TESTCOSMO
 #endif
 }
 
@@ -184,7 +184,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 
   // local free fall time in seconde in code unit
-  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); // TODO find the expression in the case of a cosmological Poisson equation
+  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
   t_ff /= fact_t;
 
   // local Jeans time in seconde in code unit

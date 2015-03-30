@@ -46,6 +46,8 @@ typedef double REAL;
 #define CUDPP_REAL CUDPP_DOUBLE
 
 #endif // SINGLEPRECISION
+
+
 #ifdef DUAL_E
   #ifndef WRADHYD
     #define NVAR (6)
