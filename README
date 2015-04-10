@@ -3,6 +3,7 @@ How to get:
 
 how to build:
 	cp init/param_init.mk param.mk
+	cp init/param_init.h src/param.h
 	make
 
 how to launch
