@@ -1,0 +1,9 @@
+<map id="addStar" name="addStar">
+<area shape="rect" id="node2" href="$particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9" title="findlastpart" alt="" coords="128,5,215,32"/>
+<area shape="rect" id="node3" href="$stars_8c.html#aef2a0e8715497d6b0ac6f169920212ad" title="initStar" alt="" coords="140,56,203,83"/>
+<area shape="rect" id="node5" href="$stars_8c.html#a06b46f40b9b096ced8e55f1c1c784dd1" title="conserveField" alt="" coords="120,132,223,159"/>
+<area shape="rect" id="node4" href="$tools_8c.html#a91f42832539ff8d981da345bd9d56c16" title="rdm" alt="" coords="275,43,319,69"/>
+<area shape="rect" id="node6" href="$hydro__utils_8c.html#a14c3f5f01ec3fdcbb98608130856f417" title="W2U" alt="" coords="271,93,323,120"/>
+<area shape="rect" id="node7" href="$hydro__utils_8c.html#a6e7519f0b84c3255bf960bd9642116d2" title="U2W" alt="" coords="271,144,323,171"/>
+<area shape="rect" id="node8" href="$hydro__utils_8c.html#acaf6384f4acbec9da5e8e3189303fa23" title="getE" alt="" coords="272,195,321,221"/>
+</map>

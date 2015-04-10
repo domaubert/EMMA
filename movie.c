@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 #include "prototypes.h"
 #include "movie.h"
 //=================================================================================================
@@ -58,13 +57,9 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 		const REAL dxcur = pow(2.,    -ilev);
 		const int  locN  = pow(2 ,lmap-ilev);
 
-		struct OCT  *oct;
-		struct OCT  *nextoct=firstoct[ilev-1];
-		if(nextoct!=NULL)
-		do {
-			oct=nextoct;
-			nextoct=oct->next;
-			if(oct->cpu != cpu->rank) 	continue;
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
 
 			int icell;
 			for(icell=0;icell<8;icell++){
@@ -107,7 +102,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 					}
 				}
 			}
-		}while(nextoct!=NULL);
+    }
 	}
 
 	int ii;

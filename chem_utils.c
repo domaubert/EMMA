@@ -1,3 +1,6 @@
+/**
+  * \file chem_utils.c
+  */
 
 #ifdef WRAD
 
@@ -40,7 +43,7 @@ REAL cucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_b=2.753e-14*POW(lambda,1.5)/POW(1e0+POW(lambda/2.740,0.407),2.242); //cm3/s
 #ifdef TESTCOSMO
-  alpha_b=alpha_b*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
+  alpha_b=alpha_b*1e-6*unit_number;//(aexp*aexp*aexp); //m3/s
 #else
   alpha_b=alpha_b*1e-6*unit_number; //m3/s
 #endif
@@ -59,7 +62,7 @@ REAL cucompute_alpha_a(REAL temp, REAL unit_number, REAL aexp)
   lambda=2e0*157807e0/temp;
   alpha_a=1.269e-13*POW(lambda,1.503)/POW(1e0+POW(lambda/0.522,0.470),1.923); //cm3/s
 #ifdef TESTCOSMO
-  alpha_a=alpha_a*1e-6*unit_number;///(aexp*aexp*aexp); //m3/s
+  alpha_a=alpha_a*1e-6*unit_number;//(aexp*aexp*aexp); //m3/s
 #else
   alpha_a=alpha_a*1e-6*unit_number; //m3/s
 #endif
@@ -77,7 +80,7 @@ REAL cucompute_beta(REAL temp, REAL unit_number, REAL aexp)
   T5=temp/1e5;
   beta=5.85e-11*SQRT(temp)/(1+SQRT(T5))*exp(-(157809e0/temp)); //cm3/s
 #ifdef TESTCOSMO
-  beta=beta*1e-6*unit_number;///(aexp*aexp*aexp); // !m3/s
+  beta=beta*1e-6*unit_number;//(aexp*aexp*aexp); // !m3/s
 #else
   beta=beta*1e-6*unit_number; // !m3/s
 #endif
@@ -222,7 +225,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d;
 #endif
   REAL xorg;
-  for(i=0;i<nread;i++){ // we scan the octs
+  for(i=0;i<nread;i++){  // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
 
       if(stencil[i].oct[6].cell[icell].split) continue; // we dont treat split cells
@@ -257,7 +260,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       // at this stage we are ready to do the calculations
 
-      /// DEALING WITH CLUMPING ----------------------
+      // DEALING WITH CLUMPING ----------------------
 #ifdef WCLUMP
       REAL CLUMPF2=FMIN(FMAX(POW(nH[idloc]/6.,0.7),1.),40.);
       REAL CLUMPI=1.;
@@ -295,10 +298,13 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
 
 	  // Poor FIT to Haardt & MAdau 2012
+	  /*
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
 	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
 	  }
+	  */
+
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 #endif
@@ -308,7 +314,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #else
 	  REAL hubblet=0.;
 #endif
-
 
 
 	  //if(eint[idloc]!=E0) printf("2!\n");
@@ -366,9 +371,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(test)
 	    {
-	      fudgecool=fudgecool/10.; 
-	      continue;	
-	    } 
+	      fudgecool=fudgecool/10.;
+	      continue;
+	    }
 
 	  // IONISATION
 #ifndef S_X
@@ -433,8 +438,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    SN 	 = R.snfb;
 	    if (R.snfb) Cool = 0; // Stop the cooling if supernovae
 	    if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool);
-#endif //STARS
-	    
+#endif
+
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
@@ -561,3 +566,4 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 #endif
 #endif
+
