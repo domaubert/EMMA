@@ -798,7 +798,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 //==================================================================================
 #ifdef GRAFIC
 //==================================================================================
- int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param,int level){
+ int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param, int level){
 
   FILE *fx = NULL;
   FILE *fy = NULL;

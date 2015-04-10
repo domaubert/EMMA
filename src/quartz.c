@@ -12,6 +12,7 @@
 #include "hilbert.h"
 #include "prototypes.h"
 #include "io.h"
+#include "ic.h"
 #include "cic.h"
 #include "oct.h"
 #include "particle.h"
@@ -255,6 +256,7 @@ int main(int argc, char *argv[])
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
+
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
@@ -654,7 +656,7 @@ blockcounts[0]++; // For SN feedback
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
-    printf("            EMMA V1.0           \n");
+    printf("            EMMA V1.1           \n");
     printf("      Engines Are Running on    \n");
     printf("             %d process         \n",cpu.nproc);
     printf("================================\n");
