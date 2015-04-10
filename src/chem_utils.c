@@ -186,7 +186,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
- 
+
 #ifdef S_X
   REAL E0overI[NGRP];
   REAL N2[NGRP];
@@ -196,13 +196,15 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
+
+  /*
   if(cpu->rank==0){
     for(igrp=0;igrp<3;igrp++){
       printf("%e %e\n",alphai[igrp],alphae[igrp]);
     }
   }
   abort();
-
+*/
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
 

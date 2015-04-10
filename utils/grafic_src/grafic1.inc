@@ -13,12 +13,12 @@ c  Initial density fluctuation amplitude on the ultimate subgrid scale.
 c  For large grids (> 10^7) one may wish to decrease this; for small
 c  refinement grids (< 10^6) and multiple levels one may wish to increase it.
 	real sigstart
-	parameter (sigstart=0.025)
+	parameter (sigstart=0.1)
 c
 c  Top grid mesh size.
 c
 	integer np1,np2,np3
-	parameter (np1=128,np2=128,np3=128)
+	parameter (np1=64,np2=64,np3=64)
 c
 c np[1-3]:      particle lattice size for computing initial conditions.
 c                 All must be divisible by 2.  They need not be equal.
