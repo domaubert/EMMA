@@ -45,6 +45,7 @@ typedef double REAL;
 #define FABS(A) fabs(A)
 #define CUDPP_REAL CUDPP_DOUBLE
 
+#endif
 //=======================================
 
 //#define LIFETIME_OF_STARS_IN_TEST (0*3e6)

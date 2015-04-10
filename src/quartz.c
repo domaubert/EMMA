@@ -11,7 +11,6 @@
 #include <string.h>
 #include "hilbert.h"
 #include "prototypes.h"
-#include "vector.h"
 #include "io.h"
 #include "cic.h"
 #include "oct.h"

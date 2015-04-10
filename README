@@ -2,10 +2,10 @@ How to get:
 	git clone https://github.com/domaubert/EMMA.git
 
 how to build:
-	cp param_init.mk param.mk
+	cp init/param_init.mk param.mk
 	make
 
 how to launch
-  cp param_init.run param.run
+      cp init/param_init.run param.run
 	mpirun -np N ./quartzcpu param.run
 

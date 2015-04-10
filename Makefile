@@ -1,9 +1,12 @@
 ##########################################
 ARCH = CPU
-C_LIBS = -lm -O2  -Wimplicit #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
+C_LIBS = -lm -O2 -Wimplicit #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= quartz.o hilbert.o io.o cic.o oct.o particle.o tools.o amr.o segment.o communication.o hydro_utils.o friedmann.o advanceamr.o poisson_utils.o rad_utils.o chem_utils.o src_utils.o stars.o zoom.o supernovae.o movie.o convert.o
 DEFINES  =
+OBJDIR = obj
+SRCDIR = src
+OBJ=$(patsubst %,$(OBJDIR)/%,$(C_OBJS))
 
 #=========================================== CODE PARAMETERS =====================
 include param.mk
@@ -19,19 +22,20 @@ EXECUTABLE = quartzcpu
 CUDA_OBJS=
 CUDA_LIBS =
 endif
+CUDA_OBJ=$(patsubst %,$(OBJDIR)/%,$(CUDA_OBJS))
+
 
 NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
 CC = mpicc
-OBJECTS = $(C_OBJS) $(CUDA_OBJS)
-.c.o:
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $<
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $< -o $@
 ifeq ($(ARCH),GPU)
-%.o:%.cu
-	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -arch=sm_35 -c $*.cu
+$(OBJDIR)/%.o: $(SRCDIR)/%.cu
+	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -arch=sm_35 -c $< -o $@
 endif
 
-all:$(C_OBJS) $(CUDA_OBJS)
-	$(CC)  $(C_OBJS)  $(CUDA_OBJS) $(C_LIBS) $(CUDA_LIBS) -o $(EXECUTABLE)
+all:$(OBJ) $(CUDA_OBJ)
+	$(CC) $(OBJ)  $(CUDA_OBJ) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE)
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
@@ -43,4 +47,4 @@ part2silo:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/part2silo utils/part2silo.c utils/libsilo.a -lm
 
 clean:
-	rm -f *.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~
+	rm -f $(OBJDIR)/*.o *.cudafe1.* *.cudafe2.* *.hash *.ptx *fatbin.c *.cubin *.cpp* $(EXECUTABLE) *~
