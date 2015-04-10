@@ -43,6 +43,8 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
 
+  const int ndim = 2; //number of dimension
+
 	const int lmap   = param->movie->lmap;
 	const REAL xmin  = param->movie->xmin;
 	const REAL xmax  = param->movie->xmax;
@@ -63,7 +65,11 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
   const int j0 		 = ymin/dxmap;
   const int k0		 = zmin/dxmap;
 
-	const int ntot = 	nmapx*nmapy;
+  int ntot;
+  if (ndim==2)
+    ntot = 	nmapx*nmapy;
+  else if (ndim==3)
+    ntot = 	nmapx*nmapy*nmapz;
 
 	float * map = param->movie->map;
 
@@ -106,7 +112,13 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 								const int x  = imap+ii-i0;
 								const int y  = jmap+jj-j0;
-								const int id = x+y*nmapx;
+                const int z  = kmap+kk-k0;
+
+								int id;
+                if (ndim==2)
+                  id = x+y*nmapx;
+                else if (ndim==3)
+                  id = x+y*nmapx+z*nmapx*nmapy;
 
 #ifdef WGRAV
 								m1[id] += (float)cell->gdata.p;
