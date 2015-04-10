@@ -11,7 +11,7 @@
 #include <mpi.h>
 #endif
 
-#include "param.h"
+#include "../param.h"
 
 #ifdef SINGLEPRECISION
 // SINGLE PRECISION CASE
