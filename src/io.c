@@ -6,66 +6,22 @@
 
 #include "prototypes.h"
 #include "friedmann.h"
-#include "oct.h"
-#include "parameters.h"
+
 #include "restart.h"
 
+#include "oct.h"
+#include "ic.h"
+#include "parameters.h"
 
-//====================================================================================================
-
-void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param)
-{
-
-  int icur,ii,jj,kk;
-  int level;
-  struct OCT * nextoct;
-  struct OCT oct;
-  struct LOCT loct;
-  FILE *fp =NULL;
-  int noct=0;
-
-  fp=fopen(filename,"wb");
-	if(fp == NULL) printf("Cannot open %s\n", filename);
-  //printf("tsim=%f\n",tsim);
-	fwrite(&tsim,sizeof(REAL),1,fp);
-
-#ifdef WRAD
-  fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
-#endif
-
-  fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
+#include "segment.h"
+#include "stars.h"
+#include "hydro_utils.h"
+#include "atomic_data/Atomic.h"
+#include "tools.h"
 
 
-  for(level=param->lcoarse;level<=levelmax;level++) // looping over octs
-    {
-      //printf("level=%d\n",level);
-      // setting the first oct
+#define AVGFACT (1.) // set to 0 to get an homogenous cosmo field 1
 
-      nextoct=firstoct[level-1];
-
-      do // sweeping through the octs of level
-	{
-	  if(nextoct==NULL) continue; // in case the level is empty
-	  oct=(*nextoct);
-	  nextoct=oct.next;
-
-	  oct2loct(&oct,&loct);
-	  fwrite(&loct,sizeof(struct LOCT),1,fp);
-	  noct++;
-/* 	  fwrite(&oct,sizeof(struct OCT),1,fp); */
-	}while(nextoct!=NULL);
-    }
-
-  //printf("noct=%d\n",noct);
-  fwrite(&noct,sizeof(int),1,fp);
-
-  fclose(fp);
-}
 
 #ifdef PIC
 void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
@@ -187,12 +143,63 @@ void dumppart(struct OCT **firstoct,char filename[], int levelcoarse, int levelm
 }
 #endif // PIC
 
-//=======================================================================================================
+void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param)
+{
+
+  int icur,ii,jj,kk;
+  int level;
+  struct OCT * nextoct;
+  struct OCT oct;
+  struct LOCT loct;
+  FILE *fp =NULL;
+  int noct=0;
+
+  fp=fopen(filename,"wb");
+	if(fp == NULL) printf("Cannot open %s\n", filename);
+  //printf("tsim=%f\n",tsim);
+	fwrite(&tsim,sizeof(REAL),1,fp);
+
+#ifdef WRAD
+  fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
+  fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
+#endif
+
+  fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
+
+
+  for(level=param->lcoarse;level<=levelmax;level++) // looping over octs
+    {
+      //printf("level=%d\n",level);
+      // setting the first oct
+
+      nextoct=firstoct[level-1];
+
+      do // sweeping through the octs of level
+	{
+	  if(nextoct==NULL) continue; // in case the level is empty
+	  oct=(*nextoct);
+	  nextoct=oct.next;
+
+	  oct2loct(&oct,&loct);
+	  fwrite(&loct,sizeof(struct LOCT),1,fp);
+	  noct++;
+/* 	  fwrite(&oct,sizeof(struct OCT),1,fp); */
+	}while(nextoct!=NULL);
+    }
+
+  //printf("noct=%d\n",noct);
+  fwrite(&noct,sizeof(int),1,fp);
+
+  fclose(fp);
+}
+
 
 void makeFolders(struct CPUINFO *cpu){
-/**
-  * create output subfolders for the current dump
-  */
+
   char folder_step[128];
   char folder_field[128];
 

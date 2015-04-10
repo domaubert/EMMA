@@ -453,7 +453,7 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
     for(igrp=0;igrp<NGRP;igrp++) param->uv.value[igrp]=0.;
   }
 }
-#endif
+#endif // UVBKG
 
 
 // ============================================================================================
@@ -558,7 +558,9 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 #ifndef TESTCLUMP
 	  for(igrp=0;igrp<NGRP;igrp++){
-	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN;
+	    REAL factgrp[NGRP];
+	    FACTGRP; //defined in Atomic.h
+	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN;//*factgrp[igrp];
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
 	    curoct->cell[icell].rfield.fy[igrp]=0.;
 	    curoct->cell[icell].rfield.fz[igrp]=0.;

@@ -7,7 +7,6 @@
 #include "prototypes.h"
 #include "oct.h"
 #include <string.h>
-#include "vector.h"
 #include <mpi.h>
 
 #ifdef GPUAXL

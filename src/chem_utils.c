@@ -3,7 +3,6 @@
   */
 
 #ifdef WRAD
-#ifdef WCHEM
 
 #include <math.h>
 #include <stdio.h>
@@ -32,6 +31,7 @@ void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   R->temp=tloc;
 }
 
+#ifdef WCHEM
 
 // ============================================================================
 REAL cucompute_alpha_b(REAL temp, REAL unit_number, REAL aexp)
@@ -131,6 +131,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   /* c5=0.; */
 #ifndef WRADTEST
   c5=5.406e-24*(temp-2.727/aexp)/POW(aexp/0.001,4)*x*nh2;
+  REAL Ta=2.727/aexp; c5=5.406e-36*(temp-Ta)/(aexp*aexp*aexp*aexp)*x*nh2;
 #endif
   // Overall Cooling
 
@@ -185,7 +186,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
-
+ 
 #ifdef S_X
   REAL E0overI[NGRP];
   REAL N2[NGRP];
@@ -195,6 +196,12 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
+  if(cpu->rank==0){
+    for(igrp=0;igrp<3;igrp++){
+      printf("%e %e\n",alphai[igrp],alphae[igrp]);
+    }
+  }
+  abort();
 
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
@@ -429,7 +436,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	      fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
 	    }
 	  }
-#endif
+#endif // SCHAYE
 
 	  if(compcool){
 	    REAL SN = 0;
@@ -447,7 +454,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);
-#endif
+#endif //SEMI
 
 
 #else
@@ -479,7 +486,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);
 #endif
 	  //================================================================================
-#endif
+#endif //S_X
 
 	  if(eintt<0.)
  	    {
@@ -505,11 +512,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 
 	  eintt=FMAX(emin,eintt);
+ 	  }
 
 #else
 	  eintt=eint[idloc];
 #endif
- 	  }
 
 	  // inner update
 	  for(igrp =0;igrp<NGRP;igrp++)
@@ -526,10 +533,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //printf("xt=%e\n",xt);
 #ifdef COOLING
 	  eint[idloc]=eintt;
+	  da=hubblet*dtcool*aexp;
 #endif
 
 #ifdef TESTCOSMO
-	  REAL da=hubblet*dtcool*aexp;
 	  aexp+=da;
 #endif
 	  currentcool_t+=dtcool;

@@ -6,6 +6,21 @@
 // _read,fp,adress,dens;
 // close,fp;
 //dens=reform(dens,[3,128,128,128]);
+func readavg(fname,&time){
+  fp=open(fname,"rb");
+  adress=0;
+  nc=array(int);
+  time=array(float);
+  _read,fp,adress,nc;adress+=sizeof(nc);
+  _read,fp,adress,time;adress+=sizeof(time);
+  nc;
+  time;
+  data=array(float,6);
+  _read,fp,adress,data;
+  close,fp;
+  return data;
+}
+
 
 func readmap(fname,&time){
   fp=open(fname,"rb");

@@ -5,7 +5,6 @@
 #include "prototypes.h"
 #include "oct.h"
 #include "cic.h"
-#include "vector.h"
 
 #ifdef WMPI
 #include <mpi.h>

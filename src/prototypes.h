@@ -47,7 +47,6 @@ typedef double REAL;
 
 #endif // SINGLEPRECISION
 
-
 #ifdef DUAL_E
   #ifndef WRADHYD
     #define NVAR (6)
@@ -69,8 +68,6 @@ typedef double REAL;
 #ifdef WRAD
   #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
-
-
 //=======================================
 
 //#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
@@ -419,13 +416,11 @@ struct Rtype{
 #endif
 
 
-#ifdef WCHEM
   REAL nhplus;
   REAL eint;
   REAL nh;
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
   //  REAL deltaX; // the ionization variation (to track fronts)
-#endif
 
 };
 #endif

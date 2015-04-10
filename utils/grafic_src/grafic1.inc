@@ -13,7 +13,7 @@ c  Initial density fluctuation amplitude on the ultimate subgrid scale.
 c  For large grids (> 10^7) one may wish to decrease this; for small
 c  refinement grids (< 10^6) and multiple levels one may wish to increase it.
 	real sigstart
-	parameter (sigstart=0.1)
+	parameter (sigstart=0.025)
 c
 c  Top grid mesh size.
 c
