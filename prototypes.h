@@ -55,7 +55,7 @@ typedef double REAL;
 #define OMEGAB (0.049); // 0.049 for PLANCK
 #endif
 
-#define PMIN 1e-12
+#define PMIN 1e-15
 
 #define NCOSMOTAB (262144)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
@@ -435,13 +435,11 @@ struct Rtype{
 #endif
 
 
-#ifdef WCHEM
   REAL nhplus;
   REAL eint;
   REAL nh;
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
   //  REAL deltaX; // the ionization variation (to track fronts)
-#endif
 
 };
 #endif

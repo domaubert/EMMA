@@ -455,7 +455,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    REAL factgrp[NGRP];
 	    FACTGRP; //defined in Atomic.h
-	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN*factgrp[igrp];
+	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN;//*factgrp[igrp];
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
 	    curoct->cell[icell].rfield.fy[igrp]=0.;
 	    curoct->cell[icell].rfield.fz[igrp]=0.;

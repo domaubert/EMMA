@@ -12,6 +12,9 @@
 #include "hydro_utils.h"
 #include "atomic_data/Atomic.h"
 
+
+#define AVGFACT (1.) // set to 0 to get an homogenous cosmo field 1 
+
 void cell2lcell(struct CELL *cell, struct LCELL *lcell){
 
   lcell->marked=cell->marked;
@@ -236,7 +239,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 	  // note somme(vweight)=1.
 	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
 	  mean_T+=curcell->rfield.temp*vweight;
-
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 	  max_rho=FMAX(max_rho,curcell->field.d);
 
@@ -2078,7 +2080,8 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     //    abort();
   }
 #else
-  temp=1e4;
+  //temp=1e4;
+  temp=33.64/POW(41.,2)*POW(1.+zstart,2);
 #endif
 
   // supercomoving unit values
