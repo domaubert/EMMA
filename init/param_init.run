@@ -13,8 +13,9 @@ level_coarse 6
 level_max 10
 amr_thresh 8
 n_smooth 2
+<<<<<<< HEAD
 ##==DM=======================
-mass_res 0
+dm_res 0
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3

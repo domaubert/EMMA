@@ -72,24 +72,34 @@ void dumpFile(char *filename_in, char *filename_out){
 /**
   * copy filename_in into filename_out and print it on screen
   */
+  int fileok=1;
   FILE *fps[2] = {stdout, NULL};
   fps[1]=fopen(filename_out,"w");
-  if(fps[1] == NULL) printf("Cannot open %s\n", filename_out);
+  if(fps[1] == NULL) {
+    printf("Cannot open %s\n", filename_out);
+    fileok=0;
+  }
+
 
   FILE* buf=NULL;
   buf=fopen(filename_in,"r");
-  if(buf == NULL) printf("Cannot open %s\n", filename_in);
-
-  int i;
-  for(i=0;i<2;i++){
-    FILE *fp = fps[i];
-    char ch;
-    fseek(buf,0,SEEK_SET);
-    while((ch=fgetc(buf))!=EOF) fprintf(fp,"%c",ch);
+  if(buf == NULL){
+    printf("Cannot open %s : you may want to link it in the current directory\n", filename_in);
+    fileok=0;
   }
 
-  fclose(fps[1]);
-  fclose(buf);
+  int i;
+  if(fileok){
+    for(i=0;i<2;i++){
+      FILE *fp = fps[i];
+      char ch;
+      fseek(buf,0,SEEK_SET);
+      while((ch=fgetc(buf))!=EOF) fprintf(fp,"%c",ch);
+    }
+    
+    fclose(fps[1]);
+    fclose(buf);
+  }
 }
 
 
