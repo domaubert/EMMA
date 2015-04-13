@@ -11,7 +11,7 @@
 #include <mpi.h>
 #endif
 
-#include "param.h"
+#include "../param.h"
 
 #ifdef SINGLEPRECISION
 // SINGLE PRECISION CASE
@@ -431,7 +431,7 @@ struct Rtype{
   */
 
 struct Wtype{
-  REAL d;   ///< density
+  REAL d;   ///< gas density in unit of average barionic density
   REAL u;   ///< velocity
   REAL v;   ///< velocity
   REAL w;   ///< velocity
@@ -446,7 +446,7 @@ struct Wtype{
 
 
 struct Wtype_MPI{
-  REAL d;   ///< density
+  REAL d;   ///< gas density in unit of average barionic density
   REAL u;   ///< velocity
   REAL v;   ///< velocity
   REAL w;   ///< velocity
@@ -464,7 +464,7 @@ struct Wtype_MPI{
   */
 
 struct Utype{
-  REAL d;    ///< density
+  REAL d;    ///< gas density in unit of average barionic density
   REAL du;   ///< momentum
   REAL dv;   ///< momentum
   REAL dw;   ///< momentum
@@ -482,7 +482,7 @@ struct Utype{
 
 
 struct Wtype1D{
-  REAL d;   ///< density
+  REAL d;   ///< gas density in unit of average barionic density
   REAL u;   ///< velocity
   REAL p;   ///< pressure
   REAL a;   ///< sound speed
@@ -492,7 +492,7 @@ struct Wtype1D{
 };
 
 struct Wtype1D_double{
-  double d;   ///< density
+  double d;   ///< gas density in unit of average barionic density
   double u;   ///< velocity
   double p;   ///< pressure
   double a;   ///< sound speed
@@ -500,7 +500,7 @@ struct Wtype1D_double{
 
 
 struct Utype1D{
-  REAL d;    ///< density
+  REAL d;    ///< gas density in unit of average barionic density
   REAL du;   ///< momentum
   REAL E;    ///< Energy
 #ifdef WRADHYD
@@ -612,7 +612,7 @@ struct RAD_MPI{
 //=========================================================
 
 struct Gtype{
-  REAL d; ///<density
+  REAL d; ///<contrast of matter density
   REAL p; ///<pottential
 };
 
