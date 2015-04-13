@@ -9,32 +9,12 @@
 #define NCOSMOTAB (262144)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 #define FRAC_VAR (0.1)
+#define SEED (4569) // srand seed for stochastic stars creation
+#define NGRP (1)
+#define NVAR_R (5)
+#define EMIN (1e-8)
 
 
-#ifdef DUAL_E
-  #ifndef WRADHYD
-    #define NVAR (6)
-  #else
-    #define NVAR (7)
-  #endif
-#else
-  #define NVAR (5)
-#endif
-
-#define NFLUX (6*NVAR)
-
-#ifndef WHYDRO2
-  #define OMEGAB (0.0)
-#else
-  #define OMEGAB (0.049); // 0.049 for PLANCK
-#endif
-
-#ifdef WRAD
-  #define NGRP (1)
-  #define NVAR_R (5)
-  #define EMIN (1e-8)
-  #define NFLUX_R (6*NGRP*NVAR_R)
-#endif
 
 
 // ================= PHYSICAL CONSTANTS ===================
