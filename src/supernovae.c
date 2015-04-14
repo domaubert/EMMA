@@ -160,8 +160,16 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       //printf("Energy injected =%e mass=%e aexp=%e cellE=%e\n",E,curp->mass,aexp, cell->field.E);
 
-      thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
-      kineticFeedback(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
+      if(param->sn->feedback_frac){
+        // oct feedback
+        // if there is thermal and kinetic feedback (or purely kinetic feedback) the energy is injected in a oct
+        thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
+        kineticFeedback(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
+      }else{
+        // cell feedback
+        // if there is only thermal feedback the energy can be injected in just a cel
+        thermalFeedbackCell(cell, E*(1.-param->sn->feedback_frac));
+      }
 
       Nsn++;
     }
