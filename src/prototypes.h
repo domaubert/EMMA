@@ -361,16 +361,11 @@ struct CPUINFO{
 
 #ifdef WGRAV
 
-#ifndef FASTGRAV
   struct GGRID *dev_stencil;
   REAL *res;
   REAL *pnew;
   REAL *resLR;
-#else
-  struct STENGRAV *dev_stencil;
-  struct STENGRAV *gpu_stencil;
-#endif
-
+  
 #endif
 
 #ifdef WHYDRO2

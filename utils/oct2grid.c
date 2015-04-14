@@ -5,7 +5,7 @@
 #include <math.h>
 #include <string.h>
 //#include "silo.h"
-#include "prototypes.h"
+#include "../src/prototypes.h"
 //=================================================================================================
 #define max(a,b) (a>=b?a:b)
 
