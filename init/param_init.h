@@ -4,7 +4,6 @@
 #define CFL (0.85)
 #define GRAV (0.25)
 #define FRACDX  (0.25)
-#define SEED (12345)
 #define PMIN 1e-12
 #define NCOSMOTAB (262144)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
@@ -13,9 +12,6 @@
 #define NGRP (1)
 #define NVAR_R (5)
 #define EMIN (1e-8)
-
-
-
 
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.)
@@ -28,7 +24,6 @@
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
 #define SOLAR_MASS (1.989e30) //kg
-
 
 // ================= SUPERNOVAE ===========================
 

@@ -66,13 +66,12 @@ def inputplanck(size,folder):
 
 if __name__ == "__main__":
 
-	folder = "utils/grafic_src/"
+	folder = "grafic_src/"
 
 	L = int(sys.argv[1])
 	size = int(sys.argv[2])
 	print L,size
 	N = pow(2,L)	
-
 
 
 	graficinc(N,folder)
@@ -87,8 +86,11 @@ if __name__ == "__main__":
 	commande = "./" +folder+ "grafic1 <" +folder+ "Input.planck"
  	os.system(commande)
 
-	commande = "mkdir level_%03d"%L
+	commande = "mkdir ../IC"%L
  	os.system(commande)
 
-	commande = "mv ic_* level_%03d"%L
+	commande = "mkdir ../IC/level_%03d"%L
+ 	os.system(commande)
+
+	commande = "mv ic_* ../IC/level_%03d"%L
  	os.system(commande)

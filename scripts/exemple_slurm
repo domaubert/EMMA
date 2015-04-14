@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#MSUB -r EMMA
+#MSUB -n 64
+#MSUB -T 10800
+#MSUB -o param.log
+#MSUB -e param.error
+#MSUB -q standard
+#MSUB -Q normal
+#MSUB -A gen7393
+
+set -x
+cd ${BRIDGE_MSUB_PWD}
+
+ccc_mprun ./emmacpu param.run
+
+

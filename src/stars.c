@@ -178,7 +178,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   REAL dv = POW(0.5,3*level);
 
   REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
-  REAL rho_b = cell->field.d      / param->stars->thresh;
+  REAL rho_b =  cell->field.d     / param->stars->thresh;
 
   REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
   REAL fact_t = POW(aexp,2) * param->unit.unit_t;
