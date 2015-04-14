@@ -1,0 +1,20 @@
+#!/bin/bash
+
+SCRIPT=exemple
+
+make
+
+mkdir data/$1
+mkdir data/$1/src
+
+cp -r src data/$1
+cp -r IC/level_* data/$1
+cp emmacpu data/$1
+cp param.* data/$1
+cp scripts/${SCRIPT} data/$1
+
+cd data/$1
+
+./${SCRIPT}
+#sbatch ${SCRIPT}
+#ccc_msub ${SCRIPT}

@@ -104,7 +104,7 @@ struct STARSPARAM{
 struct SNPARAM{
 
   REAL feedback_eff;///< feedback efficiency
-  REAL feedback_frac;///< fraction of thermal feedback over kinetic feedback
+  REAL feedback_frac;///< fraction of kinetic feedback over thermal feedback
   REAL Esnfb;///<  total Energy of a SN
 };
 #endif // SUPERNOVAE
@@ -365,7 +365,7 @@ struct CPUINFO{
   REAL *res;
   REAL *pnew;
   REAL *resLR;
-  
+
 #endif
 
 #ifdef WHYDRO2

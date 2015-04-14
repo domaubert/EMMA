@@ -1,0 +1,5 @@
+#!/bin/bash
+
+NPROC=4
+
+nohup mpirun -np $NPROC emmacpu param.run > param.log &

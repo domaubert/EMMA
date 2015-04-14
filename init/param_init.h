@@ -13,9 +13,6 @@
 #define NVAR_R (5)
 #define EMIN (1e-8)
 
-
-
-
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.)
 #define KBOLTZ (1.3806e-23) // J/K
@@ -27,7 +24,6 @@
 #define HELIUM_MASSFRACTION (0.24)
 #define MOLECULAR_MU (1.0)
 #define SOLAR_MASS (1.989e30) //kg
-
 
 // ================= SUPERNOVAE ===========================
 

@@ -96,7 +96,7 @@ void dumpFile(char *filename_in, char *filename_out){
       fseek(buf,0,SEEK_SET);
       while((ch=fgetc(buf))!=EOF) fprintf(fp,"%c",ch);
     }
-    
+
     fclose(fps[1]);
     fclose(buf);
   }
@@ -232,7 +232,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #endif
 
 #ifdef UVBKG
-  setUVBKG(param, "uvbkg.dat");
+  setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
 }
 
