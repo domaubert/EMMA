@@ -1800,7 +1800,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 	// ----------- perform physical cooling and ionisation
 
 #ifdef WCHEM
-	REAL afin=chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
+	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
 	//printf("aorg=%e afin=%e\n",aexp,afin);
 #endif
 
