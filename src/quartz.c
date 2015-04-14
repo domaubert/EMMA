@@ -815,29 +815,12 @@ blockcounts[0]++; // For SN feedback
   rstencil=(struct RGRID*)calloc(hstride,sizeof(struct RGRID));
 #endif
 
-#ifndef FASTGRAV
   struct GGRID *grav_stencil;
   grav_stencil=(struct GGRID*)calloc(gstride,sizeof(struct GGRID));
   gstencil.stencil=grav_stencil;
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-
-
-#else
-  gstencil.d=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.p=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
-
-  gstencil.nei=(int *)calloc(gstride*7,sizeof(int));
-  gstencil.level=(int *)calloc(gstride,sizeof(int));
-  gstencil.cpu=(int *)calloc(gstride,sizeof(int));
-  gstencil.valid=(char *)calloc(gstride,sizeof(char));
-
-  gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
-  gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-#endif
-
 #endif
 
 
