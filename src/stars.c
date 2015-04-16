@@ -198,7 +198,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
 
   // Jeans efficiency
-  SFR *= t_j/t_ff;
+  //SFR *= t_j/t_ff;
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;

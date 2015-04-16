@@ -1180,6 +1180,7 @@ if(cond1||cond2||cond3){
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,(double *)cosmo->tab_aexp,(double *)cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
+    param->cosmo->tphy=a2t(param,aexp);
 #else
     aexp=1.0;
 #endif
@@ -1257,6 +1258,10 @@ if(cond1||cond2||cond3){
 	if(level==param->lcoarse) adt[level-2]=adt[level-1]; // we synchronize coarser levels with the coarse one
       }
     }
+
+#ifdef TESTCOSMO
+	param->cosmo->tphy	= a2t(param, aexp);
+#endif
 
 
 #ifdef WMPI
