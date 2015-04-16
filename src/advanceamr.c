@@ -17,6 +17,7 @@
 #include "cic.h"
 #include "particle.h"
 #include "communication.h"
+#include "convert.h"
 
 #ifdef STARS
 #include "stars.h"
@@ -376,6 +377,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #else
   aexp=1.0;
 #endif
+
+  setScale(param, aexp);
+
 
   if(cpu->rank==RANK_DISP){
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);

@@ -93,12 +93,16 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 #ifdef WGRAV
   // test the Jeans criterion
 	//B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
-  B = 1;
+	REAL dx = POW(2.,-level);
+  REAL jeans = M_PI/(16.*NEWTON_G) * POW(cell->field.a/dx,2);
+  jeans *= POW(aexp,3) /(param->unit.unit_d);
+
+  B = cell->field.d > jeans;
 #else
 	B = 1;
 #endif
 
-	return 		A && B;
+	return A && B;
 
 }
 
@@ -330,6 +334,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
               if( curp->isStar==3){
                 curp->isStar=4; //Supernovae + decreasing luminosity -> decreasing luminosity
                 //curently supernovae are instantaneous
+                /// TODO implement slow feedback
               }
 
               if(curp->isStar==2){

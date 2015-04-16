@@ -86,7 +86,7 @@ if __name__ == "__main__":
 	commande = "./" +folder+ "grafic1 <" +folder+ "Input.planck"
  	os.system(commande)
 
-	commande = "mkdir ../IC"%L
+	commande = "mkdir ../IC"
  	os.system(commande)
 
 	commande = "mkdir ../IC/level_%03d"%L
