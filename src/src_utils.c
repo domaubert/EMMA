@@ -237,12 +237,10 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #else
 #ifdef STARS
 
-  REAL srcint = param->srcint;
-
   cell->rfield.src=0.;
   cell->rfieldnew.src=0.;
   flag=0;
-
+  REAL srcint=param->srcint;
   struct PART *nexp=cell->phead;
   if(nexp==NULL) return 0;
   int nss=0;
@@ -272,8 +270,8 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  src*POW(t,slope);
-      //printf("SRC= %e\n",cell->rfield.src);
+      cell->rfield.src +=  src*(t<1.?1.:POW(t,slope));
+      //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
     }
 #endif

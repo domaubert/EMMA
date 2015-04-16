@@ -1,26 +1,35 @@
-#include "utils/hop/readhop.i"
+#include "~/qtest/utils/hop/readhop.i"
 
+dur_src=[];
 //rep="./data_4_new_wsrc_ministar/";istart=32;istop=32;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-rep="./data_4_new_wsrc_ministar_x1/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-//rep="./data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+//rep="./data_4_new_wsrc_ministar_x1/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+//rep="~/qtest/data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=30.;flux_src=3e16;
 //rep="./data_4_new_wsrc_ministar_x3_mono/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="./data_4_new_wsrc_ministar_x3_mono_vb/";istart=11;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-rep="./data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-rep="./data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-//rep="./data_4_new_wsrc/";istart=34;istop=34;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
-//rep="./data/";istart=25;istop=25;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+//rep="./data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+//rep="./data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
+rep="~/qtest/data/";istart=12;istop=12;ncpu=32;lmax=15;sbox=12.;lcoarse=7.;dur_src=30.;flux_src=3e16;
+//rep="~/qtest/data_4_new_wsrc_ministar_x1/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e15;
+//rep="~/qtest/data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=1.5e16;
+//rep="~/qtest/data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e16;
+//rep="~/qtest/data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e17;
+
+restore,openb("~/qtest/utils/mag/f1600_SB99_30Myrs.yor"),f1600,age;
+f1600*=flux_src;
 
 #if 1
 HSFR=HM200=HM200S=HR=HS=HMHOP=HMHOPS=HPOND=vz=HSTOT=HFB=HFB2=HL=[];
-tnew=2e7;
+tnew=dur_src*1e6;
 
 
 
 for(isnap=istart;isnap<=istop;isnap+=1){
 #if 1
-  d=alloct(swrite(format=rep+"/grid.%05d",isnap),13,101,a,ncpu=ncpu,execut="utils/alloct ");
+  d=alloct(swrite(format=rep+"/grid.%05d",isnap),13,101,a,ncpu=ncpu,execut="~/qtest/utils/alloct ");
   xd=d(:3,);
   zz=1./a-1.;
+  zz;
+
   tsnap= univAge(1000,h0=67.,Omega_l=0.6825,Omega_m=0.3175)-univAge(zz,h0=67.,Omega_l=0.6825,Omega_m=0.3175);
   tsnap/=(3600.*24*365*1e6);
   p=mergepart(swrite(format=rep+"part.%05d",isnap),ncpu,a);
@@ -49,7 +58,7 @@ for(isnap=istart;isnap<=istop;isnap+=1){
   munit=((omegam)*rhoc*lbox^3)/msol;
 
   write,"nhalo=",nhalo;
-  ms=sfrnew=m200=mage=sfr=mhop=ph=m200d=m200d2=m2002=l200d=[];
+  ms=sfrnew=m200=mage=sfr=mhop=ph=m200d=m200d2=m2002=l200d=mag1600=[];
   newest=tsnap;
   for(ih=0;ih<nhalo;ih+=1){
     www=where(tag==ih);
@@ -117,10 +126,14 @@ for(isnap=istart;isnap<=istop;isnap+=1){
 
     
     if(numberof(wsin)>0){
+
+      flux_in=(s(8,wsin)*munit/1e6*interp(f1600,age,(newest*1e6-s(11,wsin))/1e6))(sum);
+      M1600loc=-2.5*log10(flux_in)-48.6;
+      grow,mag1600,M1600loc;
       grow,ms,s(8,wsin)(sum);
       grow,mage,median(s(11,wsin));
       grow,sfr,[histo1d(s(11,wsin),bint,wght=s(8,wsin))*munit/bint(dif)/lorg^3];
-      wnew=where(newest-s(11,wsin)<tnew);
+      wnew=where((newest*1e6-s(11,wsin))<tnew);
       if(numberof(wnew)>0){
         grow,sfrnew,s(8,wsin)(wnew)(sum)*munit/tnew/lorg^3;
       }
@@ -130,6 +143,7 @@ for(isnap=istart;isnap<=istop;isnap+=1){
       
     }
     else{
+      grow,mag1600,[0.];
       grow,ms,[0.];
       grow,sfrnew,[0.];
       grow,mage,[0.];
@@ -176,12 +190,24 @@ for(isnap=istart;isnap<=istop;isnap+=1){
   hpond=histo1d(mhop*munit*h,binM,wght=ms*munit*h)/(histo1d(mhop*munit*h,binM)+1e-15);
 
   w0=where(m200d>0);
-  hfb=histo1d(mhop(w0)*munit*h,binM,wght=m200d(w0)/(m200(w0)+m200d(w0)))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
-  hl=histo1d(mhop(w0)*munit*h,binM,wght=l200d(w0))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
+  if(numberof(w0)>0){
+    hfb=histo1d(mhop(w0)*munit*h,binM,wght=m200d(w0)/(m200(w0)+m200d(w0)))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
+    hl=histo1d(mhop(w0)*munit*h,binM,wght=l200d(w0))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
+  }
+  else{
+    hfb=binM(zcen)*0;
+    hl=binM(zcen)*0;
+  }
   
-
-  w0=where(m200d>0);
-  hfb2=histo1d(mhop(w0)*munit*h,binM,wght=m200d2(w0)/(m2002(w0)+m200d2(w0)))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
+    w0=where(m200d>0);
+  
+    if(numberof(w0)>0){
+      hfb2=histo1d(mhop(w0)*munit*h,binM,wght=m200d2(w0)/(m2002(w0)+m200d2(w0)))/(histo1d(mhop(w0)*munit*h,binM)+1e-15); // halo ms/ms mass histogram
+    }
+    else{
+      hfb2=binM(zcen)*0;
+    }
+         
 
   
   grow,HSFR,[hsfr];
@@ -200,7 +226,7 @@ for(isnap=istart;isnap<=istop;isnap+=1){
  }
 #endif
 
-#if 1
+#if 0
 
 nh=numberof(sfrnew);
 posh=ph(:3,);

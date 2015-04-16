@@ -1,6 +1,6 @@
 
 #include "Bastien/cosmo.i"
-#include "./utils/readpart.i"
+#include "~/qtest/utils/readpart.i"
 
 
 //rep="./data_4_new_wsrc/";ncpu=32; srcint=5e1; tlife=20e6; sbox=4.;nsnap=35; // years
@@ -17,11 +17,11 @@ rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32; srcint=5e16; tlife=20e6; sbox
 //rep="./dataNORAD/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=64; // years
 //rep="./dataNOSNNORAD/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=34; // years
 rep="./dataAMR_PART_LONG/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=15; // years
-rep="./data/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=18; // years
+rep="~/qtest/data/";ncpu=32; srcint=1e15; tlife=20e6; sbox=12.;nsnap=12; // years
 
-col="yellow";
+col="red";
 lcoarse=7.;
-bint=spanl(1e8,1e9,32);
+bint=spanl(1e8,1e9,64);
 
 delta=150.;
 MPC=3.08e22; // m
@@ -50,11 +50,13 @@ so=sort(s(11,));
 s=s(,so);
 
 //ms=indgen(dimsof(s)(0))*ms;//Solar masses
-ts=s(11,); // Myrs
+ts=s(11,); // yrs
 //plg,ms,ts;
 //SFR=ms(dif)/ts(dif)/lorg^3;
 
-SFR=histo1d(s(11,),bint,wght=s(8,))*munit/bint(dif)/lorg^3;
+massestar=array(max(s(8,)),numberof(s(8,)));
+
+SFR=histo1d(s(11,),bint,wght=massestar)*munit/bint(dif)/lorg^3;
 
 vt=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(span(90,4,256),h0=Hor,Omega_m=omegam,Omega_l=1.-omegam))/(3600.*24.*365);
 zSFR=interp(span(90,4,256),vt,bint(zcen));
