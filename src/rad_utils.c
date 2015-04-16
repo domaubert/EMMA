@@ -1801,6 +1801,7 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
 
 #ifdef WCHEM
 	chemrad(stencil,nread,stride,cpu,dxcur,dtnew,param,aexp,chemonly);
+	//printf("aorg=%e afin=%e\n",aexp,afin);
 #endif
 
 	// ------------ scatter back the FLUXES
@@ -1893,7 +1894,6 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src;
 #ifdef WCHEM
 	  curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
-	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 #endif
 
 	  // Update
@@ -1927,13 +1927,11 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
 	    R.nhplus+=child->cell[i].rfield.nhplus*0.125;
 	    R.eint+=child->cell[i].rfield.eint*0.125;
+	    R.temp+=child->cell[i].rfield.temp*0.125; // Note that it is not strictly correct here
 	    R.nh+=child->cell[i].rfield.nh*0.125;
 #endif
 	  }
 
-#ifdef WCHEM
-	  E2T(&R,aexp,param);
-#endif
 	  memcpy(&curoct->cell[icell].rfield,&R,sizeof(struct Rtype));
 
 #ifdef WRADHYD

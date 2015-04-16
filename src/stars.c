@@ -202,7 +202,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
-	//printf("rho=%e tff=%e tj=%e SFR=%e\n",cell->field.d, t_ff, t_j, SFR);
+	printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
 
 #endif //SCHAYE
 
@@ -360,6 +360,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
         }while(nexp!=NULL);
       }
     }
+    if(cpu->rank == RANK_DISP) printf("setting states done\n");
   }
   return 0;
 }
@@ -405,14 +406,14 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 /// and add them to the linked list\n
 // ----------------------------------------------------------//
 
-	if(cpu->rank == RANK_DISP) printf("STARS\n");
-	setStarsState(param, cpu, level);
+  if(cpu->rank == RANK_DISP) printf("STARS\n");
+  setStarsState(param, cpu, level);
 
-	REAL mmax = 0;
-	REAL percentvol =0;
-	int nstars = 0;
+  REAL mmax = 0;
+  REAL percentvol =0;
+  int nstars = 0;
 
-	initThresh(param, aexp);
+  initThresh(param, aexp);
   REAL mstars_level = setmStar(param,level);
 
   int iOct;
@@ -420,44 +421,52 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
     struct OCT *curoct=cpu->octList[level-1][iOct];
 
     int icell;
-	  for(icell=0;icell<8;icell++) {
-	    struct CELL *curcell = &curoct->cell[icell];
+    for(icell=0;icell<8;icell++) {
+      struct CELL *curcell = &curoct->cell[icell];
 
-	    if( testCond(curcell, param, aexp, level) ) {
+      if( testCond(curcell, param, aexp, level) ) {
         REAL dx = POW(2.0,-level);
-	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
-	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
-	      REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
+	REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
+	REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
+	REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
 
         percentvol += POW(dx,3);
 
-	      int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
-
-  //      if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
-        int ipart;
-	      for (ipart=0;ipart< N; ipart++){
-          addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++, mstars_level);
-        }
-	    }
-	    mmax = FMAX(curcell->field.d, mmax);
-	  }
+	int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
+	if(N>0.2*param->npartmax){
+	  printf("You are about to create more stars than 20 percent of npartmax N=%d nmax=%d on proc %d\n",N,param->npartmax,cpu->rank);
 	}
 
+	if(N>param->npartmax){
+	  printf("You are about to create more stars than npartmax N=%d nmax=%d on proc %d--> ABORT\n",N,param->npartmax,cpu->rank);
+	  abort();
+	}
+
+	//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+	int ipart;
+	for (ipart=0;ipart< N; ipart++){
+          addStar(curcell, level, xc, yc, zc, cpu, dt, param, aexp, is,nstars++, mstars_level);
+        }
+      }
+      mmax = FMAX(curcell->field.d, mmax);
+    }
+  }
+
 #ifdef WMPI
-	MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,	MPI_MAX,cpu->comm);
-	MPI_Allreduce(MPI_IN_PLACE,&percentvol,  1,MPI_REEL,	MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&nstars,1,MPI_INT,   MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&mmax,  1,MPI_REEL,	MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&percentvol,  1,MPI_REEL,	MPI_SUM,cpu->comm);
 #endif
 
-	param->stars->n += nstars ;
-	if(cpu->rank==RANK_DISP) {
-		printf("Mmax=%e\tthresh=%e\tvol=%e\n", mmax, param->stars->thresh, percentvol );
-		if (nstars){
+  param->stars->n += nstars ;
+  if(cpu->rank==RANK_DISP) {
+    printf("Mmax=%e\tthresh=%e\tvol=%e\n", mmax, param->stars->thresh, percentvol );
+    if (nstars){
       printf("%d stars added on level %d \n", nstars, level);
       printf("%d stars in total\n",param->stars->n);
     }
-		if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
-		if(param->stars->n>0) cpu->trigstar=1;
-	}
+    if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
+    if(param->stars->n>0) cpu->trigstar=1;
+  }
 }
 #endif//STARS

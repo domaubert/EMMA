@@ -184,7 +184,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL ebkg[NGRP];
   REAL z=1./aexporg-1.;
 
-  REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+  REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
 
 #ifdef S_X
@@ -197,14 +197,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   SECTION_EFFICACE; // defined in Atomic.h
   FACTGRP; //defined in Atomic.h
 
-  /*
-  if(cpu->rank==0){
-    for(igrp=0;igrp<3;igrp++){
-      printf("%e %e\n",alphai[igrp],alphae[igrp]);
-    }
-  }
-  abort();
-*/
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
 
@@ -316,7 +308,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  /// Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE
+	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
 #else
 	  REAL hubblet=0.;
 #endif
@@ -363,7 +355,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 		  et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 		}
 		else{
-		  et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));
+		  et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));
 		}
 
 		if((et[igrp]<0)||(isnan(et[igrp]))){
@@ -371,7 +363,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
 
 		}
-		p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+4.*hubblet)*dtcool);
+		p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc]))*dtcool);
 	      }
 
 	  ai_tmp1=0.;
@@ -406,7 +398,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
 #endif
 
-	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet));
+	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
 	  ai_tmp1=0.;
 
 
@@ -451,11 +443,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
-	  eintt=(eint[idloc]+ dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
+	  eintt=(eint[idloc]+ dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN));
 // 	  if (R.snfb) printf("E0\t%e\n",eintt);
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN));
 #endif //SEMI
 
 
@@ -482,10 +474,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp]*(!chemonly);}
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN))/(1.+5.*hubblet*dtcool);
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN));
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp]*(!chemonly);}
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN))/(1.+5*hubblet*dtcool);
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN));
 #endif
 	  //================================================================================
 #endif //S_X
@@ -521,34 +513,37 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
 
 	  // inner update
+	  REAL aold=aexp;
+#ifdef TESTCOSMO
+	  da=hubblet*dtcool*aexp;
+	  aexp+=da;
+#endif
+
 	  for(igrp =0;igrp<NGRP;igrp++)
 	    {
-	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];
+	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3);
 	      if(!chemonly){
-		floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
-		floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
-		floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp];
+		floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+		floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+		floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
 	      }
 	    }
 
 	  x0[idloc]=xt;
 	  //printf("xt=%e\n",xt);
 #ifdef COOLING
-	  eint[idloc]=eintt;
-	  da=hubblet*dtcool*aexp;
+	  eint[idloc]=eintt*POW(aold/aexp,5);
 #endif
 
-#ifdef TESTCOSMO
-	  aexp+=da;
-#endif
 	  currentcool_t+=dtcool;
 	  fudgecool=param->fudgecool;
 	  nitcool++;
-	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;}
+	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
+	}
 
       /// ====================== End of the cooling loop
 
-      aexp=aexporg;
+      //aexp=aexporg;
       // FIlling the rad structure to send it back
 
       if(!chemonly){
@@ -563,11 +558,12 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       R.nhplus=x0[idloc]*R.nh;
       R.eint=eint[idloc]*POW(aexp,5)/param->unit.unit_n/param->unit.unit_d/POW(param->unit.unit_v,2);
-
+      E2T(&R,aexp,param);
       memcpy(&stencil[i].New.cell[icell].rfieldnew,&R,sizeof(struct Rtype));
 
     }
   }
+
 
 }
 #endif

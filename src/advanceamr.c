@@ -192,7 +192,7 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
 #ifdef ACCEL_RAD_STAR
   if((cpu->trigstar==0))
   {
-    param->clight=1e-4;
+    param->clight=1e-3;
   }
   else{
     param->clight=param->clightorg;
@@ -1265,15 +1265,6 @@ if(cond1||cond2||cond3){
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
 
-    /* if(param->lcoarse==level){ */
-    /*   if(cpu->rank==RANK_DISP){ */
-    /* 	int lev; */
-    /* 	for(lev=7;lev<=10;lev++){ */
-    /* 	  printf("lev %d dt=%e\n",lev,adt[lev-1]); */
-    /* 	} */
-    /*   } */
-    /* } */
-
     // ===================================== RADIATION
 
     double tcomp[10];
@@ -1284,7 +1275,7 @@ if(cond1||cond2||cond3){
 
 
 
-    nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp, tloc);  // Computing source distribution and filling the radiation fields
+    nsource=FillRad(level,param,firstoct,cpu,0,aexp, tloc);  // Computing source distribution and filling the radiation fields // Note that we don't initialize the fields (done in advancelevel)
 
 #ifdef HOMOSOURCE
     homosource(param,firstoct,cpu,level); // FOR HOMOGENOUS SRC
