@@ -17,6 +17,7 @@
 #include "cic.h"
 #include "particle.h"
 #include "communication.h"
+#include "convert.h"
 
 #ifdef STARS
 #include "stars.h"
@@ -189,19 +190,25 @@ REAL L_comptstep_rad(int level, struct RUNPARAMS *param,struct OCT** firstoct, R
   // setting the first oct
 #ifdef STARS
 #ifdef ACCEL_RAD_STAR
+  REAL reduce_clight = 1e-3;
+
   if((cpu->trigstar==0))
   {
-    param->clight=1e-3;
+    param->clight=reduce_clight;
   }
   else{
-    param->clight=param->clightorg;
+    if(param->srcint){ // if stars doesn't emmit there's no need to change clight
+      param->clight=param->clightorg;
+    }else{
+      param->clight=reduce_clight;
+    }
     //    printf("SWITCH VEL %e %e\n",param->clight,param->clightorg);
   }
 #endif // ACCEL_RAD_STAR
 #endif // STARS
 
 #ifdef UVBKG
-    param->clight=1e-4;
+    param->clight=1e-3;
 #endif // UVBKG
 
   //nextoct=firstoct[level-1];
@@ -376,6 +383,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #else
   aexp=1.0;
 #endif
+
+  setScale(param, aexp);
+
 
   if(cpu->rank==RANK_DISP){
     printf("\n === entering level =%d with gstride=%d hstride=%d sten=%p aexp=%e adt=%e\n",level,gstride,hstride,stencil,aexp,adt[level-1]);
