@@ -94,10 +94,12 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
   // test the Jeans criterion
 	//B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
 	REAL dx = POW(2.,-level);
+
   REAL jeans = M_PI/(16.*NEWTON_G) * POW(cell->field.a/dx,2);
   jeans *= POW(aexp,3) /(param->unit.unit_d);
 
   B = cell->field.d > jeans;
+  B = 1;
 #else
 	B = 1;
 #endif
@@ -202,7 +204,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
-	printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
+	//printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
 
 #endif //SCHAYE
 

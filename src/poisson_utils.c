@@ -991,6 +991,8 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     factdens=1.;
   }
 
+
+
   // Computing the max number for iteration
 
   if((level==param->mgridlmin)||(level>param->lcoarse)){
@@ -1033,7 +1035,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
 	curoct=nextoct;
-	// ------------ gathering the stencil value 
+	// ------------ gathering the stencil value
 	nextoct=gatherstencilgrav(curoct,stencil->stencil,stride,cpu, &nread);
 
 	if(nread>0){
@@ -1053,7 +1055,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 	    residual+=rloc;
 	    //printf("iter=%d rloc=%e\n",iter,rloc);
 	  }
-	
+
 	// ------------ scatter back the data in the tree
 
 	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
@@ -1104,7 +1106,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     tstop=MPI_Wtime();
     tup+=(tstop-tt);
     tglob+=(tstop-tstart);
-    
+
     if(iter>0){
 
       // here we test the convergence of the temporary solution
@@ -1184,7 +1186,7 @@ REAL PoissonCG(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   }
 
   dxcur=POW(0.5,level);
-  
+
   double tall=0.,tcal=0.,tscat=0.,tgat=0.;
   double tglob=0.,tup=0.;
 
@@ -1216,9 +1218,9 @@ REAL PoissonCG(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
     if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
       do {
 	curoct=nextoct;
-		
-	
-	// ------------ gathering the stencil value 
+
+
+	// ------------ gathering the stencil value
 	nextoct=gatherstencilgrav(curoct,stencil->stencil,stride,cpu, &nread);
 
 	if(nread>0){
@@ -1234,7 +1236,7 @@ REAL PoissonCG(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  else{
 	    residual+=rloc;
 	  }
-	
+
 	// ------------ scatter back the data in the tree
 
 	scatterstencilgrav(curoct,stencil,nread,stride, cpu);
@@ -1442,7 +1444,7 @@ void PoissonForce(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
     struct OCT *curoct=cpu->octList[level-1][iOct];
 
-	// ------------ gathering the stencil value 
+	// ------------ gathering the stencil value
       nextoct=gatherstencilgrav(curoct,stencil->stencil,stride,cpu, &nread);
       for(idir=0;idir<3;idir++){
 	// ------------ Computing the potential gradient

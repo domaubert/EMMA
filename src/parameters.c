@@ -199,9 +199,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,RF,stream,&param->movie->ymax);
       rstat=fscanf(buf,RF,stream,&param->movie->zmin);
       rstat=fscanf(buf,RF,stream,&param->movie->zmax);
-
 #endif
-
       fclose(buf);
     }
 
@@ -234,6 +232,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef UVBKG
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
+
 }
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -350,7 +349,6 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 #endif
 
 #ifdef WRAD
-  if(cpu->rank==RANK_DISP)
     printf("SRCINT set to %e\n",param->srcint);
 
 #ifndef SRCINT
@@ -367,6 +365,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 #ifdef UVBKG
     printf("UVBKG is defined -> clight set to 1e-4 \n");
 #endif // UVBKG
+  //abort();
 
   printf("\n");
 }

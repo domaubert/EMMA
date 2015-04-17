@@ -1741,6 +1741,15 @@ blockcounts[0]++; // For SN feedback
   mkdir("data/", 0755);
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
+  // test if each cpu will have at least one oct in the minimum level of multigrid
+  int Lmin = (int)(log(cpu.nproc)/log(2.));
+  if( param.mgridlmin < Lmin){
+    param.mgridlmin = Lmin;
+    if(cpu.rank==RANK_DISP){
+      printf("Conflict between mgridlmin and ncpu : mgridlmin set to %d\n",param.mgridlmin );
+    }
+  }
+
   //#ifdef STARS
 /* #ifndef ZOOM */
 /*  	param.stars->mstars	= (param.cosmo->ob/param.cosmo->om) * POW(2.0,-3.0*param.lmax)*param.stars->overdensity_cond; */
