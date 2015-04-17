@@ -251,8 +251,10 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
     if ((curp->isStar==1)){
       nss++;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
-      cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
+      REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
+      cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0); // switch to code units
       //printf("SRC= %e\n",cell->rfield.src);
+      //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
     }
 
@@ -270,7 +272,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  src*(t<1.?1.:POW(t,slope));
+      cell->rfield.src +=  src*(t<1.?1.:POW(t,slope))*(t>0?1.:0);
       //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
     }

@@ -144,6 +144,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
       rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
+      if(param->mgridlmin<0){
+	param->mgridlmin=param->lcoarse-param->lcoarse;
+      }
+
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
       rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
 

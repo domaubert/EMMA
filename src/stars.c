@@ -198,7 +198,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
-	printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
+	//printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
 
 #endif //SCHAYE
 
