@@ -70,6 +70,8 @@ typedef double REAL;
 #endif
 //=======================================
 
+
+
 //#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
 
 #ifdef TESTCOSMO

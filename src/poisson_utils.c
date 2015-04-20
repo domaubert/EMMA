@@ -991,8 +991,6 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
     factdens=1.;
   }
 
-
-
   // Computing the max number for iteration
 
   if((level==param->mgridlmin)||(level>param->lcoarse)){
