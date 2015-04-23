@@ -1607,7 +1607,7 @@ int main(int argc, char *argv[])
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
   int Lmin = (int)(log(cpu.nproc)/log(2.));
-  if( param.mgridlmin < Lmin){
+  if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
     param.mgridlmin = Lmin;
     if(cpu.rank==RANK_DISP){
       printf("Conflict between mgridlmin and ncpu : mgridlmin set to %d\n",param.mgridlmin );
