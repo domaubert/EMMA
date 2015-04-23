@@ -1765,13 +1765,13 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 
 #ifdef WRADHYD
 	      U.dX+=Ue.dX;
+#ifdef HELIUM
+	      U.dXHE+=Ue.dXHE;
+	      U.dXXHE+=Ue.dXXHE;
+
+#endif
 #endif
 	      U2W(&U,&W);
-	      //getE(&W);
-	      /* if(W.p==0.){ */
-	      /* 	printf("nil pressure !\n"); */
-	      /* 	abort(); */
-	      /* } */
 	      memcpy(&(curoct->cell[icell].fieldnew),&W,sizeof(struct Wtype));
 	    }
 	  }

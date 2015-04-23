@@ -102,7 +102,11 @@ void collectE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param
     }
     // below is essentially for outputs
     cellcoarse->rfield.nhplus +=cell->rfield.nhplus*fact;
-     cellcoarse->rfield.eint +=cell->rfield.eint*fact;
+#ifdef HELIUM
+    cellcoarse->rfield.nheplus +=cell->rfield.nheplus*fact;
+    cellcoarse->rfield.nhepplus +=cell->rfield.nhepplus*fact;
+#endif
+    cellcoarse->rfield.eint +=cell->rfield.eint*fact;
 
   }
   else{
@@ -252,7 +256,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       nss++;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0); // switch to code units
+      cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
       //printf("SRC= %e\n",cell->rfield.src);
       //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
@@ -507,14 +511,23 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #ifdef WRADHYD
 	d=curoct->cell[icell].field.d; // baryonic density [unit_mass/unit_lenght^3]
 	//curoct->cell[icell].rfield.nh=d/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; // switch to atom/m^3
-	curoct->cell[icell].rfield.nh=d; // [unit_N] note d in unit_d and nh in unit_N are identical
+	curoct->cell[icell].rfield.nh=d*(1.-YHE); // [unit_N] note d in unit_d and nh in unit_N are identical
 	curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
+
 	curoct->cell[icell].rfield.eint=curoct->cell[icell].field.p/(GAMMA-1.); // 10000 K for a start
 	curoct->cell[icell].rfieldnew.eint=curoct->cell[icell].field.p/(GAMMA-1.);
+
  	/* curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; */
 	/* curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; */
 	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX; // [unit_N] note d in unit_d and nh in unit_N are identical
 	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].rfield.nhplus; // [unit_N] note d in unit_d and nh in unit_N are identical
+#ifdef HELIUM
+	curoct->cell[icell].rfield.nheplus=curoct->cell[icell].field.dXHE/MHE_OVER_MH; // [unit_N] note d in unit_d and nh in unit_N are identical
+	curoct->cell[icell].rfieldnew.nheplus=curoct->cell[icell].rfield.nheplus; // [unit_N] note d in unit_d and nh in unit_N are identical
+
+	curoct->cell[icell].rfield.nhepplus=curoct->cell[icell].field.dXXHE/MHE_OVER_MH; // [unit_N] note d in unit_d and nh in unit_N are identical
+	curoct->cell[icell].rfieldnew.nhepplus=curoct->cell[icell].rfield.nhepplus; // [unit_N] note d in unit_d and nh in unit_N are identical
+#endif
 
 #endif
 #endif
@@ -543,7 +556,15 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  REAL eint;
 
 	  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh;
-	  curoct->cell[icell].rfieldnew.nhplus=xion*curoct->cell[icell].rfieldnew.nh;
+	  curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].rfield.nhplus;
+
+#ifdef HELIUM
+	  curoct->cell[icell].rfield.nheplus=xion*curoct->cell[icell].rfield.nh*yHE;
+	  curoct->cell[icell].rfieldnew.nheplus=curoct->cell[icell].rfield.nheplus;
+
+	  curoct->cell[icell].rfield.nhepplus=xion*curoct->cell[icell].rfield.nh*yHE;
+	  curoct->cell[icell].rfieldnew.nhepplus=curoct->cell[icell].rfield.nhepplus;
+#endif
 
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density

@@ -364,6 +364,20 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
   case 1006:
     res=oct->cell[icell].dX;
     break;
+#ifdef HELIUM
+  case 1008:
+    res=oct->cell[icell].dXHE;
+    break;
+  case 1009:
+    res=oct->cell[icell].dXXHE;
+    break;
+  case 708:
+    res=oct->cell[icell].xHE;
+    break;
+  case 709:
+    res=oct->cell[icell].xxHE;
+    break;
+#endif
 #endif
   case 707:
     res=oct->cell[icell].temp;

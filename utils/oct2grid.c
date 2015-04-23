@@ -480,6 +480,20 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
   case 1006:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].dX;
     break;
+#ifdef HELIUM
+  case 1009:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].dXXHE;
+    break;
+  case 1008:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].dXHE;
+    break;
+  case 708:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].xHE;
+    break;
+  case 709:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].xxHE;
+    break;
+#endif
 #endif
   case 707:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].temp;

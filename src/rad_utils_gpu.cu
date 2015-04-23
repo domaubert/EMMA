@@ -163,6 +163,10 @@ __device__ void ddiffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
 #endif
 #ifdef WCHEM
   WR->nhplus=W2->nhplus-W1->nhplus;
+#ifdef HELIUM
+  WR->nheplus=W2->nheplus-W1->nheplus;
+  WR->nhepplus=W2->nhepplus-W1->nhepplus;
+#endif
   WR->eint=W2->eint-W1->eint;
   WR->nh=W2->nh-W1->nh;
 #endif
@@ -232,6 +236,22 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   else{
     Wr->nhplus=FMIN(FMIN(0.,FMAX(beta*Wm->nhplus,Wp->nhplus)),FMAX(Wm->nhplus,beta*Wp->nhplus));
   }
+#ifdef HELIUM
+  if(Wp->nheplus>0){
+    Wr->nheplus=FMAX(FMAX(0.,FMIN(beta*Wm->nheplus,Wp->nheplus)),FMIN(Wm->nheplus,beta*Wp->nheplus));
+  }
+  else{
+    Wr->nheplus=FMIN(FMIN(0.,FMAX(beta*Wm->nheplus,Wp->nheplus)),FMAX(Wm->nheplus,beta*Wp->nheplus));
+  }
+
+  if(Wp->nhepplus>0){
+    Wr->nhepplus=FMAX(FMAX(0.,FMIN(beta*Wm->nhepplus,Wp->nhepplus)),FMIN(Wm->nhepplus,beta*Wp->nhepplus));
+  }
+  else{
+    Wr->nhepplus=FMIN(FMIN(0.,FMAX(beta*Wm->nhepplus,Wp->nhepplus)),FMAX(Wm->nhepplus,beta*Wp->nhepplus));
+  }
+
+#endif
 
   if(Wp->eint>0){
     Wr->eint=FMAX(FMAX(0.,FMIN(beta*Wm->eint,Wp->eint)),FMIN(Wm->eint,beta*Wp->eint));
@@ -265,6 +285,11 @@ __device__ void dinterpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype
 
 #ifdef WCHEM
     Wp->nhplus =W0->nhplus + dx*Dx->nhplus + dy*Dy->nhplus + dz*Dz->nhplus;
+#ifdef HELIUM
+    Wp->nheplus =W0->nheplus + dx*Dx->nheplus + dy*Dy->nheplus + dz*Dz->nheplus;
+    Wp->nhepplus =W0->nhepplus + dx*Dx->nhepplus + dy*Dy->nhepplus + dz*Dz->nhepplus;
+#endif
+
     Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
 #endif

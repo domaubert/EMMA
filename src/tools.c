@@ -344,7 +344,10 @@ int gpoiss(REAL lambda){
 	    k++;
 	  }while(k<1e6);
 	}
-	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+	if(k==1e6) {
+	  printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+	  k=lambda;
+	}
 	return k;
 }
 
