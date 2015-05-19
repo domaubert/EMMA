@@ -26,7 +26,7 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
   rootpart=proot;
 
   fp=fopen(filename,"wb");
-  if(fp == NULL) printf("Cannot open %s\n", filename);
+  if(fp == NULL) {printf("Cannot open %s\n", filename); abort();}
 
   fwrite(&tsim,sizeof(REAL),1,fp);
   fwrite(&tinit,sizeof(REAL),1,fp);
@@ -135,7 +135,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 
   // opening the file
   fp=fopen(filename,"rb");
-  if(fp == NULL) printf("Cannot open %s\n", filename);
+  if(fp == NULL) {printf("Cannot open %s\n", filename); abort();}
 
   size_t outf;
 
@@ -327,7 +327,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   for(level=levelcoarse;level<=levelmax;level++) npart+=cpu->npart[level-1];
 
   fp=fopen(filename,"wb");
-	if(fp == NULL) printf("Cannot open %s\n", filename);
+	if(fp == NULL) {printf("Cannot open %s\n", filename); abort();}
 
   fwrite(&npart,1,sizeof(int),fp);
   fwrite(&tsim,1,sizeof(REAL),fp);
@@ -400,7 +400,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   // opening the file
   fp=fopen(filename,"rb");
-	if(fp == NULL) printf("Cannot open %s\n", filename);
+	if(fp == NULL) {printf("Cannot open %s\n", filename);abort();}
 
   // reading snapshot time
   size_t outf;

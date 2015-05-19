@@ -689,6 +689,7 @@ struct LCELL
   double xion;
   double temp; ///< is a direct function of eint, nh and xion but stored for conveniency
 #endif
+//  REAL sfr;
 };
 
 
