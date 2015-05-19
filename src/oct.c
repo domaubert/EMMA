@@ -302,6 +302,10 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
   lcell->p=cell->field.p;
 #ifdef WRADHYD
   lcell->dX=cell->field.dX;
+#ifdef HELIUM
+  lcell->dXHE=cell->field.dXHE;
+  lcell->dXXHE=cell->field.dXXHE;
+#endif
 #endif
 #endif
 
@@ -318,6 +322,10 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
   lcell->snfb=cell->rfield.snfb;
 #endif
   lcell->xion=cell->rfield.nhplus/cell->rfield.nh;
+#ifdef HELIUM
+  lcell->xHE=cell->rfield.nheplus/cell->rfield.nh;
+  lcell->xxHE=cell->rfield.nhepplus/cell->rfield.nh;
+#endif
   lcell->temp=cell->rfield.temp;
 #endif
 

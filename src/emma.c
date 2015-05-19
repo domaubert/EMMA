@@ -253,6 +253,13 @@ int main(int argc, char *argv[])
 /*   printf("size =%d\n",sizeof(struct OCT)); */
 /*   abort(); */
 
+#ifdef HELIUM
+#ifndef WRADHYD
+  printf("ERROR HELIUM INCLUDED WITHOUT COUPLED HYDRO\n");
+  abort();
+#endif
+#endif
+
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
@@ -302,7 +309,6 @@ int main(int argc, char *argv[])
   MPI_Aint base;
   struct PACKET _info_pack;
 
-#ifndef OLDMPI
   MPI_Address(&_info_pack.data,offsets);
   base=offsets[0];
   MPI_Address(&_info_pack.key,offsets+1);
@@ -323,37 +329,12 @@ int main(int argc, char *argv[])
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PACKET);
 
-#else
-  /* Setup description of the 8 MPI_REEL fields data */
-  offsets[0] = 0;
-  oldtypes[0] = MPI_REEL;
-  blockcounts[0] = 8; // MODKEY
-
-  /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REEL */
-  MPI_Type_extent(MPI_REEL, &extent);
-  offsets[1] = blockcounts[0] * extent;
-  oldtypes[1] = MPI_DOUBLE; // MODKEY
-  blockcounts[1] = 1;
-  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; // MODKEY
-
-  // MODKEY
-  MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[2] = offsets[1]+blockcounts[1]*extent;
-  oldtypes[2] = MPI_INT;
-  blockcounts[2] = 1;
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); //MODKEY
-  MPI_Type_commit(&MPI_PACKET);
-#endif
 
 #ifdef PIC
   //========= creating a PART MPI type =======
   MPI_Datatype MPI_PART;
   struct PART_MPI _info;
 
-#ifndef OLDMPI
   MPI_Address(&_info.x,offsets);
   base=offsets[0];
   MPI_Address(&_info.key,offsets+1);
@@ -384,42 +365,11 @@ int main(int argc, char *argv[])
   MPI_Type_commit(&MPI_PART);
 
 
-#else
-
-  /* Setup description of the 7 (+2 if STARS) MPI_REEL fields x,y,z,vx,vy,vz,mass, (age, rhocell) */
-  offsets[0] = 0;
-  oldtypes[0] = MPI_REEL;
-  blockcounts[0] = 7; //MODKEY
-#ifdef STARS
-  blockcounts[0] = 9; //MODKEY
-#endif
-
-  // dealing witht he key
-  MPI_Type_extent(MPI_REEL, &extent);
-  offsets[1] = offsets[0]+blockcounts[0] * extent;
-  oldtypes[1] = MPI_DOUBLE;
-  blockcounts[1] = 1;
-
-  /* Setup description of the 4 (+1 if STARS) MPI_INT fields idx level icell is,(isStar) */
-  /* Need to first figure offset by getting size of MPI_REEL */
-  MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[2] = offsets[1]+blockcounts[1] * extent;
-  oldtypes[2] = MPI_INT;
-  blockcounts[2] = 4;
-#ifdef STARS
-  blockcounts[2] = 5;
-#endif
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
-  MPI_Type_commit(&MPI_PART);
-#endif
 #endif
 
 #ifdef WHYDRO2
   //========= creating a WTYPE MPI type =======
 
-#ifndef OLDMPI
   MPI_Datatype MPI_WTYPE;
   struct Wtype _info_hyd;
 
@@ -431,7 +381,11 @@ int main(int argc, char *argv[])
   oldtypes[0]=MPI_REEL;
 
 #ifdef WRADHYD
+#ifdef HELIUM
+  blockcounts[0]=10;
+#else
   blockcounts[0]=8;
+#endif
 #else
   blockcounts[0]=7;
 #endif
@@ -466,49 +420,6 @@ int main(int argc, char *argv[])
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
 
-#else
-
-  MPI_Datatype MPI_WTYPE;
-
-  /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
-  offsets[0] = 0;
-  oldtypes[0] = MPI_REEL;
-#ifdef WRADHYD
-  blockcounts[0] = 8;
-#else
-  blockcounts[0] = 7;
-#endif
-  /* Now define structured type and commit it */
-  MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
-  MPI_Type_commit(&MPI_WTYPE);
-
-  //========= creating a HYDRO MPI type =======
-  MPI_Datatype MPI_HYDRO;
-
-  /* Setup description of the 8 MPI_WTYPE fields one per oct*/
-  offsets[0] = 0;
-  oldtypes[0] = MPI_WTYPE;
-  blockcounts[0] = 8;
-
-  /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REEL */
-  MPI_Type_extent(MPI_WTYPE, &extent);
-  offsets[1] = 8 * extent;
-  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG;
-  oldtypes[1] = MPI_DOUBLE; // MODKEY
-  blockcounts[1] = 1;
-
-  //MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent);
-  MPI_Type_extent(MPI_DOUBLE, &extent); // MODKEY
-  offsets[2] = offsets[1]+extent;
-  oldtypes[2] = MPI_INT;
-  blockcounts[2] = 1;
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
-  MPI_Type_commit(&MPI_HYDRO);
-
-#endif
 #endif
 
 #ifdef WRAD
@@ -517,7 +428,6 @@ int main(int argc, char *argv[])
   struct Rtype _info_r;
 
 
-#ifndef OLDMPI
   MPI_Address(&_info_r.e[0],offsets);
   base=offsets[0];
   MPI_Address(&_info_r.fx[0],offsets+1);
@@ -552,6 +462,10 @@ int main(int argc, char *argv[])
   blockcounts[4]++;
 #endif
 
+#ifdef HELIUM
+  blockcounts[4]+=2;
+#endif
+
   /* Now define structured type and commit it */
   MPI_Type_struct(5, blockcounts, offsets, oldtypes, &MPI_RTYPE);
   MPI_Type_commit(&MPI_RTYPE);
@@ -581,56 +495,6 @@ int main(int argc, char *argv[])
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
 
-#else
-  /* Setup description of the 7/8 MPI_REEL fields d,u,v,w,p,a */
-  offsets[0] = 0;
-  oldtypes[0] = MPI_REEL;
-#ifdef WCHEM
-  blockcounts[0] = NGRP*4+5;
-
-#ifdef STARS
-blockcounts[0]++; // For SN feedback
-#endif
-
-#else
-  blockcounts[0] = NGRP*4+1;
-#endif
-
-
-
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_RTYPE);
-  MPI_Type_commit(&MPI_RTYPE);
-
-
-  //========= creating a RAD MPI type =======
-  MPI_Datatype MPI_RAD;
-
-  /* Setup description of the 8 MPI_WTYPE fields one per oct*/
-  offsets[0] = 0;
-  oldtypes[0] = MPI_RTYPE;
-  blockcounts[0] = 8;
-
-  /* Setup description of the 2 MPI_INT fields key, level */
-  /* Need to first figure offset by getting size of MPI_REEL */
-  MPI_Type_extent(MPI_RTYPE, &extent);
-  offsets[1] = 8 * extent;
-  //oldtypes[1] = MPI_UNSIGNED_LONG_LONG; //MODKEY
-  oldtypes[1] = MPI_DOUBLE;
-  blockcounts[1] = 1;
-
-  //MPI_Type_extent(MPI_UNSIGNED_LONG_LONG, &extent); //MODKEY
-  MPI_Type_extent(MPI_DOUBLE, &extent);
-  offsets[2] = offsets[1]+extent;
-  oldtypes[2] = MPI_INT;
-  blockcounts[2] = 1;
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
-  MPI_Type_commit(&MPI_RAD);
-
-#endif
 #endif
 
   //============================================

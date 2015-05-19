@@ -544,11 +544,25 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WRADHYD
 		       // some fix here for RHD values
+
 		       REAL xion=Ri[il].nhplus/Ri[il].nh;
-		       Wi[il].dX=Wi[il].d*xion;
-		       Ri[il].nh= Wi[il].d/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
-		       Ri[il].nhplus= Wi[il].dX/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass);
+#ifdef HELIUM
+		       REAL xhe=Ri[il].nheplus/Ri[il].nh;
+		       REAL xxhe=Ri[il].nhepplus/Ri[il].nh;
+#endif
+
+		       Wi[il].dX=Wi[il].d*(1.-YHE)*xion;
+		       Ri[il].nh= Wi[il].d*(1.-YHE);
+		       Ri[il].nhplus= Wi[il].dX;
 		       Ri[il].eint= Wi[il].p/(GAMMA-1.);
+
+#ifdef HELIUM
+		       Wi[il].dXHE=Wi[il].d*YHE*xhe/yHE;
+		       Wi[il].dXXHE=Wi[il].d*YHE*xxhe/yHE;
+		       Ri[il].nheplus=Wi[il].dXHE/MHE_OVER_MH;
+		       Ri[il].nhepplus=Wi[il].dXXHE/MHE_OVER_MH;
+#endif
+
 #endif
 
 		     }
@@ -1277,31 +1291,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #else
 			    //mcell=0.;
 			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
-			    //mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
-			    //if(curoct->cell[icell].rfield.src>0.) printf("den=%e\n",den);
-/*
-			     if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
-			       curoct->cell[icell].marked=marker;
-			       nmark++;stati[2]++;
-			     }
-*/
-/*
-			    if(((curoct->cell[icell].field.d>1.001))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-*/
-
-			    //~ mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//\*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05); */
-			    //~ if(mcell>mmax) mmax=mcell;
-			    //~ if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      //~ curoct->cell[icell].marked=marker;
-			      //~ nmark++;stati[2]++;
-			    //~ }
-
-
-
-
 #endif
  			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {

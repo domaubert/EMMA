@@ -1091,7 +1091,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef WRADHYD
 	  // Testing ADVECTION
 	  //W.X=(i1/6)%2+((i2+1)/6)%2;
-	  W.dX=0.2e-3*W.d;
+	  W.dX=0.2e-3*W.d*(1.-YHE);
+#ifdef HELIUM
+	  W.dXHE=0.2e-3*W.d*(YHE)/yHE;
+	  W.dXXHE=0.2e-3*W.d*(YHE)/yHE;
+#endif
 #endif
 	  memcpy(&(curoct->cell[icell].field),&W,sizeof(struct Wtype));
 

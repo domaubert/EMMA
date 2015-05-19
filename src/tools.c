@@ -355,7 +355,10 @@ int gpoiss(const REAL lambda){
 
 	  if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
 	}
-	//printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+	if(k==1e6) {
+	  printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+	  k=lambda;
+	}
 	return k;
 }
 

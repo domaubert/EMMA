@@ -176,41 +176,45 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
 	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dt/ tstartilde; // Average number of stars created
 #else
-  // local free fall time in seconde in code unit
-  // REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
-  //printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
-
-  REAL dx = POW(0.5,level);
-  REAL dv = POW(0.5,3*level);
-
-  REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
-  REAL rho_b =  cell->field.d     / param->stars->thresh;
-
-  REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
-  REAL fact_t = POW(aexp,2) * param->unit.unit_t;
-
-  // local free fall time in seconde in code unit
-  REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
-  t_ff /= fact_t;
-
+	// local free fall time in seconde in code unit
+	// REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
+	//printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
+	
+	REAL dx = POW(0.5,level);
+	REAL dv = POW(0.5,3*level);
+	
+	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
+	REAL rho_b =  cell->field.d     / param->stars->thresh;
+	
+	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
+	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
+	
+	// local free fall time in seconde in code unit
+	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
+	t_ff /= fact_t;
+  
   // local Jeans time in seconde in code unit
-  REAL t_j = dx/cell->field.a;
-
+	REAL t_j = dx/cell->field.a;
+	
 	// star formation rate in kg/s/m3 in code unit
-  REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
+	REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
 
-  // Jeans efficiency
-  //SFR *= t_j/t_ff;
-
+	// Jeans efficiency
+	//SFR *= t_j/t_ff;
+	
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
 	//printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
 
 #endif //SCHAYE
 
+#ifdef GSLRAND
+	int N = gsl_ran_poisson (param->stars->rpoiss, lambda);
+#else
 	int N = gpoiss(lambda); //Poisson drawing
+#endif
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
-  REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
+	REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
 	if(N * mlevel >= M_in_cell) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
 	return N;
@@ -408,6 +412,17 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 /// and add them to the linked list\n
 // ----------------------------------------------------------//
 
+#ifdef GSLRAND
+  const gsl_rng_type * T;
+  gsl_rng * r;
+  gsl_rng_env_setup();
+
+  T = gsl_rng_default;
+  r = gsl_rng_alloc (T);
+
+  param->stars->rpoiss=r;
+#endif
+
   if(cpu->rank == RANK_DISP) printf("STARS\n");
   setStarsState(param, cpu, level);
 
@@ -470,5 +485,10 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
     if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
     if(param->stars->n>0) cpu->trigstar=1;
   }
+
+#ifdef GSLRAND
+  gsl_rng_free (r);
+#endif
+
 }
 #endif//STARS

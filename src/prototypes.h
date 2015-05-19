@@ -11,6 +11,11 @@
 #include <mpi.h>
 #endif
 
+#ifdef GSLRAND
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#endif
+
 #include "param.h"
 
 #ifdef SINGLEPRECISION
@@ -51,10 +56,14 @@ typedef double REAL;
   #ifndef WRADHYD
     #define NVAR (6)
   #else
-    #define NVAR (7)
-  #endif
+#ifdef HELIUM
+#define NVAR (9)
 #else
-  #define NVAR (5)
+#define NVAR (7)
+#endif
+#endif
+#else
+#define NVAR (5)
 #endif
 
 #define NFLUX (6*NVAR)
@@ -99,6 +108,10 @@ struct STARSPARAM{
   REAL mass_res;///< the mass resolution
   int  n;///< total number of stars
   REAL thresh;///< density threshold to allow star formation
+#ifdef GSLRAND
+  gsl_rng *rpoiss;
+#endif
+
 };
 #endif
 
@@ -419,6 +432,11 @@ struct Rtype{
   REAL temp; // is a direct function of eint, nh and xion but stored for conveniency
   //  REAL deltaX; // the ionization variation (to track fronts)
 
+#ifdef HELIUM
+  REAL nheplus;
+  REAL nhepplus;
+#endif
+
 };
 #endif
 
@@ -438,6 +456,10 @@ struct Wtype{
 
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dXHE;
+  REAL dXXHE;
+#endif
 #endif
 };
 
@@ -452,6 +474,11 @@ struct Wtype_MPI{
   REAL E;
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dXHE;
+  REAL dXXHE;
+#endif
+
 #endif
 };
 
@@ -473,6 +500,11 @@ struct Utype{
 
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dXHE;
+  REAL dXXHE;
+#endif
+
 #endif
 
 };
@@ -485,6 +517,11 @@ struct Wtype1D{
   REAL a;   ///< sound speed
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dXHE;
+  REAL dXXHE;
+#endif
+
 #endif
 };
 
@@ -502,6 +539,11 @@ struct Utype1D{
   REAL E;    ///< Energy
 #ifdef WRADHYD
   REAL dX;
+#ifdef HELIUM
+  REAL dXHE;
+  REAL dXXHE;
+#endif
+
 #endif
 };
 
@@ -675,6 +717,11 @@ struct LCELL
   float w;
   float p;
   float dX;
+#ifdef HELIUM
+  float dXHE;
+  float dXXHE;
+#endif
+
 #endif
 
 
@@ -688,6 +735,12 @@ struct LCELL
   float snfb;
   double xion;
   double temp; ///< is a direct function of eint, nh and xion but stored for conveniency
+
+#ifdef HELIUM
+  double xHE;
+  double xxHE;
+#endif
+
 #endif
 //  REAL sfr;
 };

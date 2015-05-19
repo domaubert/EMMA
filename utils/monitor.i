@@ -19,10 +19,13 @@ func readinfo(dir){
 }
 
 
-func monitor(dir,tpause=,zmax=,zmin=){
+func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
   if(is_void(zmax)) zmax=20;
   if(is_void(tpause)) tpause=30;
-
+  if(is_void(clear)) clear=0;
+  zB=[3.8,4.9,5.9,6.8,7.9,10.4];
+  SFRB=10.^[-1.44,-1.53,-1.84,-1.95,-2.20,-3.33]; // Ms/Mpc^3/yr
+  SFRB2=10.^[-1.06,-1.19,-1.59,-1.72,-2.05,-3.18]; // Ms/Mpc^3/yr
   
   tpause=int(tpause*1e3);
   vi=readinfo(dir);
@@ -35,49 +38,75 @@ func monitor(dir,tpause=,zmax=,zmin=){
 
   write,"########################################";
   
-  while(1){
     vv=asciiRead(dir+"/param.avg");
     
     z=vv(3,);
     a=vv(2,);
     lev=vv(5,);
+    maxd=vv(6,);
     avgx=vv(7,);
     avgT=vv(8,);
+    maxT=vv(9,);
     nstar=vv(10,);
+    nSN=vv(11,);
+    src=vv(12,);
     ts=(univAge(10000,h0=h0,Omega_m=om,Omega_l=ob,silent=1)-univAge(vv(3,),h0=h0,Omega_m=om,Omega_l=ol,silent=1))/(3600.*24*365.25);
-    sfr=nstar(dif)/ts(dif)*mstar/(lbox/(h0/100.))^3;
-
+    sfr=nstar(dif)*(ts(dif)>0)/(ts(dif)+1e-15)*mstar/(lbox/(h0/100.))^3;
     
     aa=write(format=" NSteps=%d z=%f [aexp=%f] === xHI=%e avg Temp=%e [K]\n",int(vv(1,0)),z(0),a(0),1.-avgx(0),avgT(0));    
-    ws,1;
-    window,1,style="win22.gs";
+    if(clear){
+      WS,1,dpi=120;
+      window,1,style="win42.gs";
+    }
 
     plsys,1;
-    plg,avgT,z;
+    plg,avgT,z,color=col;
+    plg,maxT,z,color=col;
     limits,zmax,zmin;
-    range,1e2,1e7;
+    range,1e2,1e8;
     logxy,1,1;
 
     plsys,2;
-    PL,sfr,z(zcen);
+    plg,SFRB,zB,color=__rgb(,30),type=2;
+    plg,SFRB2,zB,color=__rgb(,30),type=2;
+    plg,sfr,z(zcen),color=col;
+    PL,sfr(0),z(zcen)(0),color=col;
     range,1e-5,1e1;
     limits,zmax,zmin;
     logxy,1,1;
 
     plsys,3;
-    plg,lev,z;
+    plg,lev,z,color=col;
     range,5,15;
     limits,zmax,zmin;
-    logxy,1,1;
+    logxy,1,0;
 
     plsys,4;
-    plg,1.-avgx,z;
+    plg,1.-avgx,z,color=col;
+    plg,avgx,z,color=col;
     range,1e-6,2.;
     limits,zmax,zmin;
     logxy,1,1;
-    
-    pause,tpause;
-    
-  }
 
+    plsys,5;
+    plg,maxd,z,color=col;
+    limits,zmax,zmin;
+    range,1e0,1e10;
+    logxy,1,1;
+
+    plsys,6;
+    plg,nstar+1,z,color=col;
+    plg,nSN+1,z,color=col;
+    range,1,1e8;
+    limits,zmax,zmin;
+    logxy,1,1;
+
+    plsys,7;
+    plg,src,z,color=col;
+    limits,zmax,zmin;
+    range,1e-4,1e2;
+    logxy,1,1;
+
+
+    
 }
