@@ -13,7 +13,6 @@ level_coarse 6
 level_max 10
 amr_thresh 8
 n_smooth 2
-<<<<<<< HEAD
 ##==DM=======================
 dm_res 0
 ##==PoissonSolver============

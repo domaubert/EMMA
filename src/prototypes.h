@@ -210,6 +210,8 @@ struct RUNPARAMS{
   int nrestart; ///< the restart snapshot
   int nsubcycles; ///< number of subcyles in AMR advance procedure
 
+  struct OUTPUTPARAM *out;
+
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo; ///< the cosmological parameters
 #endif
@@ -333,6 +335,9 @@ struct CPUINFO{
   struct HYDRO_MPI **hrecvbuffer;
   struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
+
+  int mpiio_offsets;
+  int *mpiio_ncells;
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; ///< the structured type for MPI messages (particles)
@@ -1029,3 +1034,10 @@ struct MULTIVECT{
 #endif
 };
 
+
+struct OUTPUTPARAM{
+  int n_field;
+  int n_field_tot;
+  char *field_name[50];
+  int field_id[50];
+};

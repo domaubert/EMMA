@@ -8,8 +8,6 @@
 #include "hydro_utils.h"
 
 
-
-
 #ifdef PIC
 //==================================================================================
 #ifdef GRAFIC
@@ -30,21 +28,42 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   int res_level = level+param->DM_res;
   if(cpu->rank==0){
 
-#ifdef MUSIC
-    sprintf(filename,"./level_%03d/ic_velcx",res_level);
-    fx=fopen(filename,"rb"); 	if(fx == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velcy",res_level);
-    fy=fopen(filename,"rb"); 	if(fy == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velcz",res_level);
-    fz=fopen(filename,"rb");	if(fz == NULL) {printf("Cannot open %s\n", filename); abort();}
-#else
-    sprintf(filename,"./level_%03d/ic_velbx",res_level);
-    fx=fopen(filename,"rb"); 	if(fx == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velby",res_level);
-    fy=fopen(filename,"rb"); 	if(fy == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velbz",res_level);
-    fz=fopen(filename,"rb");	if(fz == NULL) {printf("Cannot open %s\n", filename); abort();}
-#endif // MUSIC
+    sprintf(filename,"./level_%03d/ic_velcx",level);
+    fx=fopen(filename,"rb");
+    if(fx == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velbx",level);
+      fx=fopen(filename,"rb");
+      if(fx == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
+    sprintf(filename,"./level_%03d/ic_velcy",level);
+    fy=fopen(filename,"rb");
+    if(fy == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velby",level);
+      fy=fopen(filename,"rb");
+      if(fy == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
+    sprintf(filename,"./level_%03d/ic_velcz",level);
+    fz=fopen(filename,"rb");
+    if(fz == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velbz",level);
+      fz=fopen(filename,"rb");
+      if(fz == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
 
     // reading the headers
     size_t outf;
@@ -295,7 +314,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   }
   return lastpart;
 }
-#endif
+#endif // GRAFIC
 
 //==================================================================================
 #ifdef ZELDOVICH
@@ -501,7 +520,7 @@ struct PART * read_zeldovich_part(struct PART *part, struct CPUINFO *cpu, REAL *
 
   return lastpart;
 }
-#endif
+#endif // ZELDOVICH
 
 
 //==================================================================================
@@ -651,14 +670,14 @@ struct PART * read_edbert_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	  }while(nextoct!=NULL);
       }
 
-#endif
+#endif // WHYDRO2
 
   return lastpart;
 }
-#endif
+#endif // EDBERT
 
 
-#endif
+#endif // PIC
 
 #ifdef WHYDRO2
 
@@ -815,25 +834,45 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   // Note only the rank 0 reads the file.
 
   if(cpu->rank==0){
-#ifdef MUSIC
+
     sprintf(filename,"./level_%03d/ic_deltab",level);
     fdx=fopen(filename,"rb");		if(fdx == NULL) {printf("Cannot open %s\n", filename); abort();}
+
     sprintf(filename,"./level_%03d/ic_velcx",level);
-    fx=fopen(filename,"rb");		if(fx == NULL) {printf("Cannot open %s\n", filename); abort();}
+    fx=fopen(filename,"rb");
+    if(fx == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velbx",level);
+      fx=fopen(filename,"rb");
+      if(fx == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
     sprintf(filename,"./level_%03d/ic_velcy",level);
-    fy=fopen(filename,"rb");		if(fy == NULL) {printf("Cannot open %s\n", filename); abort();}
+    fy=fopen(filename,"rb");
+    if(fy == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velby",level);
+      fy=fopen(filename,"rb");
+      if(fy == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
     sprintf(filename,"./level_%03d/ic_velcz",level);
-    fz=fopen(filename,"rb");		if(fz == NULL) {printf("Cannot open %s\n", filename); abort();}
- #else
-    sprintf(filename,"./level_%03d/ic_deltab",level);
-    fdx=fopen(filename,"rb");		if(fdx == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velbx",level);
-    fx=fopen(filename,"rb");		if(fx == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velby",level);
-    fy=fopen(filename,"rb");		if(fy == NULL) {printf("Cannot open %s\n", filename); abort();}
-    sprintf(filename,"./level_%03d/ic_velbz",level);
-    fz=fopen(filename,"rb");		if(fz == NULL) {printf("Cannot open %s\n", filename); abort();}
-#endif // MUSIC
+    fz=fopen(filename,"rb");
+    if(fz == NULL) {
+      printf("Cannot open %s\n", filename);
+      sprintf(filename,"./level_%03d/ic_velbz",level);
+      fz=fopen(filename,"rb");
+      if(fz == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
 
     /* fdx=fopen("./ic_deltab","rb"); */
     /* fx=fopen("./ic_velcx","rb"); */

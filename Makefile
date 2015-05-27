@@ -1,7 +1,7 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -lm -O2 -Wimplicit   #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
+C_LIBS = -lm -g -Wimplicit   #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \

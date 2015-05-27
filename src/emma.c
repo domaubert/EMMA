@@ -204,6 +204,8 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
+  struct OUTPUTPARAM out;
+  param.out=&out;
 
 #ifdef STARS
   struct STARSPARAM stars;
@@ -279,6 +281,10 @@ int main(int argc, char *argv[])
 	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));
 #endif
   //omp_set_num_threads(param.ompthread);
+
+#ifdef MPIIO
+  cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
+#endif // MPIIO
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
