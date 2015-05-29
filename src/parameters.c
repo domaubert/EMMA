@@ -197,7 +197,7 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
 void GetParameters(char *fparam, struct RUNPARAMS *param)
 {
-  FILE *buf;
+  FILE *buf=NULL;
   char stream[256];
   size_t rstat;
   double dummyf;
@@ -231,6 +231,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->DM_res);
+      rstat=fscanf(buf,RF,stream,&param->dx_res);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);

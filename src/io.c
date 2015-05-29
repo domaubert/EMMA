@@ -265,11 +265,10 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 
   //printf("cpu=%d grid_offset=%d\n",cpu->rank, cpu->mpiio_grid_offsets);
-  printf("cpu=%d part_offset=%d\n",cpu->rank, cpu->mpiio_part_offsets);
+  //printf("cpu=%d part_offset=%d\n",cpu->rank, cpu->mpiio_part_offsets);
   //printf("cpu=%d star_offset=%d\n",cpu->rank, cpu->mpiio_star_offsets);
 
 }
-
 
 #ifdef PIC
 void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
@@ -601,7 +600,6 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 
   fclose(fp);
 }
-
 
 void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 

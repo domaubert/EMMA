@@ -199,6 +199,7 @@ struct RUNPARAMS{
   REAL amrthresh; ///< the refinement criterion (refine if mcell>amrthresh)
 
   int DM_res; ///< resolution of dark matter particle (equivalent level of lcoarse + DM_res)
+  REAL dx_res; ///< maximum spatial resolution before blocking AMR
 
   int nsmooth; ///< the number of neighbour refinement steps
 

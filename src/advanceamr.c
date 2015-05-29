@@ -968,9 +968,9 @@ if(cond1||cond2||cond3){
   // ================= V Computing the new refinement map
     REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
-#ifdef KPCLIMIT
-    dxkpc=1e2*PARSEC/param->unit.unit_l;
-#endif
+
+    dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
+
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
       if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
@@ -979,7 +979,7 @@ if(cond1||cond2||cond3){
 	if((ndt[level-1]%2==1)||(level==param->lcoarse)){
 #else
 	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
-#endif
+#endif // ZOOM
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
@@ -1008,7 +1008,7 @@ if(cond1||cond2||cond3){
 
 #ifdef MOVIE
 	if (level==param->lcoarse)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
-#endif
+#endif // MOVIE
 
   }while((dt<adt[level-2])&&(is<nsub));
 
