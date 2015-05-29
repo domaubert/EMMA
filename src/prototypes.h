@@ -336,8 +336,15 @@ struct CPUINFO{
   struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
 
-  int mpiio_offsets;
+  int mpiio_grid_offsets;
   int *mpiio_ncells;
+
+  int mpiio_part_offsets;
+  int *mpiio_nparts;
+#ifdef STARS
+  int mpiio_star_offsets;
+  int *mpiio_nstars;
+#endif // STARS
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; ///< the structured type for MPI messages (particles)
