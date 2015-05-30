@@ -903,15 +903,15 @@ if(cond1||cond2||cond3){
       printf("==== CPU RAD TOTAL TIME =%e\n",time_rad);
 #else
       printf(" === GPU RAD TOTAL TIME =%e\n",time_rad);
-#endif
+#endif // GPUAXL
     }
-#endif
+#endif // COARSERAD
 
     //printf("cpu #%d ready 4\n",cpu->rank);
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
-#endif
+#endif // WMPI
 
 #ifdef WMPI
     //printf("proc %d waiting\n",cpu->rank);
@@ -927,16 +927,16 @@ if(cond1||cond2||cond3){
     }
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
-#endif
+#endif // WMPI
 
     if(cpu->rank==RANK_DISP) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
 
 #ifdef WRADHYD
     if(cpu->rank==RANK_DISP) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
-#endif
+#endif // WRADHYD
 
-#endif
+#endif // WRAD
 
     /* //===================================creating new stars=================================// */
 
@@ -966,11 +966,9 @@ if(cond1||cond2||cond3){
 #endif // SUPERNOVAE
 
   // ================= V Computing the new refinement map
-    REAL dxkpc=0.;
+
     REAL dxnext=POW(0.5,level+1)*aexp;
-
-    dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
-
+    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
       if((param->lmax!=param->lcoarse)&&(level<param->lmax)){

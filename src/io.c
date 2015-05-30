@@ -203,7 +203,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif // STARS
   }
 
-  // count the cells
+  // count the cells, parts and stars
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
 
@@ -242,7 +242,12 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
   // braodcast the result
   MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_ncells,cpu->nproc,MPI_INT,MPI_SUM,cpu->comm);
+#ifdef PIC
   MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_nparts,cpu->nproc,MPI_INT,MPI_SUM,cpu->comm);
+#endif // PIC
+#ifdef STARS
+  MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_nstars,cpu->nproc,MPI_INT,MPI_SUM,cpu->comm);
+#endif // STARS
 
   // compute the offset
   cpu->mpiio_grid_offsets=0;
@@ -401,7 +406,7 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 
-void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
+void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   float val;
   int vali;
@@ -417,13 +422,11 @@ void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int 
   float tsimf=tsim;
   int i;
 
-  set_offset(param,cpu);
-
+//-----------------------------------------------------------------------------------------------
   int npart=0;
   for (i=0;i<cpu->nproc;i++){
    npart+=cpu->mpiio_nparts[i];
   }
-
 
   char filenamepart[128];
 #ifdef MULTIFOLDER
@@ -438,15 +441,30 @@ void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int 
 
   MPI_File fpart=NULL;
   MPI_File_open(cpu->comm,filenamepart,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fpart);
-	if(fpart == NULL){
+	if(fpart==NULL){
     printf("Cannot open %s\n", filenamepart);
     abort();
-	}
+  }
+
 	MPI_File_write(fpart, &npart,1, MPI_INT, MPI_STATUS_IGNORE);
   MPI_File_write(fpart, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  MPI_File_seek(fpart, (MPI_Offset)(16*cpu->mpiio_part_offsets*sizeof(float)), MPI_SEEK_CUR);
+  const size_t part_header_size = sizeof(int)+sizeof(float);
 
+  const size_t part_size = 10;
+  MPI_Datatype part_type;
+  MPI_Type_contiguous(part_size, MPI_FLOAT, &part_type);
+  MPI_Type_commit(&part_type);
+
+  MPI_Offset part_offset = part_size*cpu->mpiio_part_offsets*sizeof(float) + part_header_size ;
+  MPI_File_set_view(fpart, part_offset, MPI_FLOAT, part_type, "native", MPI_INFO_NULL);
+
+//-----------------------------------------------------------------------------------------------
 #ifdef STARS
+  int nstar=0;
+  for (i=0;i<cpu->nproc;i++){
+   nstar+=cpu->mpiio_nstars[i];
+  }
+
   char filenamestar[128];
 #ifdef MULTIFOLDER
 #ifndef MPIIO
@@ -458,20 +476,26 @@ void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int 
   sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
 
-  int nstar=0;
-  for (i=0;i<cpu->nproc;i++){
-   nstar+=cpu->mpiio_nstars[i];
-  }
   MPI_File fstar=NULL;
   MPI_File_open(cpu->comm,filenamestar,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fstar);
-  if(fstar == NULL) {
+  if(fstar==NULL){
     printf("Cannot open %s\n", filenamestar);
     abort();
   }
   MPI_File_write(fstar, &nstar,1, MPI_INT, MPI_STATUS_IGNORE);
   MPI_File_write(fstar, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  MPI_File_seek(fstar, (MPI_Offset)(17*cpu->mpiio_star_offsets*sizeof(float)), MPI_SEEK_CUR);
+  const size_t star_header_size = sizeof(int)+sizeof(float);
+
+  const size_t star_size = 11;
+
+  MPI_Datatype star_type;
+  MPI_Type_contiguous(star_size, MPI_FLOAT, &star_type);
+  MPI_Type_commit(&star_type);
+
+  MPI_Offset star_offset = star_size*cpu->mpiio_part_offsets*sizeof(float) + star_header_size ;
+  MPI_File_set_view(fstar, star_offset, MPI_FLOAT, star_type, "native", MPI_INFO_NULL);
 #endif // STARS
+//-----------------------------------------------------------------------------------------------
 
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
@@ -493,12 +517,13 @@ void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int 
 		  curp=nexp;
 		  nexp=curp->next;
 
+
       MPI_File *fp = NULL;
 #ifdef STARS
 		  if(curp->isStar) 		fp=&fstar;
 		  else 			        	fp=&fpart;
 #else
-                          fp=&fpart;
+   //                       fp=&fpart;
 #endif // STARS
 
 		  val=(float)curp->x;			  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
@@ -529,7 +554,7 @@ void dumppart_MPIIO(struct OCT **firstoct,char filename[], int levelcoarse, int 
 		    val = curp->age;		    MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
 		  }
 #endif // STARS
-//		  ipart++;
+		  ipart++;
 
 		}while(nexp!=NULL);
 	      }
@@ -618,8 +643,6 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
   int i;
 
-  set_offset(param,cpu);
-
   int n_cell_tot=0;
   for (i=0;i<cpu->nproc;i++){
     n_cell_tot+=cpu->mpiio_ncells[i];
@@ -644,7 +667,12 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       }
 
       MPI_File_write(f_dat[n_field], &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
-      MPI_File_seek(f_dat[n_field], cpu->mpiio_grid_offsets*sizeof(float), MPI_SEEK_CUR);
+      //MPI_File_seek(f_dat[n_field], cpu->mpiio_grid_offsets*sizeof(float), MPI_SEEK_CUR);
+      const size_t grid_header_size = sizeof(int);
+
+      MPI_Offset grid_offset = cpu->mpiio_part_offsets*sizeof(float) + grid_header_size ;
+      MPI_File_set_view(f_dat[n_field], grid_offset, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
+
 
       n_field++;
     }
@@ -811,6 +839,10 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   int idir=cpu->rank%8;
 
+#ifdef MPIIO
+  set_offset(param,cpu);
+#endif // MPIIO
+
 #ifndef TESTCOSMO
 #ifdef WRAD
 	tdump=(tsim)*param->unit.unit_t/MYR;
@@ -849,7 +881,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifndef MPIIO
 	  dumppart_serial(firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
-	  dumppart_MPIIO(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
+	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO
 
 #endif // PIC

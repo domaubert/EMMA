@@ -7,8 +7,6 @@
 #include "src_utils.h"
 #endif // UVBKG
 
-
-
 char *field_name [] ={
 // The field order has to be the same as in param.output for consistency
 "x",
@@ -51,8 +49,6 @@ char *field_name [] ={
 "field.xxHE",
 "rfield.temp"
 };
-
-
 
 int copy(char const * const source, char const * const destination) {
 /**
@@ -153,7 +149,6 @@ void dumpFile(char *filename_in, char *filename_out){
   }
 }
 
-
 void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
   int n_field=0;
@@ -195,8 +190,7 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
 }
 
-void GetParameters(char *fparam, struct RUNPARAMS *param)
-{
+void GetParameters(char *fparam, struct RUNPARAMS *param){
   FILE *buf=NULL;
   char stream[256];
   size_t rstat;
@@ -335,8 +329,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 
 }
-
-
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
