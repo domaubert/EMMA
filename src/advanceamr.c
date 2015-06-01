@@ -36,6 +36,8 @@
  #include "ccc_user.h"
  #endif // CURIE
 
+int KPCLIMIT_TRIGGER=0;
+
 // ===============================================================
 // ===============================================================
 
@@ -974,10 +976,11 @@ if(cond1||cond2||cond3){
       if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
 
 #ifndef ZOOM
-	if((ndt[level-1]%2==1)||(level==param->lcoarse)){
+    if((ndt[level-1]%2==1)||(level==param->lcoarse))
 #else
-	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
+	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
 #endif // ZOOM
+    {
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
@@ -985,8 +988,13 @@ if(cond1||cond2||cond3){
 	}
     }
     else{
-      //if(cpu->rank==RANK_DISP)
-	printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+      KPCLIMIT_TRIGGER=1;
+      MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
+      MPI_Barrier(cpu->comm);
+
+      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
+      printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+      KPCLIMIT_TRIGGER=0;
     }
 
     // ====================== VI Some bookkeeping ==========

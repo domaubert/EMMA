@@ -37,19 +37,19 @@ float assign_field(int field,struct CELL *cell){
   switch(field){
 
   case 0:
-    res= (float)(cell2oct(cell)->x+( cell->idx   %2)*POW(0.5,cell2oct(cell)->level));
+    res= cell2oct(cell)->x+( cell->idx   %2)*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 1:
-    res= (float)(cell2oct(cell)->y+( cell->idx/2 %2)*POW(0.5,cell2oct(cell)->level));
+    res= cell2oct(cell)->y+( cell->idx/2 %2)*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 2:
-    res= (float)(cell2oct(cell)->z+( cell->idx/4   )*POW(0.5,cell2oct(cell)->level));
+    res= cell2oct(cell)->z+( cell->idx/4   )*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 3:
-    res= (float)(cell2oct(cell)->level);
+    res= cell2oct(cell)->level;
     break;
 
   case 4:
@@ -217,25 +217,24 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
         if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
           cpu->mpiio_ncells[cpu->rank]++;
-        }
 
 #ifdef PIC
-        struct PART *nexp=cell->phead;
-	      if(nexp!=NULL){
-          do{
-            struct PART *curp=nexp;
-            nexp=curp->next;
+          struct PART *nexp=cell->phead;
+          if(nexp!=NULL){
+            do{
+              struct PART *curp=nexp;
+              nexp=curp->next;
 
 #ifdef STARS
-            if (curp->isStar) cpu->mpiio_nstars[cpu->rank]++;
-            else              cpu->mpiio_nparts[cpu->rank]++;
+              if (curp->isStar) cpu->mpiio_nstars[cpu->rank]++;
+              else              cpu->mpiio_nparts[cpu->rank]++;
 #else
-                              cpu->mpiio_nparts[cpu->rank]++;
+                                cpu->mpiio_nparts[cpu->rank]++;
 #endif // STARS
-
-        		}while(nexp!=NULL);
-        }
+              }while(nexp!=NULL);
+          }
 #endif // PIC
+        }
       }
     }
   }
@@ -268,11 +267,9 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif // STARS
   }
 
-
   //printf("cpu=%d grid_offset=%d\n",cpu->rank, cpu->mpiio_grid_offsets);
   //printf("cpu=%d part_offset=%d\n",cpu->rank, cpu->mpiio_part_offsets);
   //printf("cpu=%d star_offset=%d\n",cpu->rank, cpu->mpiio_star_offsets);
-
 }
 
 #ifdef PIC
@@ -357,7 +354,7 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
 
 #ifdef STARS
 		  if(curp->isStar) 	{	fp=fstar;	nstar++;	}
-		  else 			{	fp=fpart;	npart++;	}
+		  else 			        {	fp=fpart;	npart++;	}
 #else
 		  npart++;
 #endif // STARS
@@ -569,7 +566,6 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 #endif // STARS
 
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
-
 }
 #endif // PIC
 
@@ -667,12 +663,10 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       }
 
       MPI_File_write(f_dat[n_field], &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
-      //MPI_File_seek(f_dat[n_field], cpu->mpiio_grid_offsets*sizeof(float), MPI_SEEK_CUR);
       const size_t grid_header_size = sizeof(int);
 
-      MPI_Offset grid_offset = cpu->mpiio_part_offsets*sizeof(float) + grid_header_size ;
+      MPI_Offset grid_offset = cpu->mpiio_grid_offsets*sizeof(float) + grid_header_size ;
       MPI_File_set_view(f_dat[n_field], grid_offset, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
-
 
       n_field++;
     }
@@ -693,7 +687,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
           // get and write the fields
           int n_field=0;
-          for (i =0;i<param->out->n_field_tot; i++){
+          for (i=0;i<param->out->n_field_tot; i++){
             if(param->out->field_id[i]){
               float dat = (float)assign_field(i,cell);
               MPI_File_write(f_dat[n_field], &dat,1, MPI_FLOAT, MPI_STATUS_IGNORE);
@@ -840,6 +834,10 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   int idir=cpu->rank%8;
 
 #ifdef MPIIO
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    setOctList(firstoct[level-1], cpu, param,level);
+  }
   set_offset(param,cpu);
 #endif // MPIIO
 
@@ -909,7 +907,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 #ifdef ALLOCT
 #ifdef MPIIO
-	  dumpalloct_MPI(folder_field,adump,param, cpu);
+	//  dumpalloct_MPI(folder_field,adump,param, cpu);
 #else
     dumpalloct_serial(folder_field,adump,param, cpu);
 #endif // MPIIO
@@ -939,5 +937,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  }
 #endif // BKP
+
 	}
 }
