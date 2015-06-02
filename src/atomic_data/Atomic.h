@@ -21,6 +21,12 @@
 #endif
 
 
+#ifdef STARBURST
+#define SECTION_EFFICACE hnu[0]=21.002844*1.6022e-19;alphae[0]=2.807673e-22*c;alphai[0]=2.371145e-22*c;
+#define FACTGRP factgrp[0]=1.0;
+#endif
+
+
 #ifdef STARBURST_1MYR
 #define SECTION_EFFICACE hnu[0]=23.444733*1.6022e-19;alphae[0]=2.354268e-22*c;alphai[0]=1.828680e-22*c;
 #define FACTGRP factgrp[0]=1.0;

@@ -108,11 +108,12 @@ void copy_param(const char *folder){
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
   copy(param_src, param_dest);
-
+#ifdef ALLOCT
   sprintf(param,"param.output");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
   copy(param_src, param_dest);
+  #endif // ALLOCT
 }
 
 void dumpFile(char *filename_in, char *filename_out){
@@ -324,9 +325,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
 
-
+#ifdef ALLOCT
   readOutputParam("param.output", param);
-
+#endif // ALLOCT
 
 }
 
@@ -430,8 +431,10 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
   dumpFile(fparam, "data/param.run");
   printf("\n");
+#ifdef ALLOCT
   dumpFile("param.output", "data/param.output");
   printf("\n");
+#endif // ALLOCT
 
 #ifdef TESTCOSMO
   REAL threshold=param->amrthresh0;
