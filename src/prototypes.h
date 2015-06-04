@@ -172,6 +172,15 @@ struct UVBACKGROUND{
 };
 
 //=======================================
+struct ATOMIC{
+  char path[256]; ///< path of the file containing the atomic data
+  int n;
+  REAL *hnu;
+  REAL *alphae;
+  REAL *alphai;
+  REAL *factgrp;
+};
+
 
 struct RUNPARAMS{
   int npartmax; ///< the max particles number (per process)
@@ -265,6 +274,9 @@ struct RUNPARAMS{
 #ifdef UVBKG
   struct UVBACKGROUND uv; ///< the UV background
 #endif
+
+  struct ATOMIC atomic;
+
 };
 
 

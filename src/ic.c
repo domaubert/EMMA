@@ -31,8 +31,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     sprintf(filename,"./level_%03d/ic_velcx",level);
     fx=fopen(filename,"rb");
     if(fx == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velbx",level);
+      printf("trying %s\n", filename);
       fx=fopen(filename,"rb");
       if(fx == NULL) {
         printf("Cannot open %s\n", filename);
@@ -43,8 +44,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     sprintf(filename,"./level_%03d/ic_velcy",level);
     fy=fopen(filename,"rb");
     if(fy == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velby",level);
+      printf("trying %s\n", filename);
       fy=fopen(filename,"rb");
       if(fy == NULL) {
         printf("Cannot open %s\n", filename);
@@ -55,8 +57,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     sprintf(filename,"./level_%03d/ic_velcz",level);
     fz=fopen(filename,"rb");
     if(fz == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velbz",level);
+      printf("trying %s\n", filename);
       fz=fopen(filename,"rb");
       if(fz == NULL) {
         printf("Cannot open %s\n", filename);
@@ -841,8 +844,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     sprintf(filename,"./level_%03d/ic_velcx",level);
     fx=fopen(filename,"rb");
     if(fx == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velbx",level);
+      printf("trying %s\n", filename);
       fx=fopen(filename,"rb");
       if(fx == NULL) {
         printf("Cannot open %s\n", filename);
@@ -853,8 +857,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     sprintf(filename,"./level_%03d/ic_velcy",level);
     fy=fopen(filename,"rb");
     if(fy == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velby",level);
+      printf("trying %s\n", filename);
       fy=fopen(filename,"rb");
       if(fy == NULL) {
         printf("Cannot open %s\n", filename);
@@ -865,8 +870,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     sprintf(filename,"./level_%03d/ic_velcz",level);
     fz=fopen(filename,"rb");
     if(fz == NULL) {
-      printf("Cannot open %s\n", filename);
+      printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velbz",level);
+      printf("trying %s\n", filename);
       fz=fopen(filename,"rb");
       if(fz == NULL) {
         printf("Cannot open %s\n", filename);

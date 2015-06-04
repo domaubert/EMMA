@@ -993,9 +993,11 @@ if(cond1||cond2||cond3){
       MPI_Barrier(cpu->comm);
 
       if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
+      printf("*********************************************************************************\n");
       printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
-      KPCLIMIT_TRIGGER=0;
+      printf("*********************************************************************************\n");
     }
+      KPCLIMIT_TRIGGER=0;
 
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time

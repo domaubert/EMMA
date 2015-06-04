@@ -191,6 +191,43 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
 }
 
+void readAtomic(struct RUNPARAMS *param){
+/**
+  * Read the atomic data from file
+  */
+
+
+  FILE *buf=NULL;
+  buf=fopen(param->atomic.path,"r");
+  if(buf==NULL){
+    printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
+    abort();
+  }
+
+  size_t rstat;
+  char stream[256];
+  rstat=fscanf(buf,"%s %d",stream,&param->atomic.n);
+
+  param->atomic.hnu= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphae= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphai= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.factgrp= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+
+  rstat=fscanf(buf,"%s",stream);
+  int i;
+  for(i=0;i<4;i++){
+    rstat=fscanf(buf,"%s",stream);
+  }
+
+  for(i=0;i<param->atomic.n;i++){
+    rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    param->atomic.hnu[i]*=1.6022e-19;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); param->atomic.alphae[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); param->atomic.alphai[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.factgrp[i]);
+  }
+  fclose(buf);
+}
+
 void GetParameters(char *fparam, struct RUNPARAMS *param){
   FILE *buf=NULL;
   char stream[256];
@@ -233,7 +270,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       if(param->mgridlmin<0){
-	param->mgridlmin=param->lcoarse-param->lcoarse;
+        param->mgridlmin=param->lcoarse-param->lcoarse;
       }
 
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
@@ -256,6 +293,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %s",stream, param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -328,6 +366,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #ifdef ALLOCT
   readOutputParam("param.output", param);
 #endif // ALLOCT
+
+  readAtomic(param);
+
 
 }
 

@@ -173,10 +173,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     xt,
     eintt,
     ai_tmp1=0.,
-    hnu[NGRP],		// ! Average Photon Energy (J)
-    factgrp[NGRP],
-    alphae[NGRP],
-    alphai[NGRP],
     et[NGRP],
     p[NGRP];
 
@@ -186,16 +182,23 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
+  REAL hnu[NGRP];
+  memcpy(&hnu,&param->atomic.hnu,NGRP*sizeof(REAL));
+
+  REAL alphae[NGRP];
+  memcpy(&alphae,&param->atomic.alphae,NGRP*sizeof(REAL));
+
+  REAL alphai[NGRP];
+  memcpy(&alphai,&param->atomic.alphai,NGRP*sizeof(REAL));
+
+  REAL factgrp[NGRP];
+  memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 
 #ifdef S_X
   REAL E0overI[NGRP];
   REAL N2[NGRP];
   REAL F2[NGRP];
 #endif
-
-
-  SECTION_EFFICACE; // defined in Atomic.h
-  FACTGRP; //defined in Atomic.h
 
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
@@ -207,7 +210,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     nH[BLOCKCOOL],
     eint[BLOCKCOOL],
     srcloc[BLOCKCOOL];
-
 
   REAL dt=dtnew*param->unit.unit_t*POW(aexporg,2);
 

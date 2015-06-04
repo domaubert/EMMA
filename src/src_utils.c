@@ -201,7 +201,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
 #else //ifdef TESTCLUMP
   REAL factgrp[NGRP];
-  FACTGRP; //defined in Atomic.h
+  memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 
   cell->rfield.src=0.;
   cell->rfieldnew.src=0.;
@@ -265,7 +265,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
     if (curp->isStar==3 || curp->isStar==4){ //Supernovae + decreasing luminosity OR decreasing luminosity
    /* --------------------------------------------------------------------------
-    * decreasing luminosity state, at the end of their life star still radiate
+    * decreasing luminosity state, at the end of their life, star still radiate
     * with a luminosity function of a decreasing power law of time.
     * Slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
     * --------------------------------------------------------------------------
@@ -448,7 +448,8 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
           REAL x2 = param->uv.redshift[iredshift-1];
 
           param->uv.value[igrp] = (z-x1) * (y2-y1)/(x2-x1) + y1;
-          break;
+          break;    cell->rfield.src=param->srcint*cell->field.d/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
+
         }
       }
     }
@@ -551,7 +552,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #else
 	  REAL temperature=1e2;
 	  REAL xion=1e-5;
-#endif
+#endif // COOLING
 
 	  REAL eint;
 
@@ -564,7 +565,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 	  curoct->cell[icell].rfield.nhepplus=xion*curoct->cell[icell].rfield.nh*yHE;
 	  curoct->cell[icell].rfieldnew.nhepplus=curoct->cell[icell].rfield.nhepplus;
-#endif
+#endif // HELIUM
 
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
@@ -573,14 +574,14 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  curoct->cell[icell].rfieldnew.eint=eint; // 10000 K for a start
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 	  E2T(&curoct->cell[icell].rfield,aexp,param);
-#endif
+#endif // WRADHYD
 
-#endif
+#endif // WCHEM
 
 #ifndef TESTCLUMP
 	  for(igrp=0;igrp<NGRP;igrp++){
-	    REAL factgrp[NGRP];
-	    FACTGRP; //defined in Atomic.h
+	    //REAL factgrp[NGRP];
+      //memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN;//*factgrp[igrp];
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
 	    curoct->cell[icell].rfield.fy[igrp]=0.;

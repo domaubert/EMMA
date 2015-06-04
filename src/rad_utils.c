@@ -18,6 +18,7 @@
 #include "rad_utils_gpu.h"
 #endif
 
+
 #include <omp.h>
 
 //================================================================================
@@ -41,7 +42,6 @@ void distribE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param
     }
   }
 }
-
 
 //================================================================================
 void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
@@ -193,7 +193,6 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
 }
 
 //================================================================================
-
 void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
   struct OCT * oct;
@@ -331,10 +330,8 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
 }
 
-
 // =====================================================================
 // =====================================================================
-
 void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 
 
@@ -443,8 +440,7 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 
 //================================================================================
 //================================================================================
-REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
-{
+REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j){
   REAL c2e=ee*c*c; // 2 flop
   REAL ff=0.;
   REAL arg,chi,res=0.;
@@ -473,10 +469,7 @@ REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
   return res;
 }
 
-
-
 // =============================================================================================================
-
 int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -670,10 +663,7 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
-
 // =============================================================================================================
-
 int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -875,9 +865,7 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
 // ===================================================================================================
-
 int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -1066,11 +1054,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
-
 //==================================================================================
 //==================================================================================
-
 #ifdef WRADTEST
 void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
 
@@ -1490,10 +1475,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 }
 #endif
 
-
 // ===================================================================================================
 // ===================================================================================================
-
 struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread, REAL cloc)
 {
   struct OCT* nextoct;
@@ -1545,10 +1528,8 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
   return nextoct;
 }
 
-
 // ===================================================================================================
 // ===================================================================================================
-
 void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew,REAL cloc)
 {
   int i,icell,igrp;
@@ -1651,7 +1632,6 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 }
 
 // ===========================================================================================================
-
 struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, REAL cloc)
 {
   struct OCT* nextoct;
@@ -1769,7 +1749,6 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 }
 
 // ====================================================================================================================
-
 int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param, int chemonly){
 
   struct OCT *nextoct;
@@ -1854,12 +1833,8 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   return nreadtot;
 }
 
-
-
 // =================================================================================================
 // =================================================================================================
-
-
 REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp, int chemonly){
 
   int nread,nreadtot;;
@@ -1997,7 +1972,6 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 }
 
-
 // ==============================================================
 void set_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2021,6 +1995,7 @@ void set_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struc
     }while(nextoct!=NULL);
   }
 }
+
 // ==============================================================
 void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2066,7 +2041,6 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 
 }
 
-
 // ==============================================================
 void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2100,7 +2074,4 @@ void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct
   }
 }
 
-
-
-
-#endif
+#endif // WRAD
