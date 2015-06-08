@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "prototypes.h"
 REAL cross_section(REAL egy){
 /**
   * Compute cross section

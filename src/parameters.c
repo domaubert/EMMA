@@ -9,9 +9,6 @@
 #include "src_utils.h"
 #endif // UVBKG
 
-#define KPLANCK (6.62617e-34)	//J/s
-#define ELECTRONVOLT (1.602176565e-19) //J
-
 
 char *field_name [] ={
 // The field order has to be the same as in param.output for consistency
