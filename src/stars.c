@@ -334,10 +334,11 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
           struct PART *curp=nexp;
           nexp=curp->next;
 
+          REAL t0 =  param->cosmo->tphy - curp->age;
           //------------------------------------------------//
+
           if(curp->isStar && curp->isStar < 5){ // Star not dead
 
-            REAL t0 =  param->cosmo->tphy - curp->age;
             if(t0>=0){ // for inter-level communications
               REAL tlife = param->stars->tlife;
 
@@ -369,6 +370,16 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
               }
             }
           }
+          //------------------------------------------------//
+
+          int igrp_time;
+          for(igrp_time=0;igrp_time<NGRP_TIME;igrp_time++){
+            if (t0>param->atomic.time_bound[igrp_time]){
+              curp->radiative_state=igrp_time;
+              break;
+            }
+          }
+
           //------------------------------------------------//
 
         }while(nexp!=NULL);

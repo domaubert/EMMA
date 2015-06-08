@@ -206,10 +206,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL
     egyloc[BLOCKCOOL*NGRP],
     floc[3*BLOCKCOOL*NGRP],
+    srcloc[BLOCKCOOL*NGRP],
     x0[BLOCKCOOL],
     nH[BLOCKCOOL],
-    eint[BLOCKCOOL],
-    srcloc[BLOCKCOOL];
+    eint[BLOCKCOOL];
+
 
   REAL dt=dtnew*param->unit.unit_t*POW(aexporg,2);
 
@@ -270,7 +271,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+
+      for (igrp=0;igrp<NGRP;igrp++){
+      srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+      }
 // R.src phot/unit_t/unit_dv (comobile)
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);

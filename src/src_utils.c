@@ -44,7 +44,9 @@ void collectstars(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *p
 	    //printf("hehey\n");
 	    if ( (tcur - curp->age) < param->stars->tlife  ) {
 	      //printf("hihi %e\n",dxcoarse);
-	      cellcoarse->rfield.src +=  (curp->mass*param->unit.unit_mass)*srcint/POW(dxcoarse*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
+	      int igrp;
+	      for(igrp=0;igrp<NGRP;igrp++)
+	      cellcoarse->rfield.src[igrp] +=  (curp->mass*param->unit.unit_mass)*srcint/POW(dxcoarse*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
 	    }
 	  }
 	}
@@ -69,16 +71,21 @@ void collectstars(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *p
 
 int putsource2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur){
 
-
-  cell->rfield.src   =0.;
-  cell->rfieldnew.src=0.;
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+  cell->rfield.src[igrp]   =0.;
+  cell->rfieldnew.src[igrp]=0.;
+  }
 
 
   REAL dxcoarse=POW(0.5,level);
   int ns=0;
   collectstars(cell,cell,param,dxcoarse,aexp,tcur,&ns);
 
-  cell->rfieldnew.src=cell->rfield.src;
+  for(igrp=0;igrp<NGRP;igrp++){
+  cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
+  }
+
 
   return ns;
 }
@@ -157,8 +164,12 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   int flag=0;
 
   // cleaning sources field
-  cell->rfield.src=0.;
-  cell->rfieldnew.src=0.;
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfield.src[igrp]=0.;
+    cell->rfieldnew.src[igrp]=0.;
+  }
+
 
 #ifdef WRADTEST
   // ========================== FOR TESTS ============================
@@ -184,8 +195,11 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
   if(curoct->x==0.5 && curoct->y==0.5 && curoct->z==0.5 && icell==0 && lifetime_test){
     if((xc>0.)*(yc>0.)*(zc>0.)){
       //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
-      cell->rfield.src=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
-      cell->rfieldnew.src=cell->rfield.src;
+        int igrp;
+        for(igrp=0;igrp<NGRP;igrp++){
+          cell->rfield.src[igrp]=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
+          cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
+        }
       flag=1;
     }
     else{
@@ -193,8 +207,12 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
     }
   }
   else{
-    cell->rfield.src=0.;
-    cell->rfieldnew.src=0.;
+    int igrp;
+    for(igrp=0;igrp<NGRP;igrp++){
+      cell->rfield.src[igrp]=0.;
+      cell->rfieldnew.src[igrp]=0.;
+  }
+
     flag=0;
   }
   // ============= END STROMGREN SPHERE CASE =======================
@@ -203,8 +221,12 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
   REAL factgrp[NGRP];
   memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 
-  cell->rfield.src=0.;
-  cell->rfieldnew.src=0.;
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfield.src[igrp]=0.;
+    cell->rfieldnew.src[igrp]=0.;
+  }
+
   flag=0;
   if(fabs(xc)<=X0){
     for(igrp=0;igrp<NGRP;igrp++){
@@ -233,16 +255,19 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
-    cell->rfield.src = param->uv.value[igrp]/param->unit.unit_N * param->unit.unit_t*POW(aexp,2);
-    cell->rfieldnew.src=cell->rfield.src;
+    cell->rfield.src[igrp] = param->uv.value[igrp]/param->unit.unit_N * param->unit.unit_t*POW(aexp,2);
+    cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
     flag=1;
   }
 
 #else
 #ifdef STARS
 
-  cell->rfield.src=0.;
-  cell->rfieldnew.src=0.;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfield.src[igrp]=0.;
+    cell->rfieldnew.src[igrp]=0.;
+  }
+
   flag=0;
   REAL srcint=param->srcint;
   struct PART *nexp=cell->phead;
@@ -256,7 +281,12 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       nss++;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
+
+      int igrp;
+      for(igrp=0;igrp<NGRP_SPACE;igrp++){
+        cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
+      }
+
       //printf("SRC= %e\n",cell->rfield.src);
       //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
@@ -276,7 +306,11 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
       REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
       REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-      cell->rfield.src +=  src*(t<1.?1.:POW(t,slope))*(t>0?1.:0);
+
+      int igrp;
+      for(igrp=0;igrp<NGRP_SPACE;igrp++){
+        cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  src*(t<1.?1.:POW(t,slope))*(t>0?1.:0);
+      }
       //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
     }
@@ -284,18 +318,27 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 
   }while(nexp!=NULL);
 
-  cell->rfieldnew.src=cell->rfield.src;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
+  }
 
 #else //ifndef STARS
 #ifdef WHYDRO2
   if((cell->field.d>param->denthresh)&&(cell->rfield.temp<param->tmpthresh)){
-    cell->rfield.src=param->srcint*cell->field.d/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
-    cell->rfieldnew.src=cell->rfield.src;
+
+    int igrp;
+    for(igrp=0;igrp<NGRP_SPACE;igrp++){
+      cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp]=param->srcint*cell->field.d/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
+      cell->rfieldnew.src[curp->radiative_state*NGRP_SPACE+igrp]=cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp];
+    }
     flag=1;
   }
   else{
-    cell->rfield.src=0.;
-    cell->rfieldnew.src=0.;
+  int igrp;
+  for(igrp=0;igrp<NGRP;igrp++){
+    cell->rfield.src[igrp]=0.;
+    cell->rfieldnew.src[igrp]=0.;
+  }
     flag=0;
   }
 
@@ -372,8 +415,12 @@ void cleansource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINF
 	nextoct=curoct->next;
 	if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	for(icell=0;icell<8;icell++){
-	  curoct->cell[icell].rfield.src=0.;
-	  curoct->cell[icell].rfieldnew.src=0.;
+    int igrp;
+	  for(igrp=0;igrp<NGRP;igrp++){
+      curoct->cell[icell].rfield.src[igrp]=0.;
+      curoct->cell[icell].rfieldnew.src[igrp]=0.;
+    }
+
 	}
       }while(nextoct!=NULL);
     }
@@ -535,8 +582,11 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 #ifndef TESTCLUMP
 	if(curoct->cell[icell].child!=NULL){
-	  curoct->cell[icell].rfield.src=0.;
-	  curoct->cell[icell].rfieldnew.src=0.;
+    int igrp;
+	  for(igrp=0;igrp<NGRP;igrp++){
+      curoct->cell[icell].rfield.src[igrp]=0.;
+      curoct->cell[icell].rfieldnew.src[igrp]=0.;
+    }
 	  continue; // src are built on the finest level
 	}
 #endif

@@ -148,7 +148,9 @@ float assign_field(int field,struct CELL *cell){
     break;
 
   case 31:
-    res=cell->rfield.src;
+    res=0;
+    int igrp;
+    for(igrp=0;igrp<NGRP;igrp++) res+=cell->rfield.src[igrp];
     break;
 #ifdef WCHEM
   case 32:
