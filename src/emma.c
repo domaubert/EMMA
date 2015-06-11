@@ -1606,7 +1606,7 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
-  int Lmin = (int)(log(cpu.nproc)/log(2.));
+  int Lmin = 1+(int)(log(cpu.nproc)/(3*log(2.)));
   if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
     param.mgridlmin = Lmin;
     if(cpu.rank==RANK_DISP){
@@ -1711,7 +1711,6 @@ int main(int argc, char *argv[])
     if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
-#if 1
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
 
@@ -1759,12 +1758,11 @@ int main(int argc, char *argv[])
 
 
 
-#endif
 
     /* tsim=tmax; */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
-
+    // end ZOOM
 #endif
 
 #ifndef JUSTIC

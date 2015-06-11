@@ -171,7 +171,8 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   fwrite(&(firstoct[0]),sizeof(struct OCT*),1,fp);
 
 
-  for(level=param->lcoarse;level<=levelmax;level++) // looping over octs
+  //  for(level=param->lcoarse;level<=levelmax;level++) // looping over octs
+    for(level=1;level<=levelmax;level++) // looping over octs
     {
       //printf("level=%d\n",level);
       // setting the first oct

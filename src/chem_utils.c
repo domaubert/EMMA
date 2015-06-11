@@ -346,6 +346,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	      {
 #ifdef OTSA
 		factotsa[igrp]=0;
+		alpha=alphab; // recombination is limited to non ground state levels
 #else
 		factotsa[igrp]=(igrp==0);
 #endif

@@ -899,11 +899,7 @@ void call_cic(int levelmax,int levelcoarse,struct OCT **firstoct, struct CPUINFO
 	{
 	  curoct=nextoct;
 	  nextoct=curoct->next;
-#ifdef WHYDRO
-	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=curoct->cell[icell].d;
-#else
-	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=0.;
-#endif
+ 	  for(icell=0;icell<8;icell++) curoct->cell[icell].density=0.;
 	}while(nextoct!=NULL);
     }
 

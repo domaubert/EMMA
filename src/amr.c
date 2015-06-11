@@ -367,9 +367,6 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		// we remove the parent from the oct to be destroyed
 		desoct->parent=NULL;
 
-		// we cancels some flags
-		/* desoct->vecpos=-1; */
-		/* desoct->border=0; */
 
 		// we remove the oct from the list
 
@@ -520,7 +517,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
 		  int il;
-		  coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
+		  //coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
+		  for(il=0;il<8;il++){
+		    //   Ri[il].src=0.; */
+		    memcpy(&Wi[il],&curoct->cell[icell].field,sizeof(struct Wtype));
+		  }
 		}
 #endif
 
@@ -1338,8 +1339,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WMPI
 	      MPI_Barrier(cpu->comm);
 	      // we correct from the marker diffusion
-	      if(marker%3==2) mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
-	      if(level>=(param->lcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
+	      //if(marker%3==2)mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
+	      if(marker%3==2) mpi_cic_correct_level(cpu, cpu->sendbuffer, cpu->recvbuffer, 1,level);
+	      //if(marker%3==2) mpi_mark_correct(cpu,sendbuffer,recvbuffer,level);
+	      //if(level>=(param->lcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
 #endif
 	    }
 	  //printf("\n");

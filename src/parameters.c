@@ -211,7 +211,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
 
   // computing the maxhash
-  int val=(POW(2,param->lmax-1)<256?POW(2,param->lmax-1):256); // limit to 2097152 octs in hash table i.e. 16e6 cells
+  int val=(POW(2,param->lmax-1)<=512?POW(2,param->lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells
   param->maxhash=POW(val,3);
   //printf("maxhash=%d\n",param->maxhash);
 
@@ -416,7 +416,12 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     src+=curcell->rfield.src*vweight;
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 #endif // WRAD
+
+#ifdef WHYDRO2
 	  max_rho=FMAX(max_rho,curcell->field.d);
+#else
+	  max_rho=0.;
+#endif
 
 
 #ifdef STARS

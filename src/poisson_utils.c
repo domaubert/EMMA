@@ -1571,15 +1571,15 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
     struct OCT *curoct=cpu->octList[level-1][iOct];
 
-	for(icell=0;icell<8;icell++){ // looping over cells in oct
+    for(icell=0;icell<8;icell++){ // looping over cells in oct
       curcell=&(curoct->cell[icell]);
       if(curcell->child!=NULL){
-
+	
         coarse2fine_gravlin(curcell,Wi);
         for(icell2=0;icell2<8;icell2++){
-		//		Wi[icell2].p=0.;
-		  memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
-		//memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
+	  //		Wi[icell2].p=0.;
+	  memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
+	  //memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
         }
       }
     }

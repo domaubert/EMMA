@@ -108,5 +108,5 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
     logxy,1,1;
 
 
-    
+    redraw;
 }

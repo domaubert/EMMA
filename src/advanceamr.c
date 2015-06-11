@@ -337,7 +337,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 3);
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
 #ifdef WHYDRO2
-      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0); // propagate hydro for refinement
+      //mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level);
+      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0);
 #endif
 #ifdef WRAD
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement
@@ -403,8 +404,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     MPI_Barrier(cpu->comm);
     if(cpu->rank==RANK_DISP) printf("Local CIC done\n");
 #ifdef WMPI
-    mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    
+    //mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
+    //mpi_dens_correct(cpu,cpu->sendbuffer,cpu->recvbuffer,level);
+    mpi_cic_correct_level(cpu, cpu->sendbuffer, cpu->recvbuffer, 0,level);
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
+    
+    
 #endif
     MPI_Barrier(cpu->comm);
     if(cpu->rank==RANK_DISP) printf("CIC done\n");
@@ -420,12 +426,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp);
 
 
-
-
     /* //====================================  Force Field ========================== */
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
 #endif
+
     PoissonForce(level,param,firstoct,cpu,gstencil,gstride,aexp);
 #endif
 
@@ -463,14 +468,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
         if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param->dt_dump);
       }
 #endif // TESTCOSMO
-    if(level==param->lcoarse){
-if(cond1||cond2||cond3){
-	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
-	dumpIO(tloc,param,cpu,firstoct,adt,1);
-	//dumpIO(tloc,param,cpu,firstoct,adt,0);
-	//abort();
+      if(level==param->lcoarse){
+	if(cond1||cond2||cond3){
+	  if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
+	  dumpIO(tloc,param,cpu,firstoct,adt,1);
+	  //dumpIO(tloc,param,cpu,firstoct,adt,0);
+	  //abort();
+	}
       }
-    }
 #endif
 
 
@@ -814,8 +819,6 @@ if(cond1||cond2||cond3){
 #endif
 
 
-
-
     //=============== Hydro Update ======================
 #ifdef WHYDRO2
     double th[10];
@@ -823,6 +826,7 @@ if(cond1||cond2||cond3){
     th[0]=MPI_Wtime();
 #ifdef WMPI
     mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
+    //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
 #endif
 
     MPI_Barrier(cpu->comm);
@@ -839,21 +843,21 @@ if(cond1||cond2||cond3){
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
-    MPI_Barrier(cpu->comm);
-    th[3]=MPI_Wtime();
 
 #ifdef WMPI
     if(level>param->lcoarse){
       mpi_hydro_correct(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,level);
-
-#ifdef WMPI
-    MPI_Barrier(cpu->comm);
-    mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
-#endif
-
+      MPI_Barrier(cpu->comm);
     }
+
+    mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level);
+    //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0);
     MPI_Barrier(cpu->comm);
 #endif
+
+    MPI_Barrier(cpu->comm);
+    th[3]=MPI_Wtime();
+
 
     MPI_Barrier(cpu->comm);
     th[4]=MPI_Wtime();
@@ -922,9 +926,9 @@ if(cond1||cond2||cond3){
 
       MPI_Barrier(cpu->comm);
       tcomp[5]=MPI_Wtime();
-      mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
-
     }
+    
+    mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
 #endif
