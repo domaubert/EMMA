@@ -2774,8 +2774,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
   }
   else{
-    //coarse2fine_hydro2(neicell,Wi);
-    for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype));
+    coarse2fine_hydro2(neicell,Wi);
+    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype));
     
 /* #ifdef WRADHYD */
 /*     for(icell=0;icell<8;icell++) Wi[icell].X=neicell->field.X; */
@@ -2786,8 +2786,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     }
 
 #ifdef WGRAV
-    //coarse2fine_forcelin(neicell,floc);
-    for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
+    coarse2fine_forcelin(neicell,floc);
+    //for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
 #endif
 
   }
@@ -2939,8 +2939,8 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     }
 
 #ifdef WGRAV
-    //coarse2fine_forcelin(neicell,floc);
-    for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
+    coarse2fine_forcelin(neicell,floc);
+    //for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->f,sizeof(REAL)*3);
 #endif
 
   

@@ -517,6 +517,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2
 		if(cpu->rank==curoct->cpu){
 		  int il;
+		  //coarse2fine_hydrolin(&(curoct->cell[icell]),Wi);
 		  //coarse2fine_hydro2(&(curoct->cell[icell]),Wi);
 		  for(il=0;il<8;il++){
 		    //   Ri[il].src=0.; */
@@ -598,10 +599,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WHYDRO2
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].field),Wi+ii,sizeof(struct Wtype));
+		    memcpy(&(newoct->cell[ii].fieldnew),Wi+ii,sizeof(struct Wtype));
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].field),0,sizeof(struct Wtype));
-		    newoct->cell[ii].field.d=1e-13;
+		    memset(&(newoct->cell[ii].fieldnew),0,sizeof(struct Wtype));
 		  }
 #endif
 
@@ -609,9 +611,11 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype));
+		    memcpy(&(newoct->cell[ii].rfieldnew),Ri+ii,sizeof(struct Rtype));
 		  }
 		  else{
 		    memset(&(newoct->cell[ii].rfield),0,sizeof(struct Rtype));
+		    memset(&(newoct->cell[ii].rfieldnew),0,sizeof(struct Rtype));
 		  }
 #endif
 
@@ -860,6 +864,9 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 
 	    if(vrule) {
 	      curoct->cell[icell].marked=10; // the mark is cancelled
+	      if(level==9){
+		printf("CANCELLING !\n");
+	      }
 	    }
 
 	  }

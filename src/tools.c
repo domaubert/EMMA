@@ -38,6 +38,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   struct PART *curp;
   REAL mtot;
   REAL Mtot=0;
+  REAL Mtotnew=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -97,11 +98,14 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 #ifdef WHYDRO2
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
 
 		  if(curoct->cell[icell].field.d<=0) {
+		    if(cpu->rank==curoct->cpu){
 			printf("Negative value for density -> abort in multicheck\n");
-			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
+			printf("%e\t%e\t%e\t%e\t%e\t%e\t %d %d \n", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E,cpu->rank,curoct->cpu);
 			abort();
+		    }
 		  }
 #endif
 
@@ -147,7 +151,11 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
     }
 
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
 
+  if(cpu->rank==RANK_DISP){
+    printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
+  }
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
