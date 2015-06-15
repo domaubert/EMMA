@@ -1184,7 +1184,10 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].dXXHE = W0->dXXHE+ix[idir]*D[0].dXXHE+iy[idir]*D[1].dXXHE+iz[idir]*D[2].dXXHE+Wt.dXXHE;
 #endif
 #endif
-	    if(Wi[idir].d<0) abort();
+	    if(Wi[idir].d<0) {
+	      printf("neg d in extrapolation %e %e %e %e %e\n",Wi[idir].d,W0->d,D[0].d,D[1].d,D[2].d);
+	      abort();
+	      }
 	    //if(Wi[idir].p==PMIN) printf("%e %e \n",W0->p,W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p);
 
 
@@ -1296,7 +1299,10 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
-  if((*pstar)<0) abort();
+  if((*pstar)<0) {
+    printf("neg pressure %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
 
   qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
   qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
@@ -1308,7 +1314,10 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
-  if((*SL)>(*SR)) abort();
+  if((*SL)>(*SR)){
+    printf("SLSR %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
   if(isnan(*ustar)){
     printf("ustar isnan ABORT %e | %e %e %e | %e %e %e\n",*ustar,WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p);
     abort();
@@ -1349,8 +1358,15 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
-  if((*SL)>(*SR)) abort();
-  if(isnan(*ustar)) abort();
+
+  if((*SL)>(*SR)){
+    printf("SLSR %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
+  if(isnan(*ustar)) {
+    printf("ustar isnan ABORT %e | %e %e %e | %e %e %e\n",*ustar,WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p);
+    abort();
+  }
 
 }
 
@@ -2454,7 +2470,10 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 	  U2W(&U,&Wnew);
 #endif	
 	  getE(&Wnew);
-	  if(Wnew.p<0) abort();
+	  if(Wnew.p<0){
+	  printf("pneg %e\n",Wnew.p);
+	  abort();
+	}
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
       }
@@ -3192,7 +3211,10 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	U.eint=FMAX(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 
-	if(U.eint<0) abort();
+	if(U.eint<0) {
+	  printf("eint neg %e %e\n",eint,PMIN);
+	  abort();
+	}
 
 #endif
 	

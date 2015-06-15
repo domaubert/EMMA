@@ -116,6 +116,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     U2W(&U, &curcell->field); // back to primitive
 
     getE(&curcell->field); //compute new total energy
+    curcell->field.p=FMAX(curcell->field.p,PMIN);
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
   }
 }

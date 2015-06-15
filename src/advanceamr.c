@@ -294,7 +294,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
 
-  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,0);
+  mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,0); //
 
   if(level==param->lcoarse){
     // =========== Grid Census ========================================
@@ -315,7 +315,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==RANK_DISP){
       printf("----\n");
-      printf("subscyle #%d subt=%e nsub=%d\n",is,dt,nsub);
+      printf("subscyle #%d subt=%e nsub=%d ndt=%d\n",is,dt,nsub,ndt[level-1]);
     }
 
 #ifdef TESTCOSMO
@@ -337,28 +337,32 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 3);
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
 #ifdef WHYDRO2
-      //mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level);
-      mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0);
+      mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level);
+      //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0);
 #endif
 #ifdef WRAD
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,0,level); // propagate rad for refinement
 #endif
 #endif
       // refining (and destroying) octs
+      mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
       curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+
+      //L_clean_marks(level,firstoct);
+
       cpu->freeoct=curoct;
     }
-    // ==================================== Check the number of particles and octs
-    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+      // ==================================== Check the number of particles and octs
+      ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
     }
-
+      
 #ifdef STARS
-  ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
+      ptot[1]=0; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1];
 #endif
+      
 
-
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
+      mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
 
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
@@ -713,6 +717,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 
     MPI_Barrier(cpu->comm);
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,12);
     th[1]=MPI_Wtime();
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
@@ -726,7 +731,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,14);
 
 #ifdef WMPI
     if(level>param->lcoarse){
@@ -837,6 +842,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
 #endif // STARS
 
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,7);
+
     /* //===================================Supernovae=========================================// */
 
 #ifdef SUPERNOVAE
@@ -850,7 +857,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif // SNTEST
 #endif // SUPERNOVAE
 
-  // ================= V Computing the new refinement map
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,8);
+    // ================= V Computing the new refinement map
     REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
 #ifdef KPCLIMIT
@@ -872,10 +880,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	}
     }
     else{
-      //if(cpu->rank==RANK_DISP)
+      L_clean_marks(level,firstoct);
+
+      if(cpu->rank==RANK_DISP)
 	printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
     }
 
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time
