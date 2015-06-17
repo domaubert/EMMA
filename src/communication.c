@@ -14,6 +14,9 @@
 #include <mpi.h>
 #endif
 
+
+
+
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
   int nnei=0;
@@ -1806,6 +1809,9 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 
 	      for(icell=0;icell<8;icell++){
 		memcpy(&(pack->data[icell]),&(curoct->cell[icell].field),sizeof(struct Wtype));
+		if(pack->data[icell].d==0.){
+		  printf("NULL dens packet %e %e %e %d %d\n",pack->data[icell].d,pack->data[icell].d,pack->data[icell].p, curoct->level,cpu->rank);
+		}
 	      }
 	    }
 	    else{
@@ -1821,6 +1827,7 @@ void gather_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, 
 	  }
 	}
       }
+
     }
     
 
@@ -1908,6 +1915,9 @@ void scatter_mpi_hydro_level(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,
 	  if(found){ // the reception oct has been found
 	    for(icell=0;icell<8;icell++){
 	      memcpy(&(curoct->cell[icell].field),&(pack->data[icell]),sizeof(struct Wtype));
+	      if(pack->data[icell].d==0.){
+		printf("SCATTER NULL dens packet %e %e %e %d %d\n",pack->data[icell].d,pack->data[icell].d,pack->data[icell].p, curoct->level,cpu->rank);
+	      }
 	    }
 	  }
 	  else{
@@ -1962,6 +1972,11 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	    }
 	    for(icell=0;icell<8;icell++){
 	      
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("II %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+	  abort();
+	}
+
 	      W2U(&(curoct->cell[icell].fieldnew),&U);
 	      W2U(&(pack->data[icell]),&Ue);
 
@@ -1984,6 +1999,12 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 #endif
 	      U2W(&U,&W);
 	      memcpy(&(curoct->cell[icell].fieldnew),&W,sizeof(struct Wtype));
+
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("HH %e %e %e %e %e %e | %e %e %e %e %e| %d %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,Ue.d,Ue.du,Ue.dv,Ue.dw,Ue.E,curoct->cpu,cpu->rank,pack->level);
+	  abort();
+	}
+  
 	    }
 	  }
 	  else{
@@ -2961,8 +2982,6 @@ void mpi_hydro_correct(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer, struc
   //
   free(stat);
   free(req);
-
-  
 }
 #endif
 

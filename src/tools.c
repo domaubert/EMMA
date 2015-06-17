@@ -100,9 +100,9 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
 
-		  if(curoct->cell[icell].field.d<=0) {
+		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
 		    if(cpu->rank==curoct->cpu){
-		      printf("Negative value for density -> abort in multicheck %d\n",label);
+		      printf("Negative or NAN value for density -> abort in multicheck %d\n",label);
 		      printf("%e\t%e\t%e\t%e\t%e\t%e\t %d %d %d\n", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E,cpu->rank,curoct->cpu,curoct->level);
 			abort();
 		    }

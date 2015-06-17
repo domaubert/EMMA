@@ -17,7 +17,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-
+#define DEFDENS 10. // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
 
 // ===================================================
 //
@@ -35,10 +35,12 @@ void getE(struct Wtype *W){
 // ==================== converts U -> W
 void U2W(struct Utype *U, struct Wtype *W)
 {
-  W->d=U->d;
-  W->u=U->du/U->d;
-  W->v=U->dv/U->d;
-  W->w=U->dw/U->d;
+  float dloc=(U->d==0.?DEFDENS:U->d);
+
+  W->d=dloc;
+  W->u=U->du/dloc;
+  W->v=U->dv/dloc;
+  W->w=U->dw/dloc;
   
 #ifdef DUAL_E
   W->p=U->eint*(GAMMA-1.);
@@ -55,9 +57,9 @@ void U2W(struct Utype *U, struct Wtype *W)
 #endif
 
 #else
-  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
+  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(dloc)*0.5);
 #endif
-  W->a=SQRT(GAMMA*W->p/W->d);
+  W->a=SQRT(GAMMA*W->p/dloc);
 }
 
 // ==================== converts W -> U
@@ -2062,7 +2064,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 	
-	if(isnan(WN[iface].d)){
+	if(isnan(WN[iface].u)){
 	  printf("%e %e %e\n",stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.d,stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.u,stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.p);
 	  abort();
 	}
@@ -3032,7 +3034,6 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
 
-	
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
 #endif
@@ -3171,6 +3172,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
 
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("BB %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+	  abort();
+	}
+
 	U.d  +=deltaU.d;
   	U.du +=deltaU.du;
 	U.dv +=deltaU.dv;
@@ -3221,6 +3227,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	getE(&(curoct->cell[icell].fieldnew));
+
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("AA %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+	  abort();
+	}
 
 #ifdef WRADHYD
 	//Ceiling for the ionisation fraction
@@ -3284,6 +3295,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
 	      W2U(&W,&U);
 
+	      if(isnan(curoct->cell[icell].fieldnew.u)){
+		printf("CC %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+		abort();
+	      }
+
 
 	      // getting the flux
 	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
@@ -3307,12 +3323,16 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      U.dXXHE+=F[8]*dtsurdx*one*0.125;
 #endif
 #endif 	      
-	      //if(U.eint<0) abort();
 	      //scatter back
 	      U2W(&U,&W);
 	      //getE(&W);// <<<<< COULD BE CRITICAL
 
 	      memcpy(&(curoct->nei[vnei[inei]]->fieldnew),&W,sizeof(struct Wtype));
+
+	      if(isnan(curoct->cell[icell].fieldnew.u)){
+		printf("DD %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+		abort();
+	      }
 	    }
 	  }
 	}
