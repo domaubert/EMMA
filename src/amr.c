@@ -864,9 +864,6 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 
 	    if(vrule) {
 	      curoct->cell[icell].marked=10; // the mark is cancelled
-	      if(level==9){
-		printf("CANCELLING !\n");
-	      }
 	    }
 
 	  }
