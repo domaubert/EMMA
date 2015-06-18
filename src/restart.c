@@ -40,15 +40,23 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
     fwrite(adt+level-1,sizeof(REAL),1,fp);
   }
 
+  int dumpunit=0;
+
 #ifdef WRAD
-  fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
-  fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
+  dumpunit=1;
 #endif
+#ifdef WHYDRO2
+  dumpunit=1;
+#endif
+  if(dumpunit){
+    fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
+  }
 
 
 #ifdef TESTCOSMO
@@ -151,16 +159,27 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
     outf=fread(adt+level-1,sizeof(REAL),1,fp);
   }
 
+  int setunit=0;
+
+
 #ifdef WRAD
-  // reading units
-  outf=fread(&(param->unit.unit_l),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_v),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_d),sizeof(REAL),1,fp);
-  outf=fread(&(param->unit.unit_N),sizeof(REAL),1,fp);
+  setunit=1;
 #endif
+
+#ifdef WHYDRO2
+  setunit=1;
+#endif
+
+  // reading units
+  if(setunit){
+    outf=fread(&(param->unit.unit_l),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_v),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_d),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_N),sizeof(REAL),1,fp);
+  }
   //printf("UNIT L=%e\n",param->unit.unit_l);
 
 #ifdef TESTCOSMO

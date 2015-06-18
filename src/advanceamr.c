@@ -345,10 +345,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 #endif
       // refining (and destroying) octs
-      mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
+      //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
       curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+#ifdef WHYDRO2
       mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
+#endif
+
+#ifdef WRAD
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+#endif
 
       //L_clean_marks(level,firstoct);
 
@@ -383,16 +388,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // =============================== cleaning
 #ifdef WHYDRO2
-    clean_new_hydro(level,param,firstoct,cpu);
+  clean_new_hydro(level,param,firstoct,cpu);
 #endif
 
 
 #ifdef PIC
-    L_clean_dens(level,param,firstoct,cpu);
+  L_clean_dens(level,param,firstoct,cpu);
 #endif
 
 #ifdef WRAD
-    clean_new_rad(level,param,firstoct,cpu,aexp);
+  clean_new_rad(level,param,firstoct,cpu,aexp);
 #endif
 
 
@@ -754,7 +759,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #endif
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 
     // ===================================== RADIATION
 #ifdef WRAD
@@ -845,7 +850,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       }
 #endif // STARS
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,7);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,7);
 
     /* //===================================Supernovae=========================================// */
 
@@ -860,7 +865,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif // SNTEST
 #endif // SUPERNOVAE
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,8);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,8);
     // ================= V Computing the new refinement map
     REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
@@ -870,7 +875,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
       if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-
+	
 #ifndef ZOOM
 	if((ndt[level-1]%2==1)||(level==param->lcoarse)){
 #else
@@ -883,13 +888,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	}
     }
     else{
+    
       L_clean_marks(level,firstoct);
-
       if(cpu->rank==RANK_DISP)
 	printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
     }
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
+      //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time

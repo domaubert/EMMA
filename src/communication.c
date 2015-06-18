@@ -14,9 +14,6 @@
 #include <mpi.h>
 #endif
 
-
-
-
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
   int nnei=0;
@@ -512,21 +509,24 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int leve
   
   memset(countpacket,0,cpu->nnei*sizeof(int));
 
-  for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
-    if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
-    icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
-    pack=sendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
-    
-    // assigning the values
-    pack->level=cpu->bndoct[i]->level;
-    pack->key=(double)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
-    //for(ii=0;ii<8;ii++) pack->data[ii]=cpu->bndoct[i]->cell[ii].fieldnew;
 
-    for(icell=0;icell<8;icell++){
-      memcpy(&(pack->data[icell]),&(cpu->bndoct[i]->cell[icell].fieldnew),sizeof(struct Wtype));
+  if(cpu->noct[level-1]>0){ // correction must be done only if the current level exists
+    for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
+      if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
+      icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
+      pack=sendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
+      
+      // assigning the values
+      pack->level=cpu->bndoct[i]->level;
+      pack->key=(double)oct2key(cpu->bndoct[i],cpu->bndoct[i]->level); // getting the key of the current oct
+      //for(ii=0;ii<8;ii++) pack->data[ii]=cpu->bndoct[i]->cell[ii].fieldnew;
+      
+      for(icell=0;icell<8;icell++){
+	memcpy(&(pack->data[icell]),&(cpu->bndoct[i]->cell[icell].fieldnew),sizeof(struct Wtype));
+      }
+      // counting the number of packets for icpu
+      countpacket[icpu]++;
     }
-    // counting the number of packets for icpu
-    countpacket[icpu]++;
   }
 }
 #endif
@@ -547,6 +547,7 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
 
   memset(countpacket,0,cpu->nnei*sizeof(int));
 
+  if(cpu->noct[level-1]>0){ // correction must be done only if the current level exists
   for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
     if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
     icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
@@ -565,6 +566,8 @@ void gather_ex_rad(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer,int level, i
     // counting the number of packets for icpu
     countpacket[icpu]++;
   }
+  }
+
 }
 #endif
 
@@ -1972,13 +1975,13 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	    }
 	    for(icell=0;icell<8;icell++){
 	      
- 	if(isnan(curoct->cell[icell].fieldnew.u)){
-	  printf("II %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
-	  abort();
-	}
-
+	      
 	      W2U(&(curoct->cell[icell].fieldnew),&U);
 	      W2U(&(pack->data[icell]),&Ue);
+	      
+ 	      /* if(level==12){ */
+	      /* 	printf("%e %e\n",Ue.d,U.d); */
+	      /* } */
 
 	      U.d +=Ue.d;
 	      U.du+=Ue.du;

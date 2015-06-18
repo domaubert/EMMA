@@ -11,7 +11,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-
+#define DEFDENSG 10.
 
 extern "C" struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, int *nread);
 extern "C" struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew);
@@ -126,7 +126,7 @@ __device__ void getcellnei_gpu_hydro(int cindex, int *neip, int *cell)
 __device__ void dU2W(struct Utype *U, struct Wtype *W)
 {
   
-  W->d=U->d;
+  W->d=(U->d==0.?DEFDENSG:U->d);
   W->u=U->du/U->d;
   W->v=U->dv/U->d;
   W->w=U->dw/U->d;

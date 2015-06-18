@@ -35,7 +35,7 @@ void getE(struct Wtype *W){
 // ==================== converts U -> W
 void U2W(struct Utype *U, struct Wtype *W)
 {
-  float dloc=(U->d==0.?DEFDENS:U->d);
+  REAL dloc=(U->d==0.?DEFDENS:U->d);
 
   W->d=dloc;
   W->u=U->du/dloc;
@@ -3295,11 +3295,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
 	      W2U(&W,&U);
 
+ 
 	      if(isnan(curoct->cell[icell].fieldnew.u)){
 		printf("CC %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
 		abort();
 	      }
-
 
 	      // getting the flux
 	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
@@ -3565,9 +3565,11 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
 
 #ifdef WMPI
   // --------------- init for coarse octs in boundaries
+  int n0;
   if(level>param->lcoarse){
     nextoct=firstoct[level-2];
     if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
+      n0=0;
       do {
 	curoct=nextoct;
 	nextoct=curoct->next; 
@@ -3575,8 +3577,10 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
 	  for(icell=0;icell<8;icell++) {
 	    memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
 	  }
+	    n0++;
 	}
       }while(nextoct!=NULL);
+      //if(level==12) printf("cleaning %d octs / %d\n",n0,cpu->noct[level-2]);
     }
   }
 #endif
