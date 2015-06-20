@@ -47,10 +47,10 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   memset(cpu->htable,0,cpu->maxhash*sizeof(struct OCT*));
   memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
   //if(cpu->rank==RANK_DISP) printf("Clenaing MPI Buffers\n");
 
-#if 1
   // we clean the comm buffers
 
   if(cpu->sendbuffer!=NULL) {
@@ -114,10 +114,10 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
 #endif 
 
+  MPI_Barrier(cpu->comm);
 #endif
 
   // looking for neighbors
-  MPI_Barrier(cpu->comm);
   //if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
 
   for(level=1;level<=levelmax;level++)
@@ -197,8 +197,10 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 
   // =========================================== SETTING UP THE COMMUNICATIONS BETWEEN NEIGHBORS
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
   //if(cpu->rank==RANK_DISP) printf("Set up MPI Comms\n");
+#endif
 
 
   // computing the mpi neighbor list
@@ -330,7 +332,9 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     cpu->dict[cpu->mpinei[i]]=i;
   }
 
+#ifdef WMPI
 MPI_Barrier(cpu->comm);
+#endif
  if(cpu->rank==RANK_DISP) printf("setup mpi Done\n");
 
 }

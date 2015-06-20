@@ -347,6 +347,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       // refining (and destroying) octs
       //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
       curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,aexp);
+#ifdef WMPI
 #ifdef WHYDRO2
       mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
 #endif
@@ -354,7 +355,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WRAD
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
 #endif
-
+#endif
       //L_clean_marks(level,firstoct);
 
       cpu->freeoct=curoct;
@@ -412,18 +413,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     // ==================================== performing the CIC assignement
     L_cic(level,firstoct,param,cpu);
-    MPI_Barrier(cpu->comm);
-    if(cpu->rank==RANK_DISP) printf("Local CIC done\n");
+
 #ifdef WMPI
     
+    if(cpu->rank==RANK_DISP) printf("Local CIC done\n");
+    MPI_Barrier(cpu->comm);
     //mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 0);
     //mpi_dens_correct(cpu,cpu->sendbuffer,cpu->recvbuffer,level);
     mpi_cic_correct_level(cpu, cpu->sendbuffer, cpu->recvbuffer, 0,level);
     //mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,1,1);
     
+    MPI_Barrier(cpu->comm);
     
 #endif
-    MPI_Barrier(cpu->comm);
     if(cpu->rank==RANK_DISP) printf("CIC done\n");
 #endif
 
@@ -607,8 +609,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
    // ================= III Recursive call to finer level
 
   double tt2,tt1;
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt1=MPI_Wtime();
+#endif
 
     int nlevel=cpu->noct[level]; // number at next level
 #ifdef WMPI
@@ -638,8 +642,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     adt[level-2]=tdum2;
 #endif
 
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
+#endif
 
     /* if(param->lcoarse==level){ */
     /*   if(cpu->rank==RANK_DISP){ */
@@ -662,9 +668,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef PIC
     //================ Part. Update ===========================
-#ifdef WMPI
     int maxnpart;
+#ifdef WMPI
     MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_INT,MPI_SUM,cpu->comm);
+#else
+    maxnpart=cpu->npart[level-1];
 #endif
     if(cpu->rank==RANK_DISP) printf("Start PIC on %d part with dt=%e on level %d\n",maxnpart,adt[level-1],level);
 
@@ -716,22 +724,26 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //=============== Hydro Update ======================
 #ifdef WHYDRO2
     double th[10];
+
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     th[0]=MPI_Wtime();
-#ifdef WMPI
     mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
     //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
-#endif
 
     //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,14);
 
     MPI_Barrier(cpu->comm);
     th[1]=MPI_Wtime();
+#endif
+
+
     HydroSolver(level,param,firstoct,cpu,stencil,hstride,adt[level-1]);
 
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     th[2]=MPI_Wtime();
-
+#endif
 
 
 #ifdef WGRAV
@@ -750,10 +762,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0,level);
     //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,0);
     MPI_Barrier(cpu->comm);
-#endif
 
     MPI_Barrier(cpu->comm);
     th[3]=MPI_Wtime();
+#endif
 
     if(cpu->rank==RANK_DISP) printf("HYD -- Ex=%e HS=%e GCorr=%e HCorr=%e Tot=%e\n",th[1]-th[0],th[2]-th[1],th[3]-th[2],th[4]-th[3],th[4]-th[0]);
 
@@ -883,7 +895,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
+#ifdef WMPI
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
+#else
+	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,NULL,NULL);
+#endif
 	  }
 	}
     }
@@ -1073,8 +1089,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // ===================================== RADIATION
 
     double tcomp[10];
+
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcomp[0]=MPI_Wtime();
+#endif
 
     //=============== Building Sources and counting them ======================
 
@@ -1134,7 +1153,7 @@ error = ccc_tremain(&time_remain)
 
 	MPI_Barrier(cpu->comm);
 	tcomp[5]=MPI_Wtime();
-	mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+	//mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
 	
       }
       MPI_Barrier(cpu->comm);

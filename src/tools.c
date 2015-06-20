@@ -150,8 +150,10 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
     }
 
+#ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+#endif
 
   if(cpu->rank==RANK_DISP){
     printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);

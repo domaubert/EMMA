@@ -1537,8 +1537,10 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   int icell;
   double t[10];
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
  t[0]=MPI_Wtime();
+#endif
   if(cpu->rank==RANK_DISP) printf("Start Poisson Solver ");
 
 #ifndef GPUAXL
@@ -1585,8 +1587,11 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     }
   }
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
  t[9]=MPI_Wtime();
+#endif
+
  if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
    printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
