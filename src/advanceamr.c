@@ -451,20 +451,30 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       int cond2 = 0;
       int cond3 = tloc>=param->time_max;
 
-#ifdef TESTCOSMO
 
       if (param->dt_dump){
         cond1=0;
-
         int offset=0;
-        if (nsteps==0) offset = (int)(param->cosmo->tphy/param->dt_dump);
 
+#ifdef TESTCOSMO
+        if (nsteps==0) offset = (int)(param->cosmo->tphy/param->dt_dump);
         REAL a=param->cosmo->tphy;
         REAL b=(int)(*(cpu->ndumps)+offset)*param->dt_dump;
         cond2=a>b;
-        if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param->dt_dump);
-      }
+        if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param->dt_dump);
 #endif // TESTCOSMO
+
+#ifdef SNTEST
+        if (nsteps==0) offset = (int)(tloc/param->dt_dump);
+        REAL a=tloc;
+        REAL b=(int)(*(cpu->ndumps)+offset)*param->dt_dump;
+        cond2=a>b;
+        if(cpu->rank==RANK_DISP)printf("t=%.2e next dump at %.2e\n",a,b+(a>b)*param->dt_dump);
+#endif // SNTEST
+
+
+  }
+
     if(level==param->lcoarse){
 if(cond1||cond2||cond3){
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
@@ -735,7 +745,7 @@ if(cond1||cond2||cond3){
 #ifdef WMPI
     tdum=0.;
     tdum2=0.;
-    MPI_Allreduce(adt+level-1,&tdum,1,MPI_REEL,MPI_MIN,cpu->comm);
+    MPI_Allreduce(adt+level-1,&tdum, 1,MPI_REEL,MPI_MIN,cpu->comm);
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
@@ -963,6 +973,7 @@ if(cond1||cond2||cond3){
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
+    setOctList(firstoct[level-1], cpu, param,level);
     supernovae(param,cpu, adt[level-1], tloc, level, is);
 #endif // SNTEST
 #endif // SUPERNOVAE
@@ -972,22 +983,23 @@ if(cond1||cond2||cond3){
     REAL dxnext=POW(0.5,level+1)*aexp;
     REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
 
-    if(dxnext>dxkpc){ // ENFORCE Kennicut scale
-      if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
-
+    if( (param->lmax!=param->lcoarse) &&
+        (level<param->lmax)           &&
+        (dxnext>dxkpc)                ){
+/*
 #ifndef ZOOM
     if((ndt[level-1]%2==1)||(level==param->lcoarse))
 #else
 	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
 #endif // ZOOM
+*/
     {
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
 	  }
-	}
-    }
-    else{
+
+    }else{
       KPCLIMIT_TRIGGER=1;
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
       MPI_Barrier(cpu->comm);

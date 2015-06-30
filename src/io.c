@@ -129,7 +129,7 @@ float assign_field(int field,struct CELL *cell){
     break;
   case 26:
 #ifdef SUPERNOVAE
-    res=cell->rfield.snfb;
+//    res=cell->rfield.snfb;
 #endif // SUPERNOVAE
     break;
 

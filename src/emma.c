@@ -269,9 +269,9 @@ int main(int argc, char *argv[])
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
-  param.rzoom=0.055;
+  param.rzoom=0.0055;
   param.fzoom=1.45;
-  param.lmaxzoom=param.lcoarse+2;
+  param.lmaxzoom=param.lcoarse+4;
 #endif
 
 
@@ -1377,6 +1377,7 @@ int main(int argc, char *argv[])
     //    abort();
 
     //===================================================================================================================================
+
 #ifdef WRAD
 
 #ifdef WCHEM
@@ -1495,7 +1496,7 @@ int main(int argc, char *argv[])
 		  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
-#endif
+#endif // TESTCLUMP
 
 		  curoct->cell[icell].rfield.nh=nh*POW(param.unit.unit_l,3)/param.unit.unit_n;
 		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
@@ -1513,7 +1514,7 @@ int main(int argc, char *argv[])
 		  getE(&(curoct->cell[icell].field));
 		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
-#endif
+#endif // WRADHYD
 
 #endif // WCHEM
 
@@ -1525,6 +1526,49 @@ int main(int argc, char *argv[])
       }
 #endif // WRADTEST
 #endif // WRAD
+
+#ifdef SNTEST
+  // for sedov test
+
+  REAL nh=1000;
+  REAL temperature=100.;
+  REAL xion=1e-6;
+  REAL box_size_in_pc=15e3;
+
+  param.unit.unit_l= box_size_in_pc*PARSEC;
+  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_N=nh;
+
+  REAL pstar=param.unit.unit_mass*POW(param.unit.unit_v,2);
+  REAL dennh=nh*POW(param.unit.unit_l,3);
+  REAL eint=(1.5*dennh*(1.+xion)*KBOLTZ*temperature)/pstar;
+
+  for(level=levelcoarse;level<=levelmax;level++){
+    dxcur=POW(0.5,level);
+    nextoct=firstoct[level-1];
+    if(nextoct==NULL) continue;
+    do{
+      curoct=nextoct;
+      nextoct=curoct->next;
+      for(icell=0;icell<8;icell++){
+        curoct->cell[icell].field.d=dennh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;;
+        curoct->cell[icell].field.u=0.0;
+        curoct->cell[icell].field.v=0.0;
+        curoct->cell[icell].field.w=0.0;
+        //curoct->cell[icell].field.p=eint*(GAMMA-1.);
+        curoct->cell[icell].field.p=1e-5;
+        curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+        getE(&(curoct->cell[icell].field));
+      }
+    }while(nextoct!=NULL);
+  }
+  tinit=tsim;
+
+#endif // SNTEST
+
 
     // saving the absolute initial time
 #ifdef TESTCOSMO
@@ -1615,7 +1659,7 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
-  int Lmin= 1+ (int)(log(cpu.nproc)/(3*log(2)));
+  int Lmin= 1+ (int)(log(cpu.nproc)/(3*log(2)) +1);
   if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
     param.mgridlmin = Lmin;
     if(cpu.rank==RANK_DISP){
@@ -1720,7 +1764,7 @@ int main(int argc, char *argv[])
     if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
-#if 1
+#ifdef PIC
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
 
@@ -1856,21 +1900,27 @@ int main(int argc, char *argv[])
       int cond2 = 0;
       int cond3 = tsim+adt[levelcoarse-1]>=tmax;
 
-#ifdef TESTCOSMO
-
       if (param.dt_dump){
         cond1=0;
-
         int offset=0;
-        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
 
+#ifdef TESTCOSMO
+        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
         REAL a=param.cosmo->tphy;
         REAL b=(int)(ndumps+offset)*param.dt_dump;
         cond2=a>b;
-        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param.dt_dump);
+        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
         }
 #endif // TESTCOSMO
 
+#ifdef SNTEST
+        if (nsteps==0) offset = (int)(tsim/param.dt_dump);
+        REAL a=tsim;
+        REAL b=(int)(ndumps+offset)*param.dt_dump;
+        cond2=a>b;
+        if(cpu.rank==RANK_DISP)printf("t=%.2e next dump at %.2e\n",a,b+(a>b)*param.dt_dump);
+#endif // SNTEST
+}
       if(cond1||cond2||cond3){
 #ifndef EDBERT
 

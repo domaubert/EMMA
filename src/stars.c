@@ -53,7 +53,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
-  // random component
+  // compute random component
 	REAL r = rdm(0,1) * cell->field.a ;
 	REAL theta  = acos(rdm(-1,1));
 	REAL phi = rdm(0,2*M_PI);
@@ -106,7 +106,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
   // local Jeans time in second in code unit
 	REAL t_j = dx/cell->field.a;
 
-	B = t_j < t_ff;
+	B = t_j > t_ff;
 
 #else
 	B = 1;

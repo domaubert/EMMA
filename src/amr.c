@@ -500,7 +500,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 #ifndef TRANSZP
 #ifndef TRANSZM
 			// here we refine too much
-			printf("ERROR ouhla�rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
+			printf("ERROR ouhla rank=%d curoct.cpu=%d\n",cpu->rank,curoct->cpu);
 			abort();
 #endif
 #endif
@@ -1187,22 +1187,21 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef WGRAV
 			    den=curoct->cell[icell].gdata.d+1.;
-#endif
+#endif // WGRAV
 
 #ifdef ZELDOVICH
 #ifdef WHYDRO2
 			    den=curoct->cell[icell].field.d;
-#endif
-#endif
+#endif // WHYDRO2
+#endif // ZELDOVICH
 
-#else
+#else // #ifndef TESTCOSMO
 
 #ifdef WGRAV
 			    // ->> utilise pour la cosmo // le gaz est utilise
 			    den=curoct->cell[icell].gdata.d;
-#endif
-
-#endif
+#endif // WGRAV
+#endif // TESTCOSMO
 
 			    // Second we apply a criterion
 
@@ -1215,9 +1214,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 
-
-
-#else
+#else // #ifndef EDBERT
 #ifdef ZELDOVICH
 			    mcell=den*(curoct->level>=param->lcoarse);
 			    if(mcell>mmax) mmax=mcell;
@@ -1225,18 +1222,19 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
  			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-#else
+#else // #ifndef ZELDOVICH
 
 			    // --------------- MAIN AMR COSMO
 
 			    int refarea=1;
 #ifdef ZOOM
 			    refarea=(curoct->level>=param->lmaxzoom);
-#endif
+#endif // ZOOM
 
 #ifndef AMRPART
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
-#else
+#else // #ifdef AMRPART
+
 #ifdef PIC
 			    int npart=0;
 			    if(curoct->level>=param->lcoarse){
@@ -1244,11 +1242,12 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 			    mcell=npart;
 			    threshold=param->amrthresh0;
-#else
+
+#else // #ifndef PIC
 			    printf("AMR on particles SET ON without PIC enabled\n");
 			    abort();
-#endif
-#endif
+#endif // PIC
+#endif // AMRPART
 			    if(mcell>mmax) mmax=mcell;
 			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
   			      curoct->cell[icell].marked=marker;
@@ -1256,12 +1255,11 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 
 			    // --------------- MAIN AMR COSMO
-#endif
-#endif
-#else
+#endif // ZELDOVICH
+#endif // EDBERT
+#else // #ifndef PIC
+
 			    // ===================== AMR NO COSMO ================
-
-
 
 #ifdef WGRAV
 			    mcell=den*(curoct->level>=param->lcoarse);
@@ -1269,10 +1267,48 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-#endif
+#endif // WGRAV
+
+#ifdef SNTEST
+
+/*
+          REAL xpos = 0.5;
+          REAL dx= POW(0.5,curoct->level);
+
+          if (  (curoct->x > xpos) && (curoct->x < xpos+dx) &&
+                (curoct->y > xpos) && (curoct->y < xpos+dx) &&
+                (curoct->z > xpos) && (curoct->z < xpos+dx) )
+
+          {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+*/
+
+          threshold=1e-5;
+
+			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+			    /*
+          REAL epsilon = 1e-5;
+          REAL threshold = 1. + epsilon;
+			    //den=comp_grad_hydro(curoct, icell);Ŕ
+          den=curoct->cell[icell].field.d;
+
+			    if( (den>threshold)&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+          */
+
+#endif // SNTEST
 
 #ifdef WRAD
-
 #ifdef WRADTEST
 			    // == START AMR STRATEGY FOR RAD TESTS
 			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
@@ -1291,7 +1327,9 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #else
 			    //mcell=0.;
 			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
-#endif
+#endif // TESTCLUMP
+
+
  			    //mcell=(curoct->cell[icell].rfield.src>0.);
 			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
@@ -1308,14 +1346,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 
-#endif
-#endif
-
-
-#endif
-
-
-#endif
+#endif // WCHEM
+#endif // WRADTEST
+#endif // WRAD
+#endif // PIC
 
 #ifdef TUBE
 
@@ -1325,8 +1359,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-#endif
-#endif
+#endif // TUBE
+#endif // EVRARD
 
 			  }
 
@@ -1340,12 +1374,12 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 	      // we correct from the marker diffusion
 	      if(marker%3==2) mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 	      if(level>=(param->lcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
-#endif
+#endif // WMPI
 	    }
 	  //printf("\n");
     }
 
-  //printf("stat0=%d stat1=%d stat2=%d on rank %d\n",stati[0],stati[1],stati[2],cpu->rank);
+ // printf("stat0=%d stat1=%d stat2=%d on rank %d\n",stati[0],stati[1],stati[2],cpu->rank);
 
 #ifdef WMPI
   int stat0,stat1,stat2;
