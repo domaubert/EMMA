@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   struct OCT **firstoct;
   struct OCT **lastoct;
 
-    int level,levelcoarse,levelmax,levelmin;
+  int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
   int nrelax;
   int ngridmax,ngrid;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
   REAL dt;
   int ntot=0,nlev,noct;
   REAL ntotd=0.,nlevd=0.;
-
+  int cond1,cond2,cond3;
   REAL disp,mdisp;
 
   int dir;
@@ -1833,7 +1833,7 @@ int main(int argc, char *argv[])
 
 
       cpu.nsteps=nsteps;
-
+      
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,(double *)cosmo.tab_aexp,(double *)cosmo.tab_ttilde);
       cosmo.tsim=tsim;
@@ -1842,16 +1842,16 @@ int main(int argc, char *argv[])
 #ifndef WRAD
       if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #else
-     if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
-
+      
       // Resetting the timesteps
-
+      
       for(level=1;level<=levelmax;level++){
 	ndt[level-1]=0;
       }
-
+      
       //Recursive Calls over levels
       double tg1,tg2,tg3,tg4;
 #ifdef WMPI
@@ -1866,7 +1866,7 @@ int main(int argc, char *argv[])
       MPI_Barrier(cpu.comm);
       tg3=MPI_Wtime();
 #endif
-
+      
 #ifdef WRAD
 #ifdef COARSERAD
       // inner loop on radiation
@@ -1877,13 +1877,13 @@ int main(int argc, char *argv[])
       while(trad<adt[levelcoarse-1]){
 	//if(cpu.rank==RANK_DISP) printf("step\n");
 	double tcr1,tcr2;
-
+	
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr1=MPI_Wtime();
 #endif
 	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad,nrad);
-
+	
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr2=MPI_Wtime();
@@ -1898,7 +1898,7 @@ int main(int argc, char *argv[])
       MPI_Barrier(cpu.comm);
       tg4=MPI_Wtime();
 #endif
-
+      
 #ifndef GPUAXL
       if(cpu.rank==RANK_DISP) printf("CPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
 #else
@@ -1917,25 +1917,24 @@ int main(int argc, char *argv[])
 #else
       if(cpu.rank==RANK_DISP) printf("GPU GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
 #endif
-
+      
       // ==================================== dump
-      int cond1 = nsteps%param.ndumps==0;
-      int cond2 = 0;
-      int cond3 = tsim+adt[levelcoarse-1]>=tmax;
-
+      cond1 = nsteps%param.ndumps==0;
+      cond2 = 0;
+      cond3 = tsim+adt[levelcoarse-1]>=tmax;
+       
       if (param.dt_dump){
-        cond1=0;
-        int offset=0;
-
+	cond1=0;
+	int offset=0;
+	
 #ifdef TESTCOSMO
-        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
-        REAL a=param.cosmo->tphy;
-        REAL b=(int)(ndumps+offset)*param.dt_dump;
-        cond2=a>b;
-        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
-        }
+	if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
+	REAL a=param.cosmo->tphy;
+	REAL b=(int)(ndumps+offset)*param.dt_dump;
+	cond2=a>b;
+	if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
 #endif // TESTCOSMO
-
+      
 #ifdef SNTEST
         if (nsteps==0) offset = (int)(tsim/param.dt_dump);
         REAL a=tsim;
@@ -1943,7 +1942,8 @@ int main(int argc, char *argv[])
         cond2=a>b;
         if(cpu.rank==RANK_DISP)printf("t=%.2e next dump at %.2e\n",a,b+(a>b)*param.dt_dump);
 #endif // SNTEST
-}
+      }
+      
       if(cond1||cond2||cond3){
 #ifndef EDBERT
 
@@ -2023,7 +2023,7 @@ int main(int argc, char *argv[])
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
-    }
+}
 
 	// writting the last particle file
 	ndumps-=1;
