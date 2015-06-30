@@ -327,7 +327,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 //====================================================================================================
 //            PART OUT
 //====================================================================================================
-
+#ifdef PIC
 void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct PART* proot){
 
   FILE *fp = NULL;
@@ -388,7 +388,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   //printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
 
 }
-
+#endif // PIC
 //====================================================================================================
 //            PART IN
 //====================================================================================================

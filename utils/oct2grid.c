@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
 
   // silo file
-  // Note dumpsilo is kept for consistency 
+  // Note dumpsilo is kept for consistency
   // but is deprecated --> should be removed
 
   int dumpsilo=0;
@@ -423,6 +423,12 @@ void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap,
   case 105:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->cell[icell].p;
     break;
+  case 106:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=SQRT(
+        oct->cell[icell].u*oct->cell[icell].u +
+        oct->cell[icell].v*oct->cell[icell].v +
+        oct->cell[icell].w*oct->cell[icell].w );
+    break;
 #endif
 
 #ifdef WRAD
@@ -561,6 +567,13 @@ void assign_zmap(int field, int icell, float *map, int imap, int jmap, int kmap,
     break;
   case 105:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*oct->cell[icell].p;
+    break;
+
+  case 106:
+    map[(imap+ii-i0)+(jmap+jj-j0)*nmapx]+=(1./nmapz)*SQRT(
+        oct->cell[icell].u*oct->cell[icell].u +
+        oct->cell[icell].v*oct->cell[icell].v +
+        oct->cell[icell].w*oct->cell[icell].w );
     break;
 #endif
 

@@ -198,7 +198,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 #ifdef WMPI
  MPI_Barrier(cpu->comm);
- if(rank==0) printf("Check done \n");
+ if(rank==RANK_DISP) printf("Check done \n");
 #endif
 
   return mtot;

@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  // getting the field 
+  // getting the field
   sscanf(argv[3],"%d",&field);
 
   //getting the resolution
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 
 
   // scanning the cpus
-  
+
   int icpustart,icpustop;
   if(mono<0){
     icpustart=0;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   }
   // building the output file name
   strcpy(format,argv[4]);
-  
+
   sprintf(fname2,format,icpu);
   int ndummy=0;
   fp2=fopen(fname2,"wb");
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
 
   int idat=0;
   for(icpu=icpustart;icpu<icpustop;icpu++){
-    
-    
+
+
     // building the input file name
     strcpy(format,argv[1]);
     strcat(format,".p%05d");
@@ -142,12 +142,12 @@ int main(int argc, char *argv[])
 
     printf("Looking for %s\n",fname);
     fp=fopen(fname,"rb");
-  
+
     if(fp==NULL){
       printf("--ERROR -- file not found\n");
       return 1;
     }
-    
+
 
     // reading the number of octs
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
     // alloc the data
     boct=(struct LOCT*)malloc(sizeof(struct LOCT)*noct);
-    
+
 
 
     // reading the time
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 		else{
 		  flag=(oct.cpu==icpu);
 		}
-		
+
 		if(flag) {
 		  data=assign_cube(field,icell,&oct,&unit);
 		  idat++;
@@ -308,7 +308,29 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
   case 105:
     res=oct->cell[icell].p;
     break;
-#endif			  
+  case 106:
+    res=SQRT(
+        oct->cell[icell].u*oct->cell[icell].u +
+        oct->cell[icell].v*oct->cell[icell].v +
+        oct->cell[icell].w*oct->cell[icell].w );
+    break;
+  case 107:
+    res=SQRT(
+        GAMMA *
+        oct->cell[icell].p /
+        oct->cell[icell].d );
+    break;
+  /*
+  case 107:
+    res=
+        3./2. * oct->cell[icell].d *KBOLTZ * (1. - oct->cell[icell].dX )
+        +
+        1./2. * oct->cell[icell].d * (
+        oct->cell[icell].u*oct->cell[icell].u +
+        oct->cell[icell].v*oct->cell[icell].v +
+        oct->cell[icell].w*oct->cell[icell].w );
+  */
+#endif
 
 #ifdef WRAD
   case 701:
@@ -388,7 +410,7 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
   }
 
   return res;
-  
+
 }
 
 // ===============================================================

@@ -293,6 +293,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&param->movie->zmax);
 #endif
       fclose(buf);
+
     }
 
 
@@ -349,22 +350,26 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
+#ifdef TESTCOSMO
     fprintf(fp, float_format,"box_size_Mpc/h",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+#else
+    fprintf(fp, float_format,"box_size_Kpc",(param->unit.unit_l/PARSEC/1e3));
+#endif // TESTCOSMO
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
 
   fprintf(fp,"##=Unit_code->SI====================\n" );
-  #ifdef WRAD
-    fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
-    fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
-    fprintf(fp, real_format,"unit_t",(param->unit.unit_t) );		// unit time [seconds]
-    fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
-    fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
-  //  fprintf(fp,"\n");
-  #endif
 
-  fprintf(fp,"##=Cosmology========================\n" );
+  fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
+  fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
+  fprintf(fp, real_format,"unit_t",(param->unit.unit_t) );		// unit time [seconds]
+  fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
+  fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
+  //  fprintf(fp,"\n");
+
+
   #ifdef TESTCOSMO
+  fprintf(fp,"##=Cosmology========================\n" );
     fprintf(fp, real_format,"om",(param->cosmo->om) );			// Omega matter
     fprintf(fp, real_format,"ov",(param->cosmo->ov) );			// Omega vacuum
     fprintf(fp, real_format,"ob",(param->cosmo->ob) );			// Omega baryon
@@ -372,11 +377,12 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   //  fprintf(fp,"\n");
   #endif
 
-
-
+#ifdef PIC
     fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
+#ifdef TESTCOSMO
     REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->DM_res))*param->unit.unit_mass/SOLAR_MASS;
     fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
+#endif // TESTCOSMO
 #ifdef STARS
     REAL res = param->stars->mass_res;
     if(res>100){
@@ -401,6 +407,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
       }
     }
 #endif // STARS
+#endif // PIC
 
     fprintf(fp,"##=Spatial_resolution_(Kpc)=========\n" );
     int level;
@@ -582,8 +589,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     }
 
     fprintf(fp, "%d\t",nsteps);
+#ifdef TESTCOSMO
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+#endif // TESTCOSMO
     fprintf(fp, real_format,dt);
     fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);

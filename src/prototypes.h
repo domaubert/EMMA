@@ -82,7 +82,7 @@ typedef double REAL;
 
 
 
-//#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
+#define LIFETIME_OF_STARS_IN_TEST (0)
 
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -101,7 +101,6 @@ struct COSMOPARAM{
 
 #ifdef STARS
 struct STARSPARAM{
-
   REAL overdensity_cond;///< need overdensity_cond times the mean density to begin star formation
   REAL density_cond;///< Hydrogen density (m-3)
   REAL efficiency;///< efficiency of star formation proccess
@@ -118,7 +117,6 @@ struct STARSPARAM{
 
 #ifdef SUPERNOVAE
 struct SNPARAM{
-
   REAL feedback_eff;///< feedback efficiency
   REAL feedback_frac;///< fraction of kinetic feedback over thermal feedback
   REAL Esnfb;///<  total Energy of a SN
