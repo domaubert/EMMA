@@ -5,6 +5,7 @@
 #include "hilbert.h"
 #include "prototypes.h"
 #include <unistd.h>
+#include <float.h>
 
 void breakmpi()
 {
@@ -337,10 +338,18 @@ REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
 
-int gpoiss(REAL lambda){
+int gpoiss(const REAL lambda){
 /// Poisson distribution
 
-	int k=1;
+/// TODO use a better poisson algorithme
+
+#ifdef SINGLEPRECISION
+  const int kmax = log(FLT_MAX); // log( max(float32) )  = 88
+#else
+  const int kmax = log(DBL_MAX);// log( max(float64) ) = 708
+#endif // SINGLEPRECISION
+
+  int k=1;
 	REAL p = rdm(0,1);
 	REAL P = exp(-lambda);
 	REAL sum=P;
@@ -352,7 +361,9 @@ int gpoiss(REAL lambda){
 	    sum+=P;
 	    if (sum>=p) break;
 	    k++;
-	  }while(k<1e6);
+	  }while(k<kmax);
+
+	  if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
 	}
 	if(k==1e6) {
 	  printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);

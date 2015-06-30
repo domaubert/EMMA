@@ -1,11 +1,54 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "prototypes.h"
 
 #ifdef UVBKG
 #include "src_utils.h"
 #endif // UVBKG
+
+char *field_name [] ={
+// The field order has to be the same as in param.output for consistency
+"x",
+"y",
+"z",
+"l",
+"cpu",
+"gdata.d",
+"density",
+"gdata.p",
+"res",
+"f[0]",
+"f[1]",
+"f[2]",
+"marked",
+"field.d",
+"field.u",
+"field.v",
+"field.w",
+"field.p",
+"rfield.e[0]",
+"rfield.fx[0]",
+"rfield.fy[0]",
+"rfield.fz[0]",
+"rfield.e[1]",
+"rfield.fx[1]",
+"rfield.fy[1]",
+"rfield.fz[1]",
+"rfield.snfb",
+"rfield.e[2]",
+"rfield.fx[2]",
+"rfield.fy[2]",
+"rfield.fz[2]",
+"rfield.src",
+"xion",
+"field.dX",
+"field.dXHE",
+"field.dXXHE",
+"field.xHE",
+"field.xxHE",
+"rfield.temp"
+};
 
 int copy(char const * const source, char const * const destination) {
 /**
@@ -66,6 +109,10 @@ void copy_param(const char *folder){
   sprintf(param_dest,"%s%s",folder,param);
   copy(param_src, param_dest);
 
+  sprintf(param,"param.output");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
 }
 
 void dumpFile(char *filename_in, char *filename_out){
@@ -102,10 +149,49 @@ void dumpFile(char *filename_in, char *filename_out){
   }
 }
 
+void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
-void GetParameters(char *fparam, struct RUNPARAMS *param)
-{
-  FILE *buf;
+  int n_field=0;
+  int n_field_tot=0;
+
+  FILE *f=NULL;
+  f=fopen(fparam,"r");
+  if(f==NULL){
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fparam);
+      abort();
+  }else{
+    char stream[256];
+    while (fscanf(f, "%s\n", stream) != EOF) {
+
+      if ( strncmp( stream,"#", 1) ){
+        param->out->field_id[n_field_tot] = 1;
+        param->out->field_name[n_field_tot] = field_name[n_field_tot];
+        n_field++;
+      }else{
+        param->out->field_id[n_field_tot] = 0;
+      }
+      n_field_tot++;
+    }
+    fclose(f);
+  }
+
+  param->out->n_field=n_field;
+  param->out->n_field_tot=n_field_tot;
+
+/*
+  int i;
+  for (i=0;i<n_field_tot; i++){
+    if (param->out->field_id[i])
+    printf("%d\t%s\n",param->out->field_id[i], param->out->field_name[i]);
+  }
+*/
+
+//abort();
+
+}
+
+void GetParameters(char *fparam, struct RUNPARAMS *param){
+  FILE *buf=NULL;
   char stream[256];
   size_t rstat;
   double dummyf;
@@ -139,6 +225,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->DM_res);
+      rstat=fscanf(buf,RF,stream,&param->dx_res);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
@@ -236,6 +323,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 #ifdef UVBKG
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
+
+
+  readOutputParam("param.output", param);
+
 
 }
 
@@ -339,7 +430,8 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
   dumpFile(fparam, "data/param.run");
   printf("\n");
-
+  dumpFile("param.output", "data/param.output");
+  printf("\n");
 
 #ifdef TESTCOSMO
   REAL threshold=param->amrthresh0;

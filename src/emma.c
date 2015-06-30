@@ -204,6 +204,8 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
+  struct OUTPUTPARAM out;
+  param.out=&out;
 
 #ifdef STARS
   struct STARSPARAM stars;
@@ -279,6 +281,14 @@ int main(int argc, char *argv[])
 	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));
 #endif
   //omp_set_num_threads(param.ompthread);
+
+#ifdef MPIIO
+  cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
+  cpu.mpiio_nparts  = (int*)calloc(cpu.nproc,sizeof(int));
+#ifdef STARS
+  cpu.mpiio_nstars = (int*)calloc(cpu.nproc,sizeof(int));
+#endif // STARS
+#endif // MPIIO
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
@@ -1606,7 +1616,6 @@ int main(int argc, char *argv[])
 
   param.time_max=tmax;
 
-
   mkdir("data/", 0755);
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
@@ -1878,7 +1887,7 @@ int main(int argc, char *argv[])
         REAL b=(int)(ndumps+offset)*param.dt_dump;
         cond2=a>b;
         if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param.dt_dump);
-      }
+        }
 #endif // TESTCOSMO
 
       if(cond1||cond2||cond3){
@@ -1907,7 +1916,7 @@ int main(int argc, char *argv[])
 	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
 #else
 	tdump=(tsim+adt[levelcoarse-1]);
-#endif
+#endif // WRAD
 #else
 	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
 	adump=tdump;
@@ -1915,8 +1924,8 @@ int main(int argc, char *argv[])
 #ifdef EDBERT
 	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
 	tdump=(treal-trealBB)/(treal0-trealBB);
-#endif
-#endif
+#endif // EDBERT
+#endif // TESTCOSMO
 
 	// === Hydro dump
 
@@ -1935,22 +1944,22 @@ int main(int argc, char *argv[])
 		  printf("%s\n",filename);
 		}
 		dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
-	#endif
+	#endif // PIC
 
 		// backups for restart
 		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank);
 		REAL tsave=tdump;
 #ifndef TESTCOSMO
 		tsave=tdump/(param.unit.unit_t/MYR);
-#endif
+#endif // TESTCOSMO
 
 		save_amr(filename,firstoct,tsave,tinit,nsteps,ndumps,&param, &cpu,part,adt);
 #ifdef PIC
 		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank);
 		save_part(filename,firstoct,param.lcoarse,param.lmax,tsave,&cpu,part);
-#endif
+#endif // PIC
 
-#endif
+#endif // EDBERT
 	ndumps++;
       }
 

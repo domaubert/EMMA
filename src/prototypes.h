@@ -80,6 +80,8 @@ typedef double REAL;
 #endif
 //=======================================
 
+
+
 //#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
 
 #ifdef TESTCOSMO
@@ -198,6 +200,7 @@ struct RUNPARAMS{
   REAL amrthresh; ///< the refinement criterion (refine if mcell>amrthresh)
 
   int DM_res; ///< resolution of dark matter particle (equivalent level of lcoarse + DM_res)
+  REAL dx_res; ///< maximum spatial resolution before blocking AMR in Parsec
 
   int nsmooth; ///< the number of neighbour refinement steps
 
@@ -208,6 +211,8 @@ struct RUNPARAMS{
 
   int nrestart; ///< the restart snapshot
   int nsubcycles; ///< number of subcyles in AMR advance procedure
+
+  struct OUTPUTPARAM *out;
 
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo; ///< the cosmological parameters
@@ -332,6 +337,16 @@ struct CPUINFO{
   struct HYDRO_MPI **hrecvbuffer;
   struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
+
+  int mpiio_grid_offsets;
+  int *mpiio_ncells;
+
+  int mpiio_part_offsets;
+  int *mpiio_nparts;
+#ifdef STARS
+  int mpiio_star_offsets;
+  int *mpiio_nstars;
+#endif // STARS
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; ///< the structured type for MPI messages (particles)
@@ -741,6 +756,7 @@ struct LCELL
 #endif
 
 #endif
+//  REAL sfr;
 };
 
 
@@ -1027,3 +1043,10 @@ struct MULTIVECT{
 #endif
 };
 
+
+struct OUTPUTPARAM{
+  int n_field;
+  int n_field_tot;
+  char *field_name[50];
+  int field_id[50];
+};

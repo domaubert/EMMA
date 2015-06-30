@@ -36,6 +36,8 @@
  #include "ccc_user.h"
  #endif // CURIE
 
+int KPCLIMIT_TRIGGER=0;
+
 // ===============================================================
 // ===============================================================
 
@@ -813,15 +815,15 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       printf("==== CPU RAD TOTAL TIME =%e\n",time_rad);
 #else
       printf(" === GPU RAD TOTAL TIME =%e\n",time_rad);
-#endif
+#endif // GPUAXL
     }
-#endif
+#endif // COARSERAD
 
     //printf("cpu #%d ready 4\n",cpu->rank);
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
-#endif
+#endif // WMPI
 
 #ifdef WMPI
     //printf("proc %d waiting\n",cpu->rank);
@@ -837,16 +839,16 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     //mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
-#endif
+#endif // WMPI
 
     if(cpu->rank==RANK_DISP) printf("RAD -- Fill=%e Ex=%e RS=%e Corr=%e Tot=%e\n",tcomp[1]-tcomp[0],tcomp[2]-tcomp[1],tcomp[3]-tcomp[2],tcomp[4]-tcomp[3],tcomp[5]-tcomp[0]);
 
 
 #ifdef WRADHYD
     if(cpu->rank==RANK_DISP) printf("TRADHYD l=%d Total=%e Noct=%d\n",level,tcomp[5]-th[0],cpu->noct[level-1]);
-#endif
+#endif // WRADHYD
 
-#endif
+#endif // WRAD
 
     /* //===================================creating new stars=================================// */
 
@@ -877,22 +879,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif // SNTEST
 #endif // SUPERNOVAE
 
-    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,8);
     // ================= V Computing the new refinement map
-    REAL dxkpc=0.;
     REAL dxnext=POW(0.5,level+1)*aexp;
-#ifdef KPCLIMIT
-    dxkpc=1e2*PARSEC/param->unit.unit_l;
-#endif
+    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
 
     if(dxnext>dxkpc){ // ENFORCE Kennicut scale
       if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
 	
 #ifndef ZOOM
-	if((ndt[level-1]%2==1)||(level==param->lcoarse)){
+    if((ndt[level-1]%2==1)||(level==param->lcoarse))
 #else
-	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom)){
-#endif
+	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
+#endif // ZOOM
+    {
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
 #ifdef WMPI
@@ -904,10 +903,14 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 	}
     }
     else{
-    
       L_clean_marks(level,firstoct);
-      if(cpu->rank==RANK_DISP)
-	printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+      KPCLIMIT_TRIGGER=1;
+      MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
+      MPI_Barrier(cpu->comm);
+
+      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
+      printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+      KPCLIMIT_TRIGGER=0;
     }
 
       //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
@@ -928,7 +931,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef MOVIE
 	if (level==param->lcoarse)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
-#endif
+#endif // MOVIE
 
   }while((dt<adt[level-2])&&(is<nsub));
 
