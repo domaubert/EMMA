@@ -1170,15 +1170,25 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   param->cosmo->H0=h0;
   param->cosmo->unit_l=rstar;
 
-#ifdef WRAD
-  param->unit.unit_l=rstar;
-  param->unit.unit_v=vstar;
-  param->unit.unit_t=param->unit.unit_l/param->unit.unit_v;
-  param->unit.unit_n=1.;//(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*rhostar; //
-  param->unit.unit_mass=rhostar*POW(param->unit.unit_l,3);
-  param->unit.unit_d=rhostar; // kg/m3
-  param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3
+
+  int setunit=0;
+
+#ifdef WHYDRO2
+  setunit=1;
 #endif
+
+#ifdef WRAD
+  setunit=1;
+#endif
+  if(setunit){
+    param->unit.unit_l=rstar;
+    param->unit.unit_v=vstar;
+    param->unit.unit_t=param->unit.unit_l/param->unit.unit_v;
+    param->unit.unit_n=1.;//(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*rhostar; //
+    param->unit.unit_mass=rhostar*POW(param->unit.unit_l,3);
+    param->unit.unit_d=rhostar; // kg/m3
+    param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3
+  }
 
 //  REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU/param->unit.unit_mass)/POW(param->unit.unit_l,3);
  /*   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS*MOLECULAR_MU)*rhostar; */

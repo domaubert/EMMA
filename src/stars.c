@@ -152,6 +152,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 //	total energy
 	getE(&(W));
 	W.a=SQRT(GAMMA*W.p/W.d);
+	W.p=FMAX(W.p,PMIN);
 	memcpy(field,&W,sizeof(struct Wtype));
 
 }

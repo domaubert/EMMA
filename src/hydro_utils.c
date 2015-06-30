@@ -17,7 +17,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-
+#define DEFDENS 10. // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
 
 // ===================================================
 //
@@ -35,25 +35,31 @@ void getE(struct Wtype *W){
 // ==================== converts U -> W
 void U2W(struct Utype *U, struct Wtype *W)
 {
-  W->d=U->d;
-  W->u=U->du/U->d;
-  W->v=U->dv/U->d;
-  W->w=U->dw/U->d;
+  REAL dloc=(U->d==0.?DEFDENS:U->d);
+
+  W->d=dloc;
+  W->u=U->du/dloc;
+  W->v=U->dv/dloc;
+  W->w=U->dw/dloc;
   
 #ifdef DUAL_E
   W->p=U->eint*(GAMMA-1.);
   W->E=U->E;
+
 #ifdef WRADHYD
   W->dX=U->dX;
+
 #ifdef HELIUM
   W->dXHE=U->dXHE;
   W->dXXHE=U->dXXHE;
 #endif
+
 #endif
+
 #else
-  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5);
+  W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(dloc)*0.5);
 #endif
-  W->a=SQRT(GAMMA*W->p/W->d);
+  W->a=SQRT(GAMMA*W->p/dloc);
 }
 
 // ==================== converts W -> U
@@ -1180,7 +1186,10 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 	    Wi[idir].dXXHE = W0->dXXHE+ix[idir]*D[0].dXXHE+iy[idir]*D[1].dXXHE+iz[idir]*D[2].dXXHE+Wt.dXXHE;
 #endif
 #endif
-	    if(Wi[idir].d<0) abort();
+	    if(Wi[idir].d<0) {
+	      printf("neg d in extrapolation %e %e %e %e %e\n",Wi[idir].d,W0->d,D[0].d,D[1].d,D[2].d);
+	      abort();
+	      }
 	    //if(Wi[idir].p==PMIN) printf("%e %e \n",W0->p,W0->p+ix[idir]*D[0].p+iy[idir]*D[1].p+iz[idir]*D[2].p+Wt.p);
 
 
@@ -1206,8 +1215,6 @@ void MUSCL_BOUND2(struct HGRID *stencil, int ioct, int icell, struct Wtype *Wi,R
 #endif
 #endif
 	    
-	    //if(Wi[idir].p<0) abort();
-	    //Wi[idir].E=Wi[idir].p/(GAMMA-1.)+0.5*Wi[idir].d*(Wi[idir].u*Wi[idir].u+Wi[idir].v*Wi[idir].v+Wi[idir].w*Wi[idir].w);
 	    getE(Wi+idir);
 	    Wi[idir].a=SQRT(GAMMA*Wi[idir].p/Wi[idir].d);
 
@@ -1294,7 +1301,10 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
-  if((*pstar)<0) abort();
+  if((*pstar)<0) {
+    printf("neg pressure %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
 
   qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
   qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));
@@ -1306,7 +1316,10 @@ void speedestimateY_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
-  if((*SL)>(*SR)) abort();
+  if((*SL)>(*SR)){
+    printf("SLSR %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
   if(isnan(*ustar)){
     printf("ustar isnan ABORT %e | %e %e %e | %e %e %e\n",*ustar,WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p);
     abort();
@@ -1347,8 +1360,15 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
     (*SR)=FMAX(WLloc.u+WLloc.a,WRloc.u+WRloc.a);
     //abort();
   }
-  if((*SL)>(*SR)) abort();
-  if(isnan(*ustar)) abort();
+
+  if((*SL)>(*SR)){
+    printf("SLSR %e %e %e %e %e %e %e\n",WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p,*pstar);
+    abort();
+  }
+  if(isnan(*ustar)) {
+    printf("ustar isnan ABORT %e | %e %e %e | %e %e %e\n",*ustar,WLloc.d,WLloc.u,WLloc.p,WRloc.d,WRloc.u,WRloc.p);
+    abort();
+  }
 
 }
 
@@ -2037,13 +2057,14 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 	inei=iface;
 	MUSCL_BOUND2(stencil+i, ioct[vnei[inei]], vcell[inei], WT,dt,dx);// 
 	memcpy(WN+iface,WT+idxnei[inei],sizeof(struct Wtype)); 
+	//memcpy(WN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype)); 
        	W2U(WN+iface,UN+iface);
 	
 	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
 	  ffact[iface]=1; // we cancel the contriubtion of split neighbors
 	}
 	
-	if(isnan(WN[iface].d)){
+	if(isnan(WN[iface].u)){
 	  printf("%e %e %e\n",stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.d,stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.u,stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field.p);
 	  abort();
 	}
@@ -2451,7 +2472,10 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 	  U2W(&U,&Wnew);
 #endif	
 	  getE(&Wnew);
-	  if(Wnew.p<0) abort();
+	  if(Wnew.p<0){
+	  printf("pneg %e\n",Wnew.p);
+	  abort();
+	}
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
       }
@@ -2907,16 +2931,6 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
 
 
   if(neicell->child!=NULL){
-/*     // optimal case */
-/*     for(icell=0;icell<8;icell++){ */
-/*       memcpy(Wi+icell,&(neicell->child->cell[icell].field),sizeof(struct Wtype)); */
-/*       child[icell]=(neicell->child->cell[icell].child!=NULL); */
-/*     } */
-
-/* #ifdef WGRAV */
-/*     for(icell=0;icell<8;icell++) memcpy(floc+3*icell,neicell->child->cell[icell].f,sizeof(REAL)*3); */
-/* #endif */
-
     for(icell=0.;icell<8;icell++){
       struct CELLLIGHT_H *c=&stencil->oct[ioct].cell[icell];
       struct CELL *co=&neicell->child->cell[icell];
@@ -2928,15 +2942,14 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
     }
   }
   else{
-
     struct Wtype Wi[8];
     char child[8];
 #ifdef WGRAV
     REAL floc[8*3];//local force
 #endif
 
-    coarse2fine_hydro2(neicell,Wi);
-    //for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype));
+    //coarse2fine_hydro2(neicell,Wi);
+    for(icell=0;icell<8;icell++) memcpy(Wi+icell,&neicell->field,sizeof(struct Wtype));
     
 /* #ifdef WRADHYD */
 /*     for(icell=0;icell<8;icell++) Wi[icell].X=neicell->field.X; */
@@ -3020,9 +3033,7 @@ struct OCT *gatherstencil(struct OCT *octstart, struct HGRID *stencil, int strid
 
       for(icell=0;icell<8;icell++){
 	memcpy(&(stencil[iread].oct[13].cell[icell].field),&(curoct->cell[icell].field),sizeof(struct Wtype)); // for calculations
-	//memcpy(&(stencil[iread].New.cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype)); // for updates
 
-	
 #ifdef DUAL_E
 	stencil[iread].New.cell[icell].divu=0.;
 #endif
@@ -3160,14 +3171,11 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	//memcpy(&(curoct->cell[icell].fieldnew),&(stencil[iread].New.cell[icell].field),sizeof(struct Wtype));
 	memcpy(&deltaU,&(stencil[iread].New.cell[icell].deltaU),sizeof(struct Utype)); // getting the delta U back
 	W2U(&(curoct->cell[icell].fieldnew),&U);
-	
-	/* if(curoct->cell[icell].rfield.src>0){ */
-	/*   printf("dd=%e d=%e p=%e\n",deltaU.d,curoct->cell[icell].fieldnew.d,curoct->cell[icell].field.p);  */
-	/*   abort(); */
-	/* } */
-	/* printf("dd=%e d=%e p=%e\n",deltaU.d,curoct->cell[icell].fieldnew.d,curoct->cell[icell].field.p); */
-	/* abort(); */
-	//if(U.eint+deltaU.eint<0) abort();
+
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("BB %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+	  abort();
+	}
 
 	U.d  +=deltaU.d;
   	U.du +=deltaU.du;
@@ -3209,22 +3217,21 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	U.eint=FMAX(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 
-	if(U.eint<0) abort();
+	if(U.eint<0) {
+	  printf("eint neg %e %e\n",eint,PMIN);
+	  abort();
+	}
 
 #endif
-	
-	/* if(curoct->level==7){ */
-	/*   if((icell%2==1 && curoct->cpu==0)||(icell%2==0 && curoct->cpu==1)){ */
-	/*     if(curoct->x==(0.5-1./64)){ */
-	/*       printf("rank=%d icell=%d d=%e\n",curoct->cpu,icell,deltaU.d); */
-	/*     } */
-	/*   } */
-	/* } */
-
 	
 
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	getE(&(curoct->cell[icell].fieldnew));
+
+ 	if(isnan(curoct->cell[icell].fieldnew.u)){
+	  printf("AA %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+	  abort();
+	}
 
 #ifdef WRADHYD
 	//Ceiling for the ionisation fraction
@@ -3286,9 +3293,13 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	   
 	      // initial data from the new value
 	      memcpy(&W,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
-	      memcpy(&Wbkp,&(curoct->nei[vnei[inei]]->fieldnew),sizeof(struct Wtype));
 	      W2U(&W,&U);
 
+ 
+	      if(isnan(curoct->cell[icell].fieldnew.u)){
+		printf("CC %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+		abort();
+	      }
 
 	      // getting the flux
 	      memcpy(F,stencil[iread].New.cell[icell].flux+inei*NVAR,sizeof(REAL)*NVAR);
@@ -3312,12 +3323,16 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 	      U.dXXHE+=F[8]*dtsurdx*one*0.125;
 #endif
 #endif 	      
-	      //if(U.eint<0) abort();
 	      //scatter back
 	      U2W(&U,&W);
 	      //getE(&W);// <<<<< COULD BE CRITICAL
 
 	      memcpy(&(curoct->nei[vnei[inei]]->fieldnew),&W,sizeof(struct Wtype));
+
+	      if(isnan(curoct->cell[icell].fieldnew.u)){
+		printf("DD %e %e %e %e %e %e | %d %d\n",curoct->cell[icell].fieldnew.d,curoct->cell[icell].fieldnew.u,curoct->cell[icell].fieldnew.v,curoct->cell[icell].fieldnew.w,curoct->cell[icell].fieldnew.p,curoct->cell[icell].fieldnew.E,curoct->cpu,cpu->rank);
+		abort();
+	      }
 	    }
 	  }
 	}
@@ -3447,10 +3462,6 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
       for(icell=0;icell<8;icell++){
 	if(curoct->cell[icell].child==NULL){
 	  // unsplit case
-	  if(isnan(curoct->cell[icell].fieldnew.u)){
-	    printf("unsplit\n");
-	    abort();
-	  }
 	  memcpy(&(curoct->cell[icell].field),&(curoct->cell[icell].fieldnew),sizeof(struct Wtype));
 	}
 	else{
@@ -3460,8 +3471,6 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 	  child=curoct->cell[icell].child;
 	  memset(&W,0,sizeof(struct Wtype));
 	  memset(&U,0,sizeof(struct Utype));
-	  W.d=1e-13;
-	  U.d=1e-13;
 	  for(i=0;i<8;i++){
 	    // FIX THIS WITH CONSERVATIVE QUANT
 #ifdef CONSAVG
@@ -3556,20 +3565,23 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
 
 #ifdef WMPI
   // --------------- init for coarse octs in boundaries
+  // NOTE: be careful cpus that don't have octs at level dont clean boundaries
+  int n0=0;
   if(level>param->lcoarse){
     nextoct=firstoct[level-2];
-    if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
+    if(nextoct!=NULL){
       do {
 	curoct=nextoct;
 	nextoct=curoct->next; 
 	if(curoct->cpu!=cpu->rank){
 	  for(icell=0;icell<8;icell++) {
 	    memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
-	    curoct->cell[icell].fieldnew.d=1e-13;
 	  }
+	  n0++;
 	}
       }while(nextoct!=NULL);
     }
+    //if(level==12) printf("cleaning l=11 %d octs / %d on rank %d (lev12 %d octs) / f11=%p\n",n0,cpu->noct[level-2],cpu->rank,cpu->noct[level-1],firstoct[level-2]);
   }
 #endif
 

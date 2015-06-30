@@ -39,6 +39,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   struct PART *curp;
   REAL mtot;
   REAL Mtot=0;
+  REAL Mtotnew=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -98,11 +99,14 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 #ifdef WHYDRO2
 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
 
-		  if(curoct->cell[icell].field.d<=0) {
-			printf("Negative value for density -> abort in multicheck\n");
-			printf("%e\t%e\t%e\t%e\t%e\t%e\t", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E);
+		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
+		    if(cpu->rank==curoct->cpu){
+		      printf("Negative or NAN value for density -> abort in multicheck %d\n",label);
+		      printf("%e\t%e\t%e\t%e\t%e\t%e\t %d %d %d\n", curoct->cell[icell].field.d,curoct->cell[icell].field.u,curoct->cell[icell].field.v,curoct->cell[icell].field.w,curoct->cell[icell].field.p,curoct->cell[icell].field.E,cpu->rank,curoct->cpu,curoct->level);
 			abort();
+		    }
 		  }
 #endif
 
@@ -147,8 +151,14 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
     }
 
+#ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+#endif
 
+  if(cpu->rank==RANK_DISP){
+    printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
+  }
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
@@ -166,24 +176,24 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 //printf("%d\t%d\t%d\n",cpu->rank,npart, ntot);
 //printf("nPart %d\tnStar %d\n",npart[0], npart[1]);
 
-#ifdef PIC
-  //ultimate check
 
+#ifdef PIC
+  if(label<7){
+  //ultimate check
   if(npart[0]!=0){ // for initial call to multicheck that always provide a zero
-  if(ntot!=npart[0]) {
-    printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart[0],ntot,cpu->rank,label);
-    abort();
-  }
+    if(ntot!=npart[0]) {
+      printf("ERROR npart=%d npart (counted)=%d abort on rank %d on stage %d\n",npart[0],ntot,cpu->rank,label);
+      abort();
+    }
 #ifdef STARS
-  if(stot!=npart[1]) {
-    printf("ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n",npart[1],stot,cpu->rank,label);
-    abort();
-  }
+    if(stot!=npart[1]) {
+      printf("ERROR nstar=%d nstar (counted)=%d abort on rank %d on stage %d\n",npart[1],stot,cpu->rank,label);
+      abort();
+    }
 #endif
 
   }
-
-
+  }
 #endif
 
 #ifdef WMPI

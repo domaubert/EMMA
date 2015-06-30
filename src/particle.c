@@ -361,10 +361,12 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
     }while(nextoct!=NULL);
   }
 
-#ifdef WMPI
   REAL mmdisp;
+#ifdef WMPI
   MPI_Allreduce(&mdisp,&mmdisp,1,MPI_REEL,MPI_MAX,cpu->comm);
   //  mdisp=mmdisp;
+#else
+  mdisp=mmdisp;
 #endif
 
   if(cpu->rank==RANK_DISP) printf("level=%d maxdisp=%e or %e dx\n",level,mmdisp,mmdisp/dxcur);

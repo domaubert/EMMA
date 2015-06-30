@@ -1,7 +1,7 @@
 
 
-nflux_emma=3e16; // photons/sec/kg
-dur_emma=10.; //Myrs
+nflux_emma=4e16; // photons/sec/kg
+dur_emma=5.; //Myrs
 
 
 #if 1
@@ -33,6 +33,7 @@ agebis=grow(0,age);
 
 // sb99 average emission over the same duration as emma
 nflux_avg_dur_emma=integ(nfluxbis,agebis,dur_emma)/dur_emma;
+nflux_avg_dur_emma;
 //nflux_avg_dur_emma=integ(nfluxbis,agebis,dur_emma);
 
 // we get the fudge factor to be applied to spectra
@@ -50,7 +51,7 @@ fnu/=(4.*pi*pc10*pc10); //ergs/sec/Hz/cm2
 
 f1600=interp(fnu,lam,1600.,2); //ergs/sec/Hz/cm2 at 1600 Angstrom for 1e6 Ms particle
 
-save,createb("~/qtest/utils/mag/f1600_SB99_10Myrs.yor"),f1600,age;
+save,createb(swrite(format="~/qtest/utils/mag/f1600_SB99_%dMyrs.yor",int(dur_emma))),f1600,age;
 
 M1600=-2.5*log10(f1600/1e6)-48.6;
 f5500=interp(fnu,lam,5500,2); // at 5500 Angstrom for V mag

@@ -372,7 +372,6 @@ int main(int argc, char *argv[])
 
 
 void assign_cube(int field, int icell, float *map, int imap, int jmap, int kmap, int ii, int jj, int kk, int i0, int j0, int k0, int nmapx, int nmapy, int nmapz, struct LOCT *oct, struct UNITS *unit){
-
   switch(field){
   case 0:
     map[(imap+ii-i0)+(jmap+jj-j0)*nmapx+(kmap+kk-k0)*nmapx*nmapy]=oct->level;

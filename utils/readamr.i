@@ -160,9 +160,10 @@ func mergefield(fname,cname,ncpu,level,&time){
 
 }
 
-func plotamr(levmap,color=,width=,lmin=)
+func plotamr(levmap,color=,width=,lmin=,lbox=)
 {
   if(is_void(lmin)) lmin=1;
+  if(is_void(lbox)) lbox=1.;
   nx=dimsof(levmap)(2);
   ny=dimsof(levmap)(3);
 
@@ -178,7 +179,7 @@ func plotamr(levmap,color=,width=,lmin=)
         xmin=www(1,i)-1;
         ymin=www(2,i)-1;
         if((xmin%dx==0)*(ymin%dx==0)){
-          plbox,xmin,xmin+dx,ymin,ymin+dx,color=color,width=width;
+          plbox,(xmin/lbox),(xmin+dx)/lbox,(ymin/lbox),(ymin+dx)/lbox,color=color,width=width;
         }
       }
     }

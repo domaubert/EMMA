@@ -325,7 +325,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(fudgecool<1e-6){
 	    printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
-	//    if(fudgecool<1e-20) abort();
+	    if(fudgecool<1e-20) abort();
 	  }
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
@@ -346,6 +346,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	      {
 #ifdef OTSA
 		factotsa[igrp]=0;
+		alpha=alphab; // recombination is limited to non ground state levels
 #else
 		factotsa[igrp]=(igrp==0);
 #endif

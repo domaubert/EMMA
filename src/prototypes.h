@@ -72,6 +72,7 @@ typedef double REAL;
   #define OMEGAB (0.0)
 #else
   #define OMEGAB (0.049); // 0.049 for PLANCK
+//#define OMEGAB (0.31749); // 0.049 for PLANCK
 #endif
 
 #ifdef WRAD

@@ -1536,7 +1536,10 @@ int main(int argc, char *argv[])
   }
   else{
     //==================================== Restart =================================================
+
+#ifdef WMPI
     MPI_Barrier(cpu.comm);
+#endif
     if(cpu.rank==RANK_DISP)
       printf("Restarting from snap #%d\n", param.nrestart);
 #ifdef PIC
@@ -1563,7 +1566,9 @@ int main(int argc, char *argv[])
     ainit=tinit;
 #endif
 
+#ifdef WMPI
     MPI_Barrier(cpu.comm);
+#endif
     /* int errcode=777; */
     /* MPI_Abort(cpu.comm,errcode); */
 
@@ -1615,7 +1620,9 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
-  int Lmin= 1+ (int)(log(cpu.nproc)/(3*log(2)));
+
+  int Lmin = 1+(int)(log(cpu.nproc)/(3*log(2.)));
+
   if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
     param.mgridlmin = Lmin;
     if(cpu.rank==RANK_DISP){
@@ -1708,7 +1715,6 @@ int main(int argc, char *argv[])
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
 
-
 #ifdef ZOOM
     // we trigger the zoom region
     int izoom;
@@ -1720,7 +1726,6 @@ int main(int argc, char *argv[])
     if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
-#if 1
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
 
@@ -1768,12 +1773,11 @@ int main(int argc, char *argv[])
 
 
 
-#endif
 
     /* tsim=tmax; */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
-
+    // end ZOOM
 #endif
 
 #ifndef JUSTIC
@@ -1804,12 +1808,18 @@ int main(int argc, char *argv[])
 
       //Recursive Calls over levels
       double tg1,tg2,tg3,tg4;
+#ifdef WMPI
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
+#endif
 
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
+
+
+#ifdef WMPI
       MPI_Barrier(cpu.comm);
       tg3=MPI_Wtime();
+#endif
 
 #ifdef WRAD
 #ifdef COARSERAD
@@ -1821,19 +1831,28 @@ int main(int argc, char *argv[])
       while(trad<adt[levelcoarse-1]){
 	//if(cpu.rank==RANK_DISP) printf("step\n");
 	double tcr1,tcr2;
+
+#ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr1=MPI_Wtime();
+#endif
 	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad,nrad);
+
+#ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr2=MPI_Wtime();
+#endif
 	trad+=adt_rad[levelcoarse-1];
 	tsimrad+=adt_rad[levelcoarse-1];
 	nrad++;
 	if(nrad%10 ==0) if(cpu.rank==RANK_DISP) printf("rad iter=%d trad=%e tsimrad=%e tmax=%e done in %e secs\n",nrad,trad,tsimrad,adt[levelcoarse-1],tcr2-tcr1);
       }
 
+#ifdef WMPI
       MPI_Barrier(cpu.comm);
       tg4=MPI_Wtime();
+#endif
+
 #ifndef GPUAXL
       if(cpu.rank==RANK_DISP) printf("CPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
 #else
@@ -1843,8 +1862,10 @@ int main(int argc, char *argv[])
 #endif // RAD
 
 
+#ifdef WMPI
       MPI_Barrier(cpu.comm);
       tg2=MPI_Wtime();
+#endif
 #ifndef GPUAXL
       if(cpu.rank==RANK_DISP) printf("CPU GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
 #else
@@ -1882,7 +1903,9 @@ int main(int argc, char *argv[])
 	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 	    sleep(1);
+#ifdef WMPI
 	    MPI_Barrier(cpu.comm);
+#endif
 	  }
 	}
 	else{
@@ -1962,7 +1985,9 @@ int main(int argc, char *argv[])
 	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 	    sleep(1);
+#ifdef WMPI
 	    MPI_Barrier(cpu.comm);
+#endif
 	  }
 	}
 	else{

@@ -19,7 +19,7 @@ func readinfo(dir){
 }
 
 
-func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
+func monitor(dir,tpause=,zmax=,zmin=,clear=,col=,mstar=){
   if(is_void(zmax)) zmax=20;
   if(is_void(tpause)) tpause=30;
   if(is_void(clear)) clear=0;
@@ -32,13 +32,14 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
   h0=vi(13);
   om=vi(10);
   ol=vi(11);
-  mstar=vi(15);
+  if(is_void(mstar))mstar=vi(15);
   lbox=vi(2);
-
+  //mstar=om*(3.*(h0*1e3/3.08e22)^2)/8./pi/6.67e-11*(lbox*3.08e22/h0*100.)^3/2e30;//msol
 
   write,"########################################";
   
-    vv=asciiRead(dir+"/param.avg");
+  vv=asciiRead(dir+"/param.avg");
+  //  vv=load(dir+"/param.avg");
     
     z=vv(3,);
     a=vv(2,);
@@ -52,7 +53,6 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
     src=vv(12,);
     ts=(univAge(10000,h0=h0,Omega_m=om,Omega_l=ob,silent=1)-univAge(vv(3,),h0=h0,Omega_m=om,Omega_l=ol,silent=1))/(3600.*24*365.25);
     sfr=nstar(dif)*(ts(dif)>0)/(ts(dif)+1e-15)*mstar/(lbox/(h0/100.))^3;
-    
     aa=write(format=" NSteps=%d z=%f [aexp=%f] === xHI=%e avg Temp=%e [K]\n",int(vv(1,0)),z(0),a(0),1.-avgx(0),avgT(0));    
     if(clear){
       WS,1,dpi=120;
@@ -108,5 +108,5 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=){
     logxy,1,1;
 
 
-    
+    redraw;
 }

@@ -1535,8 +1535,10 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   int icell;
   double t[10];
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
  t[0]=MPI_Wtime();
+#endif
   if(cpu->rank==RANK_DISP) printf("Start Poisson Solver ");
 
 #ifndef GPUAXL
@@ -1569,22 +1571,25 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
     struct OCT *curoct=cpu->octList[level-1][iOct];
 
-	for(icell=0;icell<8;icell++){ // looping over cells in oct
+    for(icell=0;icell<8;icell++){ // looping over cells in oct
       curcell=&(curoct->cell[icell]);
       if(curcell->child!=NULL){
-
+	
         coarse2fine_gravlin(curcell,Wi);
         for(icell2=0;icell2<8;icell2++){
-		//		Wi[icell2].p=0.;
-		  memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
-		//memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
+	  //		Wi[icell2].p=0.;
+	  memcpy(&(curcell->child->cell[icell2].gdata.p),&(Wi[icell2].p),sizeof(REAL));
+	  //memcpy(&(curcell->child->cell[icell2].gdata.p),&(curcell->gdata.p),sizeof(REAL));
         }
       }
     }
   }
 
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
  t[9]=MPI_Wtime();
+#endif
+
  if(cpu->rank==RANK_DISP){
 #ifndef GPUAXL
    printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
