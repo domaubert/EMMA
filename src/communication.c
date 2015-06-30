@@ -1983,9 +1983,9 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      W2U(&(curoct->cell[icell].fieldnew),&U);
 	      W2U(&(pack->data[icell]),&Ue);
 	      
- 	      /* if(level==12){ */
-	      /* 	printf("%e %e\n",Ue.d,U.d); */
-	      /* } */
+ 	      if(level==12){
+	      	printf("%e %e\n",Ue.d,U.d);
+	      }
 
 	      U.d +=Ue.d;
 	      U.du+=Ue.du;

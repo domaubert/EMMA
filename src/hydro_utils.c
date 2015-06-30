@@ -3565,11 +3565,11 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
 
 #ifdef WMPI
   // --------------- init for coarse octs in boundaries
-  int n0;
+  // NOTE: be careful cpus that don't have octs at level dont clean boundaries
+  int n0=0;
   if(level>param->lcoarse){
     nextoct=firstoct[level-2];
-    if((nextoct!=NULL)&&(cpu->noct[level-2]!=0)){
-      n0=0;
+    if(nextoct!=NULL){
       do {
 	curoct=nextoct;
 	nextoct=curoct->next; 
@@ -3577,11 +3577,11 @@ void clean_new_hydro(int level,struct RUNPARAMS *param, struct OCT **firstoct, s
 	  for(icell=0;icell<8;icell++) {
 	    memset(&(curoct->cell[icell].fieldnew),0,sizeof(struct Wtype));
 	  }
-	    n0++;
+	  n0++;
 	}
       }while(nextoct!=NULL);
-      //if(level==12) printf("cleaning %d octs / %d\n",n0,cpu->noct[level-2]);
     }
+    //if(level==12) printf("cleaning l=11 %d octs / %d on rank %d (lev12 %d octs) / f11=%p\n",n0,cpu->noct[level-2],cpu->rank,cpu->noct[level-1],firstoct[level-2]);
   }
 #endif
 
