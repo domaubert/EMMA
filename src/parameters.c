@@ -263,6 +263,7 @@ void readAtomic(struct RUNPARAMS *param){
   fclose(buf);
 }
 #endif // WRAD
+
 void GetParameters(char *fparam, struct RUNPARAMS *param){
   FILE *buf=NULL;
   char stream[256];
@@ -328,11 +329,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %s",stream, param->atomic.path);
+
+      char filename[256];
+      rstat=fscanf(buf,"%s %s",stream, filename);
+      sprintf(param->atomic.path,"./src/atomic_data/%s ",filename);
+
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
       rstat=fscanf(buf,"%s",stream);

@@ -175,7 +175,6 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   // ========================== FOR TESTS ============================
   // =================================================================
 
-  int igrp;
   int icell=cell->idx;
   REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
   REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
