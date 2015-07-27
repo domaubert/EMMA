@@ -71,18 +71,14 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 /// Inject an energy "E" in all cells of the oct contening
 /// the cell "cell" on kinetic form, radially to the center
 /// of the oct and uniformly in all cells
-/// The proportion of ejecta follow fig 109 of Starburst99 model:
-/// http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
 // ----------------------------------------------------------//
-
-  //REAL ejecta_proportion = 0.5260172663907063;
-  REAL ejecta_proportion = 0.;
 
 #ifdef SNTEST
   REAL msn = 2e3 * SOLAR_MASS /param->unit.unit_mass;
-  REAL mtot_feedback = msn * ejecta_proportion;
+  REAL mtot_feedback = msn * EJECTA_PROP;
 #else
-  REAL mtot_feedback = curp->mass* ejecta_proportion;
+
+  REAL mtot_feedback = curp->mass* EJECTA_PROP;
 #endif // SNTEST
 
   struct OCT* oct = cell2oct(cell);
@@ -158,14 +154,12 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 
 REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL mstar){
 // ----------------------------------------------------------//
-/// Compute the total feedback energy following fig 115 of the
-/// Starburst99 model :
-/// http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+/// Compute the total feedback energy
 // ----------------------------------------------------------//
 
   //REAL egy = 1.936421963946603e+55 *1e-7/(1e6*SOLAR_MASS); // erg/1e6M0 -> j/kg
 
-  REAL egy = 9.73565592733335e11; // j/kg
+  REAL egy = SN_EGY; // j/kg
   egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
   return egy;
 }

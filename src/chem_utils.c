@@ -173,10 +173,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     xt,
     eintt,
     ai_tmp1=0.,
-    hnu[NGRP],		// ! Average Photon Energy (J)
-    factgrp[NGRP],
-    alphae[NGRP],
-    alphai[NGRP],
     et[NGRP],
     p[NGRP];
 
@@ -186,6 +182,17 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
   REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
+  REAL hnu[NGRP];
+  memcpy(&hnu,&param->atomic.hnu,NGRP*sizeof(REAL));
+
+  REAL alphae[NGRP];
+  memcpy(&alphae,&param->atomic.alphae,NGRP*sizeof(REAL));
+
+  REAL alphai[NGRP];
+  memcpy(&alphai,&param->atomic.alphai,NGRP*sizeof(REAL));
+
+  REAL factgrp[NGRP];
+  memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 
 #ifdef S_X
   REAL E0overI[NGRP];
@@ -193,20 +200,16 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL F2[NGRP];
 #endif
 
-
-  SECTION_EFFICACE; // defined in Atomic.h
-  FACTGRP; //defined in Atomic.h
-
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
 
   REAL
     egyloc[BLOCKCOOL*NGRP],
     floc[3*BLOCKCOOL*NGRP],
+    srcloc[BLOCKCOOL*NGRP],
     x0[BLOCKCOOL],
     nH[BLOCKCOOL],
-    eint[BLOCKCOOL],
-    srcloc[BLOCKCOOL];
+    eint[BLOCKCOOL];
 
 
   REAL dt=dtnew*param->unit.unit_t*POW(aexporg,2);
@@ -268,7 +271,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+
+      for (igrp=0;igrp<NGRP;igrp++){
+      srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+      }
 // R.src phot/unit_t/unit_dv (comobile)
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);

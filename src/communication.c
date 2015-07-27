@@ -384,11 +384,17 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
 }
 
+//<<<<<<< HEAD
 //========================================================================
 //========================================================================
 void gather_ex_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field,int level){
-
-
+/*
+=======
+//======================================================================================
+#ifdef WHYDRO2
+void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int level, int *countpacket){
+>>>>>>> atomic
+*/
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
    */
@@ -632,6 +638,7 @@ void gather_ex_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, int *nre
 	  part->rhocell=curp->rhocell;
 	  part->age=curp->age;
 	  part->isStar=curp->isStar;
+    part->radiative_state=curp->radiative_state;
 #endif
 	  //if(cpu->rank==1) printf(" id send =%d\n",part->idx);
 
@@ -1232,6 +1239,7 @@ void scatter_mpi_part(struct CPUINFO *cpu, struct PART_MPI **precvbuffer, int *n
 	    (lastp)->rhocell=part->rhocell;
 	    (lastp)->age=part->age;
 	    (lastp)->isStar=part->isStar;
+	    (lastp)->radiative_state=part->radiative_state;
 
 	if ((lastp)->isStar) {
 		nadd[1] ++;
@@ -1987,6 +1995,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      continue; // we update only coarse neighbours relative to the current level
 	    }
 	    for(icell=0;icell<8;icell++){
+
 	      W2U(&(curoct->cell[icell].fieldnew),&U);
 	      W2U(&(pack->data[icell]),&Ue);
 

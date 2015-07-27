@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 #include "prototypes.h"
+#include "spectrum.h"
 
 #ifdef UVBKG
 #include "src_utils.h"
 #endif // UVBKG
+
 
 char *field_name [] ={
 // The field order has to be the same as in param.output for consistency
@@ -191,6 +194,75 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
 }
 
+#ifdef WRAD
+void readAtomic(struct RUNPARAMS *param){
+/**
+  * Read the atomic data from file
+  */
+
+  //openfile
+  FILE *buf=NULL;
+  buf=fopen(param->atomic.path,"r");
+  if(buf==NULL){
+    printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
+    abort();
+  }
+
+  size_t rstat;
+  char stream[256];
+
+  //alloc space
+  rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_space);
+ // printf("ngrp_space=%d\n", param->atomic.ngrp_space );
+  param->atomic.space_bound= (REAL*)calloc(param->atomic.ngrp_space,sizeof(REAL));
+
+  //read space bound
+  rstat=fscanf(buf,"%s",stream);
+  int i_space;
+  for (i_space=0; i_space<param->atomic.ngrp_space; i_space++){
+    rstat=fscanf(buf,"%lf",&param->atomic.space_bound[i_space]);
+    //printf("time space[%d]%e\n",i_space, param->atomic.space_bound[i_space]);
+  }
+  rstat=fscanf(buf,"%s",stream);
+
+  //alloc time
+  rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_time);
+  //printf("ngrp_time=%d\n", param->atomic.ngrp_time );
+  param->atomic.time_bound= (REAL*)calloc(param->atomic.ngrp_time,sizeof(REAL));
+
+  //read time bound
+  rstat=fscanf(buf,"%s",stream);
+  int i_time;
+  for (i_time=0; i_time<param->atomic.ngrp_time; i_time++){
+    rstat=fscanf(buf,"%lf",&param->atomic.time_bound[i_time]);
+    //printf("time bound[%d]%e\n",i_time, param->atomic.time_bound[i_time]);
+  }
+
+  // alloc grp
+  param->atomic.n = param->atomic.ngrp_space * param->atomic.ngrp_time;
+  param->atomic.hnu= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphae= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphai= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.factgrp= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+
+  //skip header
+  rstat=fscanf(buf,"%s",stream);
+  int i;
+  for(i=0;i<4;i++){
+    rstat=fscanf(buf,"%s",stream);
+  }
+
+  //read grp
+  for(i=0;i<param->atomic.n;i++){
+    rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    param->atomic.hnu[i]*=1.6022e-19;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); param->atomic.alphae[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); param->atomic.alphai[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.factgrp[i]);
+    //printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
+  }
+  fclose(buf);
+}
+#endif // WRAD
 void GetParameters(char *fparam, struct RUNPARAMS *param){
   FILE *buf=NULL;
   char stream[256];
@@ -233,7 +305,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
       if(param->mgridlmin<0){
-	param->mgridlmin=param->lcoarse-param->lcoarse;
+        param->mgridlmin=param->lcoarse-param->lcoarse;
       }
 
       rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
@@ -256,6 +328,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %s",stream, param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -330,7 +403,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   readOutputParam("param.output", param);
 #endif // ALLOCT
 
+#ifdef WRAD
+  readAtomic(param);
+#endif // WRAD
+
 }
+
+
+  //abort();
+
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
@@ -491,7 +572,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   REAL max_rho=0;
   REAL src=0;
 
-
   int level;
   REAL vweight;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -515,7 +595,12 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 #ifdef WRAD
 	  mean_T+=curcell->rfield.temp*vweight;
-    src+=curcell->rfield.src*vweight;
+
+    int igrp;
+	  for(igrp=0;igrp<NGRP;igrp++){
+      src+=curcell->rfield.src[igrp]*vweight;
+    }
+
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 #endif // WRAD
 
@@ -554,8 +639,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
-
-
 
 //  char* int_format = "%-8d\t";
   char* real_format = "%e\t";
@@ -612,8 +695,5 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp,"\n");
     fclose(fp);
-
   }
 }
-
-

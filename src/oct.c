@@ -316,8 +316,8 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
     lcell->fx[igrp]=cell->rfield.fx[igrp];
     lcell->fy[igrp]=cell->rfield.fy[igrp];
     lcell->fz[igrp]=cell->rfield.fz[igrp];
+    lcell->src[igrp]=cell->rfield.src[igrp];
   }
-  lcell->src=cell->rfield.src;
 #ifdef STARS
   lcell->snfb=cell->rfield.snfb;
 #endif

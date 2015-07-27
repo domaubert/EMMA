@@ -18,6 +18,8 @@
 
 #include "param.h"
 
+
+
 #ifdef SINGLEPRECISION
 // SINGLE PRECISION CASE
 
@@ -171,6 +173,30 @@ struct UVBACKGROUND{
 };
 
 //=======================================
+struct ATOMIC{
+  char path[1024]; ///< path of the file containing the atomic data
+  int n;
+  int ngrp_space;
+  int ngrp_time;
+
+  REAL *space_bound;
+  REAL *time_bound;
+
+  REAL *hnu;
+  REAL *alphae;
+  REAL *alphai;
+  REAL *factgrp;
+};
+
+struct SPECTRUM{
+  char path[1024];
+  int ntime;
+  int nwave;
+  REAL*time;
+  REAL*wavelength;
+  REAL**flux;
+};
+
 
 struct RUNPARAMS{
   int npartmax; ///< the max particles number (per process)
@@ -264,6 +290,9 @@ struct RUNPARAMS{
 #ifdef UVBKG
   struct UVBACKGROUND uv; ///< the UV background
 #endif
+
+  struct ATOMIC atomic;
+  struct SPECTRUM spectrum;
 };
 
 
@@ -431,11 +460,11 @@ struct Rtype{
   REAL fx[NGRP];
   REAL fy[NGRP];
   REAL fz[NGRP];
-  REAL src;
+  REAL src[NGRP];
 
-#ifdef STARS
+#ifdef SUPERNOVAE
   REAL snfb;
-#endif
+#endif // SUPERNOVAE
 
 
   REAL nhplus;
@@ -600,6 +629,7 @@ struct PART
 
 #ifdef STARS
   int  isStar;
+  int radiative_state;
   REAL rhocell;
   REAL age;
 #endif
@@ -634,6 +664,7 @@ struct PART_MPI // For mpi communications
 
 #ifdef STARS
   int isStar;
+  int radiative_state;
 #endif
 
 };
@@ -743,7 +774,7 @@ struct LCELL
   double fx[NGRP];
   double fy[NGRP];
   float fz[NGRP];
-  double src;
+  double src[NGRP];
   float snfb;
   double xion;
   double temp; ///< is a direct function of eint, nh and xion but stored for conveniency

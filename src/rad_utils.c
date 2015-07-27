@@ -18,6 +18,7 @@
 #include "rad_utils_gpu.h"
 #endif
 
+
 #include <omp.h>
 
 //================================================================================
@@ -42,7 +43,6 @@ void distribE(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *param
   }
 }
 
-
 //================================================================================
 void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
   int igrp;
@@ -51,8 +51,9 @@ void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->fx[igrp]=W2->fx[igrp]- W1->fx[igrp];
     WR->fy[igrp]=W2->fy[igrp]- W1->fy[igrp];
     WR->fz[igrp]=W2->fz[igrp]- W1->fz[igrp];
+    WR->src[igrp]=W2->src[igrp]- W1->src[igrp];
   }
-    WR->src=W2->src- W1->src;
+
 #ifdef STARS
     WR->snfb=W2->snfb- W1->snfb;
 #endif
@@ -106,14 +107,16 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
       Wr->fz[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fz[igrp],Wp->fz[igrp])),FMAX(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
 
-  }
-
-  if(Wp->src>0){
-      Wr->src=FMAX(FMAX(0.,FMIN(beta*Wm->src,Wp->src)),FMIN(Wm->src,beta*Wp->src));
+    if(Wp->src[igrp]>0){
+      Wr->src[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->src[igrp],Wp->src[igrp])),FMIN(Wm->src[igrp],beta*Wp->src[igrp]));
     }
     else{
-      Wr->src=FMIN(FMIN(0.,FMAX(beta*Wm->src,Wp->src)),FMAX(Wm->src,beta*Wp->src));
+      Wr->src[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->src[igrp],Wp->src[igrp])),FMAX(Wm->src[igrp],beta*Wp->src[igrp]));
     }
+
+  }
+
+
 
 
 #ifdef STARS
@@ -175,8 +178,9 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
     Wp->fx[igrp] =W0->fx[igrp] +dx*Dx->fx[igrp] +dy*Dy->fx[igrp] +dz*Dz->fx[igrp];
     Wp->fy[igrp] =W0->fy[igrp] +dx*Dx->fy[igrp] +dy*Dy->fy[igrp] +dz*Dz->fy[igrp];
     Wp->fz[igrp] =W0->fz[igrp] +dx*Dx->fz[igrp] +dy*Dy->fz[igrp] +dz*Dz->fz[igrp];
+    Wp->src[igrp] =W0->src[igrp] +dx*Dx->src[igrp] +dy*Dy->src[igrp] +dz*Dz->src[igrp];
   }
-    Wp->src =W0->src +dx*Dx->src +dy*Dy->src +dz*Dz->src;
+
 
 #ifdef WCHEM
     Wp->nhplus =W0->nhplus + dx*Dx->nhplus + dy*Dy->nhplus + dz*Dz->nhplus;
@@ -193,7 +197,6 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
 }
 
 //================================================================================
-
 void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
   struct OCT * oct;
@@ -331,10 +334,8 @@ void coarse2fine_rad2(struct CELL *cell, struct Rtype *Wi, REAL cloc){
 
 }
 
-
 // =====================================================================
 // =====================================================================
-
 void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 
 
@@ -443,8 +444,7 @@ void coarse2fine_radlin(struct CELL *cell, struct Rtype *Wi){
 
 //================================================================================
 //================================================================================
-REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
-{
+REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j){
   REAL c2e=ee*c*c; // 2 flop
   REAL ff=0.;
   REAL arg,chi,res=0.;
@@ -473,10 +473,7 @@ REAL Eddington(REAL fx, REAL fy, REAL fz, REAL ee, REAL c,int i,int j)
   return res;
 }
 
-
-
 // =============================================================================================================
-
 int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -670,10 +667,7 @@ int rad_sweepX(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
-
 // =============================================================================================================
-
 int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -875,9 +869,7 @@ int rad_sweepY(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
 // ===================================================================================================
-
 int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt, REAL c){
 
   int inei,icell,iface;
@@ -1066,11 +1058,8 @@ int rad_sweepZ(struct RGRID *stencil, int level, int curcpu, int nread,int strid
   return 0;
 }
 
-
-
 //==================================================================================
 //==================================================================================
-
 #ifdef WRADTEST
 void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3, int order, struct CELL *cell, struct RGRID *stencil, REAL cloc){
 
@@ -1490,10 +1479,8 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 }
 #endif
 
-
 // ===================================================================================================
 // ===================================================================================================
-
 struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, int *nread, REAL cloc)
 {
   struct OCT* nextoct;
@@ -1545,10 +1532,8 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
   return nextoct;
 }
 
-
 // ===================================================================================================
 // ===================================================================================================
-
 void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew,REAL cloc)
 {
   int i,icell,igrp;
@@ -1558,7 +1543,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
   int flx;
   REAL dtsurdx=dtnew/dxcur;
   REAL F[NFLUX_R];
-  REAL SRC;
+  REAL SRC[NGRP];
   for(i=0;i<nread;i++){ // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
 
@@ -1591,8 +1576,8 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 #ifndef WCHEM
       // adding the source contribution
       for(igrp=0;igrp<NGRP;igrp++){
-      	SRC=stencil[i].oct[6].cell[icell].rfield.src;
-      	R.e[igrp]  +=SRC*dtnew+EMIN;
+      	SRC[igrp]=stencil[i].oct[6].cell[icell].rfield.src[igrp];
+      	R.e[igrp]  +=SRC[igrp]*dtnew+EMIN;
       }
 #endif
 
@@ -1651,7 +1636,6 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 }
 
 // ===========================================================================================================
-
 struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int stride, struct CPUINFO *cpu, REAL dxcur, REAL dtnew, REAL cloc)
 {
   struct OCT* nextoct;
@@ -1769,7 +1753,6 @@ struct OCT *scatterstencilrad(struct OCT *octstart, struct RGRID *stencil, int s
 }
 
 // ====================================================================================================================
-
 int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dxcur, REAL dtnew,REAL aexp, struct RUNPARAMS *param, int chemonly){
 
   struct OCT *nextoct;
@@ -1854,12 +1837,8 @@ int advancerad(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct RGR
   return nreadtot;
 }
 
-
-
 // =================================================================================================
 // =================================================================================================
-
-
 REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, struct RGRID *stencil, int stride, REAL dtnew, REAL aexp, int chemonly){
 
   int nread,nreadtot;;
@@ -1916,7 +1895,9 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	if(is_unsplit){
 	  // unsplit case
 
-	  curoct->cell[icell].rfieldnew.src=curoct->cell[icell].rfield.src;
+    int igrp;
+    for(igrp=0;igrp<NGRP;igrp++)
+	  curoct->cell[icell].rfieldnew.src[igrp]=curoct->cell[icell].rfield.src[igrp];
 #ifdef WCHEM
 	  curoct->cell[icell].rfieldnew.nh=curoct->cell[icell].rfield.nh;
 #endif
@@ -1950,8 +1931,9 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	      R.fx[igrp]+=child->cell[i].rfield.fx[igrp]*0.125;
 	      R.fy[igrp]+=child->cell[i].rfield.fy[igrp]*0.125;
 	      R.fz[igrp]+=child->cell[i].rfield.fz[igrp]*0.125;
+        R.src[igrp]+=child->cell[i].rfield.src[igrp]*0.125;
 	    }
-	    R.src+=child->cell[i].rfield.src*0.125;
+
 #ifdef WCHEM
 	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
 	    R.nhplus+=child->cell[i].rfield.nhplus*0.125;
@@ -1997,7 +1979,6 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
 }
 
-
 // ==============================================================
 void set_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2021,6 +2002,7 @@ void set_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struc
     }while(nextoct!=NULL);
   }
 }
+
 // ==============================================================
 void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2066,7 +2048,6 @@ void clean_new_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, str
 
 }
 
-
 // ==============================================================
 void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, REAL aexp){
 
@@ -2100,7 +2081,4 @@ void sanity_rad(int level,struct RUNPARAMS *param, struct OCT **firstoct, struct
   }
 }
 
-
-
-
-#endif
+#endif // WRAD

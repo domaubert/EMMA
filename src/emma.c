@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
   blockcounts[1]=1;
 
 #ifdef STARS
-  blockcounts[2]=5;
+  blockcounts[2]=6;
 #else
   blockcounts[2]=4;
 #endif
