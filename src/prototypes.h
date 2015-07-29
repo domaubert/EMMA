@@ -84,7 +84,7 @@ typedef double REAL;
 
 
 
-#define LIFETIME_OF_STARS_IN_TEST (0)
+#define LIFETIME_OF_STARS_IN_TEST (3e9)
 
 #ifdef TESTCOSMO
 struct COSMOPARAM{

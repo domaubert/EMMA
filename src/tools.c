@@ -40,6 +40,8 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL mtot;
   REAL Mtot=0;
   REAL Mtotnew=0;
+  REAL Etot=0;
+  static REAL Etotlast;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -98,8 +100,18 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
 #ifdef WHYDRO2
-		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
-		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+		  if(curoct->cell[icell].child==NULL){
+		  Mtot +=curoct->cell[icell].field.d*dv;
+		  Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+
+		  REAL v2 = curoct->cell[icell].field.u*curoct->cell[icell].field.u+
+                curoct->cell[icell].field.v*curoct->cell[icell].field.v+
+                curoct->cell[icell].field.w*curoct->cell[icell].field.w;
+
+		  Etot +=(0.5*curoct->cell[icell].field.d*v2 + curoct->cell[icell].field.p/(GAMMA-1.))*dv;
+
+		  }
+
 
 		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
 		    if(cpu->rank==curoct->cpu){
@@ -133,7 +145,12 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		 	stot++;
 			Mtot+=curp->mass;
 		    }
-#endif
+#endif // STARS
+
+      REAL v2 = curp->vx*curp->vx+
+                curp->vy*curp->vy+
+                curp->vz*curp->vz;
+      Etot+= 0.5*curp->mass*v2
 		  }while(nexp!=NULL);
 #endif
 
@@ -154,11 +171,15 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Etot,1,MPI_REEL,MPI_SUM,cpu->comm);
+
 #endif
 
   if(cpu->rank==RANK_DISP){
     printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
+    printf("Total_energy=%e last=%e deviation=%e\n",Etot,Etotlast,Etot-Etotlast);
   }
+  Etotlast = Etot;
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */

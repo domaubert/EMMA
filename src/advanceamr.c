@@ -996,8 +996,10 @@ if(cond1||cond2||cond3){
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
+/*
     setOctList(firstoct[level-1], cpu, param,level);
     supernovae(param,cpu, adt[level-1], tloc, level, is);
+*/
 #endif // SNTEST
 #endif // SUPERNOVAE
 
@@ -1019,7 +1021,7 @@ if(cond1||cond2||cond3){
 */
     {
 	    L_clean_marks(level,firstoct);
-	    // marking the cells of the current level
+          // marking the cells of the current level
 #ifdef WMPI
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
 #else
@@ -1031,15 +1033,14 @@ if(cond1||cond2||cond3){
     }else{
 
       KPCLIMIT_TRIGGER=1;
-      MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
       MPI_Barrier(cpu->comm);
+      MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
 
       if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
-      printf("*********************************************************************************\n");
       printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
-      printf("*********************************************************************************\n");
     }
-      KPCLIMIT_TRIGGER=0;
+
+    KPCLIMIT_TRIGGER=0;
 
       //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
     // ====================== VI Some bookkeeping ==========

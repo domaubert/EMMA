@@ -69,6 +69,9 @@
 #define RADSTEP
 #endif // COARSERAD
 
+#ifdef SUPERNOVAE
+#include "supernovae.h"
+#endif // SUPERNOVAE
 
 void gdb_debug()
 {
@@ -1818,6 +1821,7 @@ int main(int argc, char *argv[])
     }
 
 
+
 #endif // PIC&
 
     /* tsim=tmax; */
@@ -1825,6 +1829,13 @@ int main(int argc, char *argv[])
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
     // end ZOOM
 #endif // ZOOM
+
+#ifdef SNTEST
+      for(level=1;level<=levelmax;level++){
+        setOctList(firstoct[level-1], &cpu, &param,level);
+      }
+      supernovae(&param,&cpu, 0, 0, 10, 0);
+#endif // SNTEST
 
 #ifndef JUSTIC
 

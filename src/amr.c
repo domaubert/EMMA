@@ -1290,7 +1290,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 */
 
-          threshold=1e-5;
+          threshold=1e-1;
 
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    if(mcell>mmax) mmax=mcell;

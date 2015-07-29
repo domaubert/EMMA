@@ -197,9 +197,9 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
 /**
-  * Read the atomic data from file
+  * Read the atomic data from file defined in param.run
   */
-
+  int debug = 0;
   //openfile
   FILE *buf=NULL;
   buf=fopen(param->atomic.path,"r");
@@ -207,13 +207,13 @@ void readAtomic(struct RUNPARAMS *param){
     printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
     abort();
   }
-
+  printf("reading %s\n",param->atomic.path);
   size_t rstat;
   char stream[256];
 
   //alloc space
   rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_space);
- // printf("ngrp_space=%d\n", param->atomic.ngrp_space );
+  if(debug) printf("ngrp_space=%d\n", param->atomic.ngrp_space);
   param->atomic.space_bound= (REAL*)calloc(param->atomic.ngrp_space,sizeof(REAL));
 
   //read space bound
@@ -221,13 +221,12 @@ void readAtomic(struct RUNPARAMS *param){
   int i_space;
   for (i_space=0; i_space<param->atomic.ngrp_space; i_space++){
     rstat=fscanf(buf,"%lf",&param->atomic.space_bound[i_space]);
-    //printf("time space[%d]%e\n",i_space, param->atomic.space_bound[i_space]);
+    if(debug) printf("space_bound[%d]%e\n",i_space, param->atomic.space_bound[i_space]);
   }
-  rstat=fscanf(buf,"%s",stream);
 
   //alloc time
   rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_time);
-  //printf("ngrp_time=%d\n", param->atomic.ngrp_time );
+  if(debug) printf("ngrp_time=%d\n", param->atomic.ngrp_time );
   param->atomic.time_bound= (REAL*)calloc(param->atomic.ngrp_time,sizeof(REAL));
 
   //read time bound
@@ -235,32 +234,31 @@ void readAtomic(struct RUNPARAMS *param){
   int i_time;
   for (i_time=0; i_time<param->atomic.ngrp_time; i_time++){
     rstat=fscanf(buf,"%lf",&param->atomic.time_bound[i_time]);
-    //printf("time bound[%d]%e\n",i_time, param->atomic.time_bound[i_time]);
+    if(debug) printf("time_bound[%d]%e\n",i_time, param->atomic.time_bound[i_time]);
   }
 
   // alloc grp
   param->atomic.n = param->atomic.ngrp_space * param->atomic.ngrp_time;
+
   param->atomic.hnu= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.alphae= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.alphai= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.factgrp= (REAL*)calloc(param->atomic.n,sizeof(REAL));
 
   //skip header
-  rstat=fscanf(buf,"%s",stream);
   int i;
-  for(i=0;i<4;i++){
-    rstat=fscanf(buf,"%s",stream);
-  }
+  for(i=0;i<4;i++)  rstat=fscanf(buf,"%s",stream);
 
   //read grp
   for(i=0;i<param->atomic.n;i++){
-    rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    param->atomic.hnu[i]*=1.6022e-19;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); param->atomic.alphae[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); param->atomic.alphai[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    if(!debug)  param->atomic.hnu[i]*=ELECTRONVOLT;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); if(!debug)  param->atomic.alphae[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); if(!debug)  param->atomic.alphai[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
     rstat=fscanf(buf,"%lf",&param->atomic.factgrp[i]);
-    //printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
+    if(debug) printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
   }
   fclose(buf);
+  if(debug) abort();
 }
 #endif // WRAD
 

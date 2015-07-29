@@ -11,7 +11,6 @@
 
 #include "prototypes.h"
 #include "oct.h"
-#include "atomic_data/Atomic.h"
 #include "chem_utils.h"
 #include "tools.h"
 #include "convert.h"
@@ -73,8 +72,8 @@ int putsource2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL ae
 
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
-  cell->rfield.src[igrp]   =0.;
-  cell->rfieldnew.src[igrp]=0.;
+    cell->rfield.src[igrp]   =0.;
+    cell->rfieldnew.src[igrp]=0.;
   }
 
 
@@ -313,7 +312,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
       //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
       flag=1;
     }
-#endif
+#endif // DECREASE_EMMISIVITY_AFTER_TLIFE
 
   }while(nexp!=NULL);
 
@@ -344,7 +343,7 @@ if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #endif //WHYDRO
 #endif //STARS
 #endif //UVBKG
-#endif
+#endif // WRADTEST
   return flag;
 }
 
@@ -387,13 +386,13 @@ void homosource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO
   int Ntot;
   MPI_Allreduce(&N,&Ntot,1,MPI_INT,MPI_SUM,cpu->comm);
   N=Ntot;
-#endif
+#endif // WMPI
 
   //if(cpu->rank==RANK_DISP) printf("Call lev=%d Homogeneous field found = %e with %d src\n",levext,bkg,N);
   param->bkg=bkg; // saving the value
 
 }
-#endif
+#endif // HOMOSOURCE
 
 
 // ==================================================================================================================
@@ -574,10 +573,10 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 	curoct->cell[icell].rfield.nhepplus=curoct->cell[icell].field.dXXHE/MHE_OVER_MH; // [unit_N] note d in unit_d and nh in unit_N are identical
 	curoct->cell[icell].rfieldnew.nhepplus=curoct->cell[icell].rfield.nhepplus; // [unit_N] note d in unit_d and nh in unit_N are identical
-#endif
+#endif // HELIUM
 
-#endif
-#endif
+#endif // WRADHYD
+#endif // WCHEM
 
 #ifndef TESTCLUMP
 	if(curoct->cell[icell].child!=NULL){
@@ -588,7 +587,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
     }
 	  continue; // src are built on the finest level
 	}
-#endif
+#endif // TESTCLUMP
 
         flag=putsource(&(curoct->cell[icell]),param,level,aexp,tcur,curoct,cpu); // creating sources if required
 

@@ -218,9 +218,20 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 // ----------------------------------------------------------//
 
 	struct OCT* oct = cell2oct(cell);
+  REAL dx = POW(2.0,-level);
 
-	if (oct->x == 0.5 && oct->y == 0.5 && oct->z == 0.5 && cell->idx == 0){
-//	if (oct->x == 0 && oct->y == 0 && oct->z == 0 && cell->idx == 0){
+	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-0.5;
+	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-0.5;
+	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-0.5;
+
+	REAL R=SQRT(x*x+y*y+z*z);
+
+  REAL rmax=0.003;
+
+	if (R<rmax && cell->child==NULL){
+
+
+
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 		REAL t = aexp ;//* in_yrs;
 
@@ -230,7 +241,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       printf("======================================\n");
       printf("===SN EXPLODE=========================\n");
       printf("======================================\n");
-			SN_TMP_PARAM = 0;
+
 
       REAL msn = 2e3 * SOLAR_MASS;
       //REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
@@ -281,7 +292,7 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
         Nsn += feedback(curcell, param, cpu, aexp, level, dt);
       }
     }
-
+  SN_TMP_PARAM = 0;
   #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
   #endif
