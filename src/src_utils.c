@@ -180,8 +180,12 @@ REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
 if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
 #endif // SNTEST
 
+  REAL  x_src=0,
+        y_src=0,
+        z_src=0;
+
   //if((FABS(xc-0.5)<=X0)*(FABS(yc-0.5)<=X0)*(FABS(zc-0.5)<=X0) && lifetime_test){
-  if(curoct->x==0.5 && curoct->y==0.5 && curoct->z==0.5 && icell==0 && lifetime_test){
+  if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0 && lifetime_test){
     if((xc>0.)*(yc>0.)*(zc>0.)){
       //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
       cell->rfield.src=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
@@ -551,7 +555,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #else
 	  REAL temperature=1e2;
 	  REAL xion=1e-5;
-#endif
+#endif // COOLING
 
 	  REAL eint;
 
@@ -564,7 +568,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 	  curoct->cell[icell].rfield.nhepplus=xion*curoct->cell[icell].rfield.nh*yHE;
 	  curoct->cell[icell].rfieldnew.nhepplus=curoct->cell[icell].rfield.nhepplus;
-#endif
+#endif // HELIUM
 
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
@@ -573,9 +577,9 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  curoct->cell[icell].rfieldnew.eint=eint; // 10000 K for a start
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 	  E2T(&curoct->cell[icell].rfield,aexp,param);
-#endif
+#endif // WRADHYD
 
-#endif
+#endif // WCHEM
 
 #ifndef TESTCLUMP
 	  for(igrp=0;igrp<NGRP;igrp++){
@@ -591,13 +595,13 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	    curoct->cell[icell].rfieldnew.fy[igrp]=curoct->cell[icell].rfield.fy[igrp];
 	    curoct->cell[icell].rfieldnew.fz[igrp]=curoct->cell[icell].rfield.fz[igrp];
 	  }
-#endif
+#endif // TESTCLUMP
 	}
 
 #ifdef WRADHYD
 	E2T(&curoct->cell[icell].rfieldnew,aexp,param);
 	E2T(&curoct->cell[icell].rfield,aexp,param);
-#endif
+#endif // WRADHYD
 
 	nc+=flag;
       }
@@ -608,7 +612,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   int nctot;
   MPI_Allreduce(&nc,&nctot,1,MPI_INT,MPI_SUM,cpu->comm);
   nc=nctot;
-#endif
+#endif // WMPI
   //if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
   return nc;
 }

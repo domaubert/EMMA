@@ -1515,7 +1515,6 @@ int main(int argc, char *argv[])
 		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif // WRADHYD
-
 #endif // WCHEM
 
 		}

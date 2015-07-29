@@ -13,7 +13,6 @@
 #include <mpi.h>
 #include "atomic_data/Atomic.h"
 
-
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
 #define FSCHAYE 2.5
 //================================================================================
