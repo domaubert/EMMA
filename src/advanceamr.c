@@ -1011,15 +1011,7 @@ if(cond1||cond2||cond3){
     if( (param->lmax!=param->lcoarse) &&
         (level<param->lmax)           &&
         (dxnext>dxkpc)                ){
-/*
->>>>>>> sedov
-#ifndef ZOOM
-    if((ndt[level-1]%2==1)||(level==param->lcoarse))
-#else
-	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
-#endif // ZOOM
-*/
-    {
+
 	    L_clean_marks(level,firstoct);
           // marking the cells of the current level
 #ifdef WMPI
@@ -1027,8 +1019,6 @@ if(cond1||cond2||cond3){
 #else
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,NULL,NULL);
 #endif
-	  }
-
 
     }else{
 
@@ -1037,7 +1027,15 @@ if(cond1||cond2||cond3){
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
 
       if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
-      printf("Blocking refinement to level %d : dx[%d]=%e dxkpc=%e\n",level+1,level+1,dxnext,dxkpc);
+
+      if (level==param->lmax){
+        printf("Blocking refinement to level %d : level max reached\n",level);
+      }else{
+        printf("Blocking refinement to level %d : dx[%d]=%e dxlim=%e\n",level,level+1,dxnext,dxkpc);
+      }
+
+      KPCLIMIT_TRIGGER=0;
+
     }
 
     KPCLIMIT_TRIGGER=0;

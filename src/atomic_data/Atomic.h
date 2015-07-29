@@ -1,3 +1,5 @@
+#ifndef ATOMIC
+#define ATOMIC
 #define NGRP_ATOMIC 1
 
 #ifdef S_50000
@@ -207,4 +209,6 @@
 #define SECTION_EFFICACE hnu[0]=14.311030*1.6022e-19;alphae[0]=5.525609e-22*c;alphai[0]=5.513721e-22*c;
 #define FACTGRP factgrp[0]=1.0;
 #define SRCINT (4.104363e+06)
+#endif
+
 #endif
