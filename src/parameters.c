@@ -420,19 +420,13 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
 
 
-#ifdef WRADTEST
-#define U_TEST
-#endif // WRADTEST
-#ifdef  SNTEST
-#define U_TEST
-#endif // SNTEST
-#ifdef U_TEST
+#if defined(WRADTEST) || defined(SNTEST)
   param->unitary_stars_test->lifetime = 3.673e6;
   param->unitary_stars_test->mass=2e3;
   param->unitary_stars_test->src_pos_x=0.5;
   param->unitary_stars_test->src_pos_y=0.5;
   param->unitary_stars_test->src_pos_z=0.5;
-#endif // U_TEST
+#endif // defined
 
 }
 

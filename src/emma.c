@@ -220,18 +220,11 @@ int main(int argc, char *argv[])
   param.stars=&stars;
 #endif
 
-#ifdef WRADTEST
-#define U_TEST
-#endif // WRADTEST
 
-#ifdef  SNTEST
-#define U_TEST
-#endif // SNTEST
-
-#ifdef U_TEST
+#if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST unitary_stars_test;
   param.unitary_stars_test = &unitary_stars_test;
-#endif // U_TEST
+#endif // defined
 
 
 #ifdef SUPERNOVAE
