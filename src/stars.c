@@ -350,7 +350,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
               if( curp->isStar==3){
                 curp->isStar=4; //Supernovae + decreasing luminosity -> decreasing luminosity
                 //curently supernovae are instantaneous
-                /// TODO implement slow feedback
+                /// TODO implement "slow" feedback
               }
 
               if(curp->isStar==2){

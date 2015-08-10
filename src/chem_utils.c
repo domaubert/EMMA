@@ -7,11 +7,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "prototypes.h"
-#include "oct.h"
 #include <string.h>
 #include <mpi.h>
-#include "atomic_data/Atomic.h"
+
+#include "prototypes.h"
+#include "oct.h"
 
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
 #define FSCHAYE 2.5
@@ -182,16 +182,16 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
 
   REAL hnu[NGRP];
-  memcpy(&hnu,&param->atomic.hnu,NGRP*sizeof(REAL));
-
   REAL alphae[NGRP];
-  memcpy(&alphae,&param->atomic.alphae,NGRP*sizeof(REAL));
-
   REAL alphai[NGRP];
-  memcpy(&alphai,&param->atomic.alphai,NGRP*sizeof(REAL));
-
   REAL factgrp[NGRP];
-  memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
+
+  for(igrp=0;igrp<NGRP;igrp++) {
+    hnu[igrp]=param->atomic.hnu[igrp];
+    alphae[igrp]=param->atomic.alphae[igrp];
+    alphai[igrp]=param->atomic.alphai[igrp];
+    factgrp[igrp]=param->atomic.factgrp[igrp];
+  }
 
 #ifdef S_X
   REAL E0overI[NGRP];
@@ -361,7 +361,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 		  et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 		}
 		else{
-		  et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));
+		  et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));
 		}
 
 		if((et[igrp]<0)||(isnan(et[igrp]))){

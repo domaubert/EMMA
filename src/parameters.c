@@ -199,7 +199,8 @@ void readAtomic(struct RUNPARAMS *param){
 /**
   * Read the atomic data from file defined in param.run
   */
-  int debug = 0;
+  int debug =0; //print what is read and abort if !=0
+
   //openfile
   FILE *buf=NULL;
   buf=fopen(param->atomic.path,"r");
@@ -207,39 +208,44 @@ void readAtomic(struct RUNPARAMS *param){
     printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
     abort();
   }
-  printf("reading %s\n",param->atomic.path);
+  if(debug) printf("reading %s\n",param->atomic.path);
   size_t rstat;
   char stream[256];
 
   //alloc space
   rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_space);
   if(debug) printf("ngrp_space=%d\n", param->atomic.ngrp_space);
-  param->atomic.space_bound= (REAL*)calloc(param->atomic.ngrp_space,sizeof(REAL));
+  param->atomic.space_bound= (REAL*)calloc(param->atomic.ngrp_space+1,sizeof(REAL));
+  param->atomic.space_bound[param->atomic.ngrp_space]=INFINITY;
 
   //read space bound
-  rstat=fscanf(buf,"%s",stream);
+  rstat=fscanf(buf,"%s",stream); // read SPACE_BOUND(eV)
   int i_space;
   for (i_space=0; i_space<param->atomic.ngrp_space; i_space++){
     rstat=fscanf(buf,"%lf",&param->atomic.space_bound[i_space]);
     if(debug) printf("space_bound[%d]%e\n",i_space, param->atomic.space_bound[i_space]);
   }
+  rstat=fscanf(buf,"%s",stream); //read inf
+
 
   //alloc time
   rstat=fscanf(buf,"%s %d",stream,&param->atomic.ngrp_time);
   if(debug) printf("ngrp_time=%d\n", param->atomic.ngrp_time );
-  param->atomic.time_bound= (REAL*)calloc(param->atomic.ngrp_time,sizeof(REAL));
+  param->atomic.time_bound= (REAL*)calloc(param->atomic.ngrp_time+1,sizeof(REAL));
+  param->atomic.time_bound[param->atomic.ngrp_time]=INFINITY;
 
   //read time bound
-  rstat=fscanf(buf,"%s",stream);
+  rstat=fscanf(buf,"%s",stream); //read TIME_BOUND(MYR)
   int i_time;
   for (i_time=0; i_time<param->atomic.ngrp_time; i_time++){
     rstat=fscanf(buf,"%lf",&param->atomic.time_bound[i_time]);
     if(debug) printf("time_bound[%d]%e\n",i_time, param->atomic.time_bound[i_time]);
+    param->atomic.time_bound[i_time]*=1e6; //Myrs in yrs
   }
+  rstat=fscanf(buf,"%s",stream); //read inf
 
   // alloc grp
   param->atomic.n = param->atomic.ngrp_space * param->atomic.ngrp_time;
-
   param->atomic.hnu= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.alphae= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.alphai= (REAL*)calloc(param->atomic.n,sizeof(REAL));
@@ -354,6 +360,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #ifdef SUPERNOVAE
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff	=(REAL)dummyf;
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac	=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->ejecta_proportion	=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->sn_egy	=(REAL)dummyf;
 #else
 	for (i=0; i<2; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
@@ -410,11 +418,23 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   readAtomic(param);
 #endif // WRAD
 
+
+
+#ifdef WRADTEST
+#define U_TEST
+#endif // WRADTEST
+#ifdef  SNTEST
+#define U_TEST
+#endif // SNTEST
+#ifdef U_TEST
+  param->unitary_stars_test->lifetime = 3.673e6;
+  param->unitary_stars_test->mass=2e3;
+  param->unitary_stars_test->src_pos_x=0.5;
+  param->unitary_stars_test->src_pos_y=0.5;
+  param->unitary_stars_test->src_pos_z=0.5;
+#endif // U_TEST
+
 }
-
-
-  //abort();
-
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
@@ -560,7 +580,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
 }
 
-void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt){
+void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
 /**
   * At each timestep, compute and write information about the average state of several physical quantities
   */
@@ -643,6 +663,16 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
 #endif
 
+
+  param->physical_state->mean_xion = mean_xion;
+  param->physical_state->mean_T = mean_T;
+  param->physical_state->max_T=max_T;
+  param->physical_state->max_rho=max_rho;
+  param->physical_state->src_tot=src;
+  param->physical_state->max_level=max_level;
+  param->physical_state->Nsn=Nsn;
+
+
 //  char* int_format = "%-8d\t";
   char* real_format = "%e\t";
 
@@ -658,6 +688,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"step\t");
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
+      fprintf(fp,"t_[yrs]\t\t");
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
       fprintf(fp,"max_rho\t\t");
@@ -678,7 +709,11 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef TESTCOSMO
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+#else
+    fprintf(fp, real_format,0.);
+    fprintf(fp, real_format,0.);
 #endif // TESTCOSMO
+    fprintf(fp, real_format,t*param->unit.unit_t/MYR*1e6);
     fprintf(fp, real_format,dt);
     fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);

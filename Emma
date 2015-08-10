@@ -1,23 +1,91 @@
-#!/bin/bash
+#!/usr/bin/env python
+import os, sys
 
-SCRIPT=smithers
-DATA_FOLDER=data/
-RUN_FOLDER=$1
-IC_FOLDER=IC/
+SCRIPT="smithers"
+DATA_FOLDER="data/"
+IC_FOLDER="IC/"
 
-make
+RUN_FOLDER=""
+if len(sys.argv) > 1:
+	RUN_FOLDER=sys.argv[1]
 
-mkdir $DATA_FOLDER$RUN_FOLDER
+FOLDER = DATA_FOLDER+RUN_FOLDER
 
-cp -r src $DATA_FOLDER$RUN_FOLDER
-cp emmacpu $DATA_FOLDER$RUN_FOLDER
-cp param.* $DATA_FOLDER$RUN_FOLDER
-cp scripts/${SCRIPT} $DATA_FOLDER$RUN_FOLDER
 
-ln -s $(pwd)/$IC_FOLDER/level_* $DATA_FOLDER$RUN_FOLDER
+def build_all():
+	def build(target=""):		
+		if os.system("make %s"%(target) ):
+			print "Build failed"
+			exit()	
 
-cd $DATA_FOLDER/$RUN_FOLDER
+	build()
+	build("oct2grid")	
+	build("alloct")
+			
+def link_IC():	
+	ic_folder = "%s/%s"%(os.getcwd(),IC_FOLDER)	
+	os.system("ln -s %s/level_* %s"%(ic_folder, FOLDER ))
 
-./${SCRIPT}
-#sbatch ${SCRIPT}
-#ccc_msub ${SCRIPT}
+def mkdir(path):
+	try : 
+		os.mkdir(path)
+	except OSError:
+		pass
+
+def copy_utils():
+	mkdir("%s/utils"%(FOLDER))
+	os.system("cp -r utils/alloct %s/utils"%(FOLDER))
+	os.system("cp -r utils/oct2grid %s/utils"%(FOLDER))
+	
+def copy_param():
+	os.system("cp param.run %s"%(FOLDER))
+	os.system("cp param.mk %s"%(FOLDER))
+	os.system("cp param.output %s"%(FOLDER))
+	
+def get_arch():
+	file = "Makefile"
+	for line in open(file):
+		if "CPU" in line:
+			return "cpu"
+		if "GPU" in line:
+			return "gpu"
+
+def copy_exec():
+	arch=get_arch()
+	
+	if (arch=="cpu"):
+		os.system("cp emmacpu %s"%(FOLDER))
+	if (arch=="gpu"):
+		os.system("cp emmagpu %s"%(FOLDER))
+
+def init():
+	mkdir(FOLDER)
+	os.system("cp -r src %s"%(FOLDER))
+	os.system("cp scripts/%s %s"%(SCRIPT,FOLDER))
+
+	copy_exec()
+	copy_param()
+	copy_utils()
+	link_IC()
+	
+def get_script_type():
+	file = SCRIPT
+	for line in open(file):
+		if "#SBATCH" in line:
+			return "sbatch"
+		if "#MSUB" in line:
+			return "ccc_msub"
+	return "./"
+	
+def launch():
+	os.chdir(FOLDER)
+	script_type = get_script_type()
+	os.system("%s%s"%(script_type, SCRIPT))
+	
+
+if __name__ == "__main__":
+
+	build_all()
+	init()
+	launch()
+	

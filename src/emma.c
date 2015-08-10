@@ -12,6 +12,7 @@
 #include "hilbert.h"
 #include "prototypes.h"
 #include "io.h"
+#include "restart.h"
 #include "ic.h"
 #include "cic.h"
 #include "oct.h"
@@ -47,7 +48,6 @@
 #include "rad_utils.h"
 #ifdef WCHEM
 #include "chem_utils.h"
-#include "atomic_data/Atomic.h"
 #endif
 
 #endif
@@ -72,6 +72,11 @@
 #ifdef SUPERNOVAE
 #include "supernovae.h"
 #endif // SUPERNOVAE
+
+#ifdef MOVIE
+#include "movie.h"
+#endif // MOVIE
+
 
 void gdb_debug()
 {
@@ -215,6 +220,20 @@ int main(int argc, char *argv[])
   param.stars=&stars;
 #endif
 
+#ifdef WRADTEST
+#define U_TEST
+#endif // WRADTEST
+
+#ifdef  SNTEST
+#define U_TEST
+#endif // SNTEST
+
+#ifdef U_TEST
+  struct UNITARY_STARS_TEST unitary_stars_test;
+  param.unitary_stars_test = &unitary_stars_test;
+#endif // U_TEST
+
+
 #ifdef SUPERNOVAE
   struct SNPARAM sn;
   param.sn=&sn;
@@ -225,6 +244,9 @@ int main(int argc, char *argv[])
 	struct MOVIEPARAM movie;
 	param.movie=&movie;
 #endif
+
+  struct PHYSICAL_STATE physical_state;
+  param.physical_state = &physical_state;
 
 #ifdef WDBG
   gdb_debug();
@@ -1368,26 +1390,31 @@ int main(int argc, char *argv[])
 #ifdef TUBE
     printf("Read Shock Tube\n");
     read_shocktube(&cpu, &tinit,&param,firstoct);
-#endif
+#endif // TUBE
+#endif // EVRARD
+#endif // GRAFIC
+#endif // WHYDRO2
 
-
-#endif
-#endif
-
-
-#endif
-
-    //    abort();
 
     //===================================================================================================================================
 
 #ifdef WRAD
-
 #ifdef WCHEM
-    if(NGRP!=NGRP_ATOMIC){
-      printf("NGRP and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
-      abort();
+    int flag =0;
+
+    if(NGRP_SPACE!=param.atomic.ngrp_space){
+      printf("NGRP_SPACE and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
+      printf("check src/param.h and the atomic file (in src/atomic_data) chosen in param.run\n");
+      flag=1;
     }
+
+    if(NGRP_TIME!=param.atomic.ngrp_time){
+      printf("NGRP_TIME and NGRP_ATOMIC INCONSISTENT ! ERROR !\n");
+      printf("check src/param.h and the atomic file (in src/atomic_data) chosen in param.run\n");
+      flag=1;
+    }
+
+    if (flag) abort();
 #endif // WCHEM
 
 #ifdef WRADTEST
@@ -1526,9 +1553,14 @@ int main(int argc, char *argv[])
 
 
       }
+
+
+
 #endif // WRADTEST
 #endif // WRAD
 
+#ifndef WRADTEST
+#ifndef WRAD
 #ifdef SNTEST
   // for sedov test
 
@@ -1570,7 +1602,8 @@ int main(int argc, char *argv[])
   tinit=tsim;
 
 #endif // SNTEST
-
+#endif // WRAD
+#endif // WRADTEST
 
     // saving the absolute initial time
 #ifdef TESTCOSMO
@@ -1829,13 +1862,14 @@ int main(int argc, char *argv[])
     // end ZOOM
 #endif // ZOOM
 
+/*
 #ifdef SNTEST
       for(level=1;level<=levelmax;level++){
         setOctList(firstoct[level-1], &cpu, &param,level);
       }
       supernovae(&param,&cpu, 0, 0, 10, 0);
 #endif // SNTEST
-
+*/
 #ifndef JUSTIC
 
     // Loop over time
@@ -2027,8 +2061,14 @@ int main(int argc, char *argv[])
 	ndumps++;
       }
 
-    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1]);
+    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1], tsim);
 
+#ifdef MOVIE
+  for(level=1;level<=levelmax;level++){
+    setOctList(firstoct[level-1], &cpu, &param,level);
+  }
+  dumpMovie(&param, &cpu, (float)tsim);
+#endif // MOVIE
 
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];

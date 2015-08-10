@@ -376,7 +376,7 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
     break;
 
   case 705:
-    res=log10(oct->cell[icell].src+1e-15);
+    res=log10(oct->cell[icell].src[0]+1e-15);
     break;
 #ifdef WCHEM
   case 706:

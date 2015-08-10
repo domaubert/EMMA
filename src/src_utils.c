@@ -63,9 +63,6 @@ void collectstars(struct CELL *cellcoarse, struct CELL *cell,struct RUNPARAMS *p
 #endif // PIC
 }
 
-
-
-
 // --------------------------------------------------------------------
 
 int putsource2coarse(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REAL tcur){
@@ -175,32 +172,61 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   // =================================================================
 
   int icell=cell->idx;
-  REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+  REAL xc=curoct->x+( icell&1    )*dxcur+dxcur*0.5;
   REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-  REAL zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+  REAL zc=curoct->z+((icell>>2)  )*dxcur+dxcur*0.5;
 
 
 #ifndef TESTCLUMP
   // ============= STROMGREN SPHERE CASE =======================
 
-int lifetime_test = 1;
-#ifdef SNTEST
 REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
-if ( tcur_in_yrs >= LIFETIME_OF_STARS_IN_TEST) lifetime_test = 0;
-#endif // SNTEST
 
-  REAL  x_src=0,
-        y_src=0,
-        z_src=0;
+REAL  x_src=param->unitary_stars_test->src_pos_x,
+      y_src=param->unitary_stars_test->src_pos_y,
+      z_src=param->unitary_stars_test->src_pos_z;
 
   //if((FABS(xc-0.5)<=X0)*(FABS(yc-0.5)<=X0)*(FABS(zc-0.5)<=X0) && lifetime_test){
-  if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0 && lifetime_test){
+  if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0){
     if((xc>0.)*(yc>0.)*(zc>0.)){
       //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
-        int igrp;
-        for(igrp=0;igrp<NGRP;igrp++){
-          cell->rfield.src[igrp]=param->srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
-          cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
+
+//        static int cur_igrp_time=0;
+        int igrp_time;
+        for(igrp_time=0;igrp_time<NGRP_TIME;igrp_time++){
+
+          REAL t_bound_min = param->atomic.time_bound[igrp_time];
+          REAL t_bound_max = param->atomic.time_bound[igrp_time+1];
+
+          if( (tcur_in_yrs>= t_bound_min) &&
+              (tcur_in_yrs<  t_bound_max) ){
+/*
+            if (cur_igrp_time != igrp_time){
+              printf("******************\n");
+              printf("CHANGING SPECTRUM!\n");
+              printf("  %d -> %d        \n", cur_igrp_time, igrp_time);
+              printf("******************\n");
+              cur_igrp_time = igrp_time;
+            }
+*/
+
+            int igrp_space;
+            for(igrp_space=0;igrp_space<NGRP_SPACE;igrp_space++){
+
+              int igrp= igrp_time*NGRP_SPACE + igrp_space;
+              //REAL srcint = param->srcint*(tcur>0?1.:0);
+              REAL srcint = param->unitary_stars_test->mass* SOLAR_MASS * param->srcint*(tcur>0?1.:0);
+#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+              REAL t = tcur_in_yrs;
+
+              if (param->unitary_stars_test->lifetime)  t/=param->unitary_stars_test->lifetime;
+              srcint *= (t<=1.?1.:POW(t,-4.));
+#endif // DECREASE_EMMISIVITY_AFTER_TLIFE
+              cell->rfield.src[igrp]= srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
+              cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
+            }
+          }
+
         }
       flag=1;
     }

@@ -996,10 +996,10 @@ if(cond1||cond2||cond3){
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
-/*
+
     setOctList(firstoct[level-1], cpu, param,level);
     supernovae(param,cpu, adt[level-1], tloc, level, is);
-*/
+
 #endif // SNTEST
 #endif // SUPERNOVAE
 
@@ -1029,13 +1029,10 @@ if(cond1||cond2||cond3){
       if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
 
       if (level==param->lmax){
-        printf("Blocking refinement to level %d : level max reached\n",level);
+        printf("Blocking refinement to level %d : level max reached\n",level+1);
       }else{
-        printf("Blocking refinement to level %d : dx[%d]=%e dxlim=%e\n",level,level+1,dxnext,dxkpc);
+        printf("Blocking refinement to level %d : dx[%d]=%e dxlim=%e\n",level+1,level+1,dxnext,dxkpc);
       }
-
-      KPCLIMIT_TRIGGER=0;
-
     }
 
     KPCLIMIT_TRIGGER=0;
@@ -1053,13 +1050,9 @@ if(cond1||cond2||cond3){
 
     //dispndt(param,cpu,ndt);
 
+
+
     // === Loop
-
-
-#ifdef MOVIE
-	if (level==param->lcoarse)	dumpMovie(firstoct, param, cpu, level, (float)aexp);
-#endif // MOVIE
-
   }while((dt<adt[level-2])&&(is<nsub));
 
 

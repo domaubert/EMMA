@@ -34,16 +34,17 @@
 #include "movie.h"
 //=================================================================================================
 
-int MOVIE_SNAP_NUMBER = 0;
 
-void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int level, float aexp){
+void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
-	if(cpu->rank==RANK_DISP)  printf("dump movie file ");
+  static int MOVIE_SNAP_NUMBER;
+	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d",MOVIE_SNAP_NUMBER);
 
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
 
   const int ndim = 2; //number of dimension
+
 
 	const int lmap   = param->movie->lmap;
 	const REAL xmin  = param->movie->xmin;
@@ -85,8 +86,8 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 		const int  locN  = pow(2 ,lmap-ilev);
 
     int iOct;
-    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-      struct OCT *oct=cpu->octList[level-1][iOct];
+    for(iOct=0; iOct<cpu->locNoct[ilev-1]; iOct++){
+      struct OCT *oct=cpu->octList[ilev-1][iOct];
 
 			int icell;
 			for(icell=0;icell<8;icell++){
@@ -139,7 +140,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 	}
 
 	int ii;
-	for(ii=0;ii<4*ntot;ii++) map[ii] /= nmapz * cpu->nproc;
+	for(ii=0;ii<4*ntot;ii++) map[ii] /= nmapz;
 
   //=======================================
   //============= dump ====================
@@ -147,8 +148,7 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 	float* mapred = param->movie->map_reduce;
 	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
-	if(cpu->rank==0){
-
+	if(cpu->rank==RANK_DISP){
 
     mkdir(ffolder, 0755);
 		char fname[128];
@@ -160,13 +160,13 @@ void dumpMovie(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 
 		fwrite(&nmapx,1,sizeof(int  ),fp);
 		fwrite(&nmapy,1,sizeof(int  ),fp);
-		fwrite(&aexp,1,sizeof(float),fp);
+		fwrite(&aexp, 1,sizeof(float),fp);
 		fwrite(mapred,4*ntot,sizeof(float),fp);
 
 		fclose(fp);
 	}
 
-  if(cpu->rank==0) printf("done\n");
+  if(cpu->rank==0) printf(" done\n");
 }
 
 #endif//MOVIE

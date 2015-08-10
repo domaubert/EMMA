@@ -252,13 +252,13 @@ void setOctList(struct OCT *firstoct, struct CPUINFO *cpu, struct RUNPARAMS *par
  // printf("Building octList\n");
 
   struct OCT  *nextoct = firstoct;
-  struct OCT  *curoct;
+
 
 //  cleanOctList(cpu,param,level);
 
   int nOct = 0;
   do{ if(nextoct==NULL) 		continue;
-      curoct=nextoct;
+        struct OCT  *curoct=nextoct;
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue;
 

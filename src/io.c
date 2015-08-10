@@ -16,7 +16,6 @@
 #include "segment.h"
 #include "stars.h"
 #include "hydro_utils.h"
-#include "atomic_data/Atomic.h"
 #include "tools.h"
 
 #ifdef WMPI

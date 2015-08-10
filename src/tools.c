@@ -177,7 +177,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
   if(cpu->rank==RANK_DISP){
     printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
-    printf("Total_energy=%e last=%e deviation=%e\n",Etot,Etotlast,Etot-Etotlast);
+    printf("Total_energy=%e (new=%e) deviation=%e\n",Etotlast,Etot,Etot-Etotlast);
   }
   Etotlast = Etot;
 

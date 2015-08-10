@@ -74,11 +74,10 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 // ----------------------------------------------------------//
 
 #ifdef SNTEST
-  REAL msn = 2e3 * SOLAR_MASS /param->unit.unit_mass;
-  REAL mtot_feedback = msn * EJECTA_PROP;
+  REAL msn = param->unitary_stars_test->mass * SOLAR_MASS /param->unit.unit_mass;
+  REAL mtot_feedback = msn * param->sn->ejecta_proportion;
 #else
-
-  REAL mtot_feedback = curp->mass* EJECTA_PROP;
+  REAL mtot_feedback = curp->mass* param->sn_jecta_proportion;
 #endif // SNTEST
 
   struct OCT* oct = cell2oct(cell);
@@ -156,10 +155,7 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 // ----------------------------------------------------------//
 /// Compute the total feedback energy
 // ----------------------------------------------------------//
-
-  //REAL egy = 1.936421963946603e+55 *1e-7/(1e6*SOLAR_MASS); // erg/1e6M0 -> j/kg
-
-  REAL egy = SN_EGY; // j/kg
+  REAL egy = param->sn->sn_egy; // j/kg
   egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
   return egy;
 }
@@ -191,7 +187,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       if(param->sn->feedback_frac){
         // oct feedback
-        // if there is thermal and kinetic feedback (or purely kinetic feedback) the energy is injected in a oct
+        // if there is kinetic feedback the energy is injected in a oct
         thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
         kineticFeedback(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
       }else{
@@ -220,44 +216,53 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 	struct OCT* oct = cell2oct(cell);
   REAL dx = POW(2.0,-level);
 
-	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-0.5;
-	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-0.5;
-	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-0.5;
+  REAL  x_src=param->unitary_stars_test->src_pos_x,
+        y_src=param->unitary_stars_test->src_pos_y,
+        z_src=param->unitary_stars_test->src_pos_z;
+
+/*
+	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-x_src ;
+	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-y_src ;
+	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-z_src ;
 
 	REAL R=SQRT(x*x+y*y+z*z);
 
-  REAL rmax=0.003;
+  REAL rmax= 1 *dx;
 
 	if (R<rmax && cell->child==NULL){
+*/
 
+    REAL x=(oct->x+( cell->idx    & 1)*dx) ;
+    REAL y=(oct->y+((cell->idx>>1)& 1)*dx) ;
+    REAL z=(oct->z+( cell->idx>>2    )*dx);
 
+    if ( (x==x_src) && (y==y_src) && (z==z_src) && cell->child==NULL){
 
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
-		REAL t = aexp ;//* in_yrs;
+		REAL t = aexp * in_yrs;
 
-
-		if ( t >= LIFETIME_OF_STARS_IN_TEST && SN_TMP_PARAM ){
+		if ( t >= param->unitary_stars_test->lifetime && SN_TMP_PARAM ){
 
       printf("======================================\n");
       printf("===SN EXPLODE=========================\n");
       printf("======================================\n");
+      SN_TMP_PARAM = 0;
 
-
-      REAL msn = 2e3 * SOLAR_MASS;
-      //REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
-      REAL E=1;
+      REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
+      REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
+      //REAL E=1;
 
     //  thermalFeedbackCell(cell, E*(1.-param->sn->feedback_frac));
    //  thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
      //kineticFeedback(param, cell,NULL,aexp,level, E*param->sn->feedback_frac);
 
       printf("cell egy=%e\n",  cell->field.E);
-      thermalFeedbackCell(cell, E);
-      printf("cell egy=%e\n",  cell->field.E);
+      //thermalFeedbackCell(cell, E);
 
      //thermalFeedbackOct(cell, E);
 
-      //kineticFeedback(param, cell,NULL,aexp,level, E);
+      kineticFeedback(param, cell,NULL,aexp,level, E);
+      printf("cell egy=%e\n",  cell->field.E);
 
       printf("SN active at t = %e\n", t);
       printf("eblast= %e \n", E*POW( 2.,-3.*level));
@@ -292,7 +297,6 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
         Nsn += feedback(curcell, param, cpu, aexp, level, dt);
       }
     }
-  SN_TMP_PARAM = 0;
   #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);
   #endif

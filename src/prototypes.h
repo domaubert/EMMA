@@ -66,7 +66,7 @@ typedef double REAL;
 #endif
 #else
 #define NVAR (5)
-#endif
+#endif // DUAL_E
 
 #define NFLUX (6*NVAR)
 
@@ -82,9 +82,6 @@ typedef double REAL;
 #endif
 //=======================================
 
-
-
-#define LIFETIME_OF_STARS_IN_TEST (3e9)
 
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -122,6 +119,8 @@ struct SNPARAM{
   REAL feedback_eff;///< feedback efficiency
   REAL feedback_frac;///< fraction of kinetic feedback over thermal feedback
   REAL Esnfb;///<  total Energy of a SN
+  REAL ejecta_proportion;
+  REAL sn_egy;
 };
 #endif // SUPERNOVAE
 
@@ -143,7 +142,6 @@ struct MOVIEPARAM{
 #endif
 
 struct UNITS{
-
   REAL unit_l;///< comoving length size of the box [meters]
   REAL unit_v;///< unit velocity
   REAL unit_t;///< unit time [seconds]
@@ -172,6 +170,14 @@ struct UVBACKGROUND{
   REAL *value; ///< size NGRP
 };
 
+struct UNITARY_STARS_TEST{
+  REAL lifetime;
+  REAL src_pos_x;
+  REAL src_pos_y;
+  REAL src_pos_z;
+  REAL mass;
+};
+
 //=======================================
 struct ATOMIC{
   char path[1024]; ///< path of the file containing the atomic data
@@ -195,6 +201,16 @@ struct SPECTRUM{
   REAL*time;
   REAL*wavelength;
   REAL**flux;
+};
+
+struct PHYSICAL_STATE{
+  REAL mean_xion;
+  REAL mean_T;
+  REAL max_T;
+  REAL max_rho;
+  REAL src_tot;
+  int max_level;
+  int Nsn;
 };
 
 
@@ -293,6 +309,10 @@ struct RUNPARAMS{
 
   struct ATOMIC atomic;
   struct SPECTRUM spectrum;
+
+  struct UNITARY_STARS_TEST *unitary_stars_test;
+  struct PHYSICAL_STATE *physical_state;
+
 };
 
 
