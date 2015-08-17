@@ -1999,9 +1999,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      U.dv+=Ue.dv;
 	      U.dw+=Ue.dw;
 	      U.E +=Ue.E;
-#ifdef DUAL_E
 	      U.eint+=Ue.eint;
-#endif
 
 #ifdef WRADHYD
 	      U.dX+=Ue.dX;
