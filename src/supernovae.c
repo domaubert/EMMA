@@ -143,11 +143,14 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     curcell->field.d += rho_e; //new density
 
     //Energy conservation
+#ifdef DUAL_E
     struct Utype U; // conservative field structure
     W2U(&curcell->field, &U); // primitive to conservative
     U.eint*=1.+rho_e/curcell->field.d; // compute new internal energy
     U2W(&U, &curcell->field); // back to primitive
-
+#else
+    curcell->field.p*=1.+rho_e/curcell->field.d; // compute new internal energy
+#endif
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed

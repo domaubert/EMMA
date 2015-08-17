@@ -6,7 +6,9 @@
 #include "prototypes.h"
 #include <unistd.h>
 #include <float.h>
-
+#ifdef WHYDRO2
+#include "hydro_utils.h"
+#endif
 void breakmpi()
 {
   {
@@ -40,6 +42,17 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL mtot;
   REAL Mtot=0;
   REAL Mtotnew=0;
+
+  REAL PXtot=0;
+  REAL PXtotnew=0;
+  REAL PYtot=0;
+  REAL PYtotnew=0;
+  REAL PZtot=0;
+  REAL PZtotnew=0;
+  REAL Etot=0;
+  REAL Etotnew=0;
+
+  REAL ptot=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -98,8 +111,23 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
 #ifdef WHYDRO2
-		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
-		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+		  if(curoct->cell[icell].child==NULL){
+ 		    struct Utype U;
+		    W2U(&curoct->cell[icell].field,&U);
+		    struct Utype Unew;
+		    W2U(&curoct->cell[icell].fieldnew,&Unew);
+
+		    Mtot +=U.d*dv;
+		    Mtotnew +=Unew.d*dv;
+		    PXtot +=U.du*dv;
+		    PXtotnew +=Unew.du*dv;
+		    PYtot +=U.dv*dv;
+		    PYtotnew +=Unew.dv*dv;
+		    PZtot +=U.dw*dv;
+		    PZtotnew +=Unew.dw*dv;
+		    Etot +=U.E*dv;
+		    Etotnew +=Unew.E*dv;
+		  }
 
 		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
 		    if(cpu->rank==curoct->cpu){
@@ -154,10 +182,26 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+#ifndef TESTCOSMO
+  MPI_Allreduce(MPI_IN_PLACE,&PXtot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&PXtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&PYtot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&PYtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&PZtot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&PZtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Etot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Etotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+#endif
 #endif
 
   if(cpu->rank==RANK_DISP){
     printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
+#ifndef TESTCOSMO
+    printf("Total PX=%e (new=%e)\n",PXtot,PXtotnew);
+    printf("Total PY=%e (new=%e)\n",PYtot,PYtotnew);
+    printf("Total PZ=%e (new=%e)\n",PZtot,PZtotnew);
+    printf("Total E=%e (new=%e)\n",Etot,Etotnew);
+#endif
   }
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */

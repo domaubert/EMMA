@@ -103,11 +103,11 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho));
 	t_ff /= fact_t;
 
-  // local Jeans time in second in code unit
+	// local Jeans time in second in code unit
 	REAL t_j = dx/cell->field.a;
 
 	B = t_j > t_ff;
-
+	B=1; // Neutralisation du critère de Jeans
 #else
 	B = 1;
 #endif
@@ -145,7 +145,10 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U.dw -= star->vz * drho;
 
 //	internal energy
+
+#ifdef DUAL_E
 	U.eint=U.eint*(1.-drho/W.d); // assuming T and x remain constant
+#endif
 
 	U2W(&U, &W);
 

@@ -5,7 +5,11 @@
 #include "../src/prototypes.h"
 
 
-float ReadQuartz(float *map, char *inputfile, int nproc, int nmap, float x0, float y0, float z0, float dxmap)
+// utilisation
+// ./utils/part2cic data/part.00035 7 32 0 0 0 0
+// ./utils/part2cic fname level ncpu x0 y0 z0 isstar?
+
+float ReadQuartz(float *map, char *inputfile, int nproc, int nmap, float x0, float y0, float z0, float dxmap, int isstar)
 {
   int j,dummy;
   float pos[3], mass;
@@ -48,6 +52,7 @@ float ReadQuartz(float *map, char *inputfile, int nproc, int nmap, float x0, flo
       fread(&y,sizeof(float),1,fp);
       fread(&z,sizeof(float),1,fp);
       fread(&dum,sizeof(float),7,fp);
+      if(isstart)       fread(&dum,sizeof(float),1,fp);
 
 
       // CIC ASSIGNEMENT
@@ -108,7 +113,7 @@ int main(int argc, char *argv[]){
   char inputfile[256];
   char format[256];
   int ncpu;
-  
+  int isstar;
 
   //getting the resolution
   sscanf(argv[2],"%d",&lmap);
@@ -137,7 +142,7 @@ int main(int argc, char *argv[]){
   sscanf(argv[6],"%f",&z0);
 
   
-  float time=ReadQuartz(map,inputfile,ncpu,nmap,x0,y0,z0,dxmap);
+  float time=ReadQuartz(map,inputfile,ncpu,nmap,x0,y0,z0,dxmap,isstar);
 
   char fname2[256];
   FILE *fp;
