@@ -1009,15 +1009,12 @@ if(cond1||cond2||cond3){
     if( (param->lmax!=param->lcoarse) &&
         (level<param->lmax)           &&
         (dxnext>dxkpc)                ){
-/*
->>>>>>> sedov
 #ifndef ZOOM
-    if((ndt[level-1]%2==1)||(level==param->lcoarse))
+      if((ndt[level-1]%2==1)||(level==param->lcoarse))
 #else
-	  if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
+	if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
 #endif // ZOOM
-*/
-    {
+	  {
 	    L_clean_marks(level,firstoct);
 	    // marking the cells of the current level
 #ifdef WMPI
