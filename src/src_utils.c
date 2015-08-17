@@ -183,7 +183,7 @@ int hydro_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 }
 #endif // HYDRO2
 
-#ifdef UVBKG
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
 void uvbkg_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
  /*
   * set UV background according to the value in uvbkg.dat
@@ -192,24 +192,30 @@ void uvbkg_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfield.src[igrp] = param->uv.value[igrp]/param->unit.unit_N * param->unit.unit_t*POW(aexp,2);
+#ifdef STARS_TO_UVBKG
+    cell->rfield.src[igrp]*=param->uv.efficiency;
+#endif // STARS_TO_UVBKG
+
     cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
-    flag=1;
+    int flag=1;
   }
 }
 #endif // UVBKG
 
 #ifdef STARS
-void stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
+int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
  /*
   * set sources according to stars particles states and position
   */
-
+  int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfield.src[igrp]=0.;
     cell->rfieldnew.src[igrp]=0.;
   }
 
-  flag=0;
+  REAL  dxcur=POW(0.5,cell2oct(cell)->level);
+
+  int flag=0;
   REAL srcint=param->srcint;
   struct PART *nexp=cell->phead;
   if(nexp==NULL) return 0;
@@ -265,20 +271,20 @@ void stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 }
 #endif // STARS
 
-
 #ifdef WRADTEST
 int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *param, REAL tcur, REAL aexp){
   // ============= STROMGREN SPHERE CASE =======================
   int flag=0;
-  REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
-  int icell=cell->idx;
-  REAL  dxcur=POW(0.5,curoct->level);
+
   REAL X0=1./POW(2,param->lcoarse);
+  REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
 
   REAL x_src=param->unitary_stars_test->src_pos_x;
   REAL y_src=param->unitary_stars_test->src_pos_y;
   REAL z_src=param->unitary_stars_test->src_pos_z;
 
+  REAL dxcur=POW(0.5,curoct->level);
+  int icell=cell->idx;
   REAL xc=curoct->x+( icell&1    )*dxcur+dxcur*0.5;
   REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
   REAL zc=curoct->z+((icell>>2)  )*dxcur+dxcur*0.5;
@@ -301,6 +307,7 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
             for(igrp_space=0;igrp_space<NGRP_SPACE;igrp_space++){
 
               int igrp= igrp_time*NGRP_SPACE + igrp_space;
+
               //REAL srcint = param->srcint*(tcur>0?1.:0);
               REAL srcint = param->unitary_stars_test->mass* SOLAR_MASS * param->srcint*(tcur>0?1.:0);
 
@@ -309,7 +316,7 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
               t/=param->unitary_stars_test->lifetime;
               srcint *= (t<=1.?1.:POW(t,-4.));
 #else
-              srcint *= (tcur_in_yrs<param->unitary_stars_test->lifetime?1.:0.);
+              //srcint *= (tcur_in_yrs<param->unitary_stars_test->lifetime?1.:0.);
 #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
 
               cell->rfield.src[igrp]= srcint/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);//8.;///8.;///POW(1./16.,3);
@@ -328,8 +335,7 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
     for(igrp=0;igrp<NGRP;igrp++){
       cell->rfield.src[igrp]=0.;
       cell->rfieldnew.src[igrp]=0.;
-  }
-
+    }
     flag=0;
   }
 
@@ -396,24 +402,43 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
 #ifdef STARS_TO_UVBKG
 
-  if(param->physical_state->mean_xion<0.9){
+  REAL ionisation_threshold = 0.9;
+
+  static int previous_state;
+
+  if(param->physical_state->mean_xion<ionisation_threshold){
     stars_sources(cell,param,aexp);
+
   }else{
+    if (previous_state == 0){
+      previous_state=1;
+ //     homosource(param, firstoct, cpu, levext);
+
+      REAL current_stars_sources = param->bkg;
+
+      REAL current_uvbkg_sources = 0;
+      int igrp;
+      for (igrp=0;igrp<NGRP;igrp++){
+        current_uvbkg_sources += param->uv.value[igrp];
+      }
+
+      param->uv.efficiency = current_stars_sources / current_uvbkg_sources;
+    }
+
     uvbkg_sources(cell,param,aexp);
   }
-
 #else
+
   #ifdef UVBKG
     uvbkg_sources(cell,param,aexp);
   #endif // UVBKG
 
   #ifdef STARS
     stars_sources(cell,param,aexp);
-  #else
-    #if WHYDRO2
-      flag = hydro_sources(cell,param,aexp);
-    #endif // WHYDRO2
-  #endif // STARS
+  #elif WHYDRO2
+    flag=hydro_sources(cell,param,aexp);
+  #endif
+
 #endif // STARS_TO_UVBKG
 
 #endif // WRADTEST
@@ -422,8 +447,8 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
   return flag;
 }
 
-// ==================================================================================================================
-#ifdef HOMOSOURCE
+
+#if defined(WRAD) && (defined(HOMOSOURCE) || defined(STARS_TO_UVBKG))
 void homosource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu, int levext){
   struct OCT *nextoct;
   struct OCT *curoct;
@@ -443,7 +468,11 @@ void homosource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO
 	if(curoct->cpu!=cpu->rank) continue; // we don't update the boundary cells
 	for(icell=0;icell<8;icell++){
 	  if(curoct->cell[icell].child==NULL){
-	    bkg+=curoct->cell[icell].rfield.src*dx3;
+      int igrp;
+      for(igrp=0;igrp<NGRP;igrp++){
+        bkg+=curoct->cell[icell].rfield.src[igrp]*dx3;
+      }
+
 	    if(curoct->cell[icell].rfield.src>0) {
 	      N++;
 	      //printf("lev=%d src=%e N=%d cpu=%d\n",level,curoct->cell[icell].rfield.src,N,cpu->rank);
@@ -467,8 +496,7 @@ void homosource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO
   param->bkg=bkg; // saving the value
 
 }
-#endif // HOMOSOURCE
-
+#endif // defined
 
 // ==================================================================================================================
 void cleansource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINFO *cpu){
@@ -500,14 +528,11 @@ void cleansource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINF
   }
 
 }
-// ==================================================================================================================
-// ===============UV background ====================================================================================
-// ==================================================================================================================
 
-#ifdef UVBKG
-// ----------------------------------------------------------//
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
+void setUVBKG(struct RUNPARAMS *param, char *fname){
 /**
-  * \brief Read a UV background from uvbkg.dat and store it.
+  * Read a UV background from uvbkg.dat and store it.
   *
   * input values must be in comoving phot/s/m^3
   *
@@ -515,8 +540,6 @@ void cleansource(struct RUNPARAMS *param, struct OCT ** firstoct,  struct CPUINF
   * 1 int N : number of samples
   * N lines of 2 floats: (redshift) and (comoving photons/s/m3)
   */
-// ----------------------------------------------------------//
-void setUVBKG(struct RUNPARAMS *param, char *fname){
 
   //TODO consider NGRP>1
   //printf("Reading UVBKG from file :%s\n",fname);
@@ -541,16 +564,13 @@ void setUVBKG(struct RUNPARAMS *param, char *fname){
   }
 }
 
-// ----------------------------------------------------------//
+void setUVvalue(struct RUNPARAMS *param, REAL aexp){
 /**
-  * \brief Linear fit of UV background
+  * Linear fit of UV background
   *
   * Linear interpolation of the data from uvbkg.dat
   * to get a value at current aexp.
   */
-// ----------------------------------------------------------//
-void setUVvalue(struct RUNPARAMS *param, REAL aexp){
-
   //TODO consider NGRP>1
   if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
 
@@ -568,8 +588,7 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
           REAL x2 = param->uv.redshift[iredshift-1];
 
           param->uv.value[igrp] = (z-x1) * (y2-y1)/(x2-x1) + y1;
-          break;    cell->rfield.src=param->srcint*cell->field.d/POW(X0*param->unit.unit_l,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2); // switch to code units
-
+          break;
         }
       }
     }
@@ -578,8 +597,7 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
     for(igrp=0;igrp<NGRP;igrp++) param->uv.value[igrp]=0.;
   }
 }
-#endif // UVBKG
-
+#endif // defined
 
 // ============================================================================================
 
@@ -602,7 +620,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #endif
   //if(cpu->rank==RANK_DISP) printf("Building Source field\n");
 
-#ifdef UVBKG
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
   setUVvalue(param, aexp);
 #endif
 

@@ -638,7 +638,6 @@ if(cond1||cond2||cond3){
     if(cpu->rank==RANK_DISP) printf("dtff= %e ",dtff);
 #endif
 
-
     // Cosmo Expansion
 #ifdef TESTCOSMO
     REAL dtcosmo;
@@ -646,9 +645,6 @@ if(cond1||cond2||cond3){
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",dtcosmo);
 #endif
-
-
-
 
     // Courant Condition Hydro
 #ifdef WHYDRO2

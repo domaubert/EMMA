@@ -150,7 +150,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
       REAL v2 = curp->vx*curp->vx+
                 curp->vy*curp->vy+
                 curp->vz*curp->vz;
-      Etot+= 0.5*curp->mass*v2
+      Etot+= 0.5*curp->mass*v2;
 		  }while(nexp!=NULL);
 #endif
 

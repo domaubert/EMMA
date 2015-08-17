@@ -5,9 +5,9 @@
 #include "prototypes.h"
 #include "spectrum.h"
 
-#ifdef UVBKG
-#include "src_utils.h"
-#endif // UVBKG
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
+#include "src_utils.h" //setUVBKG
+#endif
 
 
 char *field_name [] ={
@@ -406,7 +406,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   param->srcint*=SRCINT;
 #endif
 
-#ifdef UVBKG
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
 
@@ -421,7 +421,15 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
 
 #if defined(WRADTEST) || defined(SNTEST)
+/*
   param->unitary_stars_test->lifetime = 3.673e6;
+  param->unitary_stars_test->mass=2e2;
+  param->unitary_stars_test->src_pos_x=0.;
+  param->unitary_stars_test->src_pos_y=0.;
+  param->unitary_stars_test->src_pos_z=0.;
+*/
+
+  param->unitary_stars_test->lifetime = 0.;
   param->unitary_stars_test->mass=2e3;
   param->unitary_stars_test->src_pos_x=0.5;
   param->unitary_stars_test->src_pos_y=0.5;

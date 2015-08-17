@@ -77,7 +77,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
   REAL msn = param->unitary_stars_test->mass * SOLAR_MASS /param->unit.unit_mass;
   REAL mtot_feedback = msn * param->sn->ejecta_proportion;
 #else
-  REAL mtot_feedback = curp->mass* param->sn_jecta_proportion;
+  REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
 #endif // SNTEST
 
   struct OCT* oct = cell2oct(cell);
@@ -220,7 +220,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         y_src=param->unitary_stars_test->src_pos_y,
         z_src=param->unitary_stars_test->src_pos_z;
 
-/*
+
 	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-x_src ;
 	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-y_src ;
 	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-z_src ;
@@ -230,14 +230,14 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
   REAL rmax= 1 *dx;
 
 	if (R<rmax && cell->child==NULL){
-*/
 
+/*
     REAL x=(oct->x+( cell->idx    & 1)*dx) ;
     REAL y=(oct->y+((cell->idx>>1)& 1)*dx) ;
     REAL z=(oct->z+( cell->idx>>2    )*dx);
 
     if ( (x==x_src) && (y==y_src) && (z==z_src) && cell->child==NULL){
-
+*/
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 		REAL t = aexp * in_yrs;
 
@@ -250,18 +250,15 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
       REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
-      //REAL E=1;
+      //REAL E=1.;
 
-    //  thermalFeedbackCell(cell, E*(1.-param->sn->feedback_frac));
-   //  thermalFeedbackOct(cell, E*(1.-param->sn->feedback_frac));
-     //kineticFeedback(param, cell,NULL,aexp,level, E*param->sn->feedback_frac);
 
       printf("cell egy=%e\n",  cell->field.E);
-      //thermalFeedbackCell(cell, E);
 
-     //thermalFeedbackOct(cell, E);
+      thermalFeedbackCell(cell, E);
+      //thermalFeedbackOct(cell, E);
+      //kineticFeedback(param, cell,NULL,aexp,level, E);
 
-      kineticFeedback(param, cell,NULL,aexp,level, E);
       printf("cell egy=%e\n",  cell->field.E);
 
       printf("SN active at t = %e\n", t);

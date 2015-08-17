@@ -163,13 +163,17 @@ struct SCALE{
   REAL N;
 };
 
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
 struct UVBACKGROUND{
   int N; ///< number of samples in the input background
   REAL *redshift; ///< size N
   REAL *Nphot; ///< size N
   REAL *value; ///< size NGRP
+  REAL efficiency; ///< an efficiency factor
 };
+#endif // defined
 
+#if defined(WRADTEST) || defined(SNTEST)
 struct UNITARY_STARS_TEST{
   REAL lifetime;
   REAL src_pos_x;
@@ -177,6 +181,7 @@ struct UNITARY_STARS_TEST{
   REAL src_pos_z;
   REAL mass;
 };
+#endif // defined
 
 //=======================================
 struct ATOMIC{
@@ -282,11 +287,12 @@ struct RUNPARAMS{
   REAL denthresh; ///< density threshold to turn the sources on
   REAL tmpthresh; ///< temperature threshold to turn the sources on
   REAL srcint; ///< intensity of the sources
-#ifdef HOMOSOURCE
+
+#if defined(HOMOSOURCE) || defined(STARS_TO_UVBKG)
   REAL bkg; ///< the uniform background intensity
 #endif
 
-#endif
+#endif // WRAD
 
   REAL egy_rhs; ///< the right hand side of the energy conservation equation (0 in non cosmological case);
   REAL egy_0; ///< the initial energy
@@ -303,14 +309,17 @@ struct RUNPARAMS{
 	struct MOVIEPARAM *movie; ///< the movie parameters
 #endif
 
-#ifdef UVBKG
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
   struct UVBACKGROUND uv; ///< the UV background
-#endif
+ #endif // defined
 
   struct ATOMIC atomic;
   struct SPECTRUM spectrum;
 
+#if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST *unitary_stars_test;
+#endif // defined
+
   struct PHYSICAL_STATE *physical_state;
 
 };
@@ -319,21 +328,18 @@ struct RUNPARAMS{
 
 //=======================================
 
-// this structure exists for MPI communication protocol
-
 struct PACKET{
+/**
+  * This structure exists for MPI communication protocol
+  */
+
   REAL data[8]; ///< the data to be transfered (8 since we transmit data per octs)
   //unsigned long long key; // the destination hilbert key
   double key; ///< MODKEY
   int level; ///< the level of the destination (to remove the key degeneracy)
 };
 
-
-
-
-
 //=======================================
-
 
 struct CPUINFO{
   int rank; ///< the local processor ID

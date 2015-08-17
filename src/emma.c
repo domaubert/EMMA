@@ -1170,7 +1170,7 @@ int main(int argc, char *argv[])
 
     npart=ip; // we compute the localnumber of particle
 
-#endif
+#endif // PART2
 
 
 #ifdef PARTN
@@ -1940,9 +1940,9 @@ int main(int argc, char *argv[])
       if(cpu.rank==RANK_DISP) printf("CPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
 #else
       if(cpu.rank==RANK_DISP) printf("GPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
-#endif
-#endif
-#endif // RAD
+#endif // GPUAXL
+#endif // COARSERAD
+#endif // WRAD
 
 
 #ifdef WMPI
@@ -1970,7 +1970,7 @@ int main(int argc, char *argv[])
         REAL b=(int)(ndumps+offset)*param.dt_dump;
         cond2=a>b;
         if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
-        }
+
 #endif // TESTCOSMO
 
 #ifdef SNTEST
@@ -1980,7 +1980,8 @@ int main(int argc, char *argv[])
         cond2=a>b;
         if(cpu.rank==RANK_DISP)printf("t=%.2e next dump at %.2e\n",a,b+(a>b)*param.dt_dump);
 #endif // SNTEST
-}
+      }
+
       if(cond1||cond2||cond3){
 #ifndef EDBERT
 
