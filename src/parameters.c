@@ -275,6 +275,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   double dummyf;
   char RF[]="%s %lf";
   int i;
+
+  int debug=0;
+
+
   buf=fopen(fparam,"r");
   if(buf==NULL)
     {
@@ -283,74 +287,75 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
     }
   else
     {
-      rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);
-      rstat=fscanf(buf,"%s %d",stream,&param->npartmax);
-      rstat=fscanf(buf,"%s %d",stream,&param->nbuff);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->ndumps);
-      rstat=fscanf(buf,RF,stream,&param->dt_dump);
-      rstat=fscanf(buf,"%s %d",stream,&param->nsteps);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->dt=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->tmax=(REAL)dummyf;
+      rstat=fscanf(buf,"%s %d",stream,&param->ngridmax);  if (debug) printf("param->ngridmax=%d\n", param->ngridmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->npartmax);  if (debug) printf("param->npartmax=%d\n", param->npartmax);
+      rstat=fscanf(buf,"%s %d",stream,&param->nbuff);     if (debug) printf("param->nbuff=%d\n", param->nbuff);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->lcoarse);
-      rstat=fscanf(buf,"%s %d",stream,&param->lmax);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh0=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
+      rstat=fscanf(buf,"%s %d",stream,&param->ndumps);    if (debug) printf("param->ndumps=%d\n", param->ndumps);
+      rstat=fscanf(buf,RF,stream,&param->dt_dump);        if (debug) printf("param->dt_dump=%e\n", param->dt_dump);
+      rstat=fscanf(buf,"%s %d",stream,&param->nsteps);    if (debug) printf("param->nsteps=%d\n", param->nsteps);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->dt=(REAL)dummyf;   if (debug) printf("param->dt=%e\n", param->dt);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->tmax=(REAL)dummyf; if (debug) printf("param->tmax=%e\n", param->tmax);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->DM_res);
-      rstat=fscanf(buf,RF,stream,&param->dx_res);
+      rstat=fscanf(buf,"%s %d",stream,&param->lcoarse); if (debug) printf("param->lcoarse=%d\n", param->lcoarse);
+      rstat=fscanf(buf,"%s %d",stream,&param->lmax);    if (debug) printf("param->lmax=%d\n", param->lmax);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh0=(REAL)dummyf; if (debug) printf("param->amrthresh=%e\n", param->amrthresh0);
+      rstat=fscanf(buf,"%s %d",stream,&param->nsmooth); if (debug) printf("param->nsmooth=%d\n", param->nsmooth);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->niter);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf;
-      rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin);
+      rstat=fscanf(buf,"%s %d",stream,&param->DM_res);  if (debug) printf("param->DM_res=%d\n", param->DM_res);
+      rstat=fscanf(buf,RF,stream,&param->dx_res);       if (debug) printf("param->dx_res=%e\n", param->dx_res);
+
+      rstat=fscanf(buf,"%s",stream);
+      rstat=fscanf(buf,"%s %d",stream,&param->niter);   if (debug) printf("param->niter=%d\n", param->niter);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->poissonacc=(REAL)dummyf; if (debug) printf("param->poissonacc=%e\n", param->poissonacc);
+      rstat=fscanf(buf,"%s %d",stream,&param->mgridlmin); if (debug) printf("param->mgridlmin=%d\n", param->mgridlmin);
       if(param->mgridlmin<0){
         param->mgridlmin=param->lcoarse-param->lcoarse;
       }
 
-      rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);
-      rstat=fscanf(buf,"%s %d",stream,&param->nrelax);
+      rstat=fscanf(buf,"%s %d",stream,&param->nvcycles);  if (debug) printf("param->nvcycles=%d\n", param->nvcycles);
+      rstat=fscanf(buf,"%s %d",stream,&param->nrelax);    if (debug) printf("param->nrelax=%d\n", param->nrelax);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->nrestart);
+      rstat=fscanf(buf,"%s %d",stream,&param->nrestart);  if (debug) printf("param->nrestart=%d\n", param->nrestart);
 
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->gstride);
-      rstat=fscanf(buf,"%s %d",stream,&param->hstride);
-      rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles);
-      rstat=fscanf(buf,"%s %d",stream,&param->nthread);
-      rstat=fscanf(buf,"%s %d",stream,&param->nstream);
-      rstat=fscanf(buf,"%s %d",stream,&param->ompthread);
+      rstat=fscanf(buf,"%s %d",stream,&param->gstride);    if (debug) printf("param->gstride=%d\n", param->gstride);
+      rstat=fscanf(buf,"%s %d",stream,&param->hstride);    if (debug) printf("param->hstride=%d\n", param->hstride);
+      rstat=fscanf(buf,"%s %d",stream,&param->nsubcycles); if (debug) printf("param->nsubcycles=%d\n", param->nsubcycles);
+      rstat=fscanf(buf,"%s %d",stream,&param->nthread);    if (debug) printf("param->nthread=%d\n", param->nthread);
+      rstat=fscanf(buf,"%s %d",stream,&param->nstream);    if (debug) printf("param->nstream=%d\n", param->nstream);
+      rstat=fscanf(buf,"%s %d",stream,&param->ompthread);  if (debug) printf("param->ompthread=%d\n", param->ompthread);
 
       rstat=fscanf(buf,"%s",stream);
 #ifdef WRAD
-      rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf; if (debug) printf("param->clight=%d\n", param->clight);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;  if (debug) printf("param->denthresh=%d\n", param->denthresh);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;  if (debug) printf("param->tmpthresh=%d\n", param->tmpthresh);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;     if (debug) printf("param->srcint=%d\n", param->srcint);
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);
-      sprintf(param->atomic.path,"./src/atomic_data/%s ",filename);
-
+      sprintf(param->atomic.path,"./src/atomic_data/%s ",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+                      rstat=fscanf(buf,"%s %s",stream, stream);
 #endif
 
       rstat=fscanf(buf,"%s",stream);
 #ifdef STARS
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->efficiency=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->overdensity_cond=(REAL)dummyf;   if (debug) printf("param->stars->overdensity_cond=%e\n", param->stars->overdensity_cond);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->density_cond=(REAL)dummyf;       if (debug) printf("param->stars->density_cond=%e\n", param->stars->density_cond);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->efficiency=(REAL)dummyf;         if (debug) printf("param->stars->efficiency=%e\n", param->stars->efficiency);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->tlife=(REAL)dummyf;              if (debug) printf("param->stars->tlife=%e\n", param->stars->tlife);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->stars->mass_res=(REAL)dummyf;           if (debug) printf("param->stars->mass_res=%e\n", param->stars->mass_res);
 
 #else
 	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
@@ -358,12 +363,12 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
       rstat=fscanf(buf,"%s",stream);
 #ifdef SUPERNOVAE
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff	=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac	=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->ejecta_proportion	=(REAL)dummyf;
-      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->sn_egy	=(REAL)dummyf;
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_eff	=(REAL)dummyf;        if (debug) printf("param->sn->feedback_eff=%e\n", param->sn->feedback_eff);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac	=(REAL)dummyf;      if (debug) printf("param->sn->feedback_frac=%e\n", param->sn->feedback_frac);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->ejecta_proportion	=(REAL)dummyf;  if (debug) printf("param->sn->ejecta_proportion=%e\n",param->sn->ejecta_proportion);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->sn_egy	=(REAL)dummyf;              if (debug) printf("param->sn->sn_egy=%e\n", param->sn->sn_egy);
 #else
-	for (i=0; i<2; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
 #ifdef MOVIE
@@ -380,8 +385,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
     }
 
-
-
+ if (debug) abort();
 
   // computing the maxhash
   int val=(POW(2,param->lmax-1)<=512?POW(2,param->lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells

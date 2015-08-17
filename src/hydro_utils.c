@@ -81,6 +81,8 @@ void W2U(struct Wtype *W, struct Utype *U)
   U->dXXHE=W->dXXHE;
 #endif // HELIUM
 #endif // WRADHYD
+#else
+  U->E=((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(U->d)*0.5+W->p/(GAMMA-1.);
 #endif // DUAL_E
 
 }
@@ -1438,8 +1440,9 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       W2U(&Wold,&Uold); // primitive -> conservative
 
+#ifdef DUAL_E
       REAL eold=Uold.eint;
-
+#endif
       /* // MUSCL STATE RECONSTRUCTION */
       memset(ffact,0,sizeof(int)*2);
 
@@ -1653,7 +1656,9 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memcpy(stencil[i].New.cell[icell].flux+4*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+5*NVAR,FR,sizeof(REAL)*NVAR);
 
+#ifdef DUAL_E
       stencil[i].New.cell[icell].divu=divu;
+#endif
 
       // ready for the next cell
     }
@@ -1733,7 +1738,9 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       W2U(&Wold,&Uold); // primitive -> conservative
 
+#ifdef DUAL_E
       REAL eold=Uold.eint;
+#endif
 
       /* // MUSCL STATE RECONSTRUCTION */
       memset(ffact,0,sizeof(int)*2);
@@ -1962,7 +1969,9 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memcpy(stencil[i].New.cell[icell].flux+2*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+3*NVAR,FR,sizeof(REAL)*NVAR);
 
+#ifdef DUAL_E
       stencil[i].New.cell[icell].divu=divu;
+#endif
 
       // ready for the next cell
     }
@@ -2039,7 +2048,9 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 /* #endif */
 
       W2U(&Wold,&Uold); // primitive -> conservative
+#ifdef DUAL_E
       REAL eold=Uold.eint;
+#endif
 
       /* // MUSCL STATE RECONSTRUCTION */
       memset(ffact,0,sizeof(int)*2);
@@ -2271,7 +2282,9 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memcpy(stencil[i].New.cell[icell].flux+0*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+1*NVAR,FR,sizeof(REAL)*NVAR);
 
+#ifdef DUAL_E
       stencil[i].New.cell[icell].divu=divu;
+#endif
 
       // ready for the next cell
     }
@@ -2476,8 +2489,8 @@ void grav_correction(int level,struct RUNPARAMS *param, struct OCT ** firstoct, 
 #endif // CONSERVATIVE
 	  getE(&Wnew);
 	  if(Wnew.p<0){
-	  printf("pneg %e\n",Wnew.p);
-	  abort();
+	    printf("pneg %e\n",Wnew.p);
+	    abort();
 	}
 	  memcpy(&(curcell->field),&Wnew,sizeof(struct Wtype));
 	}
@@ -3525,6 +3538,9 @@ void HydroSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  str
 #endif // CONSAVG
 	  }
 #ifdef CONSAVG
+	  REAL ekin=0.5*(U.du*U.du+U.dv*U.dv+U.dw*U.dw)/U.d;
+	  U.eint=U.E-ekin;
+	  U.eint=FMAX(U.eint*(GAMMA-1.),PMIN)/(GAMMA-1.);
 	  U2W(&U,&W);
 #endif // CONSAVG
 	  getE(&W);

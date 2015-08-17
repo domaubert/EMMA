@@ -140,7 +140,10 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     //Energy conservation
     struct Utype U; // conservative field structure
     W2U(&curcell->field, &U); // primitive to conservative
+#ifdef DUAL_E
     U.eint*=1.+rho_e/curcell->field.d; // compute new internal energy
+#endif // DUAL_E
+
     U2W(&U, &curcell->field); // back to primitive
 
     getE(&curcell->field); //compute new total energy
@@ -156,6 +159,7 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 /// Compute the total feedback energy
 // ----------------------------------------------------------//
   REAL egy = param->sn->sn_egy; // j/kg
+  printf("sn_egy=%e\n",param->sn->sn_egy);
   egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
   return egy;
 }
@@ -221,6 +225,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         z_src=param->unitary_stars_test->src_pos_z;
 
 
+/*
 	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-x_src ;
 	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-y_src ;
 	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-z_src ;
@@ -230,14 +235,14 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
   REAL rmax= 1 *dx;
 
 	if (R<rmax && cell->child==NULL){
+*/
 
-/*
     REAL x=(oct->x+( cell->idx    & 1)*dx) ;
     REAL y=(oct->y+((cell->idx>>1)& 1)*dx) ;
     REAL z=(oct->z+( cell->idx>>2    )*dx);
 
     if ( (x==x_src) && (y==y_src) && (z==z_src) && cell->child==NULL){
-*/
+
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 		REAL t = aexp * in_yrs;
 
@@ -248,10 +253,13 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       printf("======================================\n");
       SN_TMP_PARAM = 0;
 
+      //printf("x_src=%e y_src=%e, z_src=%e\n", param->unitary_stars_test->src_pos_x, param->unitary_stars_test->src_pos_y, param->unitary_stars_test->src_pos_z);
+
       REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
       REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
       //REAL E=1.;
 
+      printf("msn=%e\n",  param->unitary_stars_test->mass );
 
       printf("cell egy=%e\n",  cell->field.E);
 
