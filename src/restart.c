@@ -327,7 +327,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 //====================================================================================================
 //            PART OUT
 //====================================================================================================
-
+#ifdef PIC
 void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct PART* proot){
 
   FILE *fp = NULL;
@@ -512,5 +512,5 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   return freepart;
 }
-
+#endif
 

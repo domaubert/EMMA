@@ -5,7 +5,9 @@
 #include "hilbert.h"
 #include "prototypes.h"
 #include <unistd.h>
-
+#ifdef WHYDRO2
+#include "hydro_utils.h"
+#endif
 void breakmpi()
 {
   {
@@ -39,6 +41,8 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL mtot;
   REAL Mtot=0;
   REAL Mtotnew=0;
+  REAL Etot=0;
+  REAL Etotnew=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -97,8 +101,17 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
 #ifdef WHYDRO2
-		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+ 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+		  struct Utype U;
+		  struct Utype Unew;
+		  W2U(&curoct->cell[icell].field,&U);
+		  W2U(&curoct->cell[icell].fieldnew,&Unew);
+
+		  if(curoct->cell[icell].child==NULL) Etot +=U.E*dv;
+		  if(curoct->cell[icell].child==NULL) Etotnew +=Unew.E*dv;
+
+
 
 		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
 		    if(cpu->rank==curoct->cpu){
@@ -153,10 +166,13 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Etot,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&Etotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
   if(cpu->rank==RANK_DISP){
     printf("Total Baryon mass=%e (new=%e)\n",Mtot,Mtotnew);
+    printf("Total Baryon Egy=%e (new=%e)\n",Etot,Etotnew);
   }
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */

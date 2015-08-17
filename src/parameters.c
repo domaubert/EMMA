@@ -257,7 +257,11 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
+#ifdef TESTCOSMO    
     fprintf(fp, float_format,"box_size_Mpc/h",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+#else
+    fprintf(fp, float_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6));
+#endif
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
 
@@ -283,8 +287,11 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 
 
     fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
+#ifdef PIC
     REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->DM_res))*param->unit.unit_mass/SOLAR_MASS;
     fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
+#endif
+
 #ifdef STARS
     REAL res = param->stars->mass_res;
     if(res>100){
@@ -468,8 +475,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
       fprintf(fp,"step\t");
+#ifdef TESTCOSMO
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
+#endif
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
       fprintf(fp,"max_rho\t\t");
@@ -487,8 +496,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     }
 
     fprintf(fp, "%d\t",nsteps);
+#ifdef TESTCOSMO
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+#endif
     fprintf(fp, real_format,dt);
     fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);

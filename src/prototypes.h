@@ -52,18 +52,14 @@ typedef double REAL;
 
 #endif // SINGLEPRECISION
 
-#ifdef DUAL_E
-  #ifndef WRADHYD
-    #define NVAR (6)
-  #else
+#ifndef WRADHYD
+#define NVAR (6)
+#else
 #ifdef HELIUM
 #define NVAR (9)
 #else
 #define NVAR (7)
 #endif
-#endif
-#else
-#define NVAR (5)
 #endif
 
 #define NFLUX (6*NVAR)
@@ -493,9 +489,7 @@ struct Utype{
   REAL dw;   ///< momentum
   REAL E;    ///< Energy
 
-#ifdef DUAL_E
   REAL eint; ///< internal energy
-#endif
 
 #ifdef WRADHYD
   REAL dX;
