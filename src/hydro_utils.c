@@ -42,6 +42,7 @@ void U2W(struct Utype *U, struct Wtype *W)
   W->v=U->dv/dloc;
   W->w=U->dw/dloc;
 
+#ifdef DUAL_E
   W->p=U->eint*(GAMMA-1.);
 #else
   W->p=(GAMMA-1.)*(U->E-((U->du)*(U->du)+(U->dv)*(U->dv)+(U->dw)*(U->dw))/(dloc)*0.5);

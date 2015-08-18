@@ -388,7 +388,7 @@ void save_part(char filename[],struct OCT **firstoct, int levelcoarse, int level
   //printf("wrote %d particles (%d expected) in %s on proc %d\n",ipart,npart,filename,cpu->rank);
 
 }
-#endif // PIC
+
 //====================================================================================================
 //            PART IN
 //====================================================================================================
@@ -512,5 +512,5 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
   return freepart;
 }
-#endif
+#endif // PIC
 

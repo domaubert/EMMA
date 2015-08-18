@@ -46,14 +46,6 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL Etot=0;
   REAL Etotnew=0;
 
-  REAL PXtot=0;
-  REAL PXtotnew=0;
-  REAL PYtot=0;
-  REAL PYtotnew=0;
-  REAL PZtot=0;
-  REAL PZtotnew=0;
-  REAL Etot=0;
-  REAL Etotnew=0;
 
   REAL ptot=0;
 

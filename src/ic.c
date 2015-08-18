@@ -730,9 +730,6 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
   WL.v=0.;
   WL.w=0.;
   WL.p=1.0;
-#ifdef SED
-  WL.p=1e3;
-#endif
   WL.a=sqrt(GAMMA*WL.p/WL.d);
   getE(&WL);
 
@@ -771,7 +768,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 #endif
 
 		if(rc<X0){
-		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
+		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
 		}
 		else{
 		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
