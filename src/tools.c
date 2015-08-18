@@ -358,7 +358,7 @@ REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
 
-int gpoiss(const REAL lambda){
+int gpoiss(REAL lambda){
 /// Poisson distribution
 
 /// TODO use a better poisson algorithme

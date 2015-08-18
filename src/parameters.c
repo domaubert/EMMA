@@ -224,9 +224,11 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh0=(REAL)dummyf;
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth);
 
+
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->DM_res);
-      rstat=fscanf(buf,RF,stream,&param->dx_res);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->dx_res=(REAL)dummyf;
+
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
@@ -259,7 +261,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+      for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
       rstat=fscanf(buf,"%s",stream);
