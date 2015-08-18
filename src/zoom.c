@@ -50,6 +50,7 @@ int pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param){
   yc-=0.5;
   zc-=0.5;
 
+
   REAL rc=SQRT(xc*xc+yc*yc+zc*zc);
   REAL rcur=param->rzoom;
 

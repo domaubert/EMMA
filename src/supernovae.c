@@ -109,14 +109,33 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
     REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
 
+#ifdef SNTEST
+  REAL  x_src=param->unitary_stars_test->src_pos_x,
+        y_src=param->unitary_stars_test->src_pos_y,
+        z_src=param->unitary_stars_test->src_pos_z;
+
+  if ( (x_src==0) && (y_src==0) && (z_src==0)) {
+      REAL x[]={1., 0., 0., 0., 0., 0., 0., 0.};// diagonal projection
+      REAL y[]={1., 0., 0., 0., 0., 0., 0., 0.};
+      REAL z[]={1., 0., 0., 0., 0., 0., 0., 0.};
+      int i;
+      for (i=0;i<8; i++){
+        dir_x[i]=x[i];
+        dir_y[i]=y[i];
+        dir_z[i]=z[i];
+      }
+    }
+#endif // SNTEST
+
+
 #ifdef PIC
     REAL vx0 = curp->vx;
     REAL vy0 = curp->vy;
     REAL vz0 = curp->vz;
 #else
-		REAL vx0 = 0;
-	  REAL vy0 = 0;
-	  REAL vz0 = 0;
+		REAL vx0 = curcell->field.u;
+	  REAL vy0 = curcell->field.v;
+	  REAL vz0 = curcell->field.w;
 #endif // PIC
 
     REAL vxe = vx0 + ve*dir_x[i]/2.; // projection on axis in the particle framework
@@ -159,7 +178,6 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 /// Compute the total feedback energy
 // ----------------------------------------------------------//
   REAL egy = param->sn->sn_egy; // j/kg
-  printf("sn_egy=%e\n",param->sn->sn_egy);
   egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
   return egy;
 }
@@ -258,13 +276,14 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
       REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
       //REAL E=1.;
+      if ( (x_src==0) && (y_src==0) && (z_src==0)) E/=8.;
 
       printf("msn=%e\n",  param->unitary_stars_test->mass );
 
       printf("cell egy=%e\n",  cell->field.E);
 
-      thermalFeedbackCell(cell, E);
-      //thermalFeedbackOct(cell, E);
+      //thermalFeedbackCell(cell, E);
+      thermalFeedbackOct(cell, E);
       //kineticFeedback(param, cell,NULL,aexp,level, E);
 
       printf("cell egy=%e\n",  cell->field.E);

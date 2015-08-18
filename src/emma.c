@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   struct OCT **firstoct;
   struct OCT **lastoct;
 
-    int level,levelcoarse,levelmax,levelmin;
+  int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
   int nrelax;
   int ngridmax,ngrid;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   REAL dt;
   int ntot=0,nlev,noct;
   REAL ntotd=0.,nlevd=0.;
-
+  int cond1,cond2,cond3;
   REAL disp,mdisp;
 
   int dir;
@@ -1879,7 +1879,7 @@ int main(int argc, char *argv[])
 #ifndef WRAD
       if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #else
-     if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
 
@@ -1956,20 +1956,20 @@ int main(int argc, char *argv[])
 #endif
 
       // ==================================== dump
-      int cond1 = nsteps%param.ndumps==0;
-      int cond2 = 0;
-      int cond3 = tsim+adt[levelcoarse-1]>=tmax;
+      cond1 = nsteps%param.ndumps==0;
+      cond2 = 0;
+      cond3 = tsim+adt[levelcoarse-1]>=tmax;
 
       if (param.dt_dump){
-        cond1=0;
-        int offset=0;
+	cond1=0;
+	int offset=0;
 
 #ifdef TESTCOSMO
-        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
-        REAL a=param.cosmo->tphy;
-        REAL b=(int)(ndumps+offset)*param.dt_dump;
-        cond2=a>b;
-        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
+	if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
+	REAL a=param.cosmo->tphy;
+	REAL b=(int)(ndumps+offset)*param.dt_dump;
+	cond2=a>b;
+	if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
 
 #endif // TESTCOSMO
 
@@ -2067,7 +2067,7 @@ int main(int argc, char *argv[])
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
-    }
+}
 
 	// writting the last particle file
 	ndumps-=1;

@@ -45,14 +45,11 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   for(ii=0;ii<6;ii++){ // looking for the gradient in 3 directions
     if(vnei[ii]==6){
       memcpy(&W,&(curoct->cell[vcell[ii]].field),sizeof(struct Wtype));
-
     }
     else{
       // Note that the neibourgh cell may not exist therefore we have to check
       if(curoct->nei[vnei[ii]]->child!=NULL){
 	memcpy(&W,&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]].field),sizeof(struct Wtype));
-
-#
       }
       else{
 	// the neighbour does not exist we need to interpolate the value at the correct position
@@ -1294,7 +1291,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			    if( (mcell>threshold) && (curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
