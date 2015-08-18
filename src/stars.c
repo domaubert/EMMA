@@ -108,7 +108,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	// local Jeans time in second in code unit
 	REAL t_j = dx/cell->field.a;
 
-	B = t_j < t_ff;
+	B = t_j > t_ff;
 #endif
 #endif
 
