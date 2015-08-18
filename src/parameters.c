@@ -306,9 +306,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->amrthresh0=(REAL)dummyf; if (debug) printf("param->amrthresh=%e\n", param->amrthresh0);
       rstat=fscanf(buf,"%s %d",stream,&param->nsmooth); if (debug) printf("param->nsmooth=%d\n", param->nsmooth);
 
+
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->DM_res);  if (debug) printf("param->DM_res=%d\n", param->DM_res);
-      rstat=fscanf(buf,RF,stream,&param->dx_res);       if (debug) printf("param->dx_res=%e\n", param->dx_res);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->dx_res=(REAL)dummyf; if (debug) printf("param->dx_res=%e\n", param->dx_res);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);   if (debug) printf("param->niter=%d\n", param->niter);
@@ -692,9 +693,11 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
       fprintf(fp,"step\t");
+#ifdef TESTCOSMO
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
       fprintf(fp,"t_[yrs]\t\t");
+#endif
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
       fprintf(fp,"max_rho\t\t");

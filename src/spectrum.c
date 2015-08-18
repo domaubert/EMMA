@@ -334,12 +334,14 @@ void readStarburst99(struct RUNPARAMS *param){
   //skip human readable header
   int nmax = 2048;
   char stream[nmax];
-  fgets(stream, nmax, buf);
-  fgets(stream, nmax, buf);
-  fgets(stream, nmax, buf);
+
+  size_t rstat;
+  rstat=fgets(stream, nmax, buf);
+  rstat=fgets(stream, nmax, buf);
+  rstat=fgets(stream, nmax, buf);
 
   //read header
-  size_t rstat;
+
   rstat=fscanf(buf,"%s %d",stream,&param->spectrum.ntime);
   rstat=fscanf(buf,"%s %d",stream,&param->spectrum.nwave);
   printf("%d \n", param->spectrum.ntime);printf("%d \n", param->spectrum.nwave);

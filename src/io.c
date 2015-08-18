@@ -581,9 +581,9 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   int noct=0;
 
   fp=fopen(filename,"wb");
-	if(fp == NULL) printf("Cannot open %s\n", filename);
-  //printf("tsim=%f\n",tsim);
-	fwrite(&tsim,sizeof(REAL),1,fp);
+  if(fp == NULL) printf("Cannot open %s\n", filename);
+  
+  fwrite(&tsim,sizeof(REAL),1,fp);
 
 #ifdef WRAD
   fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);

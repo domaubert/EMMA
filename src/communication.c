@@ -340,7 +340,6 @@ MPI_Barrier(cpu->comm);
 }
 
 #ifdef WMPI
-
 //======================================================================================
 void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
@@ -437,6 +436,7 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int leve
 }
 
 
+#ifdef WGRAV
 void gather_ex_dens(struct CPUINFO *cpu, struct PACKET **sendbuffer, int level){
 
   /*
@@ -472,6 +472,7 @@ void gather_ex_dens(struct CPUINFO *cpu, struct PACKET **sendbuffer, int level){
   free(countpacket);
 
 }
+#endif
 
 void gather_ex_mark(struct CPUINFO *cpu, struct PACKET **sendbuffer, int level){
 
@@ -879,6 +880,7 @@ void gather_mpi_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field
 
 // ======================================================
 // ======================================================
+#ifdef WGRAV
 void gather_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int level){
   int i,j;
   int found=0;
@@ -944,6 +946,8 @@ void gather_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int l
 
     free(countpacket);
 }
+#endif
+
 
  //------------------------------------------------------------------------
 void scatter_mpi(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int field){
@@ -1103,6 +1107,7 @@ void scatter_mpi_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int fie
 }
 
 // ==================================================================================
+#ifdef WGRAV
 void scatter_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int level){
 
   int i,j;
@@ -1150,7 +1155,7 @@ void scatter_mpi_pot_level(struct CPUINFO *cpu, struct PACKET **recvbuffer,  int
 
 
 }
-
+#endif
 
  //------------------------------------------------------------------------
 #ifdef PIC
@@ -1672,6 +1677,7 @@ void scatter_mpi_mark_ext(struct CPUINFO *cpu, struct PACKET **recvbuffer,int le
 
 }
 
+#ifdef WGRAV
 void scatter_mpi_dens_ext(struct CPUINFO *cpu, struct PACKET **recvbuffer,int level){
 
   int i,j;
@@ -1719,6 +1725,7 @@ void scatter_mpi_dens_ext(struct CPUINFO *cpu, struct PACKET **recvbuffer,int le
 
 
 }
+#endif
 
 #ifdef WHYDRO2
 void gather_mpi_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer){
@@ -2008,9 +2015,7 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      U.dv+=Ue.dv;
 	      U.dw+=Ue.dw;
 	      U.E +=Ue.E;
-#ifdef DUAL_E
 	      U.eint+=Ue.eint;
-#endif
 
 #ifdef WRADHYD
 	      U.dX+=Ue.dX;
@@ -2639,7 +2644,7 @@ void mpi_exchange_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct 
 
 // ===================================================
 // ===================================================
-
+#ifdef WGRAV
 void mpi_exchange_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int cmp_keys, int level)
 {
   int i;
@@ -2735,6 +2740,7 @@ void mpi_exchange_pot_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, str
 }
 
 
+#endif
 
 
 //------------------------------------------------------------------------
@@ -2890,6 +2896,8 @@ void mpi_mark_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PA
 
 }
 
+
+#ifdef WGRAV
 void mpi_dens_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer,int level)
 {
   int i,icpu;
@@ -2948,7 +2956,7 @@ void mpi_dens_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PA
 
 
 }
-
+#endif
 
 
 #ifdef WHYDRO2

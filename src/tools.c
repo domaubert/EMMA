@@ -6,6 +6,9 @@
 #include "prototypes.h"
 #include <unistd.h>
 #include <float.h>
+#ifdef WHYDRO2
+#include "hydro_utils.h"
+#endif
 
 void breakmpi()
 {
@@ -41,7 +44,9 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL Mtot=0;
   REAL Mtotnew=0;
   REAL Etot=0;
-  static REAL Etotlast;
+  REAL Etotnew=0;
+  REAL ptot=0;
+
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -100,18 +105,15 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
 #ifdef WHYDRO2
-		  if(curoct->cell[icell].child==NULL){
-		  Mtot +=curoct->cell[icell].field.d*dv;
-		  Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+ 		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
+		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
+		  struct Utype U;
+		  struct Utype Unew;
+		  W2U(&curoct->cell[icell].field,&U);
+		  W2U(&curoct->cell[icell].fieldnew,&Unew);
 
-		  REAL v2 = curoct->cell[icell].field.u*curoct->cell[icell].field.u+
-                curoct->cell[icell].field.v*curoct->cell[icell].field.v+
-                curoct->cell[icell].field.w*curoct->cell[icell].field.w;
-
-		  Etot +=(0.5*curoct->cell[icell].field.d*v2 + curoct->cell[icell].field.p/(GAMMA-1.))*dv;
-
-		  }
-
+		  if(curoct->cell[icell].child==NULL) Etot +=U.E*dv;
+		  if(curoct->cell[icell].child==NULL) Etotnew +=Unew.E*dv;
 
 		  if((curoct->cell[icell].field.d<=0)||isnan(curoct->cell[icell].field.u)){
 		    if(cpu->rank==curoct->cpu){
@@ -172,14 +174,15 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Etot,1,MPI_REEL,MPI_SUM,cpu->comm);
-
+  MPI_Allreduce(MPI_IN_PLACE,&Etotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
   if(cpu->rank==RANK_DISP){
-    printf("Total Baryon mass=%e (new=%e) deviation=%e\n",Mtot,Mtotnew, Mtotnew-Mtot);
-    printf("Total energy=%e (new=%e) deviation=%e\n",Etotlast,Etot,Etot-Etotlast);
+    printf("Total Baryon mass=%e (new=%e) deviation=%e \n",Mtot,Mtotnew, Mtotnew-Mtot);
+    printf("Total Baryon Egy=%e (new=%e) deviation=%e\n",Etot,Etotnew, Etotnew-Etot);
+
   }
-  Etotlast = Etot;
+
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
   /* REAL dm = Mtot - tmw; */
@@ -359,7 +362,7 @@ REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
 
-int gpoiss(const REAL lambda){
+int gpoiss(REAL lambda){
 /// Poisson distribution
 
 /// TODO use a better poisson algorithme

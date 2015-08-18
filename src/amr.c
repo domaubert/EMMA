@@ -903,7 +903,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   int stati[3]={0,0,0};
   REAL rin;
 
-  if(cpu->rank==RANK_DISP) printf("==> start marking\n");
+  if(cpu->rank==RANK_DISP) printf("==> start marking");
   //    for(level=levelmax;level>=param->lcoarse;level--) // looping over octs
   marker=0;
   nmark=0;
@@ -1287,7 +1287,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 */
 
-          threshold=1e-1;
+          threshold=0.5;
 
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    if(mcell>mmax) mmax=mcell;
@@ -1374,11 +1374,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #ifdef WMPI
 	      MPI_Barrier(cpu->comm);
 	      // we correct from the marker diffusion
-
-	      //if(marker%3==2)mpi_cic_correct(cpu,sendbuffer,recvbuffer,1);
 	      if(marker%3==2) mpi_cic_correct_level(cpu, cpu->sendbuffer, cpu->recvbuffer, 1,level);
-	      //if(marker%3==2) mpi_mark_correct(cpu,sendbuffer,recvbuffer,level);
-	      //if(level>=(param->lcoarse-1)) mpi_exchange_level(cpu,sendbuffer,recvbuffer,3,1,level);
+
 #endif
 
 	    }

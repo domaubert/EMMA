@@ -1,7 +1,7 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -lm -g -Wimplicit   #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
+C_LIBS = -lm -O2 -Wimplicit   #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
@@ -68,6 +68,8 @@ oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
 alloct:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/alloct utils/alloct.c -lm
+part2cic:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/part2cic.c -o utils/part2cic -lm
 cube2silo:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/cube2silo utils/cube2silo.c utils/libsilo.a -lm
 part2silo:

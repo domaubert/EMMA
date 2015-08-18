@@ -713,6 +713,27 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 
   /* /\*  /\\* // TEST 1 *\\/ *\/ */
 
+  /* WL.d=1.; */
+  /* WL.u=0.; */
+  /* WL.v=0.; */
+  /* WL.w=0.; */
+  /* WL.p=1.0; */
+  /* WL.a=sqrt(GAMMA*WL.p/WL.d); */
+  /* getE(&WL); */
+
+  /* WR.d=0.125; */
+  /* WR.u=0.; */
+  /* WR.v=0.; */
+  /* WR.w=0.; */
+  /* WR.p=0.1; */
+  /* WR.a=sqrt(GAMMA*WR.p/WR.d); */
+  /* getE(&WR); */
+
+
+  /* REAL X0=0.3125; */
+  
+  // SEDOV
+
   WL.d=1.;
   WL.u=0.;
   WL.v=0.;
@@ -722,14 +743,17 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
   getE(&WL);
 
   WR.d=0.125;
+#ifdef SED
+  WR.d=1.;
+#endif
   WR.u=0.;
   WR.v=0.;
   WR.w=0.;
-  WR.p=0.1;
+  WR.p=1e3;
   WR.a=sqrt(GAMMA*WR.p/WR.d);
   getE(&WR);
 
-  REAL X0=0.3125;
+  REAL X0=1./64;
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
@@ -740,23 +764,31 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 	  {
 	    curoct=nextoct;
 	    nextoct=curoct->next;
+	    if(curoct->cpu!=cpu->rank) continue;
 	    for(icell=0;icell<8;icell++) // looping over cells in oct
 	      {
 		xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
 		yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
 		zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
 
-		if(xc<X0){
-		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
+		REAL rc=xc;
+#ifdef SED
+		rc=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
+#endif
+
+		if(rc<X0){
+		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
 		}
 		else{
-		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
 		}
 	      }
 	  }while(nextoct!=NULL);
       }
 }
 #endif
+
+
 
 //==================================================================================
 #ifdef EVRARD

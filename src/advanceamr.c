@@ -1008,6 +1008,13 @@ if(cond1||cond2||cond3){
         (level<param->lmax)           &&
         (dxnext>dxkpc)                ){
 
+#ifndef ZOOM
+      if((ndt[level-1]%2==1)||(level==param->lcoarse))
+#else
+	if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
+#endif // ZOOM
+	  {
+
 	    L_clean_marks(level,firstoct);
           // marking the cells of the current level
 #ifdef WMPI
@@ -1015,9 +1022,10 @@ if(cond1||cond2||cond3){
 #else
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,NULL,NULL);
 #endif
+    }
 
     }else{
-
+      L_clean_marks(level,firstoct);
       KPCLIMIT_TRIGGER=1;
       MPI_Barrier(cpu->comm);
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);

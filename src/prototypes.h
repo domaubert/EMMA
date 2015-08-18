@@ -54,28 +54,26 @@ typedef double REAL;
 
 #endif // SINGLEPRECISION
 
-#ifdef DUAL_E
-  #ifndef WRADHYD
-    #define NVAR (6)
-  #else
+
+
+#ifndef WRADHYD
+#define NVAR (6)
+#else
 #ifdef HELIUM
 #define NVAR (9)
 #else
 #define NVAR (7)
 #endif
 #endif
-#else
-#define NVAR (5)
-#endif // DUAL_E
 
 #define NFLUX (6*NVAR)
 
-#ifndef WHYDRO2
-  #define OMEGAB (0.0)
-#else
-  #define OMEGAB (0.049); // 0.049 for PLANCK
-//#define OMEGAB (0.31749); // 0.049 for PLANCK
-#endif
+
+#define NGRP_SPACE (1)
+#define NGRP_TIME (1)
+#define NGRP (NGRP_SPACE * NGRP_TIME)
+#define NVAR_R (5)
+#define EMIN (1e-8)
 
 #ifdef WRAD
   #define NFLUX_R (6*NGRP*NVAR_R)
@@ -561,9 +559,7 @@ struct Utype{
   REAL dw;   ///< momentum
   REAL E;    ///< Energy
 
-#ifdef DUAL_E
   REAL eint; ///< internal energy
-#endif
 
 #ifdef WRADHYD
   REAL dX;
