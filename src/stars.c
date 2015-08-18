@@ -90,7 +90,9 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 	// test if density is over the threshold
 	A = 	cell->field.d > param->stars->thresh;
+	B=1;
 #ifdef WGRAV
+#ifdef JEANSCRIT
 
 	REAL dx = POW(0.5,level);
 
@@ -106,10 +108,8 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	// local Jeans time in second in code unit
 	REAL t_j = dx/cell->field.a;
 
-	B = t_j > t_ff;
-	B=1; // Neutralisation du critère de Jeans
-#else
-	B = 1;
+	B = t_j < t_ff;
+#endif
 #endif
 
 	return A && B;
