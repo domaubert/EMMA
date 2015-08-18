@@ -3,3 +3,4 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam);
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt);
 void copy_param(const char *folder);
 
+

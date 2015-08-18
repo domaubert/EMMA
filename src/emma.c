@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   struct OCT **firstoct;
   struct OCT **lastoct;
 
-    int level,levelcoarse,levelmax,levelmin;
+  int level,levelcoarse,levelmax,levelmin;
   int nvcycles;
   int nrelax;
   int ngridmax,ngrid;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
   REAL dt;
   int ntot=0,nlev,noct;
   REAL ntotd=0.,nlevd=0.;
-
+  int cond1,cond2,cond3;
   REAL disp,mdisp;
 
   int dir;
@@ -204,6 +204,8 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
+  struct OUTPUTPARAM out;
+  param.out=&out;
 
 #ifdef STARS
   struct STARSPARAM stars;
@@ -267,9 +269,9 @@ int main(int argc, char *argv[])
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
-  param.rzoom=0.055;
+  param.rzoom=0.0055;
   param.fzoom=1.45;
-  param.lmaxzoom=param.lcoarse+2;
+  param.lmaxzoom=param.lcoarse+4;
 #endif
 
 
@@ -279,6 +281,14 @@ int main(int argc, char *argv[])
 	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));
 #endif
   //omp_set_num_threads(param.ompthread);
+
+#ifdef MPIIO
+  cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
+  cpu.mpiio_nparts  = (int*)calloc(cpu.nproc,sizeof(int));
+#ifdef STARS
+  cpu.mpiio_nstars = (int*)calloc(cpu.nproc,sizeof(int));
+#endif // STARS
+#endif // MPIIO
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
@@ -1367,6 +1377,7 @@ int main(int argc, char *argv[])
     //    abort();
 
     //===================================================================================================================================
+
 #ifdef WRAD
 
 #ifdef WCHEM
@@ -1485,7 +1496,7 @@ int main(int argc, char *argv[])
 		  param.unit.unit_N=nh; // atom/m3 // we assume gas only and therefore ob=om
 		  REAL pstar;
 		  pstar=param.unit.unit_n*param.unit.unit_mass*POW(param.unit.unit_v,2);// note that below nh is already supercomiving hence the lack of unit_l in pstar
-#endif
+#endif // TESTCLUMP
 
 		  curoct->cell[icell].rfield.nh=nh*POW(param.unit.unit_l,3)/param.unit.unit_n;
 		  eint=(1.5*curoct->cell[icell].rfield.nh*(1.+xion)*KBOLTZ*temperature)/pstar;
@@ -1503,7 +1514,7 @@ int main(int argc, char *argv[])
 		  getE(&(curoct->cell[icell].field));
 		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
-#endif
+#endif // WRADHYD
 
 #endif // WCHEM
 
@@ -1515,6 +1526,49 @@ int main(int argc, char *argv[])
       }
 #endif // WRADTEST
 #endif // WRAD
+
+#ifdef SNTEST
+  // for sedov test
+
+  REAL nh=1000;
+  REAL temperature=100.;
+  REAL xion=1e-6;
+  REAL box_size_in_pc=15e3;
+
+  param.unit.unit_l= box_size_in_pc*PARSEC;
+  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
+  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
+  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
+  param.unit.unit_N=nh;
+
+  REAL pstar=param.unit.unit_mass*POW(param.unit.unit_v,2);
+  REAL dennh=nh*POW(param.unit.unit_l,3);
+  REAL eint=(1.5*dennh*(1.+xion)*KBOLTZ*temperature)/pstar;
+
+  for(level=levelcoarse;level<=levelmax;level++){
+    dxcur=POW(0.5,level);
+    nextoct=firstoct[level-1];
+    if(nextoct==NULL) continue;
+    do{
+      curoct=nextoct;
+      nextoct=curoct->next;
+      for(icell=0;icell<8;icell++){
+        curoct->cell[icell].field.d=dennh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;;
+        curoct->cell[icell].field.u=0.0;
+        curoct->cell[icell].field.v=0.0;
+        curoct->cell[icell].field.w=0.0;
+        //curoct->cell[icell].field.p=eint*(GAMMA-1.);
+        curoct->cell[icell].field.p=1e-5;
+        curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+        getE(&(curoct->cell[icell].field));
+      }
+    }while(nextoct!=NULL);
+  }
+  tinit=tsim;
+
+#endif // SNTEST
+
 
     // saving the absolute initial time
 #ifdef TESTCOSMO
@@ -1606,12 +1660,14 @@ int main(int argc, char *argv[])
 
   param.time_max=tmax;
 
-
   mkdir("data/", 0755);
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
+
   int Lmin = 1+(int)(log(cpu.nproc)/(3*log(2.)));
+
+
   if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
     param.mgridlmin = Lmin;
     if(cpu.rank==RANK_DISP){
@@ -1702,7 +1758,7 @@ int main(int argc, char *argv[])
 
     int *ptot = (int*)calloc(2,sizeof(int));
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
-    
+
 
 #ifdef ZOOM
     // we trigger the zoom region
@@ -1715,9 +1771,10 @@ int main(int argc, char *argv[])
     if(cpu.rank==RANK_DISP) printf("zoom amr ok\n");
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
+
     // at this stage the amr zoomed grid exists
     // let us fill it with some data
-
+#ifdef PIC
     struct PART *lpartloc;
 
 
@@ -1730,7 +1787,9 @@ int main(int argc, char *argv[])
       int npz;
       REAL munit;
       lpartloc=lastpart+1;
+#ifdef GRAFIC
       lastpart=read_grafic_part(lpartloc, &cpu, &munit, &ainit, &npz, &param,izoom);
+#endif // GRAFIC
       printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
 
       part2grid(lpartloc,&cpu,npz);
@@ -1748,8 +1807,6 @@ int main(int argc, char *argv[])
 
       cpu.freepart=freepart;
 
-
-
     // SECOND HYDRO FIELD
       int ncellhydro;
       ncellhydro=read_grafic_hydro(&cpu,&ainit, &param, izoom);
@@ -1761,13 +1818,13 @@ int main(int argc, char *argv[])
     }
 
 
-
+#endif // PIC&
 
     /* tsim=tmax; */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,1); */
     // end ZOOM
-#endif
+#endif // ZOOM
 
 #ifndef JUSTIC
 
@@ -1776,7 +1833,7 @@ int main(int argc, char *argv[])
 
 
       cpu.nsteps=nsteps;
-
+      
 #ifdef TESTCOSMO
       cosmo.aexp=interp_aexp(tsim,(double *)cosmo.tab_aexp,(double *)cosmo.tab_ttilde);
       cosmo.tsim=tsim;
@@ -1785,16 +1842,16 @@ int main(int argc, char *argv[])
 #ifndef WRAD
       if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e ================\n",nsteps,tsim);
 #else
-     if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
+      if(cpu.rank==RANK_DISP) printf("\n============== STEP %d tsim=%e [%e Myr] ================\n",nsteps,tsim,tsim*param.unit.unit_t/MYR);
 #endif
 #endif
-
+      
       // Resetting the timesteps
-
+      
       for(level=1;level<=levelmax;level++){
 	ndt[level-1]=0;
       }
-
+      
       //Recursive Calls over levels
       double tg1,tg2,tg3,tg4;
 #ifdef WMPI
@@ -1809,7 +1866,7 @@ int main(int argc, char *argv[])
       MPI_Barrier(cpu.comm);
       tg3=MPI_Wtime();
 #endif
-
+      
 #ifdef WRAD
 #ifdef COARSERAD
       // inner loop on radiation
@@ -1820,13 +1877,13 @@ int main(int argc, char *argv[])
       while(trad<adt[levelcoarse-1]){
 	//if(cpu.rank==RANK_DISP) printf("step\n");
 	double tcr1,tcr2;
-
+	
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr1=MPI_Wtime();
 #endif
 	Advance_level_RAD(levelcoarse,adt[levelcoarse-1]-trad,adt_rad,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,nsteps,tsimrad,nrad);
-
+	
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 	tcr2=MPI_Wtime();
@@ -1841,7 +1898,7 @@ int main(int argc, char *argv[])
       MPI_Barrier(cpu.comm);
       tg4=MPI_Wtime();
 #endif
-
+      
 #ifndef GPUAXL
       if(cpu.rank==RANK_DISP) printf("CPU : COARSE RAD DONE with %d steps in %e secs\n",nrad,tg4-tg3);
 #else
@@ -1860,27 +1917,33 @@ int main(int argc, char *argv[])
 #else
       if(cpu.rank==RANK_DISP) printf("GPU GLOBAL TIME = %e t = %e\n",tg2-tg1,tsim);
 #endif
-
+      
       // ==================================== dump
-      int cond1 = nsteps%param.ndumps==0;
-      int cond2 = 0;
-      int cond3 = tsim+adt[levelcoarse-1]>=tmax;
-
-#ifdef TESTCOSMO
-
+      cond1 = nsteps%param.ndumps==0;
+      cond2 = 0;
+      cond3 = tsim+adt[levelcoarse-1]>=tmax;
+       
       if (param.dt_dump){
-        cond1=0;
-
-        int offset=0;
-        if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
-
-        REAL a=param.cosmo->tphy;
+	cond1=0;
+	int offset=0;
+	
+#ifdef TESTCOSMO
+	if (nsteps==0) offset = (int)(param.cosmo->tphy/param.dt_dump);
+	REAL a=param.cosmo->tphy;
+	REAL b=(int)(ndumps+offset)*param.dt_dump;
+	cond2=a>b;
+	if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param.dt_dump);
+#endif // TESTCOSMO
+      
+#ifdef SNTEST
+        if (nsteps==0) offset = (int)(tsim/param.dt_dump);
+        REAL a=tsim;
         REAL b=(int)(ndumps+offset)*param.dt_dump;
         cond2=a>b;
-        if(cpu.rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+cond2*param.dt_dump);
+        if(cpu.rank==RANK_DISP)printf("t=%.2e next dump at %.2e\n",a,b+(a>b)*param.dt_dump);
+#endif // SNTEST
       }
-#endif // TESTCOSMO
-
+      
       if(cond1||cond2||cond3){
 #ifndef EDBERT
 
@@ -1907,7 +1970,7 @@ int main(int argc, char *argv[])
 	tdump=(tsim+adt[levelcoarse-1])*param.unit.unit_t/MYR;
 #else
 	tdump=(tsim+adt[levelcoarse-1]);
-#endif
+#endif // WRAD
 #else
 	tdump=interp_aexp(tsim+adt[levelcoarse-1],cosmo.tab_aexp,cosmo.tab_ttilde);
 	adump=tdump;
@@ -1915,8 +1978,8 @@ int main(int argc, char *argv[])
 #ifdef EDBERT
 	treal=-integ_da_dt(tdump,1.0,cosmo.om,cosmo.ov,1e-8); // in units of H0^-1
 	tdump=(treal-trealBB)/(treal0-trealBB);
-#endif
-#endif
+#endif // EDBERT
+#endif // TESTCOSMO
 
 	// === Hydro dump
 
@@ -1935,22 +1998,22 @@ int main(int argc, char *argv[])
 		  printf("%s\n",filename);
 		}
 		dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
-	#endif
+	#endif // PIC
 
 		// backups for restart
 		sprintf(filename,"bkp/grid.%05d.p%05d",ndumps,cpu.rank);
 		REAL tsave=tdump;
 #ifndef TESTCOSMO
 		tsave=tdump/(param.unit.unit_t/MYR);
-#endif
+#endif // TESTCOSMO
 
 		save_amr(filename,firstoct,tsave,tinit,nsteps,ndumps,&param, &cpu,part,adt);
 #ifdef PIC
 		sprintf(filename,"bkp/part.%05d.p%05d",ndumps,cpu.rank);
 		save_part(filename,firstoct,param.lcoarse,param.lmax,tsave,&cpu,part);
-#endif
+#endif // PIC
 
-#endif
+#endif // EDBERT
 	ndumps++;
       }
 
@@ -1960,7 +2023,7 @@ int main(int argc, char *argv[])
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
-    }
+}
 
 	// writting the last particle file
 	ndumps-=1;

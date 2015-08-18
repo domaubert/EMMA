@@ -1,11 +1,54 @@
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 #include "prototypes.h"
 
 #ifdef UVBKG
 #include "src_utils.h"
 #endif // UVBKG
+
+char *field_name [] ={
+// The field order has to be the same as in param.output for consistency
+"x",
+"y",
+"z",
+"l",
+"cpu",
+"gdata.d",
+"density",
+"gdata.p",
+"res",
+"f[0]",
+"f[1]",
+"f[2]",
+"marked",
+"field.d",
+"field.u",
+"field.v",
+"field.w",
+"field.p",
+"rfield.e[0]",
+"rfield.fx[0]",
+"rfield.fy[0]",
+"rfield.fz[0]",
+"rfield.e[1]",
+"rfield.fx[1]",
+"rfield.fy[1]",
+"rfield.fz[1]",
+"rfield.snfb",
+"rfield.e[2]",
+"rfield.fx[2]",
+"rfield.fy[2]",
+"rfield.fz[2]",
+"rfield.src",
+"xion",
+"field.dX",
+"field.dXHE",
+"field.dXXHE",
+"field.xHE",
+"field.xxHE",
+"rfield.temp"
+};
 
 int copy(char const * const source, char const * const destination) {
 /**
@@ -65,7 +108,12 @@ void copy_param(const char *folder){
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
   copy(param_src, param_dest);
-
+#ifdef ALLOCT
+  sprintf(param,"param.output");
+  sprintf(param_src,"%s%s","data/",param);
+  sprintf(param_dest,"%s%s",folder,param);
+  copy(param_src, param_dest);
+  #endif // ALLOCT
 }
 
 void dumpFile(char *filename_in, char *filename_out){
@@ -102,10 +150,49 @@ void dumpFile(char *filename_in, char *filename_out){
   }
 }
 
+void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
-void GetParameters(char *fparam, struct RUNPARAMS *param)
-{
-  FILE *buf;
+  int n_field=0;
+  int n_field_tot=0;
+
+  FILE *f=NULL;
+  f=fopen(fparam,"r");
+  if(f==NULL){
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fparam);
+      abort();
+  }else{
+    char stream[256];
+    while (fscanf(f, "%s\n", stream) != EOF) {
+
+      if ( strncmp( stream,"#", 1) ){
+        param->out->field_id[n_field_tot] = 1;
+        param->out->field_name[n_field_tot] = field_name[n_field_tot];
+        n_field++;
+      }else{
+        param->out->field_id[n_field_tot] = 0;
+      }
+      n_field_tot++;
+    }
+    fclose(f);
+  }
+
+  param->out->n_field=n_field;
+  param->out->n_field_tot=n_field_tot;
+
+/*
+  int i;
+  for (i=0;i<n_field_tot; i++){
+    if (param->out->field_id[i])
+    printf("%d\t%s\n",param->out->field_id[i], param->out->field_name[i]);
+  }
+*/
+
+//abort();
+
+}
+
+void GetParameters(char *fparam, struct RUNPARAMS *param){
+  FILE *buf=NULL;
   char stream[256];
   size_t rstat;
   double dummyf;
@@ -139,6 +226,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->DM_res);
+      rstat=fscanf(buf,RF,stream,&param->dx_res);
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->niter);
@@ -205,6 +293,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
       rstat=fscanf(buf,RF,stream,&param->movie->zmax);
 #endif
       fclose(buf);
+
     }
 
 
@@ -237,6 +326,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param)
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
 
+#ifdef ALLOCT
+  readOutputParam("param.output", param);
+#endif // ALLOCT
+
 }
 
 void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -257,26 +350,26 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     FILE *fp = fps[i];
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
-#ifdef TESTCOSMO    
+#ifdef TESTCOSMO
     fprintf(fp, float_format,"box_size_Mpc/h",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
 #else
-    fprintf(fp, float_format,"box_size_Mpc",(param->unit.unit_l/PARSEC/1e6));
-#endif
+    fprintf(fp, float_format,"box_size_Kpc",(param->unit.unit_l/PARSEC/1e3));
+#endif // TESTCOSMO
     fprintf(fp, int_format,"level_min",(param->lcoarse) );
     fprintf(fp, int_format,"level_max",(param->lmax) );
 
   fprintf(fp,"##=Unit_code->SI====================\n" );
-  #ifdef WRAD
-    fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
-    fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
-    fprintf(fp, real_format,"unit_t",(param->unit.unit_t) );		// unit time [seconds]
-    fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
-    fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
-  //  fprintf(fp,"\n");
-  #endif
 
-  fprintf(fp,"##=Cosmology========================\n" );
+  fprintf(fp, real_format,"unit_l",(param->unit.unit_l) );		// comoving length size of the box [meters]
+  fprintf(fp, real_format,"unit_v",(param->unit.unit_v) );		// unit velocity
+  fprintf(fp, real_format,"unit_t",(param->unit.unit_t) );		// unit time [seconds]
+  fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
+  fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
+  //  fprintf(fp,"\n");
+
+
   #ifdef TESTCOSMO
+  fprintf(fp,"##=Cosmology========================\n" );
     fprintf(fp, real_format,"om",(param->cosmo->om) );			// Omega matter
     fprintf(fp, real_format,"ov",(param->cosmo->ov) );			// Omega vacuum
     fprintf(fp, real_format,"ob",(param->cosmo->ob) );			// Omega baryon
@@ -284,14 +377,12 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   //  fprintf(fp,"\n");
   #endif
 
-
-
-    fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
 #ifdef PIC
+    fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
+#ifdef TESTCOSMO
     REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->DM_res))*param->unit.unit_mass/SOLAR_MASS;
     fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
-#endif
-
+#endif // TESTCOSMO
 #ifdef STARS
     REAL res = param->stars->mass_res;
     if(res>100){
@@ -316,6 +407,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
       }
     }
 #endif // STARS
+#endif // PIC
 
     fprintf(fp,"##=Spatial_resolution_(Kpc)=========\n" );
     int level;
@@ -346,7 +438,10 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
   dumpFile(fparam, "data/param.run");
   printf("\n");
-
+#ifdef ALLOCT
+  dumpFile("param.output", "data/param.output");
+  printf("\n");
+#endif // ALLOCT
 
 #ifdef TESTCOSMO
   REAL threshold=param->amrthresh0;
@@ -499,7 +594,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef TESTCOSMO
     fprintf(fp, real_format,param->cosmo->aexp);
     fprintf(fp, real_format,1./param->cosmo->aexp-1.);
-#endif
+#endif // TESTCOSMO
     fprintf(fp, real_format,dt);
     fprintf(fp, real_format ,(float)max_level);
     fprintf(fp, real_format,max_rho);

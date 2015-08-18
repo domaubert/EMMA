@@ -47,11 +47,13 @@ c      call getarg(5,outfile)
       call getarg(1,string)
       time = value(string)
 
+      call getarg(2,string)
+      eblast = value(string)
 c..otherwise explicitly set stuff
 c..standard cases
 c..spherical constant density should reach r=1 at t=1
 
-      nstep = 128
+      nstep = 512
       xgeom  = 3.0q0
       omega  = 0.0q0
       outfile = 'utils/sedov/sedov.dat'
@@ -59,21 +61,14 @@ c..spherical constant density should reach r=1 at t=1
       gamma  = 5q0/3q0
       
       ener0  = 0.0q0
-      pres0  = 0.0q0
+      pres0  = 1.0q-5
       cs0    = 0.0q0
 
 
 c..input parameters in cgs
     
-      eblast = 7.089738e-12
       rho0   = 1.0q0
       l0     = 1.0q0
-
-
-      
-      
-
-
 
 c..number of grid points, spatial domain, spatial step size.
 c..to match hydrocode output, use the mid-cell points.
@@ -81,7 +76,8 @@ c..to match hydrocode output, use the mid-cell points.
       zhi   = l0
       zstep = (zhi - zlo)/float(nstep)
       do i=1,nstep
-       zpos(i)   = zlo + 0.5q0*zstep + float(i-1)*zstep
+c       zpos(i)   = zlo + 0.5q0*zstep + float(i-1)*zstep
+       zpos(i)   = zlo + 0.q0*zstep + float(i-1)*zstep
       enddo
 
 

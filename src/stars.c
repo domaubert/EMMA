@@ -53,7 +53,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
-  // random component
+  // compute random component
 	REAL r = rdm(0,1) * cell->field.a ;
 	REAL theta  = acos(rdm(-1,1));
 	REAL phi = rdm(0,2*M_PI);
@@ -91,15 +91,23 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	// test if density is over the threshold
 	A = 	cell->field.d > param->stars->thresh;
 #ifdef WGRAV
-  // test the Jeans criterion
-	//B = cell->field.a/POW(2.,-level) > SQRT(6.*aexp * cell->gdata.d +1.) ;
-	REAL dx = POW(2.,-level);
 
-  REAL jeans = M_PI/(16.*NEWTON_G) * POW(cell->field.a/dx,2);
-  jeans *= POW(aexp,3) /(param->unit.unit_d);
+	REAL dx = POW(0.5,level);
 
-  B = cell->field.d > jeans;
-  B = 1;
+  REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
+
+	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
+	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
+
+	// local free fall time in seconde in code unit
+	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho));
+	t_ff /= fact_t;
+
+	// local Jeans time in second in code unit
+	REAL t_j = dx/cell->field.a;
+
+	B = t_j > t_ff;
+	B=1; // Neutralisation du critère de Jeans
 #else
 	B = 1;
 #endif
@@ -137,7 +145,10 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U.dw -= star->vz * drho;
 
 //	internal energy
+
+#ifdef DUAL_E
 	U.eint=U.eint*(1.-drho/W.d); // assuming T and x remain constant
+#endif
 
 	U2W(&U, &W);
 
@@ -180,29 +191,29 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	// local free fall time in seconde in code unit
 	// REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
 	//printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
-	
+
 	REAL dx = POW(0.5,level);
 	REAL dv = POW(0.5,3*level);
-	
+
 	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
 	REAL rho_b =  cell->field.d     / param->stars->thresh;
-	
+
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
-	
+
 	// local free fall time in seconde in code unit
 	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
 	t_ff /= fact_t;
-  
+
   // local Jeans time in seconde in code unit
 	REAL t_j = dx/cell->field.a;
-	
+
 	// star formation rate in kg/s/m3 in code unit
 	REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
 
 	// Jeans efficiency
 	//SFR *= t_j/t_ff;
-	
+
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
 	//printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));

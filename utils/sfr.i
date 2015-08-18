@@ -18,8 +18,12 @@ rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32; srcint=5e16; tlife=20e6; sbox
 //rep="./dataNOSNNORAD/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=34; // years
 rep="./dataAMR_PART_LONG/";ncpu=32; srcint=5e15; tlife=20e6; sbox=4.;nsnap=15; // years
 rep="~/qtest/data/";ncpu=32; srcint=1e15; tlife=20e6; sbox=12.;nsnap=7; // years
+rep="~/qtest/data_4_ref_simple/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap=53;col="red"; // years
+rep="~/qtest/data_4_ref_simple_noSN/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap=35;col="blue"; // years
+rep="~/qtest/data_4_ref_simple_noRAD/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=66;col="black"; // years
+rep="~/qtest/data/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=33;col="green"; // years
 
-col="blue";
+//col="green";
 lcoarse=7.;
 bint=spanl(1e8,1e9,64);
 
@@ -82,7 +86,7 @@ eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 #if 1
 // DISPLAY
 window,2;
-plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
+//plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
 PL,SFR(),zSFR(),color=col,incolor=col,msize=.3,line=1,width=5;
 logxy,0,1;
 limits,2,12,5e-5,1;

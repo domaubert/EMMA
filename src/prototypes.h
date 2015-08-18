@@ -52,6 +52,8 @@ typedef double REAL;
 
 #endif // SINGLEPRECISION
 
+
+
 #ifndef WRADHYD
 #define NVAR (6)
 #else
@@ -64,19 +66,21 @@ typedef double REAL;
 
 #define NFLUX (6*NVAR)
 
-#ifndef WHYDRO2
-  #define OMEGAB (0.0)
-#else
-  #define OMEGAB (0.049); // 0.049 for PLANCK
-//#define OMEGAB (0.31749); // 0.049 for PLANCK
-#endif
+
+#define NGRP_SPACE (1)
+#define NGRP_TIME (1)
+#define NGRP (NGRP_SPACE * NGRP_TIME)
+#define NVAR_R (5)
+#define EMIN (1e-8)
 
 #ifdef WRAD
   #define NFLUX_R (6*NGRP*NVAR_R)
 #endif
 //=======================================
 
-//#define LIFETIME_OF_STARS_IN_TEST (0*3e6)
+
+
+#define LIFETIME_OF_STARS_IN_TEST (0)
 
 #ifdef TESTCOSMO
 struct COSMOPARAM{
@@ -95,7 +99,6 @@ struct COSMOPARAM{
 
 #ifdef STARS
 struct STARSPARAM{
-
   REAL overdensity_cond;///< need overdensity_cond times the mean density to begin star formation
   REAL density_cond;///< Hydrogen density (m-3)
   REAL efficiency;///< efficiency of star formation proccess
@@ -112,7 +115,6 @@ struct STARSPARAM{
 
 #ifdef SUPERNOVAE
 struct SNPARAM{
-
   REAL feedback_eff;///< feedback efficiency
   REAL feedback_frac;///< fraction of kinetic feedback over thermal feedback
   REAL Esnfb;///<  total Energy of a SN
@@ -194,6 +196,7 @@ struct RUNPARAMS{
   REAL amrthresh; ///< the refinement criterion (refine if mcell>amrthresh)
 
   int DM_res; ///< resolution of dark matter particle (equivalent level of lcoarse + DM_res)
+  REAL dx_res; ///< maximum spatial resolution before blocking AMR in Parsec
 
   int nsmooth; ///< the number of neighbour refinement steps
 
@@ -204,6 +207,8 @@ struct RUNPARAMS{
 
   int nrestart; ///< the restart snapshot
   int nsubcycles; ///< number of subcyles in AMR advance procedure
+
+  struct OUTPUTPARAM *out;
 
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo; ///< the cosmological parameters
@@ -328,6 +333,16 @@ struct CPUINFO{
   struct HYDRO_MPI **hrecvbuffer;
   struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
+
+  int mpiio_grid_offsets;
+  int *mpiio_ncells;
+
+  int mpiio_part_offsets;
+  int *mpiio_nparts;
+#ifdef STARS
+  int mpiio_star_offsets;
+  int *mpiio_nstars;
+#endif // STARS
 
 #ifdef PIC
   MPI_Datatype *MPI_PART; ///< the structured type for MPI messages (particles)
@@ -735,6 +750,7 @@ struct LCELL
 #endif
 
 #endif
+//  REAL sfr;
 };
 
 
@@ -1021,3 +1037,10 @@ struct MULTIVECT{
 #endif
 };
 
+
+struct OUTPUTPARAM{
+  int n_field;
+  int n_field_tot;
+  char *field_name[50];
+  int field_id[50];
+};

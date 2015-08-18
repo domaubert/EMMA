@@ -5,9 +5,11 @@
 #include "hilbert.h"
 #include "prototypes.h"
 #include <unistd.h>
+#include <float.h>
 #ifdef WHYDRO2
 #include "hydro_utils.h"
 #endif
+
 void breakmpi()
 {
   {
@@ -43,6 +45,17 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL Mtotnew=0;
   REAL Etot=0;
   REAL Etotnew=0;
+
+  REAL PXtot=0;
+  REAL PXtotnew=0;
+  REAL PYtot=0;
+  REAL PYtotnew=0;
+  REAL PZtot=0;
+  REAL PZtotnew=0;
+  REAL Etot=0;
+  REAL Etotnew=0;
+
+  REAL ptot=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -213,7 +226,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
 #ifdef WMPI
  MPI_Barrier(cpu->comm);
- if(rank==0) printf("Check done \n");
+ if(rank==RANK_DISP) printf("Check done \n");
 #endif
 
   return mtot;
@@ -353,10 +366,18 @@ REAL rdm(REAL a, REAL b){
 	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
 }
 
-int gpoiss(REAL lambda){
+int gpoiss(const REAL lambda){
 /// Poisson distribution
 
-	int k=1;
+/// TODO use a better poisson algorithme
+
+#ifdef SINGLEPRECISION
+  const int kmax = log(FLT_MAX); // log( max(float32) )  = 88
+#else
+  const int kmax = log(DBL_MAX);// log( max(float64) ) = 708
+#endif // SINGLEPRECISION
+
+  int k=1;
 	REAL p = rdm(0,1);
 	REAL P = exp(-lambda);
 	REAL sum=P;
@@ -368,7 +389,9 @@ int gpoiss(REAL lambda){
 	    sum+=P;
 	    if (sum>=p) break;
 	    k++;
-	  }while(k<1e6);
+	  }while(k<kmax);
+
+	  if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
 	}
 	if(k==1e6) {
 	  printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);

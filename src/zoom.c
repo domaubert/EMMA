@@ -23,7 +23,7 @@
 #ifdef ZOOM
 
 int queryzoom(struct OCT *curoct, int icell, REAL dxcur, REAL Rin) {
-  
+
   REAL xc,yc,zc;
   int res=0.;
 
@@ -35,7 +35,7 @@ int queryzoom(struct OCT *curoct, int icell, REAL dxcur, REAL Rin) {
   if((xc*xc+yc*yc+zc*zc)<(Rin*Rin)){
     res=1;
   }
-  return res;  
+  return res;
 }
 
 // ===========================================================
@@ -52,14 +52,14 @@ int pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param){
 
   REAL rc=SQRT(xc*xc+yc*yc+zc*zc);
   REAL rcur=param->rzoom;
-  
+
   while((rc>rcur)&&(res>param->lcoarse)){
     //      printf("res=%d lcoarse=%d\n",res,param->lcoarse);
       rcur*=param->fzoom;
       res=res-1;
       //   abort();
   }
-  
+
   return res;
 
 }
@@ -68,7 +68,7 @@ int pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param){
 
 
 void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct OCT **firstoct,  struct OCT ** lastoct){
- 
+
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo;
   cosmo=param->cosmo;
@@ -121,21 +121,21 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
     // =========== Grid Census ========================================
     grid_census(param,cpu);
   }
-  
+
   is=0;
 
 #ifdef PIC
   //reset substep index of the particles
   L_reset_is_part(level,firstoct);
 #endif
- 
-  
+
+
   // ================= I we refine the current level
   if((param->lmax!=param->lcoarse)&&(level<param->lmaxzoom)){
 
     // enforcing the 2 levels rule
       L_check_rule(level,param,firstoct,cpu);
-      
+
 #ifdef WMPI
       mpi_cic_correct(cpu, cpu->sendbuffer, cpu->recvbuffer, 3);
       mpi_exchange_level(cpu,cpu->sendbuffer,cpu->recvbuffer,3,1,level); // propagate the rule check
@@ -149,7 +149,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
       // refining (and destroying) octs
       curoct=L_refine_cells(level,param,firstoct,lastoct,cpu->freeoct,cpu,firstoct[0]+param->ngridmax,0.);
       cpu->freeoct=curoct;
-    
+
       // ==================================== Check the number of particles and octs
       ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
 	ptot[0]+=cpu->npart[ip-1]; // total of local particles
@@ -162,7 +162,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
 
       mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
 
-      ptot[0]=0; 
+      ptot[0]=0;
       for(ip=1;ip<=param->lmax;ip++){
 	ptot[0]+=cpu->npart[ip-1]; // total of local particles
       }
@@ -173,8 +173,8 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
       MPI_Barrier(cpu->comm);
 #endif
     }
-    
-    // =============================== cleaning 
+
+    // =============================== cleaning
 #ifdef WHYDRO2
     clean_new_hydro(level,param,firstoct,cpu);
 #endif
@@ -188,7 +188,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
     clean_new_rad(level,param,firstoct,cpu,0);
 #endif
 
-    
+
    // ================= III Recursive call to finer level
 
   double tt2,tt1;
@@ -209,7 +209,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
 
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
-    
+
     // ==================================== Check the number of particles and octs
     ptot[0]=0; for(ip=1;ip<=param->lmax;ip++) ptot[0]+=cpu->npart[ip-1]; // total of local particles
 #ifdef STARS
@@ -218,7 +218,7 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,2);
 
     // ================= V Computing the new refinement map
-    
+
 
     if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
       // cleaning the marks
@@ -226,8 +226,8 @@ void zoom_level(int level, struct CPUINFO *cpu, struct RUNPARAMS *param, struct 
       // marking the cells of the current level
       L_mark_cells(level,param,firstoct,1,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
     }
-  
-  
+
+
   if(cpu->rank==RANK_DISP){
     printf("--\n");
     printf("exiting level =%d\n",level);

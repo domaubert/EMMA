@@ -10,12 +10,14 @@ dur_src=[];
 //rep="./data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;
 //rep="~/qtest/data_3MYR/";istart=12;istop=12;ncpu=32;lmax=15;sbox=12.;lcoarse=7.;dur_src=3.;flux_src=3e16;
 //rep="~/qtest/data/";istart=36;istop=36;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=5.;flux_src=1e16;
-rep="~/qtest/data/";istart=36;istop=36;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=5.;flux_src=1e16;
-rep="~/qtest/data_8_256/";istart=14;istop=14;ncpu=32;lmax=15;sbox=8.;lcoarse=8.;dur_src=10.;flux_src=2e16;
+// rep="~/qtest/data/";istart=36;istop=36;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=5.;flux_src=1e16;
+// rep="~/qtest/data_8_256/";istart=14;istop=14;ncpu=32;lmax=15;sbox=8.;lcoarse=8.;dur_src=10.;flux_src=2e16;
 //rep="~/qtest/data_4_new_wsrc_ministar_x1/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e15;
 //rep="~/qtest/data_4_new_wsrc_ministar_x3/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=1.5e16;
 //rep="~/qtest/data_4_new_wsrc_ministar_x10/";istart=37;istop=37;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e16;
 //rep="~/qtest/data_4_new_wsrc_ministar_x100/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=20.;flux_src=5e17;
+
+rep="~/qtest/data_4_ref_simple_noSN/";istart=35;istop=35;ncpu=32;lmax=15;sbox=4.;lcoarse=7.;dur_src=10.;flux_src=2e16;
 
 restore,openb("~/qtest/utils/mag/f1600_SB99_5Myrs.yor"),f1600,age;
 f1600*=flux_src;
