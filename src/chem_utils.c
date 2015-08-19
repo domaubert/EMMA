@@ -361,7 +361,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 		if((et[igrp]<0)||(isnan(et[igrp]))){
 		  test=1;
-		  printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
+		  //printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
 		}
 		p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc]))*dtcool);
 	      }
@@ -404,7 +404,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(((xt>1.)||(xt<0.))||(isnan(xt)))
  	    {
-	      printf("XION ERR eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
+	      //printf("XION ERR eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
 	      fudgecool/=10.;
 	      continue;
 	    }

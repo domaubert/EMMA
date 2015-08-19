@@ -119,9 +119,9 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     REAL vy0 = curp->vy;
     REAL vz0 = curp->vz;
 #else
-		REAL vx0 = 0;
-	  REAL vy0 = 0;
-	  REAL vz0 = 0;
+    REAL vx0 = 0;
+    REAL vy0 = 0;
+    REAL vz0 = 0;
 #endif // PIC
 
     REAL vxe = vx0 + ve*dir_x[i]/2.; // projection on axis in the particle framework
@@ -140,6 +140,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
     curcell->field.w = (vzi*rho_i + vze*rho_e)/(rho_i+rho_e);
 
+
     curcell->field.d += rho_e; //new density
 
     //Energy conservation
@@ -154,6 +155,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
+    printf("vv=%e vxi=%e rho_i=%e, vxe=%e rhoe=%e\n",curcell->field.u,vxi,rho_i,vxe,rho_e);
   }
 }
 
@@ -208,7 +210,6 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         // if there is only thermal feedback the energy can be injected in just a cell
         thermalFeedbackCell(cell, E*(1.-param->sn->feedback_frac));
       }
-
       Nsn++;
     }
   }while(nexp!=NULL);

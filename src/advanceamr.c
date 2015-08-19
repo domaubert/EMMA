@@ -373,8 +373,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
       mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
-
-    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+      
+      ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
       /* if((level==11)&&(cpu->rank==217)){ */
       /* 	printf("AP l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
@@ -1036,7 +1036,7 @@ if(cond1||cond2||cond3){
       KPCLIMIT_TRIGGER=0;
     }
 
-      //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time

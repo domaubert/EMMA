@@ -3140,6 +3140,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	curoct->cell[icell].fieldnew.p=FMAX(curoct->cell[icell].fieldnew.p,PMIN); // Pressure floor
+	curoct->cell[icell].fieldnew.a=SQRT(GAMMA*curoct->cell[icell].fieldnew.p/curoct->cell[icell].fieldnew.d);//sound speed
 	getE(&(curoct->cell[icell].fieldnew));
 
  	if(isnan(curoct->cell[icell].fieldnew.u)){
