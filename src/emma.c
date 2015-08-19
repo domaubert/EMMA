@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   REAL xc,yc,zc;
   int hstride;
   int rstride;
- int gstride;
+  int gstride;
   int ncomp;
   REAL acc;
   REAL dt;

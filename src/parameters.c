@@ -3,7 +3,6 @@
 #include <string.h>
 #include <float.h>
 #include "prototypes.h"
-#include "spectrum.h"
 
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
 #include "src_utils.h" //setUVBKG

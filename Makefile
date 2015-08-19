@@ -27,8 +27,7 @@ C_OBJS= emma.o \
 				convert.o \
 				parameters.o \
 				restart.o \
-				ic.o \
-				spectrum.o
+				ic.o
 
 DEFINES  =
 OBJDIR = obj
