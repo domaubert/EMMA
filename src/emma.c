@@ -1556,24 +1556,14 @@ int main(int argc, char *argv[])
 #ifndef WRAD
 #ifdef SNTEST
   // for sedov test
+  param.unit.unit_l=1.;
+  param.unit.unit_v=1.;
+  param.unit.unit_t=1.;
+  param.unit.unit_d=1.;
+  param.unit.unit_N=1.;
+  param.unit.unit_mass=1.;
 
-  REAL nh=1000;
-  REAL temperature=100.;
-  REAL xion=1e-6;
-  REAL box_size_in_pc=15e3;
-
-  param.unit.unit_l= box_size_in_pc*PARSEC;
-  param.unit.unit_v=LIGHT_SPEED_IN_M_PER_S;
-  param.unit.unit_t=param.unit.unit_l/param.unit.unit_v;
-  param.unit.unit_mass=nh*POW(param.unit.unit_l,3)*PROTON_MASS*MOLECULAR_MU;
-  param.unit.unit_d=nh*PROTON_MASS*MOLECULAR_MU;
-  param.unit.unit_N=nh;
-
-  REAL pstar=param.unit.unit_mass*POW(param.unit.unit_v,2);
-  REAL dennh=nh*POW(param.unit.unit_l,3);
-  REAL eint=(1.5*dennh*(1.+xion)*KBOLTZ*temperature)/pstar;
-
-  for(level=levelcoarse;level<=levelmax;level++){
+  for(level=param.lcoarse;level<=param.lmax;level++){
     dxcur=POW(0.5,level);
     nextoct=firstoct[level-1];
     if(nextoct==NULL) continue;
@@ -1581,11 +1571,10 @@ int main(int argc, char *argv[])
       curoct=nextoct;
       nextoct=curoct->next;
       for(icell=0;icell<8;icell++){
-        curoct->cell[icell].field.d=dennh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;;
+        curoct->cell[icell].field.d=1.0;
         curoct->cell[icell].field.u=0.0;
         curoct->cell[icell].field.v=0.0;
         curoct->cell[icell].field.w=0.0;
-        //curoct->cell[icell].field.p=eint*(GAMMA-1.);
         curoct->cell[icell].field.p=1e-5;
         curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
         getE(&(curoct->cell[icell].field));
