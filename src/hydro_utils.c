@@ -1700,9 +1700,7 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       W2U(&Wold,&Uold); // primitive -> conservative
 
-#ifdef DUAL_E
       REAL eold=Uold.eint;
-#endif
 
       /* // MUSCL STATE RECONSTRUCTION */
       memset(ffact,0,sizeof(int)*2);
@@ -1978,9 +1976,9 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
 /* #endif */
 
       W2U(&Wold,&Uold); // primitive -> conservative
-#ifdef DUAL_E
+
       REAL eold=Uold.eint;
-#endif
+
 
       /* // MUSCL STATE RECONSTRUCTION */
       memset(ffact,0,sizeof(int)*2);
