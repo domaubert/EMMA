@@ -53,7 +53,7 @@ c..otherwise explicitly set stuff
 c..standard cases
 c..spherical constant density should reach r=1 at t=1
 
-      nstep = 512
+      nstep = 1000
       xgeom  = 3.0q0
       omega  = 0.0q0
       outfile = 'utils/sedov/sedov.dat'
@@ -62,7 +62,7 @@ c..spherical constant density should reach r=1 at t=1
       
       ener0  = 0.0q0
       pres0  = 1.0q-5
-      cs0    = 0.0q0
+      cs0    = sqrt(gamma*pres0/rho0)
 
 
 c..input parameters in cgs

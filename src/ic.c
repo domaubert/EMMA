@@ -731,7 +731,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 
 
   /* REAL X0=0.3125; */
-  
+
   // SEDOV
 
   WL.d=1.;
@@ -1252,3 +1252,45 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #endif // GRAFIC
 #endif // TESTCOSMO
 #endif // WHYDRO2
+
+
+int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
+/**
+  * initialize the grid for sedov test
+  * the grid is fill up with an uniform and unitary medium
+  *
+  * density is set to 1
+  * velocity is set to 0
+  * pressure is set to 1e-5
+  **/
+
+  param->unit.unit_l=1.;
+  param->unit.unit_v=1.;
+  param->unit.unit_t=1.;
+  param->unit.unit_d=1.;
+  param->unit.unit_N=1.;
+  param->unit.unit_mass=1.;
+
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    REAL dxcur=POW(0.5,level);
+    struct OCT *nextoct=firstoct[level-1];
+    if(nextoct==NULL) continue;
+    do{
+      struct OCT * curoct=nextoct;
+      nextoct=curoct->next;
+      int icell;
+      for(icell=0;icell<8;icell++){
+        struct CELL *curcell= &curoct->cell[icell];
+        curcell->field.d=1.0;
+        curcell->field.u=0.0;
+        curcell->field.v=0.0;
+        curcell->field.w=0.0;
+        curcell->field.p=1e-5;
+        curcell->field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+        getE(&(curcell->field));
+      }
+    }while(nextoct!=NULL);
+  }
+  return 0;
+}

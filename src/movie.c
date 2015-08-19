@@ -121,9 +121,9 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
                 else if (ndim==3)
                   id = x+y*nmapx+z*nmapx*nmapy;
 
-#ifdef WGRAV
-								m1[id] += (float)cell->gdata.p;
-#endif
+
+								m1[id] = fmax( m1[id], (float)oct->level);
+
 								m2[id] += (float)cell->field.d;
 #ifdef WRADHYD
 								m3[id] += (float)cell->field.dX/(float)cell->field.d;

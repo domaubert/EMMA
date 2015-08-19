@@ -81,6 +81,11 @@ typedef double REAL;
 //=======================================
 
 
+#ifndef COARSERAD
+#define RADSTEP
+#endif // COARSERAD
+
+
 #ifdef TESTCOSMO
 struct COSMOPARAM{
   REAL aexp;

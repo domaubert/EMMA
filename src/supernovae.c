@@ -148,7 +148,11 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     curcell->field.d -= rho_e;
 #endif // PIC
 
-    if(mtot_feedback==0) rho_i -= rho_e;
+    if(mtot_feedback==0) {
+      rho_i -= rho_e;
+      //TODO verif if needed;
+      //curcell->field.d -= rho_e;
+    }
 
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
     curcell->field.v = (vyi*rho_i + vye*rho_e)/(rho_i+rho_e);
@@ -250,7 +254,6 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-z_src ;
 
 	REAL R=SQRT(x*x+y*y+z*z);
-
   REAL rmax = 1. * POW(0.5,param->lmax);
 
 	if (R<=rmax){
@@ -278,6 +281,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       //REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
       //REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
       REAL E=1./8.  /POW( 2.,-3.*level);
+
       if ( (x_src==0) && (y_src==0) && (z_src==0)) E/=8.;
 
       printf("msn=%e\n",  param->unitary_stars_test->mass );

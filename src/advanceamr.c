@@ -993,8 +993,8 @@ if(cond1||cond2||cond3){
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
 
-    setOctList(firstoct[level-1], cpu, param,level);
-    supernovae(param,cpu, adt[level-1], tloc, level, is);
+//    setOctList(firstoct[level-1], cpu, param,level);
+//   supernovae(param,cpu, adt[level-1], tloc, level, is);
 
 #endif // SNTEST
 #endif // SUPERNOVAE

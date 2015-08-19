@@ -1157,6 +1157,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			  if((curoct->level<=param->lmax)&&(ismooth==0)){ // we don't need to test the finest level
 
 
+
 #ifdef ZOOM
 			    // if within zoomed region the cell is marked in any case
 			    int flagzoom=0;
@@ -1273,22 +1274,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 
 #ifdef SNTEST
 
-/*
-          REAL xpos = 0.5;
-          REAL dx= POW(0.5,curoct->level);
-
-          if (  (curoct->x > xpos) && (curoct->x < xpos+dx) &&
-                (curoct->y > xpos) && (curoct->y < xpos+dx) &&
-                (curoct->z > xpos) && (curoct->z < xpos+dx) )
-
-          {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-*/
-
           threshold=0.5;
-
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
 			    if(mcell>mmax) mmax=mcell;
 			    if( (mcell>threshold) && (curoct->cell[icell].marked==0)) {
@@ -1296,17 +1282,15 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			      nmark++;stati[2]++;
 			    }
 
-			    /*
+/*
           REAL epsilon = 1e-5;
           REAL threshold = 1. + epsilon;
-			    //den=comp_grad_hydro(curoct, icell);Ŕ
           den=curoct->cell[icell].field.d;
-
 			    if( (den>threshold)&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
-          */
+*/
 
 #endif // SNTEST
 

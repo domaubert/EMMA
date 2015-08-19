@@ -9,6 +9,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <mpi.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <time.h>
+
 #include "hilbert.h"
 #include "prototypes.h"
 #include "io.h"
@@ -22,37 +27,29 @@
 #include "segment.h"
 #include "communication.h"
 #include "friedmann.h"
-#include <time.h>
-#include <mpi.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include "parameters.h"
-
-#ifdef WGPU
-#include "interface.h"
-#include "vector_gpu.h"
-#include "cic_gpu.h"
-#endif
-
+#include "advanceamr.h"
 
 #ifdef WHYDRO2
 #include "hydro_utils.h"
-#endif
-
+#endif // WHYDRO2
 
 #ifdef WGRAV
 #include "poisson_utils.h"
-#endif
+#endif // WGRAV
 
 #ifdef WRAD
 #include "rad_utils.h"
 #ifdef WCHEM
 #include "chem_utils.h"
-#endif
+#endif // WCHEM
+#endif // WRAD
 
-#endif
-
-#include "advanceamr.h"
+#ifdef WGPU
+#include "interface.h"
+#include "vector_gpu.h"
+#include "cic_gpu.h"
+#endif // WGPU
 
 #ifdef GPUAXL
 #include "interface.h"
@@ -64,10 +61,6 @@
 #ifdef ZOOM
 #include "zoom.h"
 #endif
-
-#ifndef COARSERAD
-#define RADSTEP
-#endif // COARSERAD
 
 #ifdef SUPERNOVAE
 #include "supernovae.h"
@@ -287,9 +280,10 @@ int main(int argc, char *argv[])
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
-  param.rzoom=0.0055;
-  param.fzoom=1.45;
-  param.lmaxzoom=param.lcoarse+4;
+  param.rzoom=0.05;
+  param.fzoom=1.5;
+  //param.lmaxzoom=param.lcoarse+4;
+  param.lmaxzoom=param.lmax;
 #endif
 
 
@@ -1018,11 +1012,11 @@ int main(int argc, char *argv[])
 
   cpu.Rsendbuffer=Rsendbuffer;
   cpu.Rrecvbuffer=Rrecvbuffer;
-#endif
-#endif
+#endif // WRAD
+#endif // WMPI
 
 
-#endif
+#endif // 0
 
   // =====================  computing the memory location of the first freeoct and linking the freeocts
 
@@ -1555,34 +1549,8 @@ int main(int argc, char *argv[])
 #ifndef WRADTEST
 #ifndef WRAD
 #ifdef SNTEST
-  // for sedov test
-  param.unit.unit_l=1.;
-  param.unit.unit_v=1.;
-  param.unit.unit_t=1.;
-  param.unit.unit_d=1.;
-  param.unit.unit_N=1.;
-  param.unit.unit_mass=1.;
-
-  for(level=param.lcoarse;level<=param.lmax;level++){
-    dxcur=POW(0.5,level);
-    nextoct=firstoct[level-1];
-    if(nextoct==NULL) continue;
-    do{
-      curoct=nextoct;
-      nextoct=curoct->next;
-      for(icell=0;icell<8;icell++){
-        curoct->cell[icell].field.d=1.0;
-        curoct->cell[icell].field.u=0.0;
-        curoct->cell[icell].field.v=0.0;
-        curoct->cell[icell].field.w=0.0;
-        curoct->cell[icell].field.p=1e-5;
-        curoct->cell[icell].field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
-        getE(&(curoct->cell[icell].field));
-      }
-    }while(nextoct!=NULL);
-  }
+  init_sedov(&param, firstoct);
   tinit=tsim;
-
 #endif // SNTEST
 #endif // WRAD
 #endif // WRADTEST
@@ -1844,14 +1812,14 @@ int main(int argc, char *argv[])
     // end ZOOM
 #endif // ZOOM
 
-/*
+
 #ifdef SNTEST
       for(level=1;level<=levelmax;level++){
         setOctList(firstoct[level-1], &cpu, &param,level);
       }
       supernovae(&param,&cpu, 0, 0, 10, 0);
 #endif // SNTEST
-*/
+
 #ifndef JUSTIC
 
     // Loop over time
