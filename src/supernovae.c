@@ -75,8 +75,8 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 /// http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
 // ----------------------------------------------------------//
 
-  //REAL ejecta_proportion = 0.5260172663907063;
-  REAL ejecta_proportion = 0.;
+  REAL ejecta_proportion = 0.5260172663907063;
+  //  REAL ejecta_proportion = 0.;
 
 #ifdef SNTEST
   REAL msn = 2e3 * SOLAR_MASS /param->unit.unit_mass;
@@ -155,7 +155,6 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-    printf("vv=%e vxi=%e rho_i=%e, vxe=%e rhoe=%e\n",curcell->field.u,vxi,rho_i,vxe,rho_e);
   }
 }
 
