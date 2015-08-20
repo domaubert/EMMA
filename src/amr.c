@@ -117,10 +117,10 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
     int ax=ii/2;
     int fact=((ii%2)==0?-1:1);
     gradd[ax]+=(W.d*fact);
-    /* gradu[ax]+=(W.u*fact); */
-    /* gradv[ax]+=(W.v*fact);  */
-    /* gradw[ax]+=(W.w*fact);    */
-    /* gradp[ax]+=(W.p*fact); */
+    gradu[ax]+=(W.u*fact);
+    gradv[ax]+=(W.v*fact);
+    gradw[ax]+=(W.w*fact);
+    gradp[ax]+=(W.p*fact);
 
   }
 
@@ -873,6 +873,200 @@ void L_check_rule(int level, struct RUNPARAMS *param, struct OCT **firstoct, str
 //========================================================================================================================
 //========================================================================================================================
 
+int mark_cells_criterion(struct RUNPARAMS *param, struct OCT * curoct, int icell, int marker, int* stati, REAL* Mmax ){
+/**
+  * mark cells for reffinement depending of a physical criterion
+  *
+  */
+
+    int nmark=0;
+    REAL den=0;
+    REAL mcell=0;
+    REAL mmax=0;
+    REAL threshold=0;
+
+
+#ifdef EVRARD
+			    // ===================== EVRARD TEST ================
+
+ 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+#else
+			    // ===================== AMR COSMO ================
+
+			    // First we define the density
+#ifdef TESTCOSMO
+
+#ifdef WGRAV
+			    den=curoct->cell[icell].gdata.d+1.;
+#endif // WGRAV
+
+#ifdef ZELDOVICH
+#ifdef WHYDRO2
+			    den=curoct->cell[icell].field.d;
+#endif // WHYDRO2
+#endif // ZELDOVICH
+
+#else // #ifndef TESTCOSMO
+
+#ifdef WGRAV
+			    // ->> utilise pour la cosmo // le gaz est utilise
+			    den=curoct->cell[icell].gdata.d;
+#endif // WGRAV
+#endif // TESTCOSMO
+
+			    // Second we apply a criterion
+
+#ifdef PIC
+#ifdef EDBERT
+			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+ 			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+#else // #ifndef EDBERT
+#ifdef ZELDOVICH
+			    mcell=den*(curoct->level>=param->lcoarse);
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+ 			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#else // #ifndef ZELDOVICH
+
+			    // --------------- MAIN AMR COSMO
+
+			    int refarea=1;
+#ifdef ZOOM
+			    refarea=(curoct->level>=param->lmaxzoom);
+#endif // ZOOM
+
+#ifndef AMRPART
+			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
+#else // #ifdef AMRPART
+
+#ifdef PIC
+			    int npart=0;
+			    if(curoct->level>=param->lcoarse){
+			      countpartDM(&curoct->cell[icell],&npart);
+			    }
+			    mcell=npart;
+			    threshold=param->amrthresh0;
+
+#else // #ifndef PIC
+			    printf("AMR on particles SET ON without PIC enabled\n");
+			    abort();
+#endif // PIC
+#endif // AMRPART
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+  			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+			    // --------------- MAIN AMR COSMO
+#endif // ZELDOVICH
+#endif // EDBERT
+#else // #ifndef PIC
+
+			    // ===================== AMR NO COSMO ================
+
+#ifdef WGRAV
+			    mcell=den*(curoct->level>=param->lcoarse);
+			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif // WGRAV
+
+#ifdef SNTEST
+
+if(curoct->cell[icell].marked==0) {
+
+if(1){
+          threshold=0.5;
+			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
+}else{
+          REAL epsilon = 1e-5;
+          REAL threshold = 1. + epsilon;
+          mcell=curoct->cell[icell].field.d;
+}
+
+			    if(mcell>threshold){
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+}
+#endif // SNTEST
+
+#ifdef WRAD
+#ifdef WRADTEST
+			    // == START AMR STRATEGY FOR RAD TESTS
+			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+
+#ifdef TESTCLUMP
+			    REAL den2;
+			    den2=curoct->cell[icell].rfield.nh*param->unit.unit_N;
+			    den=-1;
+
+			    //mcell=(curoct->cell[icell].rfield.src>0.);
+			    if((((den<8e-1)&&(den>1e-1))||(den2>250.))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+#else
+			    //mcell=0.;
+			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
+#endif // TESTCLUMP
+
+
+ 			    //mcell=(curoct->cell[icell].rfield.src>0.);
+			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+			    // == END AMR STRATEGY FOR RAD TESTS
+#else
+
+#ifdef WCHEM
+			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+#endif // WCHEM
+#endif // WRADTEST
+#endif // WRAD
+#endif // PIC
+
+#ifdef TUBE
+
+			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
+			    if(mcell>mmax) mmax=mcell;
+			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+#endif // TUBE
+#endif // EVRARD
+
+
+			    if(mcell>mmax) mmax=mcell;
+  *Mmax = mmax;
+
+  return nmark;
+}
 
 
 //=========================================================================================================================================
@@ -898,7 +1092,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   struct CELL *newcell2;
   struct CELL *newcell3;
   int ichild;
-  REAL mcell;
+  REAL mcell=0;
   REAL mmax=0.;
   int stati[3]={0,0,0};
   REAL rin;
@@ -1170,183 +1364,7 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    }
 #endif
 
-			    REAL den;
-
-#ifdef EVRARD
-			    // ===================== EVRARD TEST ================
-
- 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);
-			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-#else
-			    // ===================== AMR COSMO ================
-
-			    // First we define the density
-#ifdef TESTCOSMO
-
-#ifdef WGRAV
-			    den=curoct->cell[icell].gdata.d+1.;
-#endif // WGRAV
-
-#ifdef ZELDOVICH
-#ifdef WHYDRO2
-			    den=curoct->cell[icell].field.d;
-#endif // WHYDRO2
-#endif // ZELDOVICH
-
-#else // #ifndef TESTCOSMO
-
-#ifdef WGRAV
-			    // ->> utilise pour la cosmo // le gaz est utilise
-			    den=curoct->cell[icell].gdata.d;
-#endif // WGRAV
-#endif // TESTCOSMO
-
-			    // Second we apply a criterion
-
-#ifdef PIC
-#ifdef EDBERT
-			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx;
-			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
- 			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-#else // #ifndef EDBERT
-#ifdef ZELDOVICH
-			    mcell=den*(curoct->level>=param->lcoarse);
-			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
- 			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-#else // #ifndef ZELDOVICH
-
-			    // --------------- MAIN AMR COSMO
-
-			    int refarea=1;
-#ifdef ZOOM
-			    refarea=(curoct->level>=param->lmaxzoom);
-#endif // ZOOM
-
-#ifndef AMRPART
-			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
-#else // #ifdef AMRPART
-
-#ifdef PIC
-			    int npart=0;
-			    if(curoct->level>=param->lcoarse){
-			      countpartDM(&curoct->cell[icell],&npart);
-			    }
-			    mcell=npart;
-			    threshold=param->amrthresh0;
-
-#else // #ifndef PIC
-			    printf("AMR on particles SET ON without PIC enabled\n");
-			    abort();
-#endif // PIC
-#endif // AMRPART
-			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
-  			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-			    // --------------- MAIN AMR COSMO
-#endif // ZELDOVICH
-#endif // EDBERT
-#else // #ifndef PIC
-
-			    // ===================== AMR NO COSMO ================
-
-#ifdef WGRAV
-			    mcell=den*(curoct->level>=param->lcoarse);
-			    if((mcell>threshold)&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-#endif // WGRAV
-
-#ifdef SNTEST
-
-          threshold=0.5;
-			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
-			    if(mcell>mmax) mmax=mcell;
-			    if( (mcell>threshold) && (curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-/*
-          REAL epsilon = 1e-5;
-          REAL threshold = 1. + epsilon;
-          den=curoct->cell[icell].field.d;
-			    if( (den>threshold)&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-*/
-
-#endif // SNTEST
-
-#ifdef WRAD
-#ifdef WRADTEST
-			    // == START AMR STRATEGY FOR RAD TESTS
-			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
-
-#ifdef TESTCLUMP
-			    REAL den2;
-			    den2=curoct->cell[icell].rfield.nh*param->unit.unit_N;
-			    den=-1;
-
-			    //mcell=(curoct->cell[icell].rfield.src>0.);
-			    if((((den<8e-1)&&(den>1e-1))||(den2>250.))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-#else
-			    //mcell=0.;
-			    den=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh; // xion
-#endif // TESTCLUMP
-
-
- 			    //mcell=(curoct->cell[icell].rfield.src>0.);
-			    if(((den<8e-1)&&(den>1e-2))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-			    // == END AMR STRATEGY FOR RAD TESTS
-#else
-
-#ifdef WCHEM
-			    mcell=comp_grad_rad(curoct, icell)*(curoct->level>=param->lcoarse);
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-
-#endif // WCHEM
-#endif // WRADTEST
-#endif // WRAD
-#endif // PIC
-
-#ifdef TUBE
-
-			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
-			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
-			      curoct->cell[icell].marked=marker;
-			      nmark++;stati[2]++;
-			    }
-#endif // TUBE
-#endif // EVRARD
+        nmark += mark_cells_criterion(param, curoct, icell, marker, stati, &mmax );
 
 			  }
 
@@ -1385,7 +1403,6 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   if(cpu->rank==RANK_DISP) printf(" STAT MARK 0:%d 1:%d 2:%d mmax=%e thresh=%e\n",stati[0],stati[1],stati[2],mmax,threshold);
 
 }
-
 
 //=============================================================================
 

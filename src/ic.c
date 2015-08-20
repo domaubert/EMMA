@@ -1260,8 +1260,9 @@ int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
   * the grid is fill up with an uniform and unitary medium
   *
   * density is set to 1
-  * velocity is set to 0
-  * pressure is set to 1e-5
+  * velocity to 0
+  * pressure
+ to 1e-5
   **/
 
   param->unit.unit_l=1.;

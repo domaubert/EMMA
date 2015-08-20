@@ -312,10 +312,9 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 /// Call the feedback function for all cells of the grid
 // ----------------------------------------------------------//
   if(param->sn->feedback_eff){
-    if(cpu->rank==RANK_DISP) printf("SUPERNOVAE\n");
+    if(cpu->rank==RANK_DISP) printf("SUPERNOVAE on level %d\n", level);
 
     int Nsn = 0;
-
 
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){

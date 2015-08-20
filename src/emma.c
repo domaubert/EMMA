@@ -280,8 +280,8 @@ int main(int argc, char *argv[])
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
-  param.rzoom=0.05;
-  param.fzoom=1.5;
+  param.rzoom=0.1;
+  param.fzoom=2;
   //param.lmaxzoom=param.lcoarse+4;
   param.lmaxzoom=param.lmax;
 #endif
@@ -1537,8 +1537,6 @@ int main(int argc, char *argv[])
 		}
 	      }
 	  }while(nextoct!=NULL);
-
-
       }
 
 
@@ -1649,7 +1647,6 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
-
   int Lmin = 1+(int)(log(cpu.nproc)/(3*log(2.)));
 
 
@@ -1804,7 +1801,7 @@ int main(int argc, char *argv[])
 
 
 
-#endif // PIC&
+#endif // PIC
 
     /* tsim=tmax; */
     /* dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0); */
@@ -1817,7 +1814,7 @@ int main(int argc, char *argv[])
       for(level=1;level<=levelmax;level++){
         setOctList(firstoct[level-1], &cpu, &param,level);
       }
-      supernovae(&param,&cpu, 0, 0, 10, 0);
+      supernovae(&param,&cpu, 0, 0, levelmax, 0);
 #endif // SNTEST
 
 #ifndef JUSTIC

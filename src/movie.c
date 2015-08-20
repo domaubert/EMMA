@@ -124,12 +124,12 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
 								m1[id] = fmax( m1[id], (float)oct->level);
 
-								m2[id] += (float)cell->field.d;
+								m2[id] += (float)cell->field.d/nmapz;
 #ifdef WRADHYD
-								m3[id] += (float)cell->field.dX/(float)cell->field.d;
+								m3[id] += (float)cell->field.dX/(float)cell->field.d/nmapz;
 #endif
 #ifdef WRAD
-								m4[id] += (float)cell->rfield.temp;
+								m4[id] += (float)cell->rfield.temp/nmapz;
 #endif
 							}
 						}
@@ -138,9 +138,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 			}
     }
 	}
-
-	int ii;
-	for(ii=0;ii<4*ntot;ii++) map[ii] /= nmapz;
 
   //=======================================
   //============= dump ====================
