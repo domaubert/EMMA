@@ -1665,10 +1665,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-	struct Utype Us;
-	REAL ebar;
-	REAL ecen=0.;
-	REAL divu,divuloc;
+  struct Utype Us;
+  REAL ebar;
+  REAL ecen=0.;
+  REAL divu,divuloc;
 
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
