@@ -55,7 +55,7 @@ int countpart(struct PART* phead)
 }
   // ==========================================
 
-int countpartDM(struct CELL* cell, int *npart)
+void countpartDM(struct CELL* cell, int *npart)
 {
   struct PART* curp;
   struct PART* nexp;
