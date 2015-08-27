@@ -315,21 +315,21 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
         oct->cell[icell].w*oct->cell[icell].w );
     break;
   case 107:
-    res=SQRT(
-        GAMMA *
-        oct->cell[icell].p /
-        oct->cell[icell].d );
+{
+    REAL vx= oct->cell[icell].u;
+    REAL vy= oct->cell[icell].v;
+    REAL vz= oct->cell[icell].w;
+
+    REAL dx = POW(0.5,oct->level);
+
+    REAL x=(oct->x+( icell    & 1)*dx+dx*0.5)-0.5;
+    REAL y=(oct->y+((icell>>1)& 1)*dx+dx*0.5)-0.5;
+    REAL z=(oct->z+( icell>>2    )*dx+dx*0.5)-0.5;
+
+    res= (x*vx+y*vy+z*vz)/SQRT(x*x+y*y+z*z);
+}
     break;
-  /*
-  case 107:
-    res=
-        3./2. * oct->cell[icell].d *KBOLTZ * (1. - oct->cell[icell].dX )
-        +
-        1./2. * oct->cell[icell].d * (
-        oct->cell[icell].u*oct->cell[icell].u +
-        oct->cell[icell].v*oct->cell[icell].v +
-        oct->cell[icell].w*oct->cell[icell].w );
-  */
+
 #endif
 
 #ifdef WRAD

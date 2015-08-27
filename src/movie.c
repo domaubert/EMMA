@@ -122,15 +122,47 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
                   id = x+y*nmapx+z*nmapx*nmapy;
 
 
-								m1[id] = fmax( m1[id], (float)oct->level);
 
-								m2[id] += (float)cell->field.d/nmapz;
-#ifdef WRADHYD
-								m3[id] += (float)cell->field.dX/(float)cell->field.d/nmapz;
-#endif
+            float field1=0;
+            float field2=0;
+            float field3=0;
+            float field4=0;
+
+
+
+            field1 = (float)oct->level;
+            field2 = (float)cell->field.d;
+            field3 = (float)cell->field.p;
 #ifdef WRAD
-								m4[id] += (float)cell->rfield.temp/nmapz;
+            field4 = (float)cell->rfield.temp;
 #endif
+
+            int mode;
+            if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
+            if(strcmp(param->movie->mode_str, "avg") ==0){mode=1;}
+
+            switch(mode){
+
+              case 0:
+						    printf("mode=max");
+                abort();
+								m1[id] = fmax( m1[id], field1);
+								m2[id] = fmax( m2[id], field2);
+								m3[id] = fmax( m3[id], field3);
+								m4[id] = fmax( m4[id], field4);
+                break;
+
+              case 1:
+                printf("mode=avg");
+                abort();
+								m1[id] = field1/nmapz;
+								m2[id] = field2/nmapz;
+								m3[id] = field3/nmapz;
+								m4[id] = field4/nmapz;
+								break;
+            }
+
+
 							}
 						}
 					}

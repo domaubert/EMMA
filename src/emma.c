@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
-  param.rzoom=0.1;
+  param.rzoom=0.02;
   param.fzoom=2;
   //param.lmaxzoom=param.lcoarse+4;
   param.lmaxzoom=param.lmax;
@@ -1811,10 +1811,12 @@ int main(int argc, char *argv[])
 
 
 #ifdef SNTEST
+  if(param.nrestart==0){
       for(level=1;level<=levelmax;level++){
         setOctList(firstoct[level-1], &cpu, &param,level);
       }
-      supernovae(&param,&cpu, 0, 0, levelmax, 0);
+      supernovae(&param,&cpu, 0, 0, levelcoarse, 0);
+  }
 #endif // SNTEST
 
 #ifndef JUSTIC

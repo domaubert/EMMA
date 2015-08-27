@@ -1017,6 +1017,7 @@ if(cond1||cond2||cond3){
 
 	    L_clean_marks(level,firstoct);
           // marking the cells of the current level
+
 #ifdef WMPI
 	    L_mark_cells(level,param,firstoct,param->nsmooth,param->amrthresh,cpu,cpu->sendbuffer,cpu->recvbuffer);
 #else

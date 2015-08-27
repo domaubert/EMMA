@@ -249,12 +249,16 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         y_src=param->unitary_stars_test->src_pos_y,
         z_src=param->unitary_stars_test->src_pos_z;
 
-	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5)-x_src ;
-	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5)-y_src ;
-	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5)-z_src ;
+	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5);
+	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5);
+	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5);
 
-	REAL R=SQRT(x*x+y*y+z*z);
-  REAL rmax = 1. * POW(0.5,param->lmax);
+  REAL dX = x-x_src;
+  REAL dy = y-y_src;
+  REAL dz = z-z_src;
+
+	REAL R=SQRT(dX*dX+dy*dy+dz*dz);
+  REAL rmax = 1. * POW(0.5,param->lcoarse);
 
 	if (R<=rmax){
 
@@ -295,6 +299,8 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       printf("cell egy=%e\n",  cell->field.E);
 
       printf("SN active at t = %e\n", t);
+      printf("SN pos =>  x=%e y=%e z=%e \n", x,y,z);
+
       printf("eblast= %e \n", E*POW( 2.,-3.*level));
 
       return 1;

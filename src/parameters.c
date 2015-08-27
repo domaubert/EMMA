@@ -373,14 +373,16 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
 #ifdef MOVIE
       rstat=fscanf(buf,"%s",stream);
-      rstat=fscanf(buf,"%s %d",stream,&param->movie->lmap);
+      rstat=fscanf(buf,"%s %d",stream,&param->movie->lmap);                    if (debug) printf("param->movie->lmap=%d\n", param->movie->lmap);
       if (param->movie->lmap>param->lmax) param->movie->lmap=param->lmax;
-      rstat=fscanf(buf,RF,stream,&param->movie->xmin);
-      rstat=fscanf(buf,RF,stream,&param->movie->xmax);
-      rstat=fscanf(buf,RF,stream,&param->movie->ymin);
-      rstat=fscanf(buf,RF,stream,&param->movie->ymax);
-      rstat=fscanf(buf,RF,stream,&param->movie->zmin);
-      rstat=fscanf(buf,RF,stream,&param->movie->zmax);
+      rstat=fscanf(buf,"%s %s",stream,&param->movie->mode_str);                if (debug) printf("param->movie->mode_str=%s\n", param->movie->mode_str);
+
+      rstat=fscanf(buf,RF,stream,&param->movie->xmin);    if (debug) printf("param->movie->xmin=%e\n", param->movie->xmin);
+      rstat=fscanf(buf,RF,stream,&param->movie->xmax);    if (debug) printf("param->movie->xmax=%e\n", param->movie->xmax);
+      rstat=fscanf(buf,RF,stream,&param->movie->ymin);    if (debug) printf("param->movie->ymin=%e\n", param->movie->ymin);
+      rstat=fscanf(buf,RF,stream,&param->movie->ymax);    if (debug) printf("param->movie->ymax=%e\n", param->movie->ymax);
+      rstat=fscanf(buf,RF,stream,&param->movie->zmin);    if (debug) printf("param->movie->zmin=%e\n", param->movie->zmin);
+      rstat=fscanf(buf,RF,stream,&param->movie->zmax);    if (debug) printf("param->movie->zmax=%e\n", param->movie->zmax);
 #endif
       fclose(buf);
 

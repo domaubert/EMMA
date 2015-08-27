@@ -132,6 +132,7 @@ struct SNPARAM{
 struct MOVIEPARAM{
 	char* folder;
 	int lmap;
+	char mode_str[3];
 	REAL xmin;
 	REAL xmax;
 	REAL ymin;

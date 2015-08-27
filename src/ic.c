@@ -1265,9 +1265,10 @@ int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
  to 1e-5
   **/
 
-  param->unit.unit_l=1.;
-  param->unit.unit_v=1.;
+  param->unit.unit_l=0.125;
   param->unit.unit_t=1.;
+  //param->unit.unit_v=param->unit.unit_l/param->unit.unit_t;
+  param->unit.unit_v=1.;
   param->unit.unit_d=1.;
   param->unit.unit_N=1.;
   param->unit.unit_mass=1.;
