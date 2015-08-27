@@ -95,7 +95,11 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 #ifndef TUBE
 	      keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
+#ifdef SED
+	      keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
+#else
 	      keyloc=(unsigned long long)(c[0]+c[1]*POW(2,levelcoarse-1)+c[2]*POW(2,levelcoarse-1)*POW(2,levelcoarse-1));
+#endif
 #endif	      
 	      //if((curoct->level==1)) printf("i=%d j=%d k=%d|| %d %d %d || %d || %d %d\n",i,j,k,(int)(c[0]),(int)(c[1]),(int)(c[2]),keyloc,cpu->kmin,cpu->kmax);
 	      if(first){
@@ -158,7 +162,11 @@ unsigned long long oct2key(struct OCT *curoct,int level){
 #ifndef TUBE
   keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
 #else
+#ifdef SED
+  keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
+#else
   keyloc=(unsigned long long)(ix+iy*POW(2,level-1)+iz*POW(2,level-1)*POW(2,level-1));
+#endif
 #endif
 
 
@@ -187,7 +195,11 @@ unsigned long long pos2key(REAL xc, REAL yc, REAL zc,int level){
 #ifndef TUBE
   keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
 #else
+#ifdef SED
+  keyloc=(unsigned long long)(hilbert_c2i(3,level,c));
+#else
   keyloc=(unsigned long long)(ix+iy*POW(2,level-1)+iz*POW(2,level-1)*POW(2,level-1));
+#endif
 #endif
 
   return keyloc;
@@ -228,7 +240,11 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 #ifndef TUBE
     keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
+#ifdef SED
+    keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
+#else
     keyloc=(unsigned long long)(ix+iy*POW(2,levelcoarse-1)+iz*POW(2,levelcoarse-1)*POW(2,levelcoarse-1));
+#endif
 #endif
     cpuloc=keyloc/cpu->nkeys;
     curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
@@ -266,7 +282,11 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
 #ifndef TUBE
   keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
 #else
+#ifdef SED
+  keyloc=(unsigned long long)(hilbert_c2i(3,levelcoarse,c));
+#else
   keyloc=(unsigned long long)(ix+iy*POW(2,levelcoarse-1)+iz*POW(2,levelcoarse-1)*POW(2,levelcoarse-1));
+#endif
 #endif
   if((keyloc>=cpu->kmin)&&(keyloc<=cpu->kmax)){
     return 1;

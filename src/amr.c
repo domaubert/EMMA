@@ -1357,10 +1357,13 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 #endif // PIC
 
 #ifdef TUBE
-
+#ifdef SED
+			    mcell=curoct->cell[icell].field.d;
+#else
 			    mcell=comp_grad_hydro(curoct, icell)*(curoct->level>=param->lcoarse);//*(fabs(curoct->y-0.5)<0.05)*(fabs(curoct->z-0.5)<0.05);
+#endif
 			    if(mcell>mmax) mmax=mcell;
-			    if((mcell>(threshold))&&(curoct->cell[icell].marked==0)) {
+			    if((mcell>(1.1))&&(curoct->cell[icell].marked==0)) {
 			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }

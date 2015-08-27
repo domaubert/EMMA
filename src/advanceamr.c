@@ -1004,7 +1004,9 @@ if(cond1||cond2||cond3){
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
     REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
-
+#ifdef TUBE
+    dxkpc=0.;
+#endif
 
     if( (param->lmax!=param->lcoarse) &&
         (level<param->lmax)           &&

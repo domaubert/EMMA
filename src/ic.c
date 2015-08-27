@@ -767,8 +767,9 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 		rc=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
 #endif
 
-		if(rc<X0){
+		if((rc<X0)*(xc>0.5)*(yc>0.5)*(zc>0.5)){
 		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+		  printf("coucou\n");
 		}
 		else{
 		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));
