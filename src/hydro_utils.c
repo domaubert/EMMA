@@ -37,7 +37,7 @@ void U2W(struct Utype *U, struct Wtype *W)
 
   REAL dloc=(U->d==0.?DEFDENS:U->d);
 
-  W->d=dloc;
+  W->d=U->d;
   W->u=U->du/dloc;
   W->v=U->dv/dloc;
   W->w=U->dw/dloc;

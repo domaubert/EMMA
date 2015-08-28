@@ -516,13 +516,13 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int leve
   int i,icell;
 
   memset(countpacket,0,cpu->nnei*sizeof(int));
-
-
+  
   if(cpu->noct[level-1]>0){ // correction must be done only if the current level exists
     for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
       if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
       icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
       pack=sendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
+      
 
       // assigning the values
       pack->level=cpu->bndoct[i]->level;
@@ -1997,6 +1997,10 @@ void scatter_mpi_hydro_ext(struct CPUINFO *cpu, struct HYDRO_MPI **recvbuffer,in
 	      W2U(&(curoct->cell[icell].fieldnew),&U);
 	      W2U(&(pack->data[icell]),&Ue);
 
+ 	      /* if(level==7) if((Ue.d!=0)&&(Ue.E==0.)) {  */
+	      /* 	  printf("rank=%d d=%e E=%e level=%d\n",cpu->rank,Ue.d,Ue.E,pack->level); */
+	      /* 	  abort(); */
+	      /* 	} */
 
 	      U.d +=Ue.d;
 	      U.du+=Ue.du;

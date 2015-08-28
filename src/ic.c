@@ -740,7 +740,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
   WR.u=0.;
   WR.v=0.;
   WR.w=0.;
-  WR.p=1e3;
+  WR.p=1e5;
   WR.a=sqrt(GAMMA*WR.p/WR.d);
   getE(&WR);
 
