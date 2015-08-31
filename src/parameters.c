@@ -382,7 +382,12 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 #ifdef PIC
     fprintf(fp,"##=Mass_resolution_(Mo)=============\n" );
 #ifdef TESTCOSMO
-    REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->DM_res))*param->unit.unit_mass/SOLAR_MASS;
+    //REAL mass_res_DM =  (1.- param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->DM_res))*param->unit.unit_mass/SOLAR_MASS;
+
+    // below hack to get the correct result even in the case of SP calculation
+    double munpercell=param->cosmo->om*(3.*pow(param->cosmo->H0*1e3/PARSEC/1e6,2)/(8.*M_PI*NEWTON_G))*pow(param->unit.unit_l/pow(2.0,param->lcoarse),3);
+    REAL mass_res_DM=(REAL)((1.- param->cosmo->ob/param->cosmo->om)*munpercell/pow(2.0,3.*param->DM_res)/SOLAR_MASS);
+
     fprintf(fp, real_format,"mass_res_DM",mass_res_DM );
 #endif // TESTCOSMO
 #ifdef STARS
@@ -392,8 +397,13 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
     }else{
 
       if(res>=0){
-        REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res));
-        REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS;
+        /* REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res)); */
+        /* REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS; */
+
+	double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res)); 
+	REAL mass_res_star =(REAL)( mstars_level * munpercell /SOLAR_MASS); 
+	
+
         fprintf(fp, real_format,"mass_res_star",mass_res_star);
       }else{
         int level;
@@ -422,7 +432,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 
   }
   fclose(fps[1]);
-
+  abort();
 }
 
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
