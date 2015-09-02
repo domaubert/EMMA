@@ -74,8 +74,9 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 // ----------------------------------------------------------//
 
 #ifdef SNTEST
-  REAL msn = param->unitary_stars_test->mass * SOLAR_MASS /param->unit.unit_mass;
-  REAL mtot_feedback = msn * param->sn->ejecta_proportion;
+  //REAL msn = param->unitary_stars_test->mass * SOLAR_MASS /param->unit.unit_mass;
+  //REAL mtot_feedback = msn * param->sn->ejecta_proportion;
+  REAL mtot_feedback =0;
 #else
   REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
 #endif // SNTEST
@@ -151,7 +152,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     if(mtot_feedback==0) {
       rho_i -= rho_e;
       //TODO verif if needed;
-      //curcell->field.d -= rho_e;
+     // curcell->field.d -= rho_e;
     }
 
     curcell->field.u = (vxi*rho_i + vxe*rho_e)/(rho_i+rho_e); //new velocity
@@ -249,26 +250,30 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         y_src=param->unitary_stars_test->src_pos_y,
         z_src=param->unitary_stars_test->src_pos_z;
 
+
+  REAL x=(oct->x+( cell->idx    & 1)*dx);
+  REAL y=(oct->y+((cell->idx>>1)& 1)*dx);
+  REAL z=(oct->z+( cell->idx>>2    )*dx);
+
+	/*
 	REAL x=(oct->x+( cell->idx    & 1)*dx+dx*0.5);
 	REAL y=(oct->y+((cell->idx>>1)& 1)*dx+dx*0.5);
 	REAL z=(oct->z+( cell->idx>>2    )*dx+dx*0.5);
+  */
 
   REAL dX = x-x_src;
   REAL dy = y-y_src;
   REAL dz = z-z_src;
 
 	REAL R=SQRT(dX*dX+dy*dy+dz*dz);
-  REAL rmax = 1. * POW(0.5,param->lcoarse);
+  REAL rmax = 0.6 * POW(0.5,param->lcoarse);
 
 	if (R<=rmax){
 
-/*
-    REAL x=(oct->x+( cell->idx    & 1)*dx) ;
-    REAL y=(oct->y+((cell->idx>>1)& 1)*dx) ;
-    REAL z=(oct->z+( cell->idx>>2    )*dx);
 
-    if ( (x==x_src) && (y==y_src) && (z==z_src) && cell->child==NULL){
-*/
+
+//    if ( (x==x_src) && (y==y_src) && (z==z_src) && cell->child==NULL){
+
 
 		REAL in_yrs = param->unit.unit_t/MYR *1e6;
 		REAL t = aexp * in_yrs;
@@ -284,19 +289,21 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       //REAL msn = param->unitary_stars_test->mass * SOLAR_MASS;
       //REAL E = computeFeedbackEnergy(param, 1, level, msn/param->unit.unit_mass);
-      REAL E=1./8.  /POW( 2.,-3.*level);
 
-      if ( (x_src==0) && (y_src==0) && (z_src==0)) E/=8.;
+      REAL e=1. ;
+      REAL E=e /POW( 2.,-3.*level);
 
-      printf("msn=%e\n",  param->unitary_stars_test->mass );
+    //  if ( (x_src==0) && (y_src==0) && (z_src==0)) E/=8.;
 
-      printf("cell egy=%e\n",  cell->field.E);
+    //  printf("msn=%e\n",  param->unitary_stars_test->mass );
+
+      printf("cell egy t0=%e\n",  cell->field.E);
 
       thermalFeedbackCell(cell, E);
       //thermalFeedbackOct(cell, E);
       //kineticFeedback(param, cell,NULL,aexp,level, E);
 
-      printf("cell egy=%e\n",  cell->field.E);
+      printf("cell egy t1=%e\n",  cell->field.E);
 
       printf("SN active at t = %e\n", t);
       printf("SN pos =>  x=%e y=%e z=%e \n", x,y,z);

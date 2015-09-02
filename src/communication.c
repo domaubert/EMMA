@@ -315,10 +315,10 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     cpu->Rrecvbuffer[i]=(struct RAD_MPI *) (calloc(cpu->nbuff,sizeof(struct RAD_MPI)));
   }
 
-#endif
-#endif
+#endif // WRAD
+#endif // 1
 
-#endif
+#endif // WMPI
 
   // creating a cpu dictionnary to translate from cpu number to inei
 
@@ -383,17 +383,11 @@ void gather_ex(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field){
 
 }
 
-//<<<<<<< HEAD
+
 //========================================================================
-//========================================================================
+//  ========================================================================
+
 void gather_ex_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, int field,int level){
-/*
-=======
-//======================================================================================
-#ifdef WHYDRO2
-void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int level, int *countpacket){
->>>>>>> atomic
-*/
   /*
     NOTE: this one is peculiar since the keys are directly computed from the source of data
    */

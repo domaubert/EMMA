@@ -375,7 +375,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->movie->lmap);                    if (debug) printf("param->movie->lmap=%d\n", param->movie->lmap);
       if (param->movie->lmap>param->lmax) param->movie->lmap=param->lmax;
-      rstat=fscanf(buf,"%s %s",stream,&param->movie->mode_str);                if (debug) printf("param->movie->mode_str=%s\n", param->movie->mode_str);
+      rstat=fscanf(buf,"%s %s",stream,param->movie->mode_str);                if (debug) printf("param->movie->mode_str=%s\n", param->movie->mode_str);
 
       rstat=fscanf(buf,RF,stream,&param->movie->xmin);    if (debug) printf("param->movie->xmin=%e\n", param->movie->xmin);
       rstat=fscanf(buf,RF,stream,&param->movie->xmax);    if (debug) printf("param->movie->xmax=%e\n", param->movie->xmax);

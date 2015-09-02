@@ -133,9 +133,8 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             field1 = (float)oct->level;
             field2 = (float)cell->field.d;
             field3 = (float)cell->field.p;
-#ifdef WRAD
-            field4 = (float)cell->rfield.temp;
-#endif
+            field4 = (float)oct->cpu;
+
 
             int mode;
             if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
@@ -144,8 +143,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             switch(mode){
 
               case 0:
-						    printf("mode=max");
-                abort();
 								m1[id] = fmax( m1[id], field1);
 								m2[id] = fmax( m2[id], field2);
 								m3[id] = fmax( m3[id], field3);
@@ -153,13 +150,15 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
                 break;
 
               case 1:
-                printf("mode=avg");
-                abort();
 								m1[id] = field1/nmapz;
 								m2[id] = field2/nmapz;
 								m3[id] = field3/nmapz;
 								m4[id] = field4/nmapz;
 								break;
+
+              default:
+                printf("Couldn't determine movie mode, check movie parameters in param.h\n");
+                abort();
             }
 
 

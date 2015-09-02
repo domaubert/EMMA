@@ -16,7 +16,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-#define DEFDENS 10. // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
+#define DEFDENS 10 // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
 
 // ===================================================
 //
@@ -37,7 +37,7 @@ void U2W(struct Utype *U, struct Wtype *W)
 
   REAL dloc=(U->d==0.?DEFDENS:U->d);
 
-  W->d=dloc;
+  W->d=U->d;
   W->u=U->du/dloc;
   W->v=U->dv/dloc;
   W->w=U->dw/dloc;
@@ -1342,7 +1342,10 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
 
   (*pstar)=(REAL)findPressure_Hybrid(&WLloc,&WRloc,&n,ustar);
   if((*pstar)<0) (*pstar)=(REAL) findPressure(&WLloc,&WRloc,&n,ustar);
-  if((*pstar)<0) abort();
+  if((*pstar)<0)  {
+    printf("neg pressure ABORT\n");
+    abort();
+  }
 
   qL=(*pstar<=WL->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WL->p-1.)));
   qR=(*pstar<=WR->p?1.:SQRT(1.+(GAMMA+1.)/(2.*GAMMA)*((*pstar)/WR->p-1.)));

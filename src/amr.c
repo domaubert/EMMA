@@ -934,7 +934,10 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 		    for(icell=0;icell<8;icell++) // looping over cells in oct
 		      {
 			if((pass==0)&&(ismooth==0)){
-			  if(curoct->cell[icell].marked>0) abort();
+			  if(curoct->cell[icell].marked>0){
+          printf("marked>0 check amr.c\n");
+          abort();
+			  }
 			}
 
 			switch(pass){
