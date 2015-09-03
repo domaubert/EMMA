@@ -432,7 +432,6 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 
   }
   fclose(fps[1]);
-  abort();
 }
 
 void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){

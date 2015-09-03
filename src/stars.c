@@ -199,6 +199,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
 	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dt/ tstartilde; // Average number of stars created
 #else
+#ifdef DEFSTAR
 	// local free fall time in seconde in code unit
 	// REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
 	//printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
@@ -206,37 +207,53 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	REAL dx = POW(0.5,level);
 	REAL dv = POW(0.5,3*level);
 
-	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
-	REAL rho_b =  cell->field.d     / param->stars->thresh;
+	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh; // WTF pourquoi diviser par le seuil ici ?
+	REAL rho_b =  cell->field.d/ param->stars->thresh;
+	
+	rho_m=rho_b;
 
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 
 	// local free fall time in seconde in code unit
 	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
+	REAL t0=t_ff;
 	t_ff /= fact_t;
 
   // local Jeans time in seconde in code unit
 	REAL t_j = dx/cell->field.a;
 
 	// star formation rate in kg/s/m3 in code unit
-	REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
-
+	REemAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
+	REAL eff=param->stars->efficiency ;
 	// Jeans efficiency
 	//SFR *= t_j/t_ff;
 
   // Average number of stars created
 	REAL lambda =  SFR  / mlevel * dt * dv;
-	//printf("rho=%e tff=%e tj=%e SFR=%e tstar=%e\n",cell->field.d, t_ff, t_j, SFR,t_ff*t_ff/t_j/param->stars->efficiency*fact_t/(3600.*24.*365.*1e9));
+#else
+	// DOM HACK STAR FORMATION
+	REAL tcarac=4e0; // Gyrs
+	REAL tstars=tcarac*(3600.*24*365*1e9)*SQRT(cell->field.d/param->stars->thresh);
+	REAL t0=tstars;
+	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 
+	tstars=tstars/fact_t;
+	REAL eff=1.;
+	REAL lambda=cell->field.d*pow(0.5,3*level)*dt/tstars/mlevel;
+
+#endif
 #endif //SCHAYE
 
 #ifdef GSLRAND
-	int N = gsl_ran_poisson (param->stars->rpoiss, lambda);
+	int N = gsl_ran_poisson (param->stars->rpoiss, (double)lambda);
 #else
 	int N = gpoiss(lambda); //Poisson drawing
 #endif
-	//printf("AVG star creation =%e /eff %d\n",lambda,N);
+	if(N>=1){
+	  printf("tstar=%e lambda=%e\n",t0/eff/(3600.*24.*365.*1e9),lambda);
+	  printf("AVG star creation =%e /eff %d\n",lambda,N);
+	}
 	REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
 	if(N * mlevel >= M_in_cell) N = 0.9*M_in_cell / mlevel ; // 0.9 to prevent void cells
 
@@ -296,6 +313,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 /// Compute the density threshold of star formation
 // ----------------------------------------------------------//
 
+
 #ifdef TESTCOSMO
 #ifdef SCHAYE
 	// std value for overdensity = 55.7
@@ -306,7 +324,7 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
   if (param->stars->density_cond>0) k=POW(aexp,3);  // Physical density case
 
   // Hydrogen atom per cubic meter in code unit
-  REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d*param->unit.unit_N;
+  REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d*param->unit.unit_N; 
   // overdensity
   REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
 

@@ -874,7 +874,7 @@ if(cond1||cond2||cond3){
     grav_correction(level,param,firstoct,cpu,adt[level-1]); // Here Hydro and Gravity are coupled
 #endif
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,15);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,15);
 
 #ifdef WMPI
     if(level>param->lcoarse){
@@ -894,7 +894,7 @@ if(cond1||cond2||cond3){
 
 #endif
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 
     // ===================================== RADIATION
 #ifdef WRAD
@@ -1038,7 +1038,7 @@ if(cond1||cond2||cond3){
       KPCLIMIT_TRIGGER=0;
     }
 
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time

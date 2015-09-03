@@ -34,7 +34,7 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=,mstar=){
   ol=vi(11);
   if(is_void(mstar))mstar=vi(15);
   lbox=vi(2);
-  mstar=om*(3.*(h0*1e3/3.08e22)^2)/8./pi/6.67e-11*(lbox*3.08e22/h0*100.)^3/2e30/128.^3/64.;//msol
+  mstar=om*(3.*(h0*1e3/3.08e22)^2)/8./pi/6.67e-11*(lbox*3.08e22/h0*100.)^3/2e30/512.^3;//msol
 
   write,"########################################";
   

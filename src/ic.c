@@ -744,7 +744,7 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
   WR.a=sqrt(GAMMA*WR.p/WR.d);
   getE(&WR);
 
-  REAL X0=1./64;
+  REAL X0=1./128;
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {

@@ -76,7 +76,7 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 // ----------------------------------------------------------//
 
   REAL ejecta_proportion = 0.5260172663907063;
-  //  REAL ejecta_proportion = 0.;
+  //REAL ejecta_proportion = 0.;
 
 #ifdef SNTEST
   REAL msn = 2e3 * SOLAR_MASS /param->unit.unit_mass;
