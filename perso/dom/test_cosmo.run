@@ -1,29 +1,29 @@
 ##==MemoryManagement=========
-max_number_of_octs 500000
-max_number_of_part 1000000
-mpi_buffer_size 500000
+max_number_of_octs 120000
+max_number_of_part 1200000
+mpi_buffer_size 50000
 ##==TimestepManagement=======
-output_frequency 50
+output_frequency 10
 dt_dump 0
-max_nuber_of_steps 1000
-time_step_max  0.1
-tmax_or_amax 15000
+max_nuber_of_steps 15000
+time_step_max  1e0
+tmax_or_amax 0.15
 ##==AMRGrid==================
 level_coarse 7
-level_max 10
+level_max 15
 amr_thresh 8
-n_smooth 8
+n_smooth 2
 ##==DM=======================
 dm_res 0
-dx_res 0
+dx_res 1e2
 ##==PoissonSolver============
 max_number_of_relaxation_poisson 100
 poisson_accuracy 1e-3
-mgrid_lmin 3
+mgrid_lmin 4
 mgrid_nvcycles 3
 mgrid_nsmooth 5
 ##==Restart==================
-restart_snap 0
+restart_snap 2
 ##==ThreadManagement======
 grav_stencil_size 16
 cons_stencil_size 16
@@ -35,25 +35,21 @@ ompthreads 1
 clight 1e-1
 dens_threshold 5e20
 temp_threshold 1e5
-src_int_or_fesc 1e15
-atomic_file Starburst99_1grpT_1grpS.dat
+src_int_or_fesc 1e16
 ##==StarFormation============
-overdensity_cond 200
+overdensity_cond 150
 density_cond -500
-efficiency 1.
-tlife 2e7
+efficiency 0.01
+tlife 10e6
 mass_res 2
 ##==SuperNovae===============
 feedback_eff 1.
-feedback_frac 1.
-ejecta_proportion 0.526
-sn_egy 9.736e11
+feedback_frac 1.0
 ##==Movie====================
-lmap 10
-mode avg
+lmap 9
 xmin 0
 xmax 1
 ymin 0
 ymax 1
-zmin 0.5
-zmax 0.51
+zmin 0
+zmax 1

@@ -1671,10 +1671,10 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-	struct Utype Us;
-	REAL ebar;
-	REAL ecen=0.;
-	REAL divu,divuloc;
+  struct Utype Us;
+  REAL ebar;
+  REAL ecen=0.;
+  REAL divu,divuloc;
 
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei(icell, vnei, vcell); // we get the neighbors
@@ -3152,6 +3152,7 @@ struct OCT *scatterstencil(struct OCT *octstart, struct HGRID *stencil, int stri
 
 	U2W(&U,&(curoct->cell[icell].fieldnew)); // at this stage the central cell has been updated
 	curoct->cell[icell].fieldnew.p=FMAX(curoct->cell[icell].fieldnew.p,PMIN); // Pressure floor
+	curoct->cell[icell].fieldnew.a=SQRT(GAMMA*curoct->cell[icell].fieldnew.p/curoct->cell[icell].fieldnew.d);//sound speed
 	getE(&(curoct->cell[icell].fieldnew));
 
  	if(isnan(curoct->cell[icell].fieldnew.u)){

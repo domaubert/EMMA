@@ -316,6 +316,9 @@ float assign_cube(int field, int icell,struct LOCT *oct, struct UNITS *unit){
     break;
   case 107:
 {
+	
+// radial velocity
+
     REAL vx= oct->cell[icell].u;
     REAL vy= oct->cell[icell].v;
     REAL vz= oct->cell[icell].w;

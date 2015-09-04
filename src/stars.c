@@ -41,7 +41,7 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->level = level;
 	star->is = is;
 	star->isStar = 1;
-  star->rhocell = cell->field.d;
+	star->rhocell = cell->field.d;
 
   // random position
 	star->x = xc + rdm(-0.5,0.5) * dx;
@@ -53,6 +53,8 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vy = cell->field.v;
 	star->vz = cell->field.w;
 
+	if(isnan(star->vx)) printf("HOHO\n");
+
   // compute random component
 	REAL r = rdm(0,1) * cell->field.a ;
 	REAL theta  = acos(rdm(-1,1));
@@ -62,6 +64,11 @@ void initStar(struct CELL * cell, struct PART *star, struct RUNPARAMS *param, in
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
+
+	if(isnan(star->vx)){
+	  printf("HOHO %e %e %e %e\n",r,theta,phi,cell->field.a);
+	}
+
 
   //mass
 	star->mass = mlevel;
@@ -108,7 +115,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	// local Jeans time in second in code unit
 	REAL t_j = dx/cell->field.a;
 
-	B = t_j < t_ff;
+	B = t_j > t_ff;
 #endif
 #endif
 
@@ -157,6 +164,10 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	W.a=SQRT(GAMMA*W.p/W.d);
 	W.p=FMAX(W.p,PMIN);
 	memcpy(field,&W,sizeof(struct Wtype));
+
+	if(isnan(U.du)){
+	  printf("drho=%e vx=%e\n",drho,star->vx);
+	}
 
 }
 
@@ -221,9 +232,9 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 #endif //SCHAYE
 
 #ifdef GSLRAND
-	int N = gsl_ran_poisson (param->stars->rpoiss, lambda);
+	unsigned int N = gsl_ran_poisson (param->stars->rpoiss, lambda);
 #else
-	int N = gpoiss(lambda); //Poisson drawing
+	unsigned int N = gpoiss(lambda); //Poisson drawing
 #endif
 	//printf("AVG star creation =%e /eff %d\n",lambda,N);
 	REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit

@@ -6,5 +6,5 @@ void checkMtot(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *c
 void myradixsort(int *a,int n);
 
 REAL rdm(REAL a, REAL b);
-int gpoiss(REAL lambda);
+unsigned int gpoiss(REAL lambda);
 REAL a2t(struct RUNPARAMS *param, REAL az );

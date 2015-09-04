@@ -334,10 +334,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
       rstat=fscanf(buf,"%s",stream);
 #ifdef WRAD
-      rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf; if (debug) printf("param->clight=%d\n", param->clight);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;  if (debug) printf("param->denthresh=%d\n", param->denthresh);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;  if (debug) printf("param->tmpthresh=%d\n", param->tmpthresh);
-      rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;     if (debug) printf("param->srcint=%d\n", param->srcint);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->clight=(REAL)dummyf;param->clightorg=(REAL)dummyf; if (debug) printf("param->clight=%e\n", param->clight);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;  if (debug) printf("param->denthresh=%e\n", param->denthresh);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;  if (debug) printf("param->tmpthresh=%e\n", param->tmpthresh);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;     if (debug) printf("param->srcint=%e\n", param->srcint);
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);

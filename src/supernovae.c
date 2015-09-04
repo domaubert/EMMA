@@ -139,9 +139,9 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 	  REAL vz0 = curcell->field.w;
 #endif // PIC
 
-    REAL vxe = vx0 + ve*dir_x[i]/2.; // projection on axis in the particle framework
-    REAL vye = vy0 + ve*dir_y[i]/2.; // cos45*cos45 = 1/2
-    REAL vze = vz0 + ve*dir_z[i]/2.;
+    REAL vxe = vx0 + ve*dir_x[i]/SQRT(3.); // projection on axis in the particle framework
+    REAL vye = vy0 + ve*dir_y[i]/SQRT(3.);
+    REAL vze = vz0 + ve*dir_z[i]/SQRT(3.);
 
 #ifdef PIC
     if(mtot_feedback!=0)  curp->mass -= me; // new particle mass
@@ -175,6 +175,34 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
 #endif
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
+    curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
+  }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void kineticFeedback_test(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
+
+  struct OCT* oct = cell2oct(cell);
+  int i;
+  for(i=0;i<8;i++){
+    struct CELL* curcell = &oct->cell[i];
+
+    REAL e = E/8.;
+    REAL v = SQRT(2.*e/curcell->field.d);
+
+    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
+    REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+
+    curcell->field.u = v*dir_x[i]/SQRT(3.);
+    curcell->field.v = v*dir_y[i]/SQRT(3.);
+    curcell->field.w = v*dir_z[i]/SQRT(3.);
+
+    //Energy conservation
+    curcell->field.p=FMAX(curcell->field.p,PMIN);
+    getE(&curcell->field); //compute new total energy
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
   }
 }
@@ -225,7 +253,6 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         // if there is only thermal feedback the energy can be injected in just a cell
         thermalFeedbackCell(cell, E*(1.-param->sn->feedback_frac));
       }
-
       Nsn++;
     }
   }while(nexp!=NULL);
@@ -299,9 +326,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       printf("cell egy t0=%e\n",  cell->field.E);
 
-      thermalFeedbackCell(cell, E);
+      //thermalFeedbackCell(cell, E);
       //thermalFeedbackOct(cell, E);
-      //kineticFeedback(param, cell,NULL,aexp,level, E);
+      kineticFeedback_test(param, cell,NULL,aexp,level, E);
 
       printf("cell egy t1=%e\n",  cell->field.E);
 
@@ -340,7 +367,6 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
       }
     }
 
-  SN_TMP_PARAM = 0;
 
   #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,   1,MPI_INT,   MPI_SUM,cpu->comm);

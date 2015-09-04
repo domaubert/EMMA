@@ -374,7 +374,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
       mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,1);
 
-    ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
+      ptot[0]=0; for(ip=1;ip<=param->lmax;ip++){
       ptot[0]+=cpu->npart[ip-1]; // total of local particles
       /* if((level==11)&&(cpu->rank==217)){ */
       /* 	printf("AP l=%ip n=%ip\n",ip,cpu->npart[ip-1]); */
@@ -848,7 +848,7 @@ if(cond1||cond2||cond3){
     MPI_Barrier(cpu->comm);
     th[0]=MPI_Wtime();
     mpi_exchange_hydro_level(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1,level);
-    //mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
+    mpi_exchange_hydro(cpu,cpu->hsendbuffer,cpu->hrecvbuffer,1);
 
     //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,14);
 
@@ -992,7 +992,6 @@ if(cond1||cond2||cond3){
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
 #else //ifdef SNTEST
-
 //    setOctList(firstoct[level-1], cpu, param,level);
 //   supernovae(param,cpu, adt[level-1], tloc, level, is);
 
@@ -1040,9 +1039,10 @@ if(cond1||cond2||cond3){
       }
     }
 
-    KPCLIMIT_TRIGGER=0;
 
-      //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,9);
+    KPCLIMIT_TRIGGER=0;
+    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
+
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time
     tloc+=adt[level-1]; // advance local time
