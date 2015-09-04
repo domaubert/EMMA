@@ -370,26 +370,27 @@ int gpoiss(REAL lambda){
 #endif // SINGLEPRECISION
 
   int k=1;
-	REAL p = rdm(0,1);
-	REAL P = exp(-lambda);
-	REAL sum=P;
-	if (sum>=p){
-	  k=0;
-	}
-	else{
-	  do { 	P*=lambda/(REAL)k;
-	    sum+=P;
-	    if (sum>=p) break;
-	    k++;
-	  }while(k<kmax);
+  REAL p = rdm(0,1);
+  REAL P = exp(-lambda);
+  REAL sum=P;
+  if (sum>=p){
+    k=0;
+  }
+  else{
+    do {
+ 	P*=lambda/(REAL)k;
+	sum+=P;
+	if (sum>=p) break;
+	k++;
+    }while(k<kmax);
 
-	  if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
-	}
-	if(k==1e6) {
-	  printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
-	  k=lambda;
-	}
-	return k;
+    if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
+  }
+  if(k==1e6) {
+    printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
+    k=lambda;
+  }
+  return k;
 }
 
 #ifdef TESTCOSMO

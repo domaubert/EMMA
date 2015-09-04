@@ -199,7 +199,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 
 	REAL lambda =  param->stars->efficiency * M_in_cell / mlevel * dt/ tstartilde; // Average number of stars created
 #else
-#ifdef DEFSTAR
+#ifndef SIMPLESTAR
 	// local free fall time in seconde in code unit
 	// REAL t_ff = 1. / SQRT(6*aexp*cell->gdata.d);
 	//printf("Local SFR=%e M0/yr/Mpc3\n", SFR/SOLAR_MASS*31556926*POW(PARSEC,3));
@@ -246,7 +246,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 #endif //SCHAYE
 
 #ifdef GSLRAND
-	int N = gsl_ran_poisson (param->stars->rpoiss, (double)lambda);
+	unsigned int N = gsl_ran_poisson (param->stars->rpoiss, (double)lambda);
 #else
 	int N = gpoiss(lambda); //Poisson drawing
 #endif
