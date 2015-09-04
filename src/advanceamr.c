@@ -1001,7 +1001,9 @@ if(cond1||cond2||cond3){
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
     REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
-
+#ifdef TUBE
+    dxkpc=0.;
+#endif
 
     if( (param->lmax!=param->lcoarse) &&
         (level<param->lmax)           &&
@@ -1038,10 +1040,8 @@ if(cond1||cond2||cond3){
         printf("Blocking refinement to level %d : dx[%d]=%e dxlim=%e\n",level+1,level+1,dxnext,dxkpc);
       }
     }
-
-
     KPCLIMIT_TRIGGER=0;
-    mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
 
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time

@@ -22,6 +22,7 @@ rep="~/qtest/data_4_ref_simple/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap
 rep="~/qtest/data_4_ref_simple_noSN/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap=35;col="blue"; // years
 rep="~/qtest/data_4_ref_simple_noRAD/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=66;col="black"; // years
 rep="~/qtest/data/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=33;col="green"; // years
+rep="~/etest/data/";ncpu=32; srcint=1e16; tlife=10e6; sbox=4.;nsnap=7;col="blue"; // years
 
 //col="green";
 lcoarse=7.;
@@ -49,7 +50,7 @@ nH=((omegab)*rhoc*lbox^3)/mp;
 munit;
 
 // COmputing the SFR
-s=mergepart(swrite(format=rep+"/star.%05d",nsnap),ncpu,a,star=1);
+s=mergepart(swrite(format=rep+"%05d/star/star.%05d",nsnap,nsnap),ncpu,a,star=1);
 so=sort(s(11,));
 s=s(,so);
 
@@ -62,7 +63,7 @@ massestar=array(max(s(8,)),numberof(s(8,)));
 
 SFR=histo1d(s(11,),bint,wght=massestar)*munit/bint(dif)/lorg^3;
 
-vt=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(span(90,4,256),h0=Hor,Omega_m=omegam,Omega_l=1.-omegam))/(3600.*24.*365);
+vt=(univAge(10000.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam)-univAge(span(90,4,256),h0=Hor,Omega_m=omegam,lambda0=1.-omegam))/(3600.*24.*365);
 zSFR=interp(span(90,4,256),vt,bint(zcen));
 
 // emissivity of photons
@@ -86,7 +87,7 @@ eSFRB=abs(SFRB*10.^[0.06,0.06,0.06,0.06,0.07,0.36]-SFRB);
 #if 1
 // DISPLAY
 window,2;
-//plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
+plshade,[SFRB,SFRB2],zB,color=__rgb(,30);
 PL,SFR(),zSFR(),color=col,incolor=col,msize=.3,line=1,width=5;
 logxy,0,1;
 limits,2,12,5e-5,1;

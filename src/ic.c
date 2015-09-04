@@ -749,11 +749,11 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
   WR.u=0.;
   WR.v=0.;
   WR.w=0.;
-  WR.p=1e3;
+  WR.p=1e5;
   WR.a=sqrt(GAMMA*WR.p/WR.d);
   getE(&WR);
 
-  REAL X0=1./64;
+  REAL X0=1./128;
 
   for(level=param->lcoarse;level<=param->lcoarse;level++) // (levelcoarse only for the moment)
       {
@@ -776,8 +776,9 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 		rc=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
 #endif
 
-		if(rc<X0){
+		if((rc<X0)*(xc>0.5)*(yc>0.5)*(zc>0.5)){
 		  memcpy(&(curoct->cell[icell].field),&WR,sizeof(struct Wtype));
+		  printf("coucou\n");
 		}
 		else{
 		  memcpy(&(curoct->cell[icell].field),&WL,sizeof(struct Wtype));

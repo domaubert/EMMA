@@ -34,7 +34,7 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=,mstar=){
   ol=vi(11);
   if(is_void(mstar))mstar=vi(15);
   lbox=vi(2);
-  //mstar=om*(3.*(h0*1e3/3.08e22)^2)/8./pi/6.67e-11*(lbox*3.08e22/h0*100.)^3/2e30;//msol
+  //mstar=om*(3.*(h0*1e3/3.08e22)^2)/8./pi/6.67e-11*(lbox*3.08e22/h0*100.)^3/2e30/512.^3;//msol
 
   write,"########################################";
   
@@ -51,7 +51,7 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=,mstar=){
     nstar=vv(10,);
     nSN=vv(11,);
     src=vv(12,);
-    ts=(univAge(10000,h0=h0,Omega_m=om,Omega_l=ob,silent=1)-univAge(vv(3,),h0=h0,Omega_m=om,Omega_l=ol,silent=1))/(3600.*24*365.25);
+    ts=(univAge(10000,h0=h0,Omega_m=om,lambda0=ol,silent=1)-univAge(vv(3,),h0=h0,Omega_m=om,lambda0=ol,silent=1))/(3600.*24*365.25);
     sfr=nstar(dif)*(ts(dif)>0)/(ts(dif)+1e-15)*mstar/(lbox/(h0/100.))^3;
     aa=write(format=" NSteps=%d z=%f [aexp=%f] === xHI=%e avg Temp=%e [K]\n",int(vv(1,0)),z(0),a(0),1.-avgx(0),avgT(0));    
     if(clear){

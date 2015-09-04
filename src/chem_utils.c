@@ -275,6 +275,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
       }
 // R.src phot/unit_t/unit_dv (comobile)
+      REAL eorg=eint[idloc];
+      REAL etorg=egyloc[idloc];
+      REAL torg=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);
 
@@ -329,7 +332,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //if(eint[idloc]!=E0) printf("3!\n");
 
 	  if(fudgecool<1e-6){
-	    printf("eint=%e nH=%e x0=%e T=%e N=%e\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0]);
+	    printf("eint=%e(%e<%e) nH=%e x0=%e(%e) T=%e(%e) N=%e(%e)\n",eint[idloc],eorg,emin,nH[idloc],x0[idloc],xorg,tloc,torg,et[0],etorg);
 	    if(fudgecool<1e-20) abort();
 	  }
 
