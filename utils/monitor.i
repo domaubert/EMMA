@@ -70,7 +70,7 @@ func monitor(dir,tpause=,zmax=,zmin=,clear=,col=,mstar=){
     plg,SFRB,zB,color=__rgb(,30),type=2;
     plg,SFRB2,zB,color=__rgb(,30),type=2;
     plg,sfr,z(zcen),color=col;
-    PL,sfr(0),z(zcen)(0),color=col;
+    //PL,sfr(0),z(zcen)(0),color=col;
     range,1e-5,1e1;
     limits,zmax,zmin;
     logxy,1,1;

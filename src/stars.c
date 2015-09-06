@@ -207,10 +207,9 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	REAL dx = POW(0.5,level);
 	REAL dv = POW(0.5,3*level);
 
-	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh; // WTF pourquoi diviser par le seuil ici ?
-	REAL rho_b =  cell->field.d/ param->stars->thresh;
+	//REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh; // WTF pourquoi diviser par le seuil ici ?
+	REAL rho_m =  cell->field.d;
 	
-	rho_m=rho_b;
 
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
@@ -219,12 +218,12 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	REAL t_ff = SQRT(3.*M_PI/(32.*NEWTON_G * rho_m/ fact_rho)); /// TODO find the expression in the case of a cosmological Poisson equation
 	REAL t0=t_ff;
 	t_ff /= fact_t;
-
+	
   // local Jeans time in seconde in code unit
 	REAL t_j = dx/cell->field.a;
 
 	// star formation rate in kg/s/m3 in code unit
-	REemAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
+	REAL SFR = param->stars->efficiency * cell->field.d  / t_ff;
 	REAL eff=param->stars->efficiency ;
 	// Jeans efficiency
 	//SFR *= t_j/t_ff;
@@ -234,7 +233,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 #else
 	// DOM HACK STAR FORMATION
 	REAL tcarac=4e0; // Gyrs
-	REAL tstars=tcarac*(3600.*24*365*1e9)*SQRT(cell->field.d/param->stars->thresh);
+	REAL tstars=tcarac*(3600.*24*365*1e9)/SQRT(cell->field.d/param->stars->thresh);
 	REAL t0=tstars;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
 

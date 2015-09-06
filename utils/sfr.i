@@ -22,7 +22,7 @@ rep="~/qtest/data_4_ref_simple/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap
 rep="~/qtest/data_4_ref_simple_noSN/";ncpu=32; srcint=2e16; tlife=10e6; sbox=4.;nsnap=35;col="blue"; // years
 rep="~/qtest/data_4_ref_simple_noRAD/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=66;col="black"; // years
 rep="~/qtest/data/";ncpu=32; srcint=0e16; tlife=10e6; sbox=4.;nsnap=33;col="green"; // years
-rep="~/etest/data/";ncpu=32; srcint=1e16; tlife=10e6; sbox=4.;nsnap=7;col="blue"; // years
+rep="~/etest/data/";ncpu=32; srcint=1e16; tlife=10e6; sbox=4.;nsnap=24;col="blue"; // years
 
 //col="green";
 lcoarse=7.;
