@@ -268,6 +268,7 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
   }
+  return flag;
 }
 #endif // STARS
 
