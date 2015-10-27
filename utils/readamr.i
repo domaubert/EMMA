@@ -73,23 +73,53 @@ func readcube(fname,&time){
   return map;
 }
 
+func dumpcube(fname,field,time){
+  fp=open(fname,"wb");
+  adress=0;
+  nmapx=dimsof(field)(2);
+  nmapy=dimsof(field)(3);
+  nmapz=dimsof(field)(4);
+  time=array(float);
+  _read,fp,adress,nmapx;adress+=sizeof(nmapx);
+  _read,fp,adress,nmapy;adress+=sizeof(nmapy);
+  _read,fp,adress,nmapz;adress+=sizeof(nmapz);
+  _read,fp,adress,time;adress+=sizeof(time);
+  nmapx;
+  nmapy;
+  nmapz;
+  
+  map=array(float,nmapx,nmapy,nmapz);
+  dummy=array(float,nmapx*nmapy);
+  for(i=1;i<=nmapz;i++){
+    _read,fp,adress,dummy;adress+=sizeof(dummy);
+    map(,,i)=reform(dummy,[2,nmapx,nmapy]);
+  }
+  close,fp;
+
+  //map=reform(map,[3,nmapx,nmapy,nmapz]);
+  return map;
+}
+
 
 func readcell(fname,&time){
   fp=open(fname,"rb");
   adress=0;
   nc=array(int);
   time=array(float);
-  _read,fp,adress,nc;adress+=sizeof(nc);
-  _read,fp,adress,time;adress+=sizeof(time);
+  _read,fp,adress,nc;adress+=sizeof(nc);nc;
+  _read,fp,adress,time;adress+=sizeof(time);time;
   nc;
   time;
-  map=array(float,nc*5);
-  _read,fp,adress,map;
+  mapf=array(float,5,nc);
+  map=array(float,nc);
+  for(i=0;i<5;i++) {
+    _read,fp,adress,map;mapf(i*nc+1:(i+1)*nc)=map;adress+=sizeof(map);
+    adress;
+  }
   close,fp;
 
-  map=reform(map,[2,5,nc]);
   time;
-  return map;
+  return mapf;
 }
 
 

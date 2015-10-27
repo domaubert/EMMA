@@ -37,11 +37,21 @@
 #define FACTGRP factgrp[0]=1.0;
 #define SRCINT (4.017571e+16)
 #endif
+
 #ifdef STARBURST_3MYR
 #define SECTION_EFFICACE hnu[0]=20.638143*1.6022e-19;alphae[0]=2.831275e-22*c;alphai[0]=2.381267e-22*c;
 #define FACTGRP factgrp[0]=1.0;
 #define SRCINT (3.175440e+16)
 #endif
+
+
+#ifdef STARBURST_3MYR_TH
+#define SECTION_EFFICACE hnu[0]=20.638143*1.6022e-19;alphae[0]=2.831275e-22*c;alphai[0]=2.381267e-22*c;
+#define FACTGRP factgrp[0]=1.0;
+#define SRCINT (1.55440e+17)
+#endif
+
+
 #ifdef STARBURST_4MYR
 #define SECTION_EFFICACE hnu[0]=19.295276*1.6022e-19;alphae[0]=3.091992e-22*c;alphai[0]=2.721032e-22*c;
 #define FACTGRP factgrp[0]=1.0;

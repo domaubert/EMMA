@@ -13,13 +13,14 @@ rep="./data_4_new_wsrc_ministar_x100/";ncpu=32;execut="./utils/alloct ";sbox=4.;
 //rep="./data_4_new_wsrc_ministar_x3/";ncpu=32;execut="./utils/alloct ";sbox=4.;
 rep="./data_4_new_wsrc_ministar_x3_mono/";ncpu=32;execut="./utils/alloct ";sbox=4.;
 //rep="./data_4_new_wsrc_ministar_x3_mono_noamr50/";ncpu=32;execut="./utils/alloct ";sbox=4.;
-rep="./data/";ncpu=32;execut="./utils/alloct ";sbox=4.;
+rep="./data16_TH035/";ncpu=256;execut="./utils/alloct ";sbox=16.;
+rep="./data_8_TH_IDM00/";ncpu=256;execut="./utils/alloct ";sbox=16.;
 
 
 
 #if 1
-nsnap=25;
-level=7;
+nsnap=22;
+level=11;
 nsamp=1;
 
 MPC=3.08e22; // m
@@ -59,17 +60,19 @@ vt=array(double,nsnap);
 
 for(i=1;i<=nsnap;i+=nsamp){
 
-#if 1
+#if 0
   xion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut="utils/oct2grid ");
   dxion=oct2cube(swrite(format=rep+"/grid.%05d",i),level,1006,a,ncpu=ncpu,execut="utils/oct2grid ");
   xa(i)=xion(*)(avg);
   dxa(i)=dxion(*)(avg);
 #endif
 
-#if 0
-  xion=alloct(swrite(format=rep+"/grid.%05d",i),level,706,a,ncpu=ncpu,execut="utils/alloct ");
-   xa(i)=(xion(5,)*pow(0.5,3*xion(4,)))(sum)/pow(0.5,xion(4,)*3)(sum);
+#if 1
+  xion=alloct(swrite(format=rep+"/%05d/grid/grid.%05d",i,i),level,706,a,ncpu=ncpu,execut="utils/alloct ");
+  xa(i)=(xion(5,)*pow(0.5,3*xion(4,)))(sum)/pow(0.5,xion(4,)*3)(sum);
+#endif
 
+#if 0
   ng=0.;
   gamma(i)=0.;
   for(ig=0;ig<3;ig++){
@@ -90,7 +93,7 @@ for(i=1;i<=nsnap;i+=nsamp){
   //ta(i)=oct2cube(swrite(format=rep+"/grid.%05d",i),level,707,a,ncpu=ncpu,execut=execut)(avg,avg,avg);
   //ea(i)=(10.^oct2cube(swrite(format=rep+"/grid.%05d",i),level,701,a,ncpu=ncpu,execut=execut))(avg,avg,avg);
   va(i)=a;
-  vt(i)=(univAge(10000.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam)-univAge(1./a-1.,h0=Hor,Omega_m=omegam,Omega_l=1.-omegam));
+  vt(i)=(univAge(10000.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam)-univAge(1./a-1.,h0=Hor,Omega_m=omegam,lambda0=1.-omegam));
 
   
  }
@@ -103,7 +106,7 @@ xa=xa(www);
 xam=xam(www);
 dxa=dxa(www);
 
-#if 1
+#if 0
 
 //ta=ta(www);
 //ea=ea(www);

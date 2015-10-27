@@ -44,15 +44,15 @@ int main(int argc, char *argv[]){
   for(i=i1;i<=i2;i++){
     strcpy(format,chop);
     strcat(format,argv[1]);
-    strcat(format,"/part.%05d");
-    strcat(format," -nf %d -o %s/hop.\%05d"); 
-    sprintf(commande,format,i,ncpu,argv[1],i);
+    strcat(format,"/%05d/part/part.%05d");
+    strcat(format," -nf %d -o %s/hop.%05d"); 
+    sprintf(commande,format,i,i,ncpu,argv[1],i);
     printf("%s\n",commande);
     system(commande);
 
 
     strcpy(format,cregroup);
-    strcat(format,"%s/hop.\%05d -o %s/reg.\%05d");
+    strcat(format,"%s/hop.%05d -o %s/reg.%05d");
     sprintf(commande,format,argv[1],i,argv[1],i);
     printf("%s\n",commande);
     system(commande);

@@ -114,6 +114,38 @@ c  corrected for an open universe.  Scale to a using linear theory.
 	p=p*tpois*tpois*scale**2
 	return
 c
+	else if (icase.eq.26)
+c  Use fit to matter transfer function.
+c  Hubble constant in units of 100 km/sec/Mpc.
+	h=h0/100.0
+	omegahh=omegam*h*h
+	q=ak/omegahh
+c  Transfer function for cold dark matter (from BBKS).
+	a1=2.34*q
+	a2=3.89*q
+	a3=16.1*q
+	a4=5.46*q
+	a5=6.71*q
+	t=1.0+a2+a3*a3+a4*a4*a4+a5*a5*a5*a5
+	t=log(1.0+a1)/a1/sqrt(sqrt(t))*sqrt(1)
+c  Apply transfer function to primordial power spectrum.
+c  Primordial spectrum of psi (or entropy, in the isocurvature case):
+	p=pnorm*ak**(an-4.0)
+c  Apply transfer function to get spectrum of phi at a=1.
+	p=p*t*t
+c  Convert to density fluctuation power spectrum.  Note that k^2 is
+c  corrected for an open universe.  Scale to a using linear theory.
+	tpois=-(2.0d0/3.0d0)/omegam*((ak*2.99793e5/h0)**2
+     2       -4.*(omega-1.0))
+	if (a10.ne.a.or.a00.ne.1.0) then
+	    a10=a
+	    a00=1.0
+	  scale=dplus(a,omegam,omegav)/dplus(1.0,omegam,omegav)
+	end if
+	p=p*tpois*tpois*scale**2
+	return
+c
+
 	else
 c**************************************
 c  Use tabulated matter transfer function.
@@ -244,6 +276,9 @@ c  from linger.dat.
 c**************************************
 	  pcdm=p(ak,a)
 	  return
+	else if (icase.eq.26) then
+	   pcdm=p(ak,a)
+	   return
 	end if
 c  Use tabulated matter transfer function.
 c  First the first tabulated value exceeding a.

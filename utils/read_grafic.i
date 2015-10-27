@@ -43,6 +43,7 @@ func read_grafic(filename,&L,&h,nslice=,bigendian=,decendian=)
   
   for(i=1;i<=np3;i++)
     {
+      i;
       dummy=array(int);_read,ff,adress,dummy;adress+=sizeof(dummy);
       dummy=array(float,np1,np2);_read,ff,adress,dummy;adress+=sizeof(dummy);
       field(,,i)=dummy;

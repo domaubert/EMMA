@@ -7,6 +7,8 @@
 #include "src_utils.h"
 #endif // UVBKG
 
+#include "atomic_data/Atomic.h"
+
 char *field_name [] ={
 // The field order has to be the same as in param.output for consistency
 "x",
@@ -320,6 +322,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
     param->stars->n		= 0;
 #endif
 
+#ifdef WRAD
 #ifdef SRCINT
   param->srcint*=SRCINT;
 #endif
@@ -327,6 +330,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #ifdef UVBKG
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
+#endif
 
 #ifdef ALLOCT
   readOutputParam("param.output", param);
@@ -487,6 +491,9 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
 }
 
+// ===================================================================================
+// ===================================================================================
+
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt){
 /**
   * At each timestep, compute and write information about the average state of several physical quantities
@@ -496,12 +503,13 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   int max_level=0;
   int Nsn=0;
-  REAL mean_xion=0;
+  double mean_xion=0;
+  double mean_xh=0;
   REAL mean_T=0;
   REAL max_T=0;
   REAL max_rho=0;
   REAL src=0;
-
+  REAL vtot=0.;
 
   int level;
   REAL vweight;
@@ -520,13 +528,15 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 	if( curcell->child==NULL){
 	  // ajout d'une ponderation en volume, plus conforme a l'idee de moyenne
 	  // note somme(vweight)=1.
+	  vtot+=vweight;
 #ifdef WRADHYD
 	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
+	  mean_xh+=(1.-curcell->field.dX/curcell->field.d)*vweight;
 #endif // WRADHYD
 
 #ifdef WRAD
 	  mean_T+=curcell->rfield.temp*vweight;
-    src+=curcell->rfield.src*vweight;
+	  src+=curcell->rfield.src*vweight;
 	  max_T=FMAX(max_T,curcell->rfield.temp);
 #endif // WRAD
 
@@ -557,13 +567,15 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   }
 
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&mean_xh,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&src,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&vtot,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
 
@@ -572,7 +584,8 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   char* real_format = "%e\t";
 
   if(cpu->rank==RANK_DISP){
-
+    
+    printf("VTOT=%e\n",vtot);
     char* filename = "data/param.avg";
 
     FILE* fp=NULL;
@@ -622,6 +635,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, real_format ,(float)Nsn);
     fprintf(fp, real_format , src);
+    fprintf(fp, real_format,mean_xh);
 
     fprintf(fp,"\n");
     fclose(fp);
