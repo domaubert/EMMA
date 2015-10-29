@@ -71,6 +71,8 @@
 #endif // MOVIE
 
 
+
+
 void gdb_debug()
 {
   int i = 0;
@@ -99,6 +101,9 @@ REAL f_aexp(REAL aexp, REAL omegam, REAL omegav)
 
 int main(int argc, char *argv[])
 {
+
+	REAL tstart=MPI_Wtime();
+
   struct OCT *grid;
   struct OCT **firstoct;
   struct OCT **lastoct;
@@ -223,6 +228,7 @@ int main(int argc, char *argv[])
 #ifdef SUPERNOVAE
   struct SNPARAM sn;
   param.sn=&sn;
+  param.sn->trig_sn=0;
 #endif
 
 
@@ -605,7 +611,8 @@ int main(int argc, char *argv[])
   cpu.octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
   int iLev;
   for(iLev = 0; iLev<levelcoarse; iLev++){
-    cpu.locNoct[iLev] = POW(2,3*(iLev+1));
+    //cpu.locNoct[iLev] = POW(2,3*(iLev+1));
+    cpu.locNoct[iLev] = (pow(2,3*(iLev+1))<ngridmax? pow(2,3*(iLev+1)):ngridmax) ;
     cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
   }
   for(iLev = levelcoarse; iLev<levelmax; iLev++){
@@ -1811,6 +1818,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef SNTEST
+  cpu->trigstar=1;
   if(param.nrestart==0){
       for(level=1;level<=levelmax;level++){
         setOctList(firstoct[level-1], &cpu, &param,level);
@@ -2072,9 +2080,12 @@ int main(int argc, char *argv[])
 #endif
 
 #endif
+
+    REAL tend=MPI_Wtime();
+
     if(cpu.rank==RANK_DISP){
       //fclose(param.fpegy);
-      printf("Done .....\n");
+      printf("Done ..... in %.2e CPU hours\n", (tend-tstart)/3600*cpu.nproc);
     }
 #ifdef WMPI
     MPI_Barrier(cpu.comm);

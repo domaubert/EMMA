@@ -539,7 +539,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
  		       memcpy(&Ri[il],&curoct->cell[icell].rfield,sizeof(struct Rtype));
 
 
-#ifdef STARS
+#ifdef SUPERNOVAE
 		       Ri[il].snfb=0.;
 #endif
 

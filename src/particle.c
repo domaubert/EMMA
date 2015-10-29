@@ -13,6 +13,25 @@
 
 
 #ifdef PIC
+
+void printPart(struct PART* part){
+  printf("x=%e ",part->x);
+  printf("y=%e ",part->y);
+  printf("z=%e ",part->z);
+
+  printf("vx=%e ",part->vx);
+  printf("vy=%e ",part->vy);
+  printf("vz=%e ",part->vz);
+
+  printf("m=%e ",part->mass);
+  printf("isStar=%d ",part->isStar);
+
+
+  printf("\n");
+
+}
+
+
 //------------------------------------------------------------------------
 
 struct PART* findlastpart(struct PART* phead)

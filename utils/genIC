@@ -2,95 +2,172 @@
 import sys, os
 from struct import *
 
+#########################################################################################
+#########################################################################################
+#########################################################################################
 
-def graficinc(N,folder):
+def genGraphic(L,size, output):
+	def graficinc(N,folder):
 
-	
-	grafic1 = folder+"grafic1.inc"
+		grafic1 = folder+"grafic1.inc"
 
-	f = open(grafic1, "w")
+		f = open(grafic1, "w")
 
-	f.write("cc  grafic1.inc\n")
-	f.write("c  User must set parameters then make grafic1\n")
-	f.write("c\n")
-	f.write("c  Parameters for offsetting baryon and CDM velocity fields by\n")
-	f.write("c  0.5 grid spacing.\n")
-	f.write("c  The origin of the baryon density field is (0,0,0).  The origin\n")
-	f.write("c  of the baryon velocity field will be offvelb*(0.5,0.5,0.5)*dx\n")
-	f.write("c  and similarly for offvelc.  offvelb/c should be +/-1 or 0.\n")
-	f.write("	integer offvelb,offvelc\n")
-	f.write("	parameter (offvelb=0,offvelc=0)\n")
-	f.write("c\n")
-	f.write("c  Initial density fluctuation amplitude on the ultimate subgrid scale.\n")
-	f.write("c  For large grids (> 10^7) one may wish to decrease this; for small\n")
-	f.write("c  refinement grids (< 10^6) and multiple levels one may wish to increase it.\n")
-	f.write("	real sigstart\n")
-	f.write("	parameter (sigstart=0.1)\n")
-	f.write("c\n")
-	f.write("c  Top grid mesh size.\n")
-	f.write("c\n")
-	f.write("	integer np1,np2,np3\n")
-	f.write("	parameter (np1=" +str(N)+ ",np2=" +str(N)+ ",np3=" +str(N)+ ")\n")
-	f.write("c\n")
-	f.write("c np[1-3]:      particle lattice size for computing initial conditions.\n")
-	f.write("c                 All must be divisible by 2.  They need not be equal.\n")
-	f.write("c  The memory required by grafic1 is np1*np2*np3 words plus a few.\n")
+		f.write("cc  grafic1.inc\n")
+		f.write("c  User must set parameters then make grafic1\n")
+		f.write("c\n")
+		f.write("c  Parameters for offsetting baryon and CDM velocity fields by\n")
+		f.write("c  0.5 grid spacing.\n")
+		f.write("c  The origin of the baryon density field is (0,0,0).  The origin\n")
+		f.write("c  of the baryon velocity field will be offvelb*(0.5,0.5,0.5)*dx\n")
+		f.write("c  and similarly for offvelc.  offvelb/c should be +/-1 or 0.\n")
+		f.write("	integer offvelb,offvelc\n")
+		f.write("	parameter (offvelb=0,offvelc=0)\n")
+		f.write("c\n")
+		f.write("c  Initial density fluctuation amplitude on the ultimate subgrid scale.\n")
+		f.write("c  For large grids (> 10^7) one may wish to decrease this; for small\n")
+		f.write("c  refinement grids (< 10^6) and multiple levels one may wish to increase it.\n")
+		f.write("	real sigstart\n")
+		f.write("	parameter (sigstart=0.1)\n")
+		f.write("c\n")
+		f.write("c  Top grid mesh size.\n")
+		f.write("c\n")
+		f.write("	integer np1,np2,np3\n")
+		f.write("	parameter (np1=" +str(N)+ ",np2=" +str(N)+ ",np3=" +str(N)+ ")\n")
+		f.write("c\n")
+		f.write("c np[1-3]:      particle lattice size for computing initial conditions.\n")
+		f.write("c                 All must be divisible by 2.  They need not be equal.\n")
+		f.write("c  The memory required by grafic1 is np1*np2*np3 words plus a few.\n")
 
-	f.close()
+		f.close()
+
+	def inputplanck(size,folder):
+
+		planck = folder + "Input.planck"
+		f= open(planck,"w")
+
+		f.write("2\n")
+		f.write("0.3175 0.6825 67.\n")
+		f.write("1\n")
+		f.write("-0.8344\n")
+		f.write("1e-3 1e3\n")
+		f.write("-" +str(size)+ ".\n")
+		f.write("1\n")
+		f.write("0\n")
+		f.write("\n")
+		f.write("\n")
+		f.write("\n")
+		f.write("\n")
+		f.write("\n")
+		f.write("0\n")
+		f.write("111111111\n")
+		f.write("0\n")
+
+		f.close
 
 
-
-def inputplanck(size,folder):
-
-	planck = folder + "Input.planck"
-	f= open(planck,"w")
-
-	f.write("2\n")
-	f.write("0.3175 0.6825 67.\n")
-	f.write("1\n")
-	f.write("-0.8344\n")
-	f.write("1e-3 1e3\n")
-	f.write("-" +str(size)+ ".\n")
-	f.write("1\n")
-	f.write("0\n")
-	f.write("\n")
-	f.write("\n")
-	f.write("\n")
-	f.write("\n")
-	f.write("\n")
-	f.write("0\n")
-	f.write("111111111\n")
-	f.write("0\n")
-
-	f.close
-
-if __name__ == "__main__":
 
 	folder = "grafic_src/"
-
-	L = int(sys.argv[1])
-	size = int(sys.argv[2])
-	print L,size
-	N = pow(2,L)	
-
 
 	graficinc(N,folder)
 	inputplanck(size,folder)
 
-	commande = "make -C " +folder+ " clean"
-	os.system(commande)
+	os.system("make -C " +folder+ " clean")
+	os.system("make -C " +folder)
+ 	os.system("./" +folder+ "grafic1 <" +folder+ "Input.planck")
+ 	os.system("mkdir ../%s"%output)
+ 	os.system("mkdir ../%s/level_%03d"%(output,L) )
+ 	os.system("mv ic_* ../%s/level_%03d"%(output,L) )
 
-	commande = "make -C " +folder
-	os.system(commande)
+#########################################################################################
+#########################################################################################
+#########################################################################################
 
-	commande = "./" +folder+ "grafic1 <" +folder+ "Input.planck"
- 	os.system(commande)
+def genMusic(L,size, output, seed):
 
-	commande = "mkdir ../IC"
- 	os.system(commande)
+	def write_conf(folder, L,size, output, seed):
 
-	commande = "mkdir ../IC/level_%03d"%L
- 	os.system(commande)
+		f= open(folder + "ic.conf" ,"w")
 
-	commande = "mv ic_* ../IC/level_%03d"%L
- 	os.system(commande)
+		f.write("[setup]\n")
+		f.write("boxlength		= %d\n"%size)
+		f.write("zstart			= 100\n")
+		f.write("levelmin		= %d\n"%L)
+		f.write("levelmax		= %d\n"%L)
+		f.write("baryons			= no\n")
+		f.write("use_2LPT		= no\n")
+		f.write("use_LLA			= no\n")
+		f.write("periodic_TF		= yes\n")
+
+		f.write("[cosmology]\n")
+		f.write("Omega_m			= 0.316\n")
+		f.write("Omega_L			= 0.6911\n")
+		f.write("Omega_b			= 0.02222\n")
+		f.write("H0						= 67.26\n")
+		f.write("sigma_8			= 0.830\n")
+		f.write("nspec				= 0.9652\n")
+		f.write("transfer			= eisenstein\n")
+
+		f.write("[random]\n")
+		f.write("seed[%d]			= %d\n"%(L, seed))
+
+
+		f.write("[output]\n")
+		f.write("format			= grafic2	\n")
+		f.write("filename		= %s\n"%output)
+		f.write("ramses_nml  		= no\n")
+
+		f.write("[poisson]\n")
+		f.write("fft_fine		= yes\n")
+		f.write("accuracy		= 1e-5\n")
+		f.write("pre_smooth		= 3\n")
+		f.write("post_smooth		= 3\n")
+		f.write("smoother		= gs\n")
+		f.write("laplace_order		= 6\n")
+		f.write("grad_order		= 6\n")
+
+
+
+	folder = "music/"
+
+	write_conf(folder, L,size, output, seed)
+
+	os.system("./%sMUSIC %sic.conf"%(folder,folder))
+ 	os.system("mkdir ../%s "%output )		
+ 	os.system("cp -rf  %s/* ../%s"%(output,output) )
+	os.system("rm -rf  %s"%output)
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+if __name__ == "__main__":
+
+
+
+	if len(sys.argv)<=1:
+		print "usage : ./genIC level size_in_(Mpc/h)^3"
+		exit(1)
+
+	L = int(sys.argv[1])
+	size = int(sys.argv[2])
+
+	N = pow(2,L)	
+	print "generating a (%d Mpc/h)^3 in %d^3"%(size,N)
+
+
+	#generator = "graphic"
+	generator = "music"
+
+
+
+
+	output = "IC"
+	seed=12345
+
+	if generator == "graphic":
+		genGraphic(L,size, output)
+	if generator == "music":
+		genMusic(L,size, output,seed)
+
+

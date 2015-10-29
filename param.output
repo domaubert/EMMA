@@ -19,7 +19,7 @@ field.d
 #rfield.e[0]
 #rfield.fx[0]
 #rfield.fy[0]
-#rfield.fz[0]
+rfield.fz[0]
 #rfield.e[1]
 #rfield.fx[1]
 #rfield.fy[1]
@@ -30,10 +30,10 @@ field.d
 #rfield.fy[2]
 #rfield.fz[2]
 #rfield.src
-xion
+#xion
 #field.dX
 #field.dXHE
 #field.dXXHE
 #field.xHE
 #field.xxHE
-rfield.temp
+#rfield.temp

@@ -442,7 +442,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  if(compcool){
 	    REAL SN = 0;
-#ifdef STARS
+#ifdef SUPERNOVAE
 	    SN 	 = R.snfb;
 	    if (R.snfb) Cool = 0; // Stop the cooling if supernovae
 	    if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool);

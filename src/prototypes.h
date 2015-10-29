@@ -124,6 +124,13 @@ struct SNPARAM{
   REAL Esnfb;///<  total Energy of a SN
   REAL ejecta_proportion;
   REAL sn_egy;
+  REAL trig_sn;
+
+  REAL *egy_loss_t;
+  REAL *egy_loss_egy;
+
+  REAL *mass_loss_t;
+  REAL *mass_loss_mass;
 };
 #endif // SUPERNOVAE
 

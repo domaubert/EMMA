@@ -83,6 +83,17 @@ void W2U(struct Wtype *W, struct Utype *U)
 
 }
 
+void printWtype(struct Wtype *W){
+  printf("d=%e ", W->d);
+  printf("u=%e ", W->u);
+  printf("v=%e ", W->v);
+  printf("w=%e ", W->w);
+  printf("p=%e ", W->p);
+  printf("E=%e ", W->E);
+
+  printf("\n");
+}
+
 
 // ================== performs the difference between two Us
 

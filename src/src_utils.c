@@ -615,7 +615,8 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   int flag;
 
 #ifdef TESTCOSMO
-  REAL tcur=a2t(param,aexp);
+  //REAL tcur=a2t(param,aexp);
+  REAL tcur = param->cosmo->tphy;
 #else
   REAL tcur=tloc; // TODO PROBABLY NEEDS TO BE FIXED FOR NON COSMO RUN WITH STARS (LATER....)
 #endif

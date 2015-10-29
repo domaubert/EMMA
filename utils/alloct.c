@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   char format[256];
   char fname2[256];
   int ncpu;
-  int icpu;
+  int icpu=0;
   struct OCT *zerooct;
   struct UNITS unit;
   size_t dummy;

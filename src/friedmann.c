@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -6,6 +5,8 @@
 
 #define MAXITER 16
 #define MAXJ 5
+
+#include "prototypes.h"
 
 
 
@@ -294,3 +295,8 @@ double fomega(double a, double omegam, double omegav)
 }
 
 // ========================================================================================
+
+REAL a2t(struct RUNPARAMS *param, REAL a){
+  REAL t=integ_da_dt(1e-8,a,param->cosmo->om,param->cosmo->ov,1e-8);
+  return t/(param->cosmo->H0*1e3/1e6/PARSEC *365*24*3600);
+}

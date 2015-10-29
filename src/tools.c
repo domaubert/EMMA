@@ -145,9 +145,15 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		    if (curp->isStar){
 			slev++;
 		 	stot++;
-			Mtot+=curp->mass;
+
+      if(curp->mass==0){
+        printf("star mass == 0\n");
+        abort();
+      };
+      Mtot+=curp->mass;
 		    }
 #endif // STARS
+
 
       REAL v2 = curp->vx*curp->vx+
                 curp->vy*curp->vy+
@@ -364,7 +370,6 @@ REAL rdm(REAL a, REAL b){
 
 unsigned int gpoiss(REAL lambda){
 /// Poisson distribution
-
 /// TODO use a better poisson algorithme
 
 #ifdef SINGLEPRECISION
@@ -388,7 +393,10 @@ unsigned int gpoiss(REAL lambda){
 	k++;
     }while(k<kmax);
 
-    if (k==kmax) printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
+    if (k==kmax) {
+      printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
+      abort();
+    }
   }
   if(k==1e6) {
     printf("k=%d lambda=%e sum=%e p=%e\n",k,lambda,sum,p);
@@ -396,29 +404,3 @@ unsigned int gpoiss(REAL lambda){
   }
   return k;
 }
-
-#ifdef TESTCOSMO
-REAL a2t(struct RUNPARAMS *param, REAL az ){
-/// Compute the equivalent time of a given scale factor
-/// function from Ned Wright http://www.astro.ucla.edu/~wright/CC.python
-
-	REAL age = 0.;
-	REAL a, adot;
-	REAL h = param->cosmo->H0/100;
-
-	REAL or = 4.165e-5/(h*h);
-	REAL ok = 1. - param->cosmo->om - or - param->cosmo->ov;
-
-	int i, n=1000;
-	for (i=0; i<n;i++){
-		a = az*(i+0.5)/n;
-		adot = SQRT(ok+(param->cosmo->om / a)+(or/ (a*a) )+ (param->cosmo->ov*a*a) );
-		age = age + 1./adot;
-	}
-	REAL zage = az*age/n;
-	REAL zage_Gyr = (977.8 /param->cosmo->H0)*zage;
-
-	return zage_Gyr*1e9;
-}
-#endif
-

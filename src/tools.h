@@ -7,4 +7,3 @@ void myradixsort(int *a,int n);
 
 REAL rdm(REAL a, REAL b);
 unsigned int gpoiss(REAL lambda);
-REAL a2t(struct RUNPARAMS *param, REAL az );

@@ -37,7 +37,8 @@
 
 void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
-  static int MOVIE_SNAP_NUMBER;
+  //static int MOVIE_SNAP_NUMBER;
+  int MOVIE_SNAP_NUMBER = cpu->nsteps;
 	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d",MOVIE_SNAP_NUMBER);
 
 // Param------------------------
@@ -129,12 +130,24 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             float field4=0;
 
 
+            int set =0;
+            switch(set){
+              case 0:
+                field1 = (float)oct->level;
+                field2 = (float)cell->field.d;
+                field3 = (float)cell->field.p;
+                field4 = (float)oct->cpu;
+                break;
+              case 1:
+                field1 = (float)oct->level;
+                field2 = (float)cell->field.d;
+                #ifdef WRAD
+                field3 = (float)cell->rfield.temp;
+                #endif // WRAD
 
-            field1 = (float)oct->level;
-            field2 = (float)cell->field.d;
-            field3 = (float)cell->field.p;
-            field4 = (float)oct->cpu;
-
+                field4 = (float)oct->cpu;
+                break;
+            }
 
             int mode;
             if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
@@ -180,7 +193,7 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
     mkdir(ffolder, 0755);
 		char fname[128];
-		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER++);
+		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER);
 
 		FILE *fp = NULL;
 		fp =fopen(fname,"wb");

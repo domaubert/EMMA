@@ -1,12 +1,12 @@
-#define RANK_DISP 0
-#define FBKP 1
+#define RANK_DISP (0)
+#define FBKP (1)
 #define GAMMA (5./3.)
 #define CFL (0.85)
 #define GRAV (0.25)
 #define FRACDX  (0.25)
 
 #define SEED (12345)
-#define PMIN 1e-9
+#define PMIN (1e-12)
 #define NCOSMOTAB (128)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 #define FRAC_VAR (0.1)

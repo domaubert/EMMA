@@ -10,4 +10,4 @@ double ddplus(double a,double omegam, double omegav);
 double integ_ddplus(double a, double b, double om, double ov,double tol);
 double dplus(double a, double omegam, double omegav);
 double fomega(double a, double omegam, double omegav);
-
+REAL a2t(struct RUNPARAMS *param, REAL a);

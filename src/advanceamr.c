@@ -18,6 +18,7 @@
 #include "particle.h"
 #include "communication.h"
 #include "convert.h"
+#include "friedmann.h"
 
 #ifdef STARS
 #include "stars.h"
@@ -271,7 +272,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef TESTCOSMO
   aexp=cosmo->aexp;
-	param->cosmo->tphy	= a2t(param, aexp);
+	param->cosmo->tphy	 = a2t(param,aexp);
 #else
   aexp=1.0;
 #endif
@@ -1037,7 +1038,7 @@ if(cond1||cond2||cond3){
       if (level==param->lmax){
         printf("Blocking refinement to level %d : level max reached\n",level+1);
       }else{
-        printf("Blocking refinement to level %d : dx[%d]=%e dxlim=%e\n",level+1,level+1,dxnext,dxkpc);
+        printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
       }
     }
     KPCLIMIT_TRIGGER=0;

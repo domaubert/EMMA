@@ -34,17 +34,16 @@ float assign_field(int field,struct CELL *cell){
   float res;
 
   switch(field){
-
   case 0:
-    res= cell2oct(cell)->x+( cell->idx   %2)*POW(0.5,cell2oct(cell)->level);
+    res= cell2oct(cell)->x+( (cell->idx)   &1)*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 1:
-    res= cell2oct(cell)->y+( cell->idx/2 %2)*POW(0.5,cell2oct(cell)->level);
+    res= cell2oct(cell)->y+( (cell->idx>>1)& 1 )*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 2:
-    res= cell2oct(cell)->z+( cell->idx/4   )*POW(0.5,cell2oct(cell)->level);
+    res= cell2oct(cell)->z+( (cell->idx)>>2    )*POW(0.5,cell2oct(cell)->level);
     break;
 
   case 3:
@@ -404,7 +403,7 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 
-void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
+void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   float val;
   int vali;
@@ -568,6 +567,162 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
+
+void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
+
+  int ipart=0;
+  int istar=0;
+  float tsimf=tsim;
+
+//-----------------------------------------------------------------------------------------------
+
+  float *part_tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],10*sizeof(float));
+  int i_tmp_part = 0;
+
+#ifdef STARS
+  float *star_tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],11*sizeof(float));
+  int i_tmp_star = 0;
+#endif // STARS
+
+  int level;
+  for(level=levelcoarse;level<=levelmax;level++){
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
+      int icell;
+      for(icell=0;icell<8;icell++){
+	      struct PART *nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
+	      if(nexp!=NULL){
+          do{
+            struct PART *curp=nexp;
+            nexp=curp->next;
+
+      float* tmp=part_tmp;
+      int* i_tmp=&i_tmp_part;
+#ifdef STARS
+		  if(curp->isStar){
+        tmp=star_tmp;
+        i_tmp=&i_tmp_star;
+      }
+#endif // STARS
+
+		  tmp[(*i_tmp)++]=(float)curp->x;
+      tmp[(*i_tmp)++]=(float)curp->y;
+		  tmp[(*i_tmp)++]=(float)curp->z;
+#ifndef PARTN
+#ifdef PART_EGY
+		  tmp[(*i_tmp)++]=(float)curp->ekin+curp->epot;
+		  tmp[(*i_tmp)++]=(float)curp->fx;
+		  tmp[(*i_tmp)++]=(float)curp->fy;
+#else
+		  tmp[(*i_tmp)++]=(float)curp->vx;
+		  tmp[(*i_tmp)++]=(float)curp->vy;
+		  tmp[(*i_tmp)++]=(float)curp->vz;
+#endif // PART_EGY
+#else
+		  tmp[(*i_tmp)++]=(float)curp->fx;
+		  tmp[(*i_tmp)++]=(float)curp->fy;
+		  tmp[(*i_tmp)++]=(float)curp->fz;
+#endif // PARTN
+		  tmp[(*i_tmp)++]=(float)(curp->idx);
+		  tmp[(*i_tmp)++]=(float)(curp->mass);
+		  tmp[(*i_tmp)++]=(float)(curp->epot);
+		  tmp[(*i_tmp)++]=(float)(curp->ekin);
+#ifdef STARS
+		  if(curp->isStar) {
+		    tmp[(*i_tmp)++]=(float)(curp->age);
+		  }
+#endif // STARS
+		  ipart++;
+
+          }while(nexp!=NULL);
+	      }
+	    }
+    }
+  }
+
+//-----------------------------------------------------------------------------------------------
+  int i;
+  int npart=0;
+  for (i=0;i<cpu->nproc;i++){
+   npart+=cpu->mpiio_nparts[i];
+  }
+
+  char filenamepart[128];
+#ifdef MULTIFOLDER
+#ifndef MPIIO
+	sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
+	sprintf(filenamepart,"data/%05d/part.%05d",*(cpu->ndumps),*(cpu->ndumps));
+#endif // MPIIO
+#else
+	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+  MPI_File fpart;
+  MPI_File_open(cpu->comm,filenamepart,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fpart);
+	if(fpart==NULL){
+    printf("Cannot open %s\n", filenamepart);
+    abort();
+  }
+
+	MPI_File_write(fpart, &npart,1, MPI_INT, MPI_STATUS_IGNORE);
+  MPI_File_write(fpart, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
+  const size_t part_header_size = sizeof(int)+sizeof(float);
+
+  const size_t part_size = 10;
+  MPI_Datatype part_type;
+  MPI_Type_contiguous(part_size, MPI_FLOAT, &part_type);
+  MPI_Type_commit(&part_type);
+
+  MPI_Offset part_offset = part_size*cpu->mpiio_part_offsets*sizeof(float) + part_header_size ;
+  MPI_File_set_view(fpart, part_offset, MPI_FLOAT, part_type, "native", MPI_INFO_NULL);
+  MPI_File_write(fpart, part_tmp,i_tmp_part, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_close(&fpart);
+  free(part_tmp);
+
+//-----------------------------------------------------------------------------------------------
+#ifdef STARS
+  int nstar=0;
+  for (i=0;i<cpu->nproc;i++){
+   nstar+=cpu->mpiio_nstars[i];
+  }
+
+  char filenamestar[128];
+#ifdef MULTIFOLDER
+#ifndef MPIIO
+  sprintf(filenamestar,"data/%05d/star/star.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
+  sprintf(filenamestar,"data/%05d/star.%05d",*(cpu->ndumps),*(cpu->ndumps));
+#endif // MPIIO
+#else
+  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+  MPI_File fstar;
+  MPI_File_open(cpu->comm,filenamestar,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fstar);
+  if(fstar==NULL){
+    printf("Cannot open %s\n", filenamestar);
+    abort();
+  }
+  MPI_File_write(fstar, &nstar,1, MPI_INT, MPI_STATUS_IGNORE);
+  MPI_File_write(fstar, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
+  const size_t star_header_size = sizeof(int)+sizeof(float);
+
+  const size_t star_size = 11;
+
+  MPI_Datatype star_type;
+  MPI_Type_contiguous(star_size, MPI_FLOAT, &star_type);
+  MPI_Type_commit(&star_type);
+
+  MPI_Offset star_offset = star_size*cpu->mpiio_part_offsets*sizeof(float) + star_header_size ;
+  MPI_File_set_view(fstar, star_offset, MPI_FLOAT, star_type, "native", MPI_INFO_NULL);
+  MPI_File_write(fstar, star_tmp,i_tmp_star, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_close(&fstar);
+  free(star_tmp);
+#endif // STARS
+//printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
+}
 #endif // PIC
 
 void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param){
@@ -582,7 +737,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
 
   fp=fopen(filename,"wb");
   if(fp == NULL) printf("Cannot open %s\n", filename);
-  
+
   fwrite(&tsim,sizeof(REAL),1,fp);
 
 #ifdef WRAD
@@ -638,7 +793,6 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   *     TODO: for the flux and all the fields depending of NGRP, dump in 1 field instead of NGRP fields
   *
   */
-
   int i;
 
   int n_cell_tot=0;
@@ -646,73 +800,58 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
     n_cell_tot+=cpu->mpiio_ncells[i];
   }
 
-// Open all the fields files
-  MPI_File *f_dat;
-  f_dat=(MPI_File *)malloc(param->out->n_field*sizeof(MPI_File));
+  float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
 
   int n_field=0;
-  for(i=0;i<param->out->n_field_tot;i++){
+  for (i=0;i<param->out->n_field_tot; i++){
     if(param->out->field_id[i]){
 
-      f_dat[n_field]=NULL;
-      char dat_name[256];
-      sprintf(dat_name,"%s%s.%05d",folder,param->out->field_name[i],*(cpu->ndumps));
-      MPI_File_open(cpu->comm,dat_name,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&f_dat[n_field]);
-
-      if(f_dat[n_field] == NULL){
-       printf("Cannot open %s\n", dat_name);
-       abort();
-      }
-
-      MPI_File_write(f_dat[n_field], &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
-      const size_t grid_header_size = sizeof(int);
-
-      MPI_Offset grid_offset = cpu->mpiio_grid_offsets*sizeof(float) + grid_header_size ;
-      MPI_File_set_view(f_dat[n_field], grid_offset, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
-
-      n_field++;
-    }
-  }
-
-// write the data
-  int level;
-  for(level=param->lcoarse;level<=param->lmax;level++){
-
-    int iOct;
-    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-      struct OCT *oct=cpu->octList[level-1][iOct];
-
-      int icell;
-      for(icell=0;icell<8;icell++){
-        struct CELL * cell= &oct->cell[icell];
-        if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
-
-          // get and write the fields
-          int n_field=0;
-          for (i=0;i<param->out->n_field_tot; i++){
-            if(param->out->field_id[i]){
-              float dat = (float)assign_field(i,cell);
-              MPI_File_write(f_dat[n_field], &dat,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-              n_field++;
+      //reduce data
+      int i_tmp=0;
+      int level;
+      for(level=param->lcoarse;level<=param->lmax;level++){
+        int iOct;
+        for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+          struct OCT *oct=cpu->octList[level-1][iOct];
+          int icell;
+          for(icell=0;icell<8;icell++){
+            struct CELL * cell= &oct->cell[icell];
+            if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
+              tmp[i_tmp++] = (float)assign_field(i,cell);
             }
           }
         }
       }
-    }
-  }
 
-  // close all the fields files
-  n_field=0;
-  for(i=0; i<param->out->n_field; i++){
-    if(param->out->field_id[i]){
+      //Open the field file
+      char dat_name[256];
+      sprintf(dat_name,"%s%s.%05d",folder,param->out->field_name[i],*(cpu->ndumps));
 
-      //MPI_File_sync( f_dat[n_field] ) ;
-      MPI_File_close(&f_dat[n_field]);
+      MPI_File f_dat;
+      MPI_File_open(cpu->comm,dat_name,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&f_dat);
+
+      if(f_dat == NULL){
+       printf("Cannot open %s\n", dat_name);
+       abort();
+      }
+
+      //write header
+      MPI_File_write(f_dat, &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
+      const size_t grid_header_size = sizeof(int);
+
+      //set view
+      MPI_Offset grid_offset = cpu->mpiio_grid_offsets*sizeof(float) + grid_header_size ;
+      MPI_File_set_view(f_dat, grid_offset, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
+
+      //write data
+      MPI_File_write(f_dat, tmp, cpu->mpiio_ncells[cpu->rank], MPI_FLOAT, MPI_STATUS_IGNORE);
+
+      // close the field file
+      MPI_File_close(&f_dat);
       n_field++;
     }
   }
-
-  free(f_dat);
+  free(tmp);
 }
 
 void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -742,24 +881,23 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   for(i=0;i<param->out->n_field_tot;i++){
     if(param->out->field_id[i]){
 
-      f_dat[i]=NULL;
-
       char folder_field[128];
       sprintf(folder_field,"%s%s/",folder, param->out->field_name[i]);
       mkdir(folder_field, 0755);
       char dat_name[256];
       sprintf(dat_name,"%s%s.%05d.p%05d",folder_field,param->out->field_name[i],*(cpu->ndumps),cpu->rank);
-      f_dat[n_field]=fopen(dat_name,"wb");
 
+      f_dat[n_field]=fopen(dat_name,"wb");
       if(f_dat[n_field] == NULL){
        printf("Cannot open %s\n", dat_name);
        abort();
       }
 
-      fwrite(&n_cell,1,sizeof(int),f_dat[n_field]);
+      fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
       n_field++;
     }
   }
+
 
 // writing the data
   int level;
@@ -773,15 +911,14 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       for(icell=0;icell<8;icell++){
         struct CELL * cell= &oct->cell[icell];
         if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
-
           n_cell++;
 
           // get and write the fields
           int ii=0;
           for (i =0;i<param->out->n_field_tot; i++){
             if(param->out->field_id[i]){
-              float dat = (float)assign_field(ii,cell);
-              fwrite(&dat ,1,sizeof(float),f_dat[ii]);
+              float dat = (float)assign_field(i,cell);
+              fwrite(&dat,sizeof(float),1,f_dat[ii]);
               ii++;
             }
           }
@@ -791,10 +928,14 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   }
 
   // write n_cells and close the fields files
-  for (i=0; i<param->out->n_field; i++){
-    rewind(f_dat[i]);
-    fwrite(&n_cell,1,sizeof(int),f_dat[i]);
-    fclose(f_dat[i]);
+  n_field=0;
+  for(i=0;i<param->out->n_field_tot;i++){
+    if(param->out->field_id[i]){
+      rewind(f_dat[n_field]);
+      fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
+      fclose(f_dat[n_field]);
+      n_field++;
+    }
   }
 }
 
@@ -878,11 +1019,17 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("%s %p\n",filename,cpu->part);
 	  }
 
+  MPI_Barrier(cpu->comm);
+  REAL tt1=MPI_Wtime();
 #ifndef MPIIO
 	  dumppart_serial(firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
 	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO
+  MPI_Barrier(cpu->comm);
+  REAL tt2=MPI_Wtime();
+
+//  printf("Total time for output writing %f \n", tt2-tt1);
 
 #endif // PIC
 	}
@@ -892,9 +1039,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifdef ALLOCT
 #ifdef MULTIFOLDER
     sprintf(folder_field,"%s",folder_step);
+    sprintf(filename,"%sgrid",folder_field);
 #else
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MULTIFOLDER
+
 #else
 #ifdef MULTIFOLDER
     sprintf(folder_field,"%sgrid/",folder_step);
@@ -903,19 +1052,28 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  sprintf(filename,"data/grid.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MULTIFOLDER
 #endif // ALLOCT
+
+
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
 	    printf("%s\n",filename);
 	  }
+MPI_Barrier(cpu->comm);
+REAL tt1=MPI_Wtime();
 #ifdef ALLOCT
 #ifdef MPIIO
-	//  dumpalloct_MPI(folder_field,adump,param, cpu);
+	  dumpalloct_MPI(folder_field,adump,param, cpu);
 #else
     dumpalloct_serial(folder_field,adump,param, cpu);
 #endif // MPIIO
 #else
     dumpgrid(param->lmax,firstoct,filename,adump,param);
 #endif // ALLOCT
+  MPI_Barrier(cpu->comm);
+  REAL tt2=MPI_Wtime();
+
+//  printf("Total time for output writing %f \n", tt2-tt1);
+
 
 /// backups for restart
 #ifdef BKP
@@ -939,6 +1097,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  }
 #endif // BKP
+
+
 
 	}
 }

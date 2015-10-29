@@ -8,50 +8,6 @@
 #include "src_utils.h" //setUVBKG
 #endif
 
-
-char *field_name [] ={
-// The field order has to be the same as in param.output for consistency
-"x",
-"y",
-"z",
-"l",
-"cpu",
-"gdata.d",
-"density",
-"gdata.p",
-"res",
-"f[0]",
-"f[1]",
-"f[2]",
-"marked",
-"field.d",
-"field.u",
-"field.v",
-"field.w",
-"field.p",
-"rfield.e[0]",
-"rfield.fx[0]",
-"rfield.fy[0]",
-"rfield.fz[0]",
-"rfield.e[1]",
-"rfield.fx[1]",
-"rfield.fy[1]",
-"rfield.fz[1]",
-"rfield.snfb",
-"rfield.e[2]",
-"rfield.fx[2]",
-"rfield.fy[2]",
-"rfield.fz[2]",
-"rfield.src",
-"xion",
-"field.dX",
-"field.dXHE",
-"field.dXXHE",
-"field.xHE",
-"field.xxHE",
-"rfield.temp"
-};
-
 int copy(char const * const source, char const * const destination) {
 /**
   * copy a file name 'source' into 'destination'
@@ -130,7 +86,6 @@ void dumpFile(char *filename_in, char *filename_out){
     fileok=0;
   }
 
-
   FILE* buf=NULL;
   buf=fopen(filename_in,"r");
   if(buf == NULL){
@@ -153,6 +108,49 @@ void dumpFile(char *filename_in, char *filename_out){
 }
 
 void readOutputParam(char *fparam, struct RUNPARAMS *param){
+
+  char *field_name [] ={
+    // The field order has to be the same as in param.output for consistency
+    "x",
+    "y",
+    "z",
+    "l",
+    "cpu",
+    "gdata.d",
+    "density",
+    "gdata.p",
+    "res",
+    "f[0]",
+    "f[1]",
+    "f[2]",
+    "marked",
+    "field.d",
+    "field.u",
+    "field.v",
+    "field.w",
+    "field.p",
+    "rfield.e[0]",
+    "rfield.fx[0]",
+    "rfield.fy[0]",
+    "rfield.fz[0]",
+    "rfield.e[1]",
+    "rfield.fx[1]",
+    "rfield.fy[1]",
+    "rfield.fz[1]",
+    "rfield.snfb",
+    "rfield.e[2]",
+    "rfield.fx[2]",
+    "rfield.fy[2]",
+    "rfield.fz[2]",
+    "rfield.src",
+    "xion",
+    "field.dX",
+    "field.dXHE",
+    "field.dXXHE",
+    "field.xHE",
+    "field.xxHE",
+    "rfield.temp"
+  };
 
   int n_field=0;
   int n_field_tot=0;
@@ -193,12 +191,95 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
 
 }
 
+void read_egy_loss(struct RUNPARAMS *param){
+/**
+  * Read parameter file
+  * egy_loss.dat is a rewriting of the Starburst99 figure of the integrated energy loss
+  * fig 115 : http://www.stsci.edu/science/starburst99/figs/energy_inst_e.html
+  * input are in joules / kilogram
+  */
+
+  int size = 10000;
+
+  param->sn->egy_loss_t =	(REAL *)calloc(size,sizeof(REAL ));
+  param->sn->egy_loss_egy =	(REAL *)calloc(size,sizeof(REAL ));
+
+  char* fname = "src/phys_data/egy_loss.dat";
+  FILE *f=fopen(fname,"r");
+  if(f==NULL){
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fname);
+      abort();
+  }
+
+  int i=0;
+  double t,egy;
+  while (fscanf(f, "%lf %lf\n", &t,&egy ) != EOF) {
+
+    param->sn->egy_loss_t[i]=(REAL)t;
+    param->sn->egy_loss_egy[i]=(REAL)egy;
+    i++;
+  }
+  fclose(f);
+
+  int debug=0;
+  if(debug){
+    for(i=0;i<size;i++){
+      t=param->sn->egy_loss_t[i];
+      egy=param->sn->egy_loss_egy[i];
+      printf("%e %e\n", t,egy);
+    }
+    abort();
+  }
+}
+
+void read_mass_loss(struct RUNPARAMS *param){
+/**
+  * Read parameter file
+  * mass_loss.dat is a rewriting of the Starburst99 figure of the integrated mass loss
+  * fig 109 : http://www.stsci.edu/science/starburst99/figs/mass_inst_e.html
+  * input are in percent of the particle mass.
+  */
+
+  int size = 10000;
+
+  param->sn->mass_loss_t =	(REAL *)calloc(size,sizeof(REAL ));
+  param->sn->mass_loss_mass=	(REAL *)calloc(size,sizeof(REAL ));
+
+  char* fname = "src/phys_data/mass_loss.dat";
+  FILE *f=fopen(fname,"r");
+  if(f==NULL){
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fname);
+      abort();
+  }
+
+  int i=0;
+  double t,mass;
+  while (fscanf(f, "%lf %lf\n", &t,&mass) != EOF) {
+
+    param->sn->mass_loss_t[i]= (REAL)t;
+    param->sn->mass_loss_mass[i]= (REAL)mass;
+    i++;
+  }
+  fclose(f);
+
+  int debug=0;
+  if(debug){
+    for(i=0;i<size;i++){
+      t=param->sn->mass_loss_t[i];
+      mass=param->sn->mass_loss_mass[i];
+      printf("%e %e\n", t,mass);
+    }
+    abort();
+  }
+}
+
+
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
 /**
   * Read the atomic data from file defined in param.run
   */
-  int debug =0; //print what is read and abort if !=0
+  int debug =0; //print what was readed and abort if !=0
 
   //openfile
   FILE *buf=NULL;
@@ -257,8 +338,8 @@ void readAtomic(struct RUNPARAMS *param){
   //read grp
   for(i=0;i<param->atomic.n;i++){
     rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    if(!debug)  param->atomic.hnu[i]*=ELECTRONVOLT;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); if(!debug)  param->atomic.alphae[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); if(!debug)  param->atomic.alphai[i]=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); if(!debug)  param->atomic.alphae[i]*=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
+    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); if(!debug)  param->atomic.alphai[i]*=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
     rstat=fscanf(buf,"%lf",&param->atomic.factgrp[i]);
     if(debug) printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
   }
@@ -425,7 +506,10 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   readAtomic(param);
 #endif // WRAD
 
-
+#ifdef SUPERNOVAE
+  read_egy_loss(param);
+  read_mass_loss(param);
+#endif // SUPERNOVAE
 
 #if defined(WRADTEST) || defined(SNTEST)
 /*
@@ -511,9 +595,9 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
         /* REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res)); */
         /* REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS; */
 
-	double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res)); 
-	REAL mass_res_star =(REAL)( mstars_level * munpercell /SOLAR_MASS); 
-	
+	double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res));
+	REAL mass_res_star =(REAL)( mstars_level * munpercell /SOLAR_MASS);
+
 
         fprintf(fp, real_format,"mass_res_star",mass_res_star);
       }else{
@@ -612,6 +696,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   REAL max_T=0;
   REAL max_rho=0;
   REAL src=0;
+  REAL mstar=0;
 
   int level;
   REAL vweight;
@@ -659,11 +744,13 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       if(nexp==NULL) continue;
       curp=nexp;
       nexp=curp->next;
-      if(curp->isStar==2||curp->isStar==3){
-        Nsn++;
-      }
+      if(curp->isStar){
+        mstar += curp->mass;
+        if(curp->isStar==2||curp->isStar==3){
+          Nsn++;
+        }
         //------------------------------------------------//
-
+      }
     }while(nexp!=NULL);
 #endif // STARS
 	}
@@ -679,6 +766,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   MPI_Allreduce(MPI_IN_PLACE,&src,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
 
@@ -715,7 +803,8 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"mean_xion\t");
       fprintf(fp,"mean_T\t\t");
       fprintf(fp,"max_T\t\t");
-      fprintf(fp,"stars\t\t");
+      fprintf(fp,"Nstars\t\t");
+      fprintf(fp,"Mstars\t\t");
       fprintf(fp,"SN\t\t");
       fprintf(fp,"src");
       fprintf(fp,"\n");
@@ -744,7 +833,9 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
+    fprintf(fp, real_format ,(float)mstar);
 #else
+    fprintf(fp, real_format ,0.);
     fprintf(fp, real_format ,0.);
 #endif // STARS
 

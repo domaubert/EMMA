@@ -54,7 +54,7 @@ void diffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->src[igrp]=W2->src[igrp]- W1->src[igrp];
   }
 
-#ifdef STARS
+#ifdef SUPERNOVAE
     WR->snfb=W2->snfb- W1->snfb;
 #endif
 #ifdef WCHEM
@@ -119,7 +119,7 @@ void minmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
 
 
 
-#ifdef STARS
+#ifdef SUPERNOVAE
   if(Wp->snfb>0){
       Wr->snfb=FMAX(FMAX(0.,FMIN(beta*Wm->snfb,Wp->snfb)),FMIN(Wm->snfb,beta*Wp->snfb));
     }
@@ -191,7 +191,7 @@ void interpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct
     Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
 #endif
-#ifdef STARS
+#ifdef SUPERNOVAE
     Wp->snfb =W0->snfb +dx*Dx->snfb +dy*Dy->snfb +dz*Dz->snfb;
 #endif
 }

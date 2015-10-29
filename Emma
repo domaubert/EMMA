@@ -5,11 +5,11 @@ SCRIPT="smithers"
 DATA_FOLDER="data/"
 IC_FOLDER="IC/"
 
-RUN_FOLDER=""
+RUN_NAME=""
 if len(sys.argv) > 1:
-	RUN_FOLDER=sys.argv[1]
+	RUN_NAME=sys.argv[1]
 
-FOLDER = DATA_FOLDER+RUN_FOLDER
+FOLDER = DATA_FOLDER+RUN_NAME
 
 
 def build_all():
@@ -61,7 +61,7 @@ def copy_exec():
 def init():
 	mkdir(FOLDER)
 	os.system("cp -r src %s"%(FOLDER))
-	os.system("cp scripts/%s %s"%(SCRIPT,FOLDER))
+	os.system("cp scripts/%s %s/%s"%(SCRIPT,FOLDER,RUN_NAME))
 
 	copy_exec()
 	copy_param()
@@ -69,18 +69,18 @@ def init():
 	link_IC()
 	
 def get_script_type():
-	file = SCRIPT
+	file = RUN_NAME
 	for line in open(file):
 		if "#SBATCH" in line:
-			return "sbatch"
+			return "sbatch "
 		if "#MSUB" in line:
-			return "ccc_msub"
+			return "ccc_msub "
 	return "./"
 	
 def launch():
 	os.chdir(FOLDER)
 	script_type = get_script_type()
-	os.system("%s%s"%(script_type, SCRIPT))
+	os.system("%s%s"%(script_type, RUN_NAME))
 	
 
 if __name__ == "__main__":

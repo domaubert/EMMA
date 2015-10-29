@@ -318,7 +318,7 @@ void cell2lcell(struct CELL *cell, struct LCELL *lcell){
     lcell->fz[igrp]=cell->rfield.fz[igrp];
     lcell->src[igrp]=cell->rfield.src[igrp];
   }
-#ifdef STARS
+#ifdef SUPERNOVAE
   lcell->snfb=cell->rfield.snfb;
 #endif
   lcell->xion=cell->rfield.nhplus/cell->rfield.nh;
