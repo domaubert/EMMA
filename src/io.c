@@ -24,7 +24,7 @@
 
 #define AVGFACT (1.) // set to 0 to get an homogenous cosmo field 1
 
-float assign_field(int field,struct CELL *cell){
+float assign_grid_field(int field,struct CELL *cell){
 
 /**
   * This function return the appropriate field, depending of a given ID.
@@ -184,6 +184,74 @@ float assign_field(int field,struct CELL *cell){
   return res;
 }
 
+float assign_part_field(int field,struct PART *curp){
+
+/**
+  * return the appropriate paerticle field, depending of a given ID.
+  */
+
+  float res=0;
+  switch(field){
+    case 0:
+      res=(float)curp->x;
+      break;
+    case 1:
+      res=(float)curp->y;
+      break;
+    case 2:
+		  res=(float)curp->z;
+		  break;
+
+    case 3:
+		  res=(float)curp->vx;
+		  break;
+    case 4:
+		  res=(float)curp->vy;
+		  break;
+    case 5:
+		  res=(float)curp->vz;
+		  break;
+
+#ifndef TESTCOSMO
+    case 6:
+		  res=(float)curp->fx;
+		  break;
+    case 7:
+		  res=(float)curp->fy;
+		  break;
+    case 8:
+		  res=(float)curp->fz;
+		  break;
+#endif // TESTCOSMO
+
+    case 9:
+		  res=(float)(curp->idx);
+		  break;
+    case 10:
+		  res=(float)(curp->mass);
+		  break;
+    case 11:
+		  res=(float)(curp->epot);
+		  break;
+    case 12:
+		  res=(float)(curp->ekin);
+		  break;
+    case 13:
+		  res=(float)(curp->ekin+curp->epot);
+		  break;
+
+#ifdef STARS
+    case 14:
+		  if(curp->isStar) {
+		    res=(float)(curp->age);
+		  }
+    break;
+  }
+#endif // STARS
+
+  return res;
+}
+
 void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
   * This function compute the MPIIO offset
@@ -273,7 +341,152 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 }
 
 #ifdef PIC
-void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
+void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
+
+  FILE *fp = NULL;
+  float val;
+  int vali;
+  int ipart=0;
+  int level;
+  struct OCT *nextoct;
+  struct OCT oct;
+  REAL dxcur;
+  struct PART *nexp;
+  struct PART *curp;
+  int icell;
+  float tsimf=tsim;
+
+  int npart=0;
+  int nstar=0;
+
+  FILE **f_part=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
+#ifdef STARS
+  FILE **f_star=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
+#endif // STARS
+
+  int n_field=0;
+  int i;
+  for(i=0;i<param->out_part->n_field_tot;i++){
+    if(param->out_part->field_id[i]){
+
+#ifdef STARS
+      char filenamestar[128];
+      char filenamepart[128];
+#ifdef MULTIFOLDER
+      char folder_field_star[128];
+      sprintf(folder_field_star,"data/%05d/star_%s/",*(cpu->ndumps),param->out_part->field_name[i]);
+      mkdir(folder_field_star, 0755);
+      sprintf(filenamestar,"%s%s.%05d.p%05d",folder_field_star,param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+
+      char folder_field_part[128];
+      sprintf(folder_field_part,"data/%05d/part_%s/",*(cpu->ndumps),param->out_part->field_name[i]);
+      mkdir(folder_field_part, 0755);
+      sprintf(filenamepart,"%s%s.%05d.p%05d",folder_field_part,param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+#else
+      sprintf(filenamestar,"data/star.%s.%05d.p%05d",param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+      sprintf(filenamepart,"data/part.%s.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+      f_star[n_field]=fopen(filenamestar,"wb");
+      if(f_star[n_field] == NULL) {
+        printf("Cannot open %s\n", filenamestar);
+        abort();
+      }
+      fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
+
+      f_part[n_field]=fopen(filenamepart,"wb");
+      if(f_part[n_field] == NULL){
+        printf("Cannot open %s\n", filenamepart);
+        abort();
+      }
+      fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+
+#else
+      char filename[128];
+#ifdef MULTIFOLDER
+      sprintf(filename,"data/%05d/part/%s.%05d.p%05d",*(cpu->ndumps),param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+#else
+      sprintf(filename,"data/part.%s.%05d.p%05d",param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+      fp=fopen(filename,"wb");
+      if(fp == NULL){
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+      fwrite(&npart,1,sizeof(int)  ,fp);
+      fwrite(&tsimf,1,sizeof(float),fp);
+#endif // STARS
+      n_field++;
+    }
+  }
+
+  int debug =0;
+  if (debug) printf("opening file OK\n");
+
+  for(level=levelcoarse;level<=levelmax;level++){
+    if (debug) printf("entering level %d\n",level);
+
+    nextoct=firstoct[level-1];
+    do{
+      if(nextoct==NULL) continue; // in case the level is empty
+      oct=(*nextoct);
+      nextoct=oct.next;
+
+      for(icell=0;icell<8;icell++){ // looping over cells in oct
+
+        nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
+        if(nexp!=NULL){
+          do{
+            curp=nexp;
+            nexp=curp->next;
+
+            int ii=0;
+            for (i=0;i<param->out_grid->n_field_tot; i++){
+              if(param->out_grid->field_id[i]){
+
+#ifdef STARS
+                if(curp->isStar) 	{	fp=f_star[ii];	nstar++;	}
+                else 			        {	fp=f_part[ii];	npart++;	}
+#else
+                fp=f_part[ii]; npart++;
+#endif // STARS
+
+                float dat = (float)assign_part_field(i,curp);
+                fwrite(&dat,sizeof(float),1,fp);
+                ii++;
+              }
+            }
+
+		  ipart++;
+
+		}while(nexp!=NULL);
+	      }
+	    }
+	}while(nextoct!=NULL);
+    }
+
+  if (debug) printf("writing OK\n");
+
+  n_field=0;
+  for(i=0;i<param->out_part->n_field_tot;i++){
+    if(param->out_part->field_id[i]){
+
+      rewind(f_part[n_field]);	fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);	fclose(f_part[n_field]);
+#ifdef STARS
+      rewind(f_star[n_field]);	fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);	fclose(f_star[n_field]);
+#endif // STARS
+
+      n_field++;
+    }
+  }
+  if (debug) printf("closing  OK\n");
+  //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
+}
+
+void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
   FILE *fp = NULL;
   float val;
@@ -298,14 +511,13 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
 
 #ifdef MULTIFOLDER
   sprintf(filenamestar,"data/%05d/star/star.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
-	sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+  sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
 #else
   sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
-	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+  sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
 
-  FILE *fstar=NULL;
-  fstar=fopen(filenamestar,"wb");
+  FILE *fstar=fopen(filenamestar,"wb");
   if(fstar == NULL) {
     printf("Cannot open %s\n", filenamestar);
     abort();
@@ -313,24 +525,32 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
   fwrite(&nstar,1,sizeof(int)  ,fstar);
   fwrite(&tsimf,1,sizeof(float),fstar);
 
-  FILE *fpart=NULL;
-  fpart=fopen(filenamepart,"wb");
-	if(fpart == NULL){
+  FILE *fpart=fopen(filenamepart,"wb");
+  if(fpart == NULL){
     printf("Cannot open %s\n", filenamepart);
     abort();
-	}
+  }
   fwrite(&npart,1,sizeof(int)  ,fpart);
   fwrite(&tsimf,1,sizeof(float),fpart);
 
 #else
+  char filename[128];
+#ifdef MULTIFOLDER
+  sprintf(filename,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
+  sprintf(filename,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
   fp=fopen(filename,"wb");
-	if(fp == NULL){
+  if(fp == NULL){
     printf("Cannot open %s\n", filename);
     abort();
-	}
+  }
   fwrite(&npart,1,sizeof(int)  ,fp);
   fwrite(&tsimf,1,sizeof(float),fp);
 #endif // STARS
+
+
 
   for(level=levelcoarse;level<=levelmax;level++) // looping over levels
     {
@@ -404,171 +624,6 @@ void dumppart_serial(struct OCT **firstoct,char filename[], int levelcoarse, int
 }
 
 void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
-
-  float val;
-  int vali;
-  int ipart=0;
-  int istar=0;
-  int level;
-  struct OCT *nextoct;
-  struct OCT oct;
-  REAL dxcur;
-  struct PART *nexp;
-  struct PART *curp;
-  int icell;
-  float tsimf=tsim;
-  int i;
-
-//-----------------------------------------------------------------------------------------------
-  int npart=0;
-  for (i=0;i<cpu->nproc;i++){
-   npart+=cpu->mpiio_nparts[i];
-  }
-
-  char filenamepart[128];
-#ifdef MULTIFOLDER
-#ifndef MPIIO
-	sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
-#else
-	sprintf(filenamepart,"data/%05d/part.%05d",*(cpu->ndumps),*(cpu->ndumps));
-#endif // MPIIO
-#else
-	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
-#endif // MUTLTIFOLDER
-
-  MPI_File fpart=NULL;
-  MPI_File_open(cpu->comm,filenamepart,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fpart);
-	if(fpart==NULL){
-    printf("Cannot open %s\n", filenamepart);
-    abort();
-  }
-
-	MPI_File_write(fpart, &npart,1, MPI_INT, MPI_STATUS_IGNORE);
-  MPI_File_write(fpart, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  const size_t part_header_size = sizeof(int)+sizeof(float);
-
-  const size_t part_size = 10;
-  MPI_Datatype part_type;
-  MPI_Type_contiguous(part_size, MPI_FLOAT, &part_type);
-  MPI_Type_commit(&part_type);
-
-  MPI_Offset part_offset = part_size*cpu->mpiio_part_offsets*sizeof(float) + part_header_size ;
-  MPI_File_set_view(fpart, part_offset, MPI_FLOAT, part_type, "native", MPI_INFO_NULL);
-
-//-----------------------------------------------------------------------------------------------
-#ifdef STARS
-  int nstar=0;
-  for (i=0;i<cpu->nproc;i++){
-   nstar+=cpu->mpiio_nstars[i];
-  }
-
-  char filenamestar[128];
-#ifdef MULTIFOLDER
-#ifndef MPIIO
-  sprintf(filenamestar,"data/%05d/star/star.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
-#else
-  sprintf(filenamestar,"data/%05d/star.%05d",*(cpu->ndumps),*(cpu->ndumps));
-#endif // MPIIO
-#else
-  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
-#endif // MUTLTIFOLDER
-
-  MPI_File fstar=NULL;
-  MPI_File_open(cpu->comm,filenamestar,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fstar);
-  if(fstar==NULL){
-    printf("Cannot open %s\n", filenamestar);
-    abort();
-  }
-  MPI_File_write(fstar, &nstar,1, MPI_INT, MPI_STATUS_IGNORE);
-  MPI_File_write(fstar, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  const size_t star_header_size = sizeof(int)+sizeof(float);
-
-  const size_t star_size = 11;
-
-  MPI_Datatype star_type;
-  MPI_Type_contiguous(star_size, MPI_FLOAT, &star_type);
-  MPI_Type_commit(&star_type);
-
-  MPI_Offset star_offset = star_size*cpu->mpiio_part_offsets*sizeof(float) + star_header_size ;
-  MPI_File_set_view(fstar, star_offset, MPI_FLOAT, star_type, "native", MPI_INFO_NULL);
-#endif // STARS
-//-----------------------------------------------------------------------------------------------
-
-  for(level=levelcoarse;level<=levelmax;level++) // looping over levels
-    {
-      //printf("level=%d\n",level);
-      // setting the first oct
-
-      nextoct=firstoct[level-1];
-      do // sweeping through the octs of level
-	{
-	  if(nextoct==NULL) continue; // in case the level is empty
-	  oct=(*nextoct);
-//	  dxcur=1./POW(2,oct.level);
-	  nextoct=oct.next;
-	  for(icell=0;icell<8;icell++) // looping over cells in oct
-	    {
-	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
-	      if(nexp!=NULL){
-		do{
-		  curp=nexp;
-		  nexp=curp->next;
-
-
-      MPI_File *fp = NULL;
-#ifdef STARS
-		  if(curp->isStar) 		fp=&fstar;
-		  else 			        	fp=&fpart;
-#else
-   //                       fp=&fpart;
-#endif // STARS
-
-		  val=(float)curp->x;			  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-      val=(float)curp->y;			  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->z;			  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-#ifndef PARTN
-#ifdef PART_EGY
-		  val=(float)curp->ekin+curp->epot;
-                                MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->fx;		  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->fy;		  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-#else
-		  val=(float)curp->vx;		  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->vy;		  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->vz;		  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-#endif // PART_EGY
-#else
-		  val=(float)curp->fx;			MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->fy;			MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)curp->fz;			MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-#endif // PARTN
-		  val=(float)(curp->idx);	  MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)(curp->mass);	MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)(curp->epot);	MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  val=(float)(curp->ekin);	MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-#ifdef STARS
-		  if(curp->isStar) {
-		    val = curp->age;		    MPI_File_write(*fp, &val,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-		  }
-#endif // STARS
-		  ipart++;
-
-		}while(nexp!=NULL);
-	      }
-	    }
-	}while(nextoct!=NULL);
-    }
-
-
-  MPI_File_close(&fpart);
-#ifdef STARS
-  MPI_File_close(&fstar);
-#endif // STARS
-
-  //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
-}
-
-void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   int ipart=0;
   int istar=0;
@@ -725,6 +780,162 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 }
 #endif // PIC
 
+void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
+
+  int ipart=0;
+  int istar=0;
+  float tsimf=tsim;
+
+//-----------------------------------------------------------------------------------------------
+
+  float *part_tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],10*sizeof(float));
+  int i_tmp_part = 0;
+
+#ifdef STARS
+  float *star_tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],11*sizeof(float));
+  int i_tmp_star = 0;
+#endif // STARS
+
+  int level;
+  for(level=levelcoarse;level<=levelmax;level++){
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
+      int icell;
+      for(icell=0;icell<8;icell++){
+	      struct PART *nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
+	      if(nexp!=NULL){
+          do{
+            struct PART *curp=nexp;
+            nexp=curp->next;
+
+      float* tmp=part_tmp;
+      int* i_tmp=&i_tmp_part;
+#ifdef STARS
+		  if(curp->isStar){
+        tmp=star_tmp;
+        i_tmp=&i_tmp_star;
+      }
+#endif // STARS
+
+		  tmp[(*i_tmp)++]=(float)curp->x;
+      tmp[(*i_tmp)++]=(float)curp->y;
+		  tmp[(*i_tmp)++]=(float)curp->z;
+#ifndef PARTN
+#ifdef PART_EGY
+		  tmp[(*i_tmp)++]=(float)curp->ekin+curp->epot;
+		  tmp[(*i_tmp)++]=(float)curp->fx;
+		  tmp[(*i_tmp)++]=(float)curp->fy;
+#else
+		  tmp[(*i_tmp)++]=(float)curp->vx;
+		  tmp[(*i_tmp)++]=(float)curp->vy;
+		  tmp[(*i_tmp)++]=(float)curp->vz;
+#endif // PART_EGY
+#else
+		  tmp[(*i_tmp)++]=(float)curp->fx;
+		  tmp[(*i_tmp)++]=(float)curp->fy;
+		  tmp[(*i_tmp)++]=(float)curp->fz;
+#endif // PARTN
+		  tmp[(*i_tmp)++]=(float)(curp->idx);
+		  tmp[(*i_tmp)++]=(float)(curp->mass);
+		  tmp[(*i_tmp)++]=(float)(curp->epot);
+		  tmp[(*i_tmp)++]=(float)(curp->ekin);
+#ifdef STARS
+		  if(curp->isStar) {
+		    tmp[(*i_tmp)++]=(float)(curp->age);
+		  }
+#endif // STARS
+		  ipart++;
+
+          }while(nexp!=NULL);
+	      }
+	    }
+    }
+  }
+
+//-----------------------------------------------------------------------------------------------
+  int i;
+  int npart=0;
+  for (i=0;i<cpu->nproc;i++){
+   npart+=cpu->mpiio_nparts[i];
+  }
+
+  char filenamepart[128];
+#ifdef MULTIFOLDER
+#ifndef MPIIO
+	sprintf(filenamepart,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
+	sprintf(filenamepart,"data/%05d/part.%05d",*(cpu->ndumps),*(cpu->ndumps));
+#endif // MPIIO
+#else
+	sprintf(filenamepart,"data/part.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+  MPI_File fpart;
+  MPI_File_open(cpu->comm,filenamepart,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fpart);
+	if(fpart==NULL){
+    printf("Cannot open %s\n", filenamepart);
+    abort();
+  }
+
+	MPI_File_write(fpart, &npart,1, MPI_INT, MPI_STATUS_IGNORE);
+  MPI_File_write(fpart, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
+  const size_t part_header_size = sizeof(int)+sizeof(float);
+
+  const size_t part_size = 10;
+  MPI_Datatype part_type;
+  MPI_Type_contiguous(part_size, MPI_FLOAT, &part_type);
+  MPI_Type_commit(&part_type);
+
+  MPI_Offset part_offset = part_size*cpu->mpiio_part_offsets*sizeof(float) + part_header_size ;
+  MPI_File_set_view(fpart, part_offset, MPI_FLOAT, part_type, "native", MPI_INFO_NULL);
+  MPI_File_write(fpart, part_tmp,i_tmp_part, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_close(&fpart);
+  free(part_tmp);
+
+//-----------------------------------------------------------------------------------------------
+#ifdef STARS
+  int nstar=0;
+  for (i=0;i<cpu->nproc;i++){
+   nstar+=cpu->mpiio_nstars[i];
+  }
+
+  char filenamestar[128];
+#ifdef MULTIFOLDER
+#ifndef MPIIO
+  sprintf(filenamestar,"data/%05d/star/star.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
+#else
+  sprintf(filenamestar,"data/%05d/star.%05d",*(cpu->ndumps),*(cpu->ndumps));
+#endif // MPIIO
+#else
+  sprintf(filenamestar,"data/star.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+#endif // MUTLTIFOLDER
+
+  MPI_File fstar;
+  MPI_File_open(cpu->comm,filenamestar,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&fstar);
+  if(fstar==NULL){
+    printf("Cannot open %s\n", filenamestar);
+    abort();
+  }
+  MPI_File_write(fstar, &nstar,1, MPI_INT, MPI_STATUS_IGNORE);
+  MPI_File_write(fstar, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
+  const size_t star_header_size = sizeof(int)+sizeof(float);
+
+  const size_t star_size = 11;
+
+  MPI_Datatype star_type;
+  MPI_Type_contiguous(star_size, MPI_FLOAT, &star_type);
+  MPI_Type_commit(&star_type);
+
+  MPI_Offset star_offset = star_size*cpu->mpiio_part_offsets*sizeof(float) + star_header_size ;
+  MPI_File_set_view(fstar, star_offset, MPI_FLOAT, star_type, "native", MPI_INFO_NULL);
+  MPI_File_write(fstar, star_tmp,i_tmp_star, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_close(&fstar);
+  free(star_tmp);
+#endif // STARS
+//printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
+}
+
 void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param){
 
   int icur,ii,jj,kk;
@@ -803,8 +1014,8 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
 
   int n_field=0;
-  for (i=0;i<param->out->n_field_tot; i++){
-    if(param->out->field_id[i]){
+  for (i=0;i<param->out_grid->n_field_tot; i++){
+    if(param->out_grid->field_id[i]){
 
       //reduce data
       int i_tmp=0;
@@ -817,7 +1028,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
           for(icell=0;icell<8;icell++){
             struct CELL * cell= &oct->cell[icell];
             if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
-              tmp[i_tmp++] = (float)assign_field(i,cell);
+              tmp[i_tmp++] = (float)assign_grid_field(i,cell);
             }
           }
         }
@@ -825,7 +1036,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
       //Open the field file
       char dat_name[256];
-      sprintf(dat_name,"%s%s.%05d",folder,param->out->field_name[i],*(cpu->ndumps));
+      sprintf(dat_name,"%s%s.%05d",folder,param->out_grid->field_name[i],*(cpu->ndumps));
 
       MPI_File f_dat;
       MPI_File_open(cpu->comm,dat_name,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&f_dat);
@@ -876,16 +1087,16 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
 // Opening all the fields files
   static FILE **f_dat;
-  f_dat=(FILE **)malloc(param->out->n_field*sizeof(FILE *));
+  f_dat=(FILE **)malloc(param->out_grid->n_field*sizeof(FILE *));
 
-  for(i=0;i<param->out->n_field_tot;i++){
-    if(param->out->field_id[i]){
+  for(i=0;i<param->out_grid->n_field_tot;i++){
+    if(param->out_grid->field_id[i]){
 
       char folder_field[128];
-      sprintf(folder_field,"%s%s/",folder, param->out->field_name[i]);
+      sprintf(folder_field,"%sgrid_%s/",folder, param->out_grid->field_name[i]);
       mkdir(folder_field, 0755);
       char dat_name[256];
-      sprintf(dat_name,"%s%s.%05d.p%05d",folder_field,param->out->field_name[i],*(cpu->ndumps),cpu->rank);
+      sprintf(dat_name,"%s%s.%05d.p%05d",folder_field,param->out_grid->field_name[i],*(cpu->ndumps),cpu->rank);
 
       f_dat[n_field]=fopen(dat_name,"wb");
       if(f_dat[n_field] == NULL){
@@ -915,9 +1126,9 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
           // get and write the fields
           int ii=0;
-          for (i =0;i<param->out->n_field_tot; i++){
-            if(param->out->field_id[i]){
-              float dat = (float)assign_field(i,cell);
+          for (i =0;i<param->out_grid->n_field_tot; i++){
+            if(param->out_grid->field_id[i]){
+              float dat = (float)assign_grid_field(i,cell);
               fwrite(&dat,sizeof(float),1,f_dat[ii]);
               ii++;
             }
@@ -929,8 +1140,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
   // write n_cells and close the fields files
   n_field=0;
-  for(i=0;i<param->out->n_field_tot;i++){
-    if(param->out->field_id[i]){
+  for(i=0;i<param->out_grid->n_field_tot;i++){
+    if(param->out_grid->field_id[i]){
       rewind(f_dat[n_field]);
       fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
       fclose(f_dat[n_field]);
@@ -956,14 +1167,21 @@ void makeFolders(struct CPUINFO *cpu){
 
 #ifndef MPIIO
 #ifdef PIC
+
+#ifndef ALLOCT
   sprintf(folder_field,"%spart/",folder_step);
   mkdir(folder_field, 0755);
+#endif // ALLOCT
+
 //  copy_param(folder_field);
 #endif // PIC
 
 #ifdef STARS
+#ifndef ALLOCT
   sprintf(folder_field,"%sstar/",folder_step);
   mkdir(folder_field, 0755);
+#endif // ALLOCT
+
 //  copy_param(folder_field);
 #endif // STARS
 #endif // MPIIO
@@ -1022,7 +1240,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   MPI_Barrier(cpu->comm);
   REAL tt1=MPI_Wtime();
 #ifndef MPIIO
-	  dumppart_serial(firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
+	  dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
 	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO

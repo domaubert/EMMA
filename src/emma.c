@@ -210,8 +210,11 @@ int main(int argc, char *argv[])
   param.cosmo=&cosmo;
 #endif
 
-  struct OUTPUTPARAM out;
-  param.out=&out;
+  struct OUTPUTPARAM out_grid;
+  param.out_grid=&out_grid;
+
+  struct OUTPUTPARAM out_part;
+  param.out_part=&out_part;
 
 #ifdef STARS
   struct STARSPARAM stars;

@@ -107,7 +107,7 @@ void dumpFile(char *filename_in, char *filename_out){
   }
 }
 
-void readOutputParam(char *fparam, struct RUNPARAMS *param){
+void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
 
   char *field_name [] ={
     // The field order has to be the same as in param.output for consistency
@@ -165,19 +165,79 @@ void readOutputParam(char *fparam, struct RUNPARAMS *param){
     while (fscanf(f, "%s\n", stream) != EOF) {
 
       if ( strncmp( stream,"#", 1) ){
-        param->out->field_id[n_field_tot] = 1;
-        param->out->field_name[n_field_tot] = field_name[n_field_tot];
+        param->out_grid->field_id[n_field_tot] = 1;
+        param->out_grid->field_name[n_field_tot] = field_name[n_field_tot];
         n_field++;
       }else{
-        param->out->field_id[n_field_tot] = 0;
+        param->out_grid->field_id[n_field_tot] = 0;
       }
       n_field_tot++;
     }
     fclose(f);
   }
 
-  param->out->n_field=n_field;
-  param->out->n_field_tot=n_field_tot;
+  param->out_grid->n_field=n_field;
+  param->out_grid->n_field_tot=n_field_tot;
+
+/*
+  int i;
+  for (i=0;i<n_field_tot; i++){
+    if (param->out->field_id[i])
+    printf("%d\t%s\n",param->out->field_id[i], param->out->field_name[i]);
+  }
+*/
+
+//abort();
+
+}
+
+void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
+
+  char *field_name [] ={
+    // The field order has to be the same as in param.output for consistency
+    "x",
+    "y",
+    "z",
+    "vx",
+    "vy",
+    "vz",
+    "fx",
+    "fy",
+    "fz",
+    "idx",
+    "mass",
+    "epot",
+    "ekin",
+    "etot",
+    "age"
+  };
+
+  int n_field=0;
+  int n_field_tot=0;
+
+  FILE *f=NULL;
+  f=fopen(fparam,"r");
+  if(f==NULL){
+      printf("ERROR : cannot open the parameter file (%s given), please check\n",fparam);
+      abort();
+  }else{
+    char stream[256];
+    while (fscanf(f, "%s\n", stream) != EOF) {
+
+      if ( strncmp( stream,"#", 1) ){
+        param->out_part->field_id[n_field_tot] = 1;
+        param->out_part->field_name[n_field_tot] = field_name[n_field_tot];
+        n_field++;
+      }else{
+        param->out_part->field_id[n_field_tot] = 0;
+      }
+      n_field_tot++;
+    }
+    fclose(f);
+  }
+
+  param->out_part->n_field=n_field;
+  param->out_part->n_field_tot=n_field_tot;
 
 /*
   int i;
@@ -272,7 +332,6 @@ void read_mass_loss(struct RUNPARAMS *param){
     abort();
   }
 }
-
 
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
@@ -499,7 +558,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #endif // UVBKG
 
 #ifdef ALLOCT
-  readOutputParam("param.output", param);
+  readOutputParam_grid("param.grid_output", param);
+  readOutputParam_part("param.part_output", param);
 #endif // ALLOCT
 
 #ifdef WRAD
@@ -636,19 +696,23 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 
   printf("Dumping parameter files \n\n");
 
-  dumpInfo("data/param.info", param, cpu);
+  dumpInfo("param.info", param, cpu);
   printf("\n");
-  dumpFile("param.mk", "data/param.mk");
+/*
+  dumpFile("param.mk", "param.mk");
   printf("\n");
-  dumpFile("param.h", "data/param.h");
+  dumpFile("param.h", "param.h");
   printf("\n");
-  dumpFile(fparam, "data/param.run");
+  dumpFile(fparam, "param.run");
   printf("\n");
+
 #ifdef ALLOCT
-  dumpFile("param.output", "data/param.output");
+  dumpFile("param.part_output", "param.part_output");
+  printf("\n");
+  dumpFile("param.grid_output", "param.grid_output");
   printf("\n");
 #endif // ALLOCT
-
+*/
 #ifdef TESTCOSMO
   REAL threshold=param->amrthresh0;
 #ifndef ZOOM
@@ -784,7 +848,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
 
-    char* filename = "data/param.avg";
+    char* filename = "param.avg";
 
     FILE* fp=NULL;
 

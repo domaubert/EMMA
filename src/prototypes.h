@@ -268,7 +268,8 @@ struct RUNPARAMS{
   int nrestart; ///< the restart snapshot
   int nsubcycles; ///< number of subcyles in AMR advance procedure
 
-  struct OUTPUTPARAM *out;
+  struct OUTPUTPARAM *out_grid;
+  struct OUTPUTPARAM *out_part;
 
 #ifdef TESTCOSMO
   struct COSMOPARAM *cosmo; ///< the cosmological parameters

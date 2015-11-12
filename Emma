@@ -40,7 +40,8 @@ def copy_utils():
 def copy_param():
 	os.system("cp param.run %s"%(FOLDER))
 	os.system("cp param.mk %s"%(FOLDER))
-	os.system("cp param.output %s"%(FOLDER))
+	os.system("cp param.grid_output %s"%(FOLDER))
+	os.system("cp param.part_output %s"%(FOLDER))
 	
 def get_arch():
 	file = "Makefile"
