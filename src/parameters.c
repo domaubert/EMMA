@@ -407,16 +407,14 @@ void readAtomic(struct RUNPARAMS *param){
 }
 #endif // WRAD
 
-void GetParameters(char *fparam, struct RUNPARAMS *param){
+void ReadParameters(char *fparam, struct RUNPARAMS *param){
+  int debug=1;
+
   FILE *buf=NULL;
   char stream[256];
   size_t rstat;
   double dummyf;
   char RF[]="%s %lf";
-  int i;
-
-  int debug=0;
-
 
   buf=fopen(fparam,"r");
   if(buf==NULL)
@@ -507,6 +505,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->feedback_frac	=(REAL)dummyf;      if (debug) printf("param->sn->feedback_frac=%e\n", param->sn->feedback_frac);
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->ejecta_proportion	=(REAL)dummyf;  if (debug) printf("param->sn->ejecta_proportion=%e\n",param->sn->ejecta_proportion);
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->sn_egy	=(REAL)dummyf;              if (debug) printf("param->sn->sn_egy=%e\n", param->sn->sn_egy);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->tlife	=(REAL)dummyf;              if (debug) printf("param->sn->tlife=%e\n", param->sn->tlife);
+
 #else
 	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
@@ -525,10 +525,14 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&param->movie->zmax);    if (debug) printf("param->movie->zmax=%e\n", param->movie->zmax);
 #endif
       fclose(buf);
-
     }
 
  if (debug) abort();
+}
+
+void GetParameters(char *fparam, struct RUNPARAMS *param){
+
+  ReadParameters(fparam, param);
 
   // computing the maxhash
   int val=(POW(2,param->lmax-1)<=512?POW(2,param->lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells
