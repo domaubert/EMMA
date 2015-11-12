@@ -508,7 +508,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->tlife	=(REAL)dummyf;              if (debug) printf("param->sn->tlife=%e\n", param->sn->tlife);
 
 #else
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
 #ifdef MOVIE
