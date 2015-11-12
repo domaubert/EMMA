@@ -810,7 +810,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       nexp=curp->next;
       if(curp->isStar){
         mstar += curp->mass;
-        if(curp->isStar==2||curp->isStar==3){
+        if(curp->isStar==5||curp->isStar==7){
           Nsn++;
         }
         //------------------------------------------------//

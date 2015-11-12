@@ -86,6 +86,7 @@ typedef double REAL;
 #endif // COARSERAD
 
 
+
 #ifdef TESTCOSMO
 struct COSMOPARAM{
   REAL aexp;
@@ -125,12 +126,14 @@ struct SNPARAM{
   REAL ejecta_proportion;
   REAL sn_egy;
   REAL trig_sn;
+  REAL tlife; ///< time for SN explosion in year
 
   REAL *egy_loss_t;
   REAL *egy_loss_egy;
 
   REAL *mass_loss_t;
   REAL *mass_loss_mass;
+
 };
 #endif // SUPERNOVAE
 
@@ -665,7 +668,7 @@ struct PART
 
 #ifdef STARS
   int  isStar;
-  int radiative_state;
+  int  radiative_state;
   REAL rhocell;
   REAL age;
 #endif

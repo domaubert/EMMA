@@ -16,3 +16,5 @@ void egypart(struct CPUINFO *cpu, REAL *ekintot, REAL *epottot,struct RUNPARAMS 
 void L_reset_is_part(int level,struct OCT** firstoct);
 
 void printPart(struct PART* part);
+int checkPartNan(struct PART* part);
+

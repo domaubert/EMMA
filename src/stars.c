@@ -40,7 +40,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->idx = idx;
 	star->level = level;
 	star->is = is;
-	star->isStar = 1;
+	star->isStar = 6;
 	star->rhocell = field->d;
 
   // random position
@@ -378,15 +378,21 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 
 int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 // ----------------------------------------------------------//
-/// Define the state of a particle in function of his age\n
-/// State are defined as follow:\n
-///
-///  state = 0 -> Dark Matter\n
-///  state = 1 -> Radiative Star\n
-///  state = 2 -> Supernovae\n
-///  state = 3 -> Supernovae + decreasing luminosity\n
-///  state = 4 -> Decreasing luminosity\n
-///  state = 5 -> Dead star
+/**
+  Define the state of a particle in function of his age\n
+  State are defined as follow:\n
+
+  stars radiation  supernovae
+
+  000 -> 0 -> DM
+  001 -> 1 -> Not allowed
+  010 -> 2 -> Not allowed
+  011 -> 3 -> Not allowed
+  100 -> 4 -> Dead Star
+  101 -> 5 -> SN
+  110 -> 6 -> Rad
+  111 -> 7 -> SN + rad
+*/
 // ----------------------------------------------------------//
 
   if (param->stars->n){
@@ -406,47 +412,39 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
           struct PART *curp=nexp;
           nexp=curp->next;
 
-          REAL t0 =  param->cosmo->tphy - curp->age;
-          //------------------------------------------------//
+          REAL age =  param->cosmo->tphy - curp->age;
 
-          if(curp->isStar && curp->isStar < 5){ // Star not dead
 
-            if(t0>=0){ // for inter-level communications
-              REAL tlife = param->stars->tlife;
+          if( curp->isStar && !(curp->isStar==4) ){ // isStar and not dead
+            if(age>=0){ // for inter-level communications
 
-              if( (curp->isStar==4) && (t0>=100*tlife) ){
-                curp->isStar=5; // decreasing luminosity -> dead star
-              }
-
-              if( curp->isStar==3){
-                curp->isStar=4; //Supernovae + decreasing luminosity -> decreasing luminosity
-                //curently supernovae are instantaneous
-                /// TODO implement "slow" feedback
-              }
-
-              if(curp->isStar==2){
-                curp->isStar=5; // supernovae -> dead star
-                //curently supernovae are instantaneous
-              }
-
-              if( (curp->isStar==1) && (t0>=tlife) ){
-#ifdef SUPERNOVAE
+//------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------//
   #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-                curp->isStar=3; // radiative -> supernovae + decreasing luminosity
+              REAL tlife_rad = param->stars->tlife;
   #else
-                curp->isStar=2; // radiative -> supernovae
-  #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
-#else
-                curp->isStar=4; // radiative -> decreasing luminosity
-#endif // SUPERNOVAE
-              }
+              REAL tlife_rad = 100*param->stars->tlife;
+  #endif
+
+              REAL tlife_sn  = param->sn->tlife;
+
+              int isSN =age>=tlife_sn ?1:0;
+              int isRAD=age>=tlife_rad?1:0;
+
+              if( (isRAD==0) && (isSN==0)) curp->isStar=4;
+              if( (isRAD==0) && (isSN==1)) curp->isStar=5;
+              if( (isRAD==1) && (isSN==0)) curp->isStar=6;
+              if( (isRAD==1) && (isSN==1)) curp->isStar=7;
+
+//------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------//
+
             }
           }
-          //------------------------------------------------//
 
           int igrp_time;
           for(igrp_time=0;igrp_time<NGRP_TIME;igrp_time++){
-            if (t0>param->atomic.time_bound[igrp_time]){
+            if (age>param->atomic.time_bound[igrp_time]){
               curp->radiative_state=igrp_time;
               break;
             }
@@ -461,6 +459,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
   }
   return 0;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

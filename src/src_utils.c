@@ -224,44 +224,51 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
    	struct PART *curp=nexp;
     nexp=curp->next;
 
-    if ((curp->isStar==1)){
-      nss++;
-      //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
-      REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-
-      int igrp;
-      for(igrp=0;igrp<NGRP_SPACE;igrp++){
-        cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
-      }
-
-      //printf("SRC= %e\n",cell->rfield.src);
-      //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
-      flag=1;
-    }
+    if ((curp->isStar==6) || (curp->isStar==7)){
 
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-    if (curp->isStar==3 || curp->isStar==4){ //Supernovae + decreasing luminosity OR decreasing luminosity
-   /* --------------------------------------------------------------------------
-    * decreasing luminosity state, at the end of their life, star still radiate
-    * with a luminosity function of a decreasing power law of time.
-    * Slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
-    * --------------------------------------------------------------------------
-    */
-
-      nss++;
-      REAL slope = -4.;
-      //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
-      REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
-      REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
-
-      int igrp;
-      for(igrp=0;igrp<NGRP_SPACE;igrp++){
-        cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  src*(t<1.?1.:POW(t,slope))*(t>0?1.:0);
-      }
-      //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
-      flag=1;
-    }
+      REAL age =  param->cosmo->tphy - curp->age;
+      if (age<param->stars->tlife){
 #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
+
+        nss++;
+        //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
+        REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
+
+        int igrp;
+        for(igrp=0;igrp<NGRP_SPACE;igrp++){
+          cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
+        }
+
+        //printf("SRC= %e\n",cell->rfield.src);
+        //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
+        flag=1;
+
+
+#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+      }else{
+       /* --------------------------------------------------------------------------
+        * decreasing luminosity state, at the end of their life, star still radiate
+        * with a luminosity function of a decreasing power law of time.
+        * Slope derived from http://www.stsci.edu/science/starburst99/figs/fig77.html
+        * --------------------------------------------------------------------------
+        */
+
+        nss++;
+        REAL slope = -4.;
+        //printf("star found ! t=%e age=%e agelim=%e idx=%d COUNT=%d\n",tcur,curp->age,param->stars->tlife,curp->idx,(( (tcur - curp->age) < param->stars->tlife  )&&(tcur>= curp->age)));
+        REAL src = (curp->mass*param->unit.unit_d)*srcint/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2);
+        REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
+
+        int igrp;
+        for(igrp=0;igrp<NGRP_SPACE;igrp++){
+          cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  src*(t<1.?1.:POW(t,slope))*(t>0?1.:0);
+        }
+        //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
+        flag=1;
+      }
+#endif // DECREASE_EMMISIVITY_AFTER_TLIFE
+    }
 
   }while(nexp!=NULL);
 

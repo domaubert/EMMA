@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <stdbool.h>
+
 
 #include "hilbert.h"
 #include "prototypes.h"

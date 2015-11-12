@@ -571,7 +571,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL E= get_egy(param,curp,aexp,dt,level);
 
 #else
-    if (curp->isStar==2 || curp->isStar==3){ // if curp is in SN state
+    if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
       REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
 #endif // CONTINUOUS_SN
 

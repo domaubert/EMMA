@@ -31,6 +31,112 @@ void printPart(struct PART* part){
 
 }
 
+int checkPartNan(struct PART* part){
+
+  int getNan=0;
+
+  if(isnan(part->x)){
+    getNan ++;
+    printf("part x is NAN\n");
+  }
+
+  if(isnan(part->y)){
+    getNan ++;
+    printf("part y is NAN\n");
+  }
+
+  if(isnan(part->z)){
+    getNan ++;
+    printf("part z is NAN\n");
+  }
+
+  if(isnan(part->vx)){
+    getNan ++;
+    printf("part vx is NAN\n");
+  }
+
+  if(isnan(part->vy)){
+    getNan ++;
+    printf("part vy is NAN\n");
+  }
+
+  if(isnan(part->vz)){
+    getNan ++;
+    printf("part vz is NAN\n");
+  }
+
+#ifndef TESTCOSMO
+    if(isnan(part->fx)){
+    getNan ++;
+    printf("part fx is NAN\n");
+  }
+
+  if(isnan(part->fy)){
+    getNan ++;
+    printf("part fy is NAN\n");
+  }
+
+  if(isnan(part->fz)){
+    getNan ++;
+    printf("part fz is NAN\n");
+  }
+#endif
+
+  if(isnan(part->mass)){
+    getNan ++;
+    printf("part mass is NAN\n");
+  }
+
+  if(isnan(part->idx)){
+    getNan ++;
+    printf("part idx is NAN\n");
+  }
+
+  if(isnan(part->level)){
+    getNan ++;
+    printf("part level is NAN\n");
+  }
+
+  if(isnan(part->is)){
+    getNan ++;
+    printf("part is is NAN\n");
+  }
+
+  if(isnan(part->epot)){
+    getNan ++;
+    printf("part epot is NAN\n");
+  }
+
+  if(isnan(part->ekin)){
+    getNan ++;
+    printf("part ekin is NAN\n");
+  }
+
+#ifdef STARS
+
+  if(isnan(part->isStar)){
+    getNan ++;
+    printf("part isStar is NAN\n");
+  }
+
+  if(isnan(part->radiative_state)){
+    getNan ++;
+    printf("part radiative_state is NAN\n");
+  }
+
+  if(isnan(part->rhocell)){
+    getNan ++;
+    printf("part rhocell is NAN\n");
+  }
+
+  if(isnan(part->age)){
+    getNan ++;
+    printf("part age is NAN\n");
+  }
+
+#endif
+  return getNan;
+};
 
 //------------------------------------------------------------------------
 

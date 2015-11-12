@@ -2,10 +2,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "hilbert.h"
-#include "prototypes.h"
 #include <unistd.h>
 #include <float.h>
+
+#include "hilbert.h"
+#include "prototypes.h"
+#include "particle.h"
+
 #ifdef WHYDRO2
 #include "hydro_utils.h"
 #endif
@@ -138,6 +141,13 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		  do{
 		    curp=nexp;
 		    nexp=curp->next;
+
+        if(checkPartNan(curp)){
+          abort();
+        }
+
+
+
 
 		    nlev++;
 		    ntot++;
