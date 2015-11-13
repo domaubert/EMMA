@@ -758,7 +758,7 @@ void printFieldInfo(struct FIELD_INFO *field){
   printf("max=%e\n",field->max);
   printf("mean=%e\n",field->mean);
   printf("sigma=%e\n",field->sigma);
-};
+}
 
 void initFieldInfo(struct FIELD_INFO *field){
   field->n=0;
@@ -786,6 +786,20 @@ void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
 
 void setSigmaFieldInfo(struct FIELD_INFO *field){
   field->sigma = SQRT(field->sigma - field->mean*field->mean);
+}
+
+void writeFieldInfoHeader(char *field_name , FILE* fp){
+  fprintf(fp,"mean_%s \t",field_name);
+  fprintf(fp,"sigma_%s \t",field_name);
+  fprintf(fp,"min_%s \t",field_name);
+  fprintf(fp,"max_%s \t",field_name);
+}
+
+void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, char* format){
+  fprintf(fp, format,field->mean);
+  fprintf(fp, format,field->sigma);
+  fprintf(fp, format,field->min);
+  fprintf(fp, format,field->max);
 }
 
 #endif // WMPI
@@ -856,7 +870,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   }
 
 #ifdef WMPI
-
   comFieldInfo(cpu,&(param->physical_state->xion));
   comFieldInfo(cpu,&(param->physical_state->rho));
   comFieldInfo(cpu,&(param->physical_state->T));
@@ -871,21 +884,19 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   setSigmaFieldInfo(&(param->physical_state->rho));
   setSigmaFieldInfo(&(param->physical_state->T));
 
-  printFieldInfo(&(param->physical_state->xion));
-  printFieldInfo(&(param->physical_state->rho));
-  printFieldInfo(&(param->physical_state->T));
-
-
+  int debug=0;
+  if (debug){
+    printFieldInfo(&(param->physical_state->xion));
+    printFieldInfo(&(param->physical_state->rho));
+    printFieldInfo(&(param->physical_state->T));
+  }
 
 }
-
-
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
 /**
   * At each timestep, write information about the average state of several physical quantities
   */
-
 
   getStepInfo(firstoct, param, cpu, nsteps, dt,t);
 
@@ -912,21 +923,21 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #endif
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
-      fprintf(fp,"max_rho\t\t");
-      fprintf(fp,"mean_xion\t");
-      fprintf(fp,"mean_T\t\t");
-      fprintf(fp,"max_T\t\t");
+
+
+      writeFieldInfoHeader( "xion", fp);
+      writeFieldInfoHeader( "T    ", fp);
+      writeFieldInfoHeader( "rho", fp);
+
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
       fprintf(fp,"SN\t\t");
       fprintf(fp,"src");
       fprintf(fp,"\n");
-
     }else{
       fp=fopen(filename,"a+");
       if(fp == NULL) printf("Cannot open %s\n", filename);
     }
-
 
     fprintf(fp, "%d\t",nsteps);
 #ifdef TESTCOSMO
@@ -936,14 +947,16 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format,0.);
     fprintf(fp, real_format,0.);
 #endif // TESTCOSMO
-    fprintf(fp, real_format,t*param->unit.unit_t/MYR*1e6);
+    fprintf(fp, real_format,param->cosmo->tphy);
     fprintf(fp, real_format,dt);
-    fprintf(fp, real_format ,(float)param->physical_state->max_level);
-    fprintf(fp, real_format,param->physical_state->rho.max);
 
-    fprintf(fp, real_format,param->physical_state->xion.mean);
-    fprintf(fp, real_format,param->physical_state->T.mean);
-    fprintf(fp, real_format,param->physical_state->T.max);
+
+    fprintf(fp, real_format ,(float)param->physical_state->max_level);
+
+    writeFieldInfo(&(param->physical_state->xion),fp, real_format);
+    writeFieldInfo(&(param->physical_state->T),fp, real_format);
+    writeFieldInfo(&(param->physical_state->rho),fp, real_format);
+
 
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
