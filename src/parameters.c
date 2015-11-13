@@ -753,7 +753,6 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 
 void printFieldInfo(struct FIELD_INFO *field){
   printf("************\n");
-  printf("n=%d\n",field->n);
   printf("min=%e\n",field->min);
   printf("max=%e\n",field->max);
   printf("mean=%e\n",field->mean);
@@ -761,7 +760,6 @@ void printFieldInfo(struct FIELD_INFO *field){
 }
 
 void initFieldInfo(struct FIELD_INFO *field){
-  field->n=0;
   field->mean=0;
   field->min=INFINITY;
   field->max=0;
@@ -769,7 +767,6 @@ void initFieldInfo(struct FIELD_INFO *field){
 }
 
 void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
-  field->n++;
   field->mean+=value*vweight;
   field->sigma+=value*value*vweight;
   field->min=FMIN(field->min, value);
@@ -804,11 +801,17 @@ void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, char* format){
 
 #endif // WMPI
 
-void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
+void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
   initFieldInfo(&(param->physical_state->xion));
   initFieldInfo(&(param->physical_state->T));
   initFieldInfo(&(param->physical_state->rho));
+
+  REAL prev_t = param->physical_state->t;
+  param->physical_state->t = param->cosmo->tphy;
+  REAL dt_yr = param->cosmo->tphy - prev_t;
+
+  REAL pre_mstar = param->physical_state->mstar;
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -824,6 +827,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       for(icell=0;icell<8;icell++) {
         struct CELL *curcell = &curoct->cell[icell];
         if( curcell->child==NULL){
+
 //------------------------------------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------//
 
@@ -869,6 +873,8 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }while(nextoct!=NULL);
   }
 
+  REAL dm_M0 = (param->physical_state->mstar - pre_mstar)/SOLAR_MASS;
+
 #ifdef WMPI
   comFieldInfo(cpu,&(param->physical_state->xion));
   comFieldInfo(cpu,&(param->physical_state->rho));
@@ -891,6 +897,11 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     printFieldInfo(&(param->physical_state->T));
   }
 
+  REAL h=param->cosmo->H0;
+  REAL l= param->unit.unit_l/(1e6*PARSEC)/h ;
+  REAL V_Mpc = POW(l,3);
+
+  param->physical_state->sfr = dm_M0 /dt_yr/V_Mpc;
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
@@ -898,7 +909,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
   * At each timestep, write information about the average state of several physical quantities
   */
 
-  getStepInfo(firstoct, param, cpu, nsteps, dt,t);
+  getStepInfo(firstoct, param, cpu);
 
 
   if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
@@ -926,11 +937,12 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 
       writeFieldInfoHeader( "xion", fp);
-      writeFieldInfoHeader( "T    ", fp);
-      writeFieldInfoHeader( "rho", fp);
+      writeFieldInfoHeader( "T   ", fp);
+      writeFieldInfoHeader( "rho ", fp);
 
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
+      fprintf(fp,"SFR\t\t");
       fprintf(fp,"SN\t\t");
       fprintf(fp,"src");
       fprintf(fp,"\n");
@@ -961,7 +973,9 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
+    fprintf(fp, real_format ,(float)param->physical_state->sfr);
 #else
+    fprintf(fp, real_format ,0.);
     fprintf(fp, real_format ,0.);
     fprintf(fp, real_format ,0.);
 #endif // STARS
