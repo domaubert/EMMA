@@ -222,14 +222,29 @@ struct SPECTRUM{
   REAL**flux;
 };
 
+
+struct FIELD_INFO{
+  REAL min;
+  REAL max;
+  REAL mean;
+};
+
 struct PHYSICAL_STATE{
-  REAL mean_xion;
-  REAL mean_T;
-  REAL max_T;
-  REAL max_rho;
-  REAL src_tot;
+
+  struct FIELD_INFO xion;
+  struct FIELD_INFO T;
+  struct FIELD_INFO rho;
+
+  REAL src;
+  REAL mstar;
   int max_level;
   int Nsn;
+
+
+
+
+
+
 };
 
 

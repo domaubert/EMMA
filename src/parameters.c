@@ -408,7 +408,7 @@ void readAtomic(struct RUNPARAMS *param){
 #endif // WRAD
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
-  int debug=1;
+  int debug=0;
 
   FILE *buf=NULL;
   char stream[256];
@@ -750,60 +750,68 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printf("\n");
 }
 
-void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
-/**
-  * At each timestep, compute and write information about the average state of several physical quantities
-  */
 
-  if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
+void initFieldInfo(struct FIELD_INFO *field){
+  field->mean=0;
+  field->min=INFINITY;
+  field->max=0;
+}
 
-  int max_level=0;
-  int Nsn=0;
-  REAL mean_xion=0;
-  REAL mean_T=0;
-  REAL max_T=0;
-  REAL max_rho=0;
-  REAL src=0;
-  REAL mstar=0;
+void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
+  field->mean+= value*vweight;
+  field->min=FMIN(field->min, value);
+  field->max=FMAX(field->max, value);
+}
+
+#ifdef WMPI
+void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
+  MPI_Allreduce(MPI_IN_PLACE,&(field->mean),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->min),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->max),1,MPI_REEL,MPI_SUM,cpu->comm);
+}
+#endif // WMPI
+
+void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
+
+  initFieldInfo(&(param->physical_state->xion));
+  initFieldInfo(&(param->physical_state->T));
+  initFieldInfo(&(param->physical_state->rho));
 
   int level;
-  REAL vweight;
   for(level=param->lcoarse;level<=param->lmax;level++){
     struct OCT *nextoct=firstoct[level-1];
-    vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
+    REAL vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
     do{
       if(nextoct==NULL) continue;
       struct OCT *curoct=nextoct;
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue;// ne pas compter les quantites des cellules de bord
-      max_level=level;
+      param->physical_state->max_level=level;
       int icell;
       for(icell=0;icell<8;icell++) {
-	struct CELL *curcell = &curoct->cell[icell];
-	if( curcell->child==NULL){
-	  // ajout d'une ponderation en volume, plus conforme a l'idee de moyenne
-	  // note somme(vweight)=1.
+        struct CELL *curcell = &curoct->cell[icell];
+        if( curcell->child==NULL){
+//------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------//
+
 #ifdef WRADHYD
-	  mean_xion+=curcell->field.dX/curcell->field.d*vweight;
+	  getFieldInfo(&(param->physical_state->xion),curcell->field.dX/curcell->field.d,vweight);
 #endif // WRADHYD
 
 #ifdef WRAD
-	  mean_T+=curcell->rfield.temp*vweight;
-
-    int igrp;
-	  for(igrp=0;igrp<NGRP;igrp++){
-      src+=curcell->rfield.src[igrp]*vweight;
-    }
-
-	  max_T=FMAX(max_T,curcell->rfield.temp);
+	  getFieldInfo(&(param->physical_state->T),curcell->rfield.temp,vweight);
 #endif // WRAD
 
 #ifdef WHYDRO2
-	  max_rho=FMAX(max_rho,curcell->field.d);
-#else
-	  max_rho=0.;
-#endif
+	  getFieldInfo(&(param->physical_state->rho),curcell->field.d,vweight);
+#endif // WHYDRO2
 
+#ifdef WRAD
+    int igrp;
+	  for(igrp=0;igrp<NGRP;igrp++){
+      param->physical_state->src+=curcell->rfield.src[igrp]*vweight;
+    }
+#endif // WRAD
 
 #ifdef STARS
     struct PART *curp;
@@ -813,39 +821,45 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       curp=nexp;
       nexp=curp->next;
       if(curp->isStar){
-        mstar += curp->mass;
-        if(curp->isStar==5||curp->isStar==7){
-          Nsn++;
+        param->physical_state->mstar += curp->mass;
+        if(curp->isStar==5||curp->isStar==7){w
+          param->physical_state->Nsn++;
         }
-        //------------------------------------------------//
       }
     }while(nexp!=NULL);
 #endif // STARS
-	}
+
+//------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------//
+        }
       }
     }while(nextoct!=NULL);
   }
 
 #ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&mean_xion,1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&mean_T,1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&max_T,1,MPI_REEL,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&max_rho,1,MPI_REEL,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&src,1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&max_level,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
+
+  comFieldInfo(cpu,&(param->physical_state->xion));
+  comFieldInfo(cpu,&(param->physical_state->rho));
+  comFieldInfo(cpu,&(param->physical_state->T));
+
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->src,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
+}
 
-  param->physical_state->mean_xion = mean_xion;
-  param->physical_state->mean_T = mean_T;
-  param->physical_state->max_T=max_T;
-  param->physical_state->max_rho=max_rho;
-  param->physical_state->src_tot=src;
-  param->physical_state->max_level=max_level;
-  param->physical_state->Nsn=Nsn;
+void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
+/**
+  * At each timestep, write information about the average state of several physical quantities
+  */
 
+
+  getStepInfo(firstoct, param, cpu, nsteps, dt,t);
+
+
+  if(cpu->rank==RANK_DISP) printf("Dumping step info\n");
 
 //  char* int_format = "%-8d\t";
   char* real_format = "%e\t";
@@ -882,6 +896,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       if(fp == NULL) printf("Cannot open %s\n", filename);
     }
 
+
     fprintf(fp, "%d\t",nsteps);
 #ifdef TESTCOSMO
     fprintf(fp, real_format,param->cosmo->aexp);
@@ -892,23 +907,23 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #endif // TESTCOSMO
     fprintf(fp, real_format,t*param->unit.unit_t/MYR*1e6);
     fprintf(fp, real_format,dt);
-    fprintf(fp, real_format ,(float)max_level);
-    fprintf(fp, real_format,max_rho);
+    fprintf(fp, real_format ,(float)param->physical_state->max_level);
+    fprintf(fp, real_format,param->physical_state->rho.max);
 
-    fprintf(fp, real_format,mean_xion);
-    fprintf(fp, real_format,mean_T);
-    fprintf(fp, real_format,max_T);
+    fprintf(fp, real_format,param->physical_state->xion.mean);
+    fprintf(fp, real_format,param->physical_state->T.mean);
+    fprintf(fp, real_format,param->physical_state->T.max);
 
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
-    fprintf(fp, real_format ,(float)mstar);
+    fprintf(fp, real_format ,(float)param->physical_state->mstar);
 #else
     fprintf(fp, real_format ,0.);
     fprintf(fp, real_format ,0.);
 #endif // STARS
 
-    fprintf(fp, real_format ,(float)Nsn);
-    fprintf(fp, real_format , src);
+    fprintf(fp, real_format ,(float)param->physical_state->Nsn);
+    fprintf(fp, real_format , param->physical_state->src);
 
     fprintf(fp,"\n");
     fclose(fp);
