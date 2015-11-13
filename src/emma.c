@@ -245,6 +245,7 @@ int main(int argc, char *argv[])
   struct PHYSICAL_STATE physical_state;
   param.physical_state = &physical_state;
 
+
 #ifdef WDBG
   gdb_debug();
 #endif

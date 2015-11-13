@@ -10,7 +10,7 @@
 #define NCOSMOTAB (128)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 #define FRAC_VAR (0.1)
-
+#define N_BIN_PDF (256)
 
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.) // m.s-1

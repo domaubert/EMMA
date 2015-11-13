@@ -759,11 +759,36 @@ void printFieldInfo(struct FIELD_INFO *field){
   printf("sigma=%e\n",field->sigma);
 }
 
-void initFieldInfo(struct FIELD_INFO *field){
+void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
   field->mean=0;
   field->min=INFINITY;
   field->max=0;
   field->sigma=0;
+
+  //int type = 0; //lin
+  int type = 1; //log
+
+  if (type){
+    REAL bin= (log10(pdf_max)-log10(pdf_min))/N_BIN_PDF;
+    //printf("bin=%e\n",bin);
+    int i;
+    for(i=0;i<N_BIN_PDF+1;i++){
+      field->bins[i]=POW(10, log10(pdf_min) + i*bin  );
+      //printf("field->bins[i]=%e\n",field->bins[i]);
+    }
+  }else{
+    REAL bin= (pdf_max-pdf_min)/N_BIN_PDF;
+    int i;
+    for(i=0;i<N_BIN_PDF+1;i++){
+      field->bins[i]=i*bin;
+      //printf("field->bins[i]=%e\n",field->bins[i]);
+    }
+  }
+
+  int i;
+  for(i=0;i<N_BIN_PDF;i++){
+    field->pdf[i]=0;
+  }
 }
 
 void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
@@ -771,6 +796,14 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
   field->sigma+=value*value*vweight;
   field->min=FMIN(field->min, value);
   field->max=FMAX(field->max, value);
+
+  int i;
+  for(i=0;i<N_BIN_PDF;i++){
+    if( (value>field->bins[i]) && (value<=field->bins[i+1]) ){
+      field->pdf[i]+=value*vweight;
+    }
+  }
+
 }
 
 #ifdef WMPI
@@ -779,33 +812,76 @@ void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
   MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
+
+  int i;
+  for(i=0;i<N_BIN_PDF;i++){
+    MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_REEL,MPI_SUM,cpu->comm);
+  }
 }
+#endif // WMPI
 
 void setSigmaFieldInfo(struct FIELD_INFO *field){
   field->sigma = SQRT(field->sigma - field->mean*field->mean);
 }
 
-void writeFieldInfoHeader(char *field_name , FILE* fp){
-  fprintf(fp,"mean_%s \t",field_name);
-  fprintf(fp,"sigma_%s \t",field_name);
-  fprintf(fp,"min_%s \t",field_name);
-  fprintf(fp,"max_%s \t",field_name);
+void writeFieldInfoHeader(FILE* fp,struct FIELD_INFO *field){
+
+  fprintf(fp,"Nbin %d\n",N_BIN_PDF);
+  fprintf(fp,"bins \n");
+
+  int i;
+  for(i=0;i<N_BIN_PDF;i++){
+    fprintf(fp, "%e\t",field->bins[i]);
+  }
+  fprintf(fp,"\n\n");
+
+  fprintf(fp,"mean        \t");
+  fprintf(fp,"sigma       \t");
+  fprintf(fp,"min         \t");
+  fprintf(fp,"max         \t");
+  fprintf(fp,"pdf         \t");
+  fprintf(fp,"\n");
 }
 
-void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, char* format){
+void writeFieldInfo(struct FIELD_INFO *field, FILE* fp){
+  char* format = "%e\t";
   fprintf(fp, format,field->mean);
   fprintf(fp, format,field->sigma);
   fprintf(fp, format,field->min);
   fprintf(fp, format,field->max);
+
+  int i;
+  for(i=0;i<N_BIN_PDF;i++){
+    fprintf(fp, format,field->pdf[i]);
+  }
+  fprintf(fp,"\n");
 }
 
-#endif // WMPI
+void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_INFO *field, int nsteps){
+
+    char filename[256];
+    sprintf(filename,"param.avg_%s",field_name);
+
+    FILE* fp;
+    if (nsteps==0){
+      fp=fopen(filename,"w");
+      if(fp == NULL) printf("Cannot open %s\n", filename);
+      writeFieldInfoHeader(fp,field);
+    }else{
+      fp=fopen(filename,"a+");
+      if(fp == NULL) printf("Cannot open %s\n", filename);
+    }
+
+    writeFieldInfo(field,fp);
+}
+
+
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
-  initFieldInfo(&(param->physical_state->xion));
-  initFieldInfo(&(param->physical_state->T));
-  initFieldInfo(&(param->physical_state->rho));
+  initFieldInfo(&(param->physical_state->xion), 1e-9, 1.);
+  initFieldInfo(&(param->physical_state->T), 1e-9, 1e9);
+  initFieldInfo(&(param->physical_state->rho), 1e-9, 1e9);
 
   REAL prev_t = param->physical_state->t;
   param->physical_state->t = param->cosmo->tphy;
@@ -935,16 +1011,11 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
 
-
-      writeFieldInfoHeader( "xion", fp);
-      writeFieldInfoHeader( "T   ", fp);
-      writeFieldInfoHeader( "rho ", fp);
-
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
-      fprintf(fp,"SFR\t\t");
-      fprintf(fp,"SN\t\t");
-      fprintf(fp,"src");
+      fprintf(fp,"SFR   \t\t");
+      fprintf(fp,"SN    \t\t");
+      fprintf(fp,"src   \t\t");
       fprintf(fp,"\n");
     }else{
       fp=fopen(filename,"a+");
@@ -962,13 +1033,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format,param->cosmo->tphy);
     fprintf(fp, real_format,dt);
 
-
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
-
-    writeFieldInfo(&(param->physical_state->xion),fp, real_format);
-    writeFieldInfo(&(param->physical_state->T),fp, real_format);
-    writeFieldInfo(&(param->physical_state->rho),fp, real_format);
-
 
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
@@ -985,5 +1050,12 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp,"\n");
     fclose(fp);
+
+  dumpStepInfoField(param, "xion", &(param->physical_state->xion), nsteps);
+  dumpStepInfoField(param, "rho", &(param->physical_state->rho), nsteps);
+  dumpStepInfoField(param, "T", &(param->physical_state->T), nsteps);
+
   }
+
+
 }

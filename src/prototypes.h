@@ -222,12 +222,14 @@ struct SPECTRUM{
   REAL**flux;
 };
 
-
 struct FIELD_INFO{
   REAL min;
   REAL max;
   REAL mean;
   REAL sigma;
+
+  REAL bins[N_BIN_PDF+1];
+  REAL pdf[N_BIN_PDF];
 };
 
 struct PHYSICAL_STATE{
