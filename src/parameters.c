@@ -873,6 +873,7 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
     }
 
     writeFieldInfo(field,fp);
+    fclose(fp);
 }
 
 
@@ -1050,11 +1051,13 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp,"\n");
     fclose(fp);
+  }
 
-  dumpStepInfoField(param, "xion", &(param->physical_state->xion), nsteps);
-  dumpStepInfoField(param, "rho", &(param->physical_state->rho), nsteps);
-  dumpStepInfoField(param, "T", &(param->physical_state->T), nsteps);
 
+  if(cpu->rank==RANK_DISP){
+    dumpStepInfoField(param, "xion", &(param->physical_state->xion), nsteps);
+    dumpStepInfoField(param, "rho", &(param->physical_state->rho), nsteps);
+    dumpStepInfoField(param, "T", &(param->physical_state->T), nsteps);
   }
 
 
