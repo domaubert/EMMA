@@ -751,24 +751,43 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 }
 
 
+void printFieldInfo(struct FIELD_INFO *field){
+  printf("************\n");
+  printf("n=%d\n",field->n);
+  printf("min=%e\n",field->min);
+  printf("max=%e\n",field->max);
+  printf("mean=%e\n",field->mean);
+  printf("sigma=%e\n",field->sigma);
+};
+
 void initFieldInfo(struct FIELD_INFO *field){
+  field->n=0;
   field->mean=0;
   field->min=INFINITY;
   field->max=0;
+  field->sigma=0;
 }
 
 void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
-  field->mean+= value*vweight;
+  field->n++;
+  field->mean+=value*vweight;
+  field->sigma+=value*value*vweight;
   field->min=FMIN(field->min, value);
   field->max=FMAX(field->max, value);
 }
 
 #ifdef WMPI
 void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
-  MPI_Allreduce(MPI_IN_PLACE,&(field->mean),1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->min),1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->max),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
 }
+
+void setSigmaFieldInfo(struct FIELD_INFO *field){
+  field->sigma = SQRT(field->sigma - field->mean*field->mean);
+}
+
 #endif // WMPI
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
@@ -822,7 +841,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       nexp=curp->next;
       if(curp->isStar){
         param->physical_state->mstar += curp->mass;
-        if(curp->isStar==5||curp->isStar==7){w
+        if(curp->isStar==5||curp->isStar==7){
           param->physical_state->Nsn++;
         }
       }
@@ -848,7 +867,19 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
+  setSigmaFieldInfo(&(param->physical_state->xion));
+  setSigmaFieldInfo(&(param->physical_state->rho));
+  setSigmaFieldInfo(&(param->physical_state->T));
+
+  printFieldInfo(&(param->physical_state->xion));
+  printFieldInfo(&(param->physical_state->rho));
+  printFieldInfo(&(param->physical_state->T));
+
+
+
 }
+
+
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
 /**

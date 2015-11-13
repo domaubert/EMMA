@@ -224,9 +224,11 @@ struct SPECTRUM{
 
 
 struct FIELD_INFO{
+  int n;
   REAL min;
   REAL max;
   REAL mean;
+  REAL sigma;
 };
 
 struct PHYSICAL_STATE{
