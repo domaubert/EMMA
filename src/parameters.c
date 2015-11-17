@@ -171,7 +171,9 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
   char stream[256];
 
   while (fscanf(f,"%s",stream)!= EOF) {
+    param->out_grid->field_name[n_field_tot]= field_name[n_field_tot];
     if( !strncmp(stream, "#" ,1)){
+      // skip line if first char == #
       char* line=NULL;
       size_t len=0;
       size_t status= getline(&line,&len,f);
@@ -191,9 +193,12 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
     if (debug) printf("grid=%d stat=%d\t",param->out_grid->field_state_grid[n_field_tot],  param->out_grid->field_state_stat[n_field_tot]);
     if (debug) printf("bin_min=%e bin_max=%e\n", param->physical_state->field[n_field_tot].bin_min,  param->physical_state->field[n_field_tot].bin_max);
 
+
+    if (param->out_grid->field_state_movie[n_field_tot]) param->out_grid->n_field_movie++;
+
     if (param->out_grid->field_state_grid[n_field_tot]){
       param->out_grid->field_id[n_field_tot]=1;
-      param->out_grid->field_name[n_field_tot]=field_name[n_field_tot];
+
       n_field++;
     }else{
       param->out_grid->field_id[n_field_tot]=0;
@@ -213,7 +218,7 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
   if(debug){
     int i;
     for (i=0;i<n_field_tot; i++){
-      if (param->out_grid->field_state_grid[i])
+      if (param->out_grid->field_state_movie[i])
       printf("%d\t%s\n",param->out_grid->field_id[i], param->out_grid->field_name[i]);
     }
   abort();

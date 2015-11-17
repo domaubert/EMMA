@@ -300,8 +300,9 @@ int main(int argc, char *argv[])
 
 #ifdef MOVIE
 	const int n    = POW(2, param.movie->lmap);
-	param.movie->map = (float*)calloc(4*n*n,sizeof(float));
-	param.movie->map_reduce = (float*)calloc(4*n*n,sizeof(float));
+	const int n_field= param.out_grid->n_field_movie;
+	param.movie->map = (float*)calloc(n_field*n*n,sizeof(float));
+	param.movie->map_reduce = (float*)calloc(n_field*n*n,sizeof(float));
 #endif
   //omp_set_num_threads(param.ompthread);
 

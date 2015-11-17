@@ -32,6 +32,8 @@
 
 #include "prototypes.h"
 #include "movie.h"
+#include "io.h" // assign_grid_field
+
 //=================================================================================================
 
 
@@ -41,11 +43,16 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
   int MOVIE_SNAP_NUMBER = cpu->nsteps;
 	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d",MOVIE_SNAP_NUMBER);
 
+  int n_field=param->out_grid->n_field_movie;
+
+  const int debug = 1;
+  if (debug) printf("n_field=%d\n",n_field);
+
+
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
 
   const int ndim = 2; //number of dimension
-
 
 	const int lmap   = param->movie->lmap;
 	const REAL xmin  = param->movie->xmin;
@@ -67,18 +74,16 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
   const int j0 		 = ymin/dxmap;
   const int k0		 = zmin/dxmap;
 
+
+  int mode;
+  if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
+  if(strcmp(param->movie->mode_str, "avg") ==0){mode=1;}
+
   int ntot;
   if (ndim==2)
     ntot = 	nmapx*nmapy;
   else if (ndim==3)
     ntot = 	nmapx*nmapy*nmapz;
-
-	float * map = param->movie->map;
-
-	float * m1 = map + 0*ntot;
-	float * m2 = map + 1*ntot;
-	float * m3 = map + 2*ntot;
-	float * m4 = map + 3*ntot;
 
 	int ilev;
 	for(ilev=param->lcoarse; ilev<=lmap; ilev++){
@@ -122,58 +127,36 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
                 else if (ndim==3)
                   id = x+y*nmapx+z*nmapx*nmapy;
 
+//============================================================================================================
 
+        float field[n_field];
 
-            float field1=0;
-            float field2=0;
-            float field3=0;
-            float field4=0;
+        int i,ii=0;
+        for (i=0;i<n_field; i++){
+          if (param->out_grid->field_state_movie[i]){            field[ii]=assign_grid_field(i,cell);
+            ii++;          }
+        }
 
+        switch(mode){
 
-            int set =0;
-            switch(set){
-              case 0:
-                field1 = (float)oct->level;
-                field2 = (float)cell->field.d;
-                field3 = (float)cell->field.p;
-                field4 = (float)oct->cpu;
-                break;
-              case 1:
-                field1 = (float)oct->level;
-                field2 = (float)cell->field.d;
-                #ifdef WRAD
-                field3 = (float)cell->rfield.temp;
-                #endif // WRAD
-
-                field4 = (float)oct->cpu;
-                break;
+          case 0:
+            for(i=0;i<n_field;i++){
+              param->movie->map[id+i*ntot] = fmax( param->movie->map[id+i*ntot], field[i]);
             }
+            break;
 
-            int mode;
-            if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
-            if(strcmp(param->movie->mode_str, "avg") ==0){mode=1;}
-
-            switch(mode){
-
-              case 0:
-								m1[id] = fmax( m1[id], field1);
-								m2[id] = fmax( m2[id], field2);
-								m3[id] = fmax( m3[id], field3);
-								m4[id] = fmax( m4[id], field4);
-                break;
-
-              case 1:
-								m1[id] = field1/nmapz;
-								m2[id] = field2/nmapz;
-								m3[id] = field3/nmapz;
-								m4[id] = field4/nmapz;
-								break;
-
-              default:
-                printf("Couldn't determine movie mode, check movie parameters in param.h\n");
-                abort();
+          case 1:
+            for(i=0;i<n_field;i++){
+              param->movie->map[id+i*ntot] += field[i]/nmapz;
             }
+            break;
 
+          default:
+            printf("Couldn't determine movie mode, check movie parameters in param.h\n");
+            abort();
+        }
+
+//============================================================================================================
 
 							}
 						}
@@ -188,26 +171,39 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
   //=======================================
 
 	float* mapred = param->movie->map_reduce;
-	MPI_Reduce(map, mapred, 4*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+
+	//TODO check that!!!
+	MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+
 	if(cpu->rank==RANK_DISP){
 
-    mkdir(ffolder, 0755);
-		char fname[128];
-		sprintf(fname,"%smovie_%08d",ffolder,MOVIE_SNAP_NUMBER);
+    int i,ii=0;
+    for (i=0;i<param->out_grid->n_field_tot; i++){
+      if (param->out_grid->field_state_movie[i]){
 
-		FILE *fp = NULL;
-		fp =fopen(fname,"wb");
-		if(fp == NULL) printf("Cannot open %s\n", fname);
+        char fffolder[256];
+        sprintf(fffolder,"%s%s/",ffolder,param->out_grid->field_name[i]);
 
-		fwrite(&nmapx,1,sizeof(int  ),fp);
-		fwrite(&nmapy,1,sizeof(int  ),fp);
-		fwrite(&aexp, 1,sizeof(float),fp);
-		fwrite(mapred,4*ntot,sizeof(float),fp);
+        if(debug) printf("field_name = %s\n", param->out_grid->field_name[i]);
 
-		fclose(fp);
+        mkdir(fffolder, 0755);
+        char fname[256];
+        sprintf(fname,"%smovie_%08d",fffolder,MOVIE_SNAP_NUMBER);
+
+        FILE *fp = NULL;
+        fp =fopen(fname,"wb");
+        if(fp==NULL) printf("Cannot open %s\n", fname);
+        fwrite(&nmapx,1,sizeof(int  ),fp);
+        fwrite(&nmapy,1,sizeof(int  ),fp);
+        fwrite(&aexp, 1,sizeof(float),fp);
+        fwrite(mapred+ii*ntot,ntot,sizeof(float),fp);
+        fclose(fp);
+
+        ii++;      }
+    }
 	}
 
-  if(cpu->rank==0) printf(" done\n");
+  if(cpu->rank==RANK_DISP) printf(" done\n");
+  if(debug) abort();
 }
-
 #endif//MOVIE

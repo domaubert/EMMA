@@ -235,6 +235,8 @@ struct OUTPUTPARAM{
   int field_state_stat[OUTPUTPARAM_n_field_max];
   int field_state_movie[OUTPUTPARAM_n_field_max];
 
+  int n_field_movie;
+
 };
 
 struct FIELD_INFO{
