@@ -21,7 +21,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   int np1,np2,np3;
   float dx,x1o,x2o,x3o,astart,om,ov,h0,ob;
   int dummy;
-  struct PART *lastpart;
+  struct PART *lastpart=NULL;
   int ip;
   char filename[256];
 

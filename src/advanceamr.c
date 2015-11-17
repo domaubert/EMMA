@@ -843,7 +843,10 @@ if(cond1||cond2||cond3){
 
     //=============== Hydro Update ======================
 #ifdef WHYDRO2
+
     double th[10];
+    int i_th;
+    for(i_th=0;i_th<10; i_th++) th[i_th]=0;
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -940,21 +943,18 @@ if(cond1||cond2||cond3){
     //printf("cpu #%d ready 4\n",cpu->rank);
 
 #ifdef WMPI
-    MPI_Barrier(cpu->comm);
-#endif // WMPI
-
-#ifdef WMPI
     //printf("proc %d waiting\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
       mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
-
-      MPI_Barrier(cpu->comm);
-      tcomp[5]=MPI_Wtime();
     }
 
+    MPI_Barrier(cpu->comm);
+    tcomp[5]=MPI_Wtime();
+
     //mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
 #endif // WMPI

@@ -430,7 +430,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   int i;
   int ioct2;
   int vnei[6],vcell[6];
-  int ineiloc;
+  int ineiloc=-1;
   static int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
@@ -1574,7 +1574,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     for(icell=0;icell<8;icell++){ // looping over cells in oct
       curcell=&(curoct->cell[icell]);
       if(curcell->child!=NULL){
-	
+
         coarse2fine_gravlin(curcell,Wi);
         for(icell2=0;icell2<8;icell2++){
 	  //		Wi[icell2].p=0.;

@@ -1080,14 +1080,14 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, "%d\t",nsteps);
 #ifdef TESTCOSMO
-    fprintf(fp, real_format,param->cosmo->aexp);
-    fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+    fprintf(fp, real_format,(float)param->cosmo->aexp);
+    fprintf(fp, real_format,(float)(1./param->cosmo->aexp-1.));
 #else
-    fprintf(fp, real_format,0.);
-    fprintf(fp, real_format,0.);
+    fprintf(fp, real_format,(float)0.);
+    fprintf(fp, real_format,(float)0.);
 #endif // TESTCOSMO
-    fprintf(fp, real_format,param->cosmo->tphy);
-    fprintf(fp, real_format,dt);
+    fprintf(fp, real_format,(float)param->cosmo->tphy);
+    fprintf(fp, real_format,(float)dt);
 
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
 
@@ -1096,13 +1096,13 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
     fprintf(fp, real_format ,(float)param->physical_state->sfr);
 #else
-    fprintf(fp, real_format ,0.);
-    fprintf(fp, real_format ,0.);
-    fprintf(fp, real_format ,0.);
+    fprintf(fp, real_format ,(float)0.);
+    fprintf(fp, real_format ,(float)0.);
+    fprintf(fp, real_format ,(float)0.);
 #endif // STARS
 
     fprintf(fp, real_format ,(float)param->physical_state->Nsn);
-    fprintf(fp, real_format , param->physical_state->src);
+    fprintf(fp, real_format ,(float)param->physical_state->src);
 
     fprintf(fp,"\n");
     fclose(fp);

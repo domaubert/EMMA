@@ -443,7 +443,7 @@ REAL L_movepart(int level,struct OCT** firstoct, REAL*adt, int is, struct CPUINF
   struct PART *nexp;
   struct PART *curp;
   REAL disp;
-  REAL dt;
+  REAL dt=0;
   // === Moving particles
 
   // setting the first oct
