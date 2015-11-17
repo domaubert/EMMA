@@ -159,6 +159,7 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
 
   int n_field=0;
   int n_field_tot=0;
+  param->out_grid->n_field_movie=0;
 
   FILE *f=fopen(fparam,"r");
   if(f==NULL){
@@ -178,6 +179,7 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
       size_t len=0;
       size_t status= getline(&line,&len,f);
       if (debug) printf("%s\t",line);
+      free(line);
       continue;
     }
 
@@ -269,6 +271,7 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     size_t len=0;
     size_t status= getline(&line,&len,f);
     if (debug) printf("%s\t",line);
+    free(line);
     continue;
   }
 
@@ -929,6 +932,12 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+  param->physical_state->sfr=0;
+  param->physical_state->Nsn=0;
+  param->physical_state->src=0;
+
+  REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
+  param->physical_state->mstar=0;
 
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -941,8 +950,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   param->physical_state->t = param->cosmo->tphy;
   REAL dt_yr = param->cosmo->tphy - prev_t;
 
-  REAL pre_mstar = param->physical_state->mstar;
-  param->physical_state->mstar=0;
+
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -1031,10 +1039,10 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   }
 
   REAL h=param->cosmo->H0;
-  REAL l= param->unit.unit_l/(1e6*PARSEC)/h ;
+  REAL l= param->unit.unit_l/(1e6*PARSEC)/h;
   REAL V_Mpc = POW(l,3);
 
-  param->physical_state->sfr = dm_M0 /dt_yr/V_Mpc;
+  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
@@ -1095,7 +1103,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
-    fprintf(fp, real_format ,(float)param->physical_state->sfr);
+    fprintf(fp, real_format ,(float)param->physical_state->sfr);//TODO check Conditional jump or move depends on uninitialised value(s)
 #else
     fprintf(fp, real_format ,(float)0.);
     fprintf(fp, real_format ,(float)0.);

@@ -170,8 +170,10 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
 	float* mapred = param->movie->map_reduce;
 
+#ifdef WMPI
 	//TODO check that!!!
 	MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+#endif // WMPI
 
 	if(cpu->rank==RANK_DISP){
 

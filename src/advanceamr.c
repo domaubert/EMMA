@@ -728,12 +728,11 @@ if(cond1||cond2||cond3){
 
    // ================= III Recursive call to finer level
 
-  double tt2,tt1;
+  double tt2=0,tt1=0;
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt1=MPI_Wtime();
 #endif
-
 
 #if 1
     if(level<param->lmax){
@@ -901,9 +900,13 @@ if(cond1||cond2||cond3){
     // ===================================== RADIATION
 #ifdef WRAD
     double tcomp[10];
+    int i;
+    for(i=0;i<10;i++) tcomp[i]=0;
     int chemonly;
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcomp[0]=MPI_Wtime();
+#endif // WMPI
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp, tloc);  // Computing source distribution and filling the radiation fields
 
@@ -1032,9 +1035,10 @@ if(cond1||cond2||cond3){
     }else{
       L_clean_marks(level,firstoct);
       KPCLIMIT_TRIGGER=1;
+#ifdef WMPI
       MPI_Barrier(cpu->comm);
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
-
+#endif // WMPI
       if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP){
         if (level==param->lmax){
           printf("Blocking refinement to level %d : level max reached\n",level+1);
@@ -1181,16 +1185,15 @@ if(cond1||cond2||cond3){
     // ================= III Recursive call to finer level
 
     double tt2,tt1;
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt1=MPI_Wtime();
-
-    int nlevel=cpu->noct[level]; // number at next level
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
-
-
+#endif // WMPI
     if(level<param->lmax){
+      int nlevel=cpu->noct[level]; // number at next level
+#ifdef WMPI
+      MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
       if(nlevel>0){
 	REAL dtfine;
 	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc,nrad);
@@ -1212,10 +1215,13 @@ if(cond1||cond2||cond3){
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
-#endif
 
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
+#endif
+
+
+
 
     // ===================================== RADIATION
 

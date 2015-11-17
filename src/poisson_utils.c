@@ -971,7 +971,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   struct OCT *curoct;
   int nreadtot;
   int nread;
-  REAL fnorm,residual,residualold,dres;
+  REAL fnorm,residual=0,residualold,dres;
   int icell;
   int nitmax;
   REAL factdens;
@@ -1533,7 +1533,10 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
+
   double t[10];
+  int i;
+  for(i=0;i<10;i++)t[i]=0;
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
