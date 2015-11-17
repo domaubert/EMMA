@@ -12,10 +12,7 @@
   * int x (size along x axis)\n
   * int y (size along y axis)\n
   * float aexp (scale factor)\n
-  * x*y float (potential)\n
-  * x*y float (density)\n
-  * x*y float (ionisation fraction)\n
-  * x*y float (temperature)\n
+  * x*y float (field)\n
   */
 // ----------------------------------------------------------
 // ----------------------------------------------------------
