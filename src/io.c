@@ -1245,7 +1245,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
-	    printf("%s %p\n",filename,cpu->part);
+	 //   printf("%s %p\n",filename,cpu->part);
+	    printf("%s\n",filename);
 	  }
 
   MPI_Barrier(cpu->comm);

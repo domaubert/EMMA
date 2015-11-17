@@ -734,13 +734,15 @@ if(cond1||cond2||cond3){
     tt1=MPI_Wtime();
 #endif
 
-    int nlevel=cpu->noct[level]; // number at next level
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
 
 #if 1
     if(level<param->lmax){
+
+      int nlevel=cpu->noct[level]; // number at next level
+#ifdef WMPI
+      MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+
       if(nlevel>0){
 	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
@@ -1033,12 +1035,12 @@ if(cond1||cond2||cond3){
       MPI_Barrier(cpu->comm);
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
 
-      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
-
-      if (level==param->lmax){
-        printf("Blocking refinement to level %d : level max reached\n",level+1);
-      }else{
-        printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP){
+        if (level==param->lmax){
+          printf("Blocking refinement to level %d : level max reached\n",level+1);
+        }else{
+          printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+        }
       }
     }
     KPCLIMIT_TRIGGER=0;
