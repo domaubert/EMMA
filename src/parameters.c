@@ -942,6 +942,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL dt_yr = param->cosmo->tphy - prev_t;
 
   REAL pre_mstar = param->physical_state->mstar;
+  param->physical_state->mstar=0;
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
