@@ -343,6 +343,8 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef PIC
 void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
+  int debug =0;
+
   FILE *fp = NULL;
   float val;
   int vali;
@@ -392,9 +394,11 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
         printf("Cannot open %s\n", filenamestar);
         abort();
       }
+      if(debug) printf("openning %s at %p\n",filenamestar, f_star[n_field]);
       fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
 
+      if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
       f_part[n_field]=fopen(filenamepart,"wb");
       if(f_part[n_field] == NULL){
         printf("Cannot open %s\n", filenamepart);
@@ -410,7 +414,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 #else
       sprintf(filename,"data/part.%s.%05d.p%05d",param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
-
+      if(debug) printf("openning %s\n",filename);
       fp=fopen(filename,"wb");
       if(fp == NULL){
         printf("Cannot open %s\n", filename);
@@ -423,8 +427,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
     }
   }
 
-  int debug =0;
-  if (debug) printf("opening file OK\n");
+  if(debug) printf("opening file OK\n");
 
   for(level=levelcoarse;level<=levelmax;level++){
     if (debug) printf("entering level %d\n",level);
@@ -444,8 +447,10 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
             nexp=curp->next;
 
             int ii=0;
-            for (i=0;i<param->out_grid->n_field_tot; i++){
-              if(param->out_grid->field_id[i]){
+            for (i=0;i<param->out_part->n_field_tot; i++){
+              if(param->out_part->field_id[i]){
+
+                if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
 
 #ifdef STARS
                 if(curp->isStar) 	{	fp=f_star[ii];	nstar++;	}
@@ -474,14 +479,19 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
   for(i=0;i<param->out_part->n_field_tot;i++){
     if(param->out_part->field_id[i]){
 
-      rewind(f_part[n_field]);	fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);	fclose(f_part[n_field]);
+      rewind(f_part[n_field]);
+      fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
+      fclose(f_part[n_field]);
 #ifdef STARS
-      rewind(f_star[n_field]);	fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);	fclose(f_star[n_field]);
+      rewind(f_star[n_field]);
+      fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
+      fclose(f_star[n_field]);
 #endif // STARS
 
       n_field++;
     }
   }
+
   if (debug) printf("closing  OK\n");
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }

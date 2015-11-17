@@ -222,21 +222,37 @@ struct SPECTRUM{
   REAL**flux;
 };
 
+
+#define OUTPUTPARAM_n_field_max (50)
+struct OUTPUTPARAM{
+  int n_field;
+  int n_field_tot;
+
+  char *field_name[OUTPUTPARAM_n_field_max];
+  int field_id[OUTPUTPARAM_n_field_max];
+
+  int field_state_grid[OUTPUTPARAM_n_field_max];
+  int field_state_stat[OUTPUTPARAM_n_field_max];
+  int field_state_movie[OUTPUTPARAM_n_field_max];
+
+};
+
 struct FIELD_INFO{
   REAL min;
   REAL max;
   REAL mean;
   REAL sigma;
 
-  REAL bins[N_BIN_PDF+1];
+  REAL bin_min;
+  REAL bin_max;
+  REAL bins_edges[N_BIN_PDF+1];
   REAL pdf[N_BIN_PDF];
 };
 
 struct PHYSICAL_STATE{
 
-  struct FIELD_INFO xion;
-  struct FIELD_INFO T;
-  struct FIELD_INFO rho;
+  int n_field;
+  struct FIELD_INFO field[OUTPUTPARAM_n_field_max];
 
   REAL sfr;
   REAL v;
@@ -1126,12 +1142,4 @@ struct MULTIVECT{
   int *vecnei_d;
   int *vecicoarse_d;
 #endif
-};
-
-
-struct OUTPUTPARAM{
-  int n_field;
-  int n_field_tot;
-  char *field_name[50];
-  int field_id[50];
 };
