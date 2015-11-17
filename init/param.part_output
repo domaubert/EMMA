@@ -1,0 +1,20 @@
+#	columns description
+#
+#	field name (shouldn't be moved for consistency)
+#	dump standard output in "data/OUT_NUMBER/" folder 
+
+x		1
+y		1
+z		1
+vx		1
+vy		1
+vz		1
+fx		0
+fy		0
+fz		0
+idx		1
+mass	1
+epot	1
+ekin	1
+etot	1
+age		1

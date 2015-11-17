@@ -260,8 +260,19 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
   }
   char stream[256];
   int state;
-  while (fscanf(f, "%d\t%s\n",&state,stream) != EOF) {
 
+  while (fscanf(f,"%s",stream)!= EOF) {
+  param->out_part->field_name[n_field_tot]= field_name[n_field_tot];
+  if( !strncmp(stream, "#" ,1)){
+    // skip line if first char == #
+    char* line=NULL;
+    size_t len=0;
+    size_t status= getline(&line,&len,f);
+    if (debug) printf("%s\t",line);
+    continue;
+  }
+
+  size_t status=fscanf(f, "%d\n",&state);
     if (state){
       param->out_part->field_id[n_field_tot] = 1;
       param->out_part->field_name[n_field_tot] = field_name[n_field_tot];

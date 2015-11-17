@@ -39,13 +39,14 @@
 
 void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
+  const int debug = 0;
   //static int MOVIE_SNAP_NUMBER;
   int MOVIE_SNAP_NUMBER = cpu->nsteps;
 	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d",MOVIE_SNAP_NUMBER);
 
   int n_field=param->out_grid->n_field_movie;
 
-  const int debug = 1;
+
   if (debug) printf("n_field=%d\n",n_field);
 
 
