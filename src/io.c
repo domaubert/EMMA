@@ -1266,12 +1266,12 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	  }
 
 #ifdef WMPI
-  MPI_Barrier(cpu->comm);
-  REAL tt1=MPI_Wtime();
+    MPI_Barrier(cpu->comm);
+    REAL tt1=MPI_Wtime();
 #endif // WMPI
 
 #ifndef MPIIO
-	  dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
+    dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
 	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO

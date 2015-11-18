@@ -88,8 +88,12 @@ void gdb_debug()
 
 // ===============================================================================
 
+void init_MPI(struct CPUINFO *cpu){
 
 
+
+
+}
 //------------------------------------------------------------------------
  // the MAIN CODE
  //------------------------------------------------------------------------
@@ -328,6 +332,11 @@ int main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+init_MPI(&cpu);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   //========= creating a PACKET MPI type =======
   MPI_Datatype MPI_PACKET,oldtypes[16];
   int          blockcounts[16];
@@ -520,9 +529,7 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-#endif // WRAD
-
-  //============================================
+#endif // WRAD}
 
   cpu.MPI_PACKET=&MPI_PACKET;
 #ifdef PIC
@@ -536,6 +543,9 @@ int main(int argc, char *argv[])
 #ifdef WRAD
   cpu.MPI_RAD=&MPI_RAD;
 #endif
+
+  //============================================
+
 
   cpu.comm=MPI_COMM_WORLD;
 #else
@@ -2046,7 +2056,7 @@ int main(int argc, char *argv[])
 
 #endif
 
-
+//printf("begin freeing\n");
 ///////////////////////////////////////////
 // we are done let's free the ressources
 ///////////////////////////////////////////
@@ -2104,7 +2114,7 @@ int main(int argc, char *argv[])
   free(cpu.npart);
 
 #ifdef STARS
-free(cpu.nstar);
+  free(cpu.nstar);
 #endif // STARS
 
   free(cpu.dict);
@@ -2113,6 +2123,11 @@ free(cpu.nstar);
   free(cpu.bndoct);
   free(cpu.allkmin);
   free(cpu.allkmax);
+
+  free(cpu.nsend);
+  free(cpu.nrecv);
+  free(cpu.nsend_coarse);
+  free(cpu.nrecv_coarse);
 
 #ifdef WMPI
   for(i=0;i<cpu.nnei;i++) {
@@ -2149,12 +2164,7 @@ free(cpu.nstar);
   free(cpu.Rrecvbuffer);
 #endif // WRAD
 
-  free(cpu.nsend);
-  free(cpu.nrecv);
-  free(cpu.nsend);
-  free(cpu.nrecv_coarse);
 #endif // WMPI
-
 
 ///////////////////////////////////////////
 // free param
@@ -2208,6 +2218,8 @@ free(cpu.nstar);
 
 #endif // GPUAXL
 
+
+printf("free OK\n");
 ///////////////////////////////////////////
 ///////////////////////////////////////////
 ///////////////////////////////////////////

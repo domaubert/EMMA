@@ -836,10 +836,10 @@ if(cond1||cond2||cond3){
 
 
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
-#endif
+#endif // WMPI
 
 
-#endif
+#endif // PIC
 
 
     //=============== Hydro Update ======================
@@ -1234,8 +1234,6 @@ if(cond1||cond2||cond3){
 
     //=============== Building Sources and counting them ======================
 
-
-
     nsource=FillRad(level,param,firstoct,cpu,0,aexp, tloc);  // Computing source distribution and filling the radiation fields // Note that we don't initialize the fields (done in advancelevel)
 
 #ifdef HOMOSOURCE
@@ -1248,10 +1246,6 @@ if(cond1||cond2||cond3){
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
       MPI_Barrier(cpu->comm);
       tcomp[2]=MPI_Wtime();
-#endif
-
-#ifdef WMPI
-      MPI_Barrier(cpu->comm);
 #endif
 
       //=============== Radiation Update ======================
@@ -1275,11 +1269,6 @@ int error;
 error = ccc_tremain(&time_remain)
  if (!error) printf("Time remaining :%lf\n", time_remain);
 #endif // CURIE
-
-
-#ifdef WMPI
-      MPI_Barrier(cpu->comm);
-#endif
 
 #ifdef WMPI
       //printf("proc %d waiting\n",cpu->rank);
@@ -1324,5 +1313,5 @@ error = ccc_tremain(&time_remain)
   return dt;
 
 }
-#endif
-#endif
+#endif // COARSERAD
+#endif // WRAD
