@@ -188,6 +188,8 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
     for (i=0;i<param->out_grid->n_field_tot; i++){
       if (param->out_grid->field_state_movie[i]){
 
+        mkdir(ffolder, 0755);
+
         char fffolder[256];
         sprintf(fffolder,"%s%s/",ffolder,param->out_grid->field_name[i]);
 
