@@ -223,19 +223,16 @@ int main(int argc, char *argv[])
   param.stars=&stars;
 #endif
 
-
 #if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST unitary_stars_test;
   param.unitary_stars_test = &unitary_stars_test;
 #endif // defined
-
 
 #ifdef SUPERNOVAE
   struct SNPARAM sn;
   param.sn=&sn;
   param.sn->trig_sn=0;
 #endif
-
 
 #ifdef MOVIE
 	struct MOVIEPARAM movie;
@@ -288,7 +285,6 @@ int main(int argc, char *argv[])
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
 
-
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
   param.rzoom=0.02;
@@ -299,10 +295,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef MOVIE
-	const int n=POW(2, param.movie->lmap);
-	const int n_field=param.out_grid->n_field_movie;
-	param.movie->map=(float*)calloc(n_field*n*n,sizeof(float));
-	param.movie->map_reduce = (float*)calloc(n_field*n*n,sizeof(float));
+	init_movie(&param);
 #endif
   //omp_set_num_threads(param.ompthread);
 
@@ -399,9 +392,7 @@ int main(int argc, char *argv[])
 
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
-
-
-#endif
+#endif // PIC
 
 #ifdef WHYDRO2
   //========= creating a WTYPE MPI type =======
@@ -421,10 +412,10 @@ int main(int argc, char *argv[])
   blockcounts[0]=10;
 #else
   blockcounts[0]=8;
-#endif
+#endif // HELIUM
 #else
   blockcounts[0]=7;
-#endif
+#endif // WRADHYD
 
   /* Now define structured type and commit it */
   MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
@@ -455,8 +446,7 @@ int main(int argc, char *argv[])
 /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
-
-#endif
+#endif // WHYDRO2
 
 #ifdef WRAD
   //========= creating a RTYPE MPI type =======
@@ -530,8 +520,7 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-
-#endif
+#endif // WRAD
 
   //============================================
 
@@ -552,7 +541,7 @@ int main(int argc, char *argv[])
 #else
   cpu.rank=0;
   cpu.nproc=1;
-#endif
+#endif // WMPI
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
@@ -2057,13 +2046,14 @@ int main(int argc, char *argv[])
 
 #endif
 
-    // we are done let's free the ressources
+
+///////////////////////////////////////////
+// we are done let's free the ressources
+///////////////////////////////////////////
 
   free(grid);
   free(firstoct);
   free(lastoct);
-
-
 
   for(iLev = 0; iLev<levelcoarse; iLev++){
     free(cpu.octList[iLev]);
@@ -2071,17 +2061,35 @@ int main(int argc, char *argv[])
   for(iLev = levelcoarse; iLev<levelmax; iLev++){
     free(cpu.octList[iLev]);
   }
-  free(cpu.locNoct);
-  free(cpu.octList);
 
 #ifdef PIC
   free(part);
 #endif // PIC
 
-#ifdef MOVIE
-	free(param.movie->map);
-	free(param.movie->map_reduce);
+#ifndef GPUAXL
+  free(stencil);
+#ifdef WRAD
+  free(rstencil);
+#endif // WRAD
+  free(grav_stencil);
+  free(gstencil.res);
+  free(gstencil.pnew);
+  free(gstencil.resLR);
+#endif // GPUAXL
+
+#ifdef COARSERAD
+  free(adt_rad);
 #endif
+  free(adt);
+  free(ndt);
+  free(ptot);
+
+///////////////////////////////////////////
+// free cpu
+///////////////////////////////////////////
+
+  free(cpu.locNoct);
+  free(cpu.octList);
 
 #ifdef MPIIO
   free(cpu.mpiio_ncells );
@@ -2091,16 +2099,9 @@ int main(int argc, char *argv[])
 #endif // STARS
 #endif // MPIIO
 
-#ifdef COARSERAD
-  free(adt_rad);
-#endif
-    free(adt);
-    free(ndt);
-
-free(cpu.htable);
-free(cpu.noct);
-free(cpu.npart);
-
+  free(cpu.htable);
+  free(cpu.noct);
+  free(cpu.npart);
 
 #ifdef STARS
 free(cpu.nstar);
@@ -2113,7 +2114,51 @@ free(cpu.nstar);
   free(cpu.allkmin);
   free(cpu.allkmax);
 
-  free(ptot);
+#ifdef WMPI
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.sendbuffer[i]);
+    free(cpu.recvbuffer[i]);
+  }
+  free(cpu.sendbuffer);
+  free(cpu.recvbuffer);
+
+#ifdef PIC
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.psendbuffer[i]);
+    free(cpu.precvbuffer[i]);
+  }
+  free(cpu.psendbuffer);
+  free(cpu.precvbuffer);
+#endif // PIC
+
+#ifdef WHYDRO2
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.hsendbuffer[i]);
+    free(cpu.hrecvbuffer[i]);
+  }
+  free(cpu.hsendbuffer);
+  free(cpu.hrecvbuffer);
+#endif // WHYDRO2
+
+#ifdef WRAD
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.Rsendbuffer[i]);
+    free(cpu.Rrecvbuffer[i]);
+  }
+  free(cpu.Rsendbuffer);
+  free(cpu.Rrecvbuffer);
+#endif // WRAD
+
+  free(cpu.nsend);
+  free(cpu.nrecv);
+  free(cpu.nsend);
+  free(cpu.nrecv_coarse);
+#endif // WMPI
+
+
+///////////////////////////////////////////
+// free param
+///////////////////////////////////////////
 
   free(param.atomic.space_bound);
   free(param.atomic.time_bound);
@@ -2122,27 +2167,27 @@ free(cpu.nstar);
   free(param.atomic.alphai);
   free(param.atomic.factgrp);
 
+#ifdef SUPERNOVAE
   free(param.sn->mass_loss_t);
   free(param.sn->mass_loss_mass);
   free(param.sn->egy_loss_t);
   free(param.sn->egy_loss_egy);
+#endif // SUPERNOVAE
+
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
   free(param.uv.redshift);
   free(param.uv.Nphot);
   free(param.uv.value);
 #endif // defined
 
-#ifndef GPUAXL
-free(stencil);
-#ifdef WRAD
-  free(rstencil);
-#endif // WRAD
-free(grav_stencil);
-free(gstencil.res);
-free(gstencil.pnew);
-free(gstencil.resLR);
-#endif // GPUAXL
+#ifdef MOVIE
+	free(param.movie->map);
+	free(param.movie->map_reduce);
+#endif // MOVIE
 
+///////////////////////////////////////////
+// free GPU
+///////////////////////////////////////////
 
 #ifdef GPUAXL
 
@@ -2161,7 +2206,11 @@ free(gstencil.resLR);
     destroy_radstencil_GPU(&cpu,rstride);
 #endif
 
-#endif
+#endif // GPUAXL
+
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
 
     REAL tend=MPI_Wtime();
 

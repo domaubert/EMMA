@@ -34,6 +34,13 @@
 //=================================================================================================
 
 
+void init_movie(struct RUNPARAMS *param){
+	const int n=POW(2, param->movie->lmap);
+	const int n_field=param->out_grid->n_field_movie;
+	param->movie->map=(float*)calloc(n_field*n*n,sizeof(float));
+	param->movie->map_reduce = (float*)calloc(n_field*n*n,sizeof(float));
+}
+
 void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
   const int debug = 0;

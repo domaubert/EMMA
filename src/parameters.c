@@ -939,18 +939,17 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
 
+  REAL prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
+  param->physical_state->t = param->cosmo->tphy;
+
+  REAL dt_yr = param->cosmo->tphy - prev_t;
+
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
      if (param->out_grid->field_state_stat[i]){
         initFieldInfo(&(param->physical_state->field[i]), param->physical_state->field[i].bin_min, param->physical_state->field[i].bin_max );
     }
   }
-
-  REAL prev_t = param->physical_state->t;
-  param->physical_state->t = param->cosmo->tphy;
-  REAL dt_yr = param->cosmo->tphy - prev_t;
-
-
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -1043,6 +1042,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL V_Mpc = POW(l,3);
 
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
+
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
@@ -1062,11 +1062,20 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     char* filename = "param.avg";
 
-    FILE* fp=NULL;
+
+
+
+    char* write_type;
+    if (nsteps==0){
+      write_type="w";
+    }else{
+      write_type="a+";
+    }
+
+    FILE* fp=fopen(filename,write_type);
+    if(fp == NULL) printf("Cannot open %s\n", filename);
 
     if (nsteps==0){
-      fp=fopen(filename,"w");
-      if(fp == NULL) printf("Cannot open %s\n", filename);
       fprintf(fp,"step\t");
 #ifdef TESTCOSMO
       fprintf(fp,"aexp\t\t");
@@ -1082,9 +1091,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"SN    \t\t");
       fprintf(fp,"src   \t\t");
       fprintf(fp,"\n");
-    }else{
-      fp=fopen(filename,"a+");
-      if(fp == NULL) printf("Cannot open %s\n", filename);
     }
 
     fprintf(fp, "%d\t",nsteps);
@@ -1103,7 +1109,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef STARS
     fprintf(fp, real_format ,(float)param->stars->n);
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
-    fprintf(fp, real_format ,(float)param->physical_state->sfr);//TODO check Conditional jump or move depends on uninitialised value(s)
+    fprintf(fp, real_format ,(float)param->physical_state->sfr);
 #else
     fprintf(fp, real_format ,(float)0.);
     fprintf(fp, real_format ,(float)0.);

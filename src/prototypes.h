@@ -767,7 +767,8 @@ struct RAD_MPI{
 
 //=========================================================
 
-struct Gtype{
+struct Gtype
+{
   REAL d; ///<contrast of matter density
   REAL p; ///<pottential
 };
@@ -792,16 +793,15 @@ struct CELL
   REAL f[3]; ///< the gravitational force component
 #endif
 
-
 #ifdef WHYDRO2
   struct Wtype field;
   struct Wtype fieldnew;
 #endif
 
-
 #ifdef WRAD
   struct Rtype rfield; ///< photons/s/m3
   struct Rtype rfieldnew; ///< photons/s/m3
+  REAL z_xion; ///< redshift of reionisation
 #endif
 };
 
