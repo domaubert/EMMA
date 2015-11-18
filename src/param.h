@@ -12,6 +12,8 @@
 #define FRAC_VAR (0.1)
 #define N_BIN_PDF (128)
 
+#define THRESH_Z_XION_MAP (0.5)
+
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.) // m.s-1
 #define KBOLTZ (1.3806e-23) // J/K
@@ -26,8 +28,6 @@
 #define SOLAR_MASS (1.989e30) //kg
 #define KPLANCK (6.62617e-34)	//J/s
 #define ELECTRONVOLT (1.602176565e-19) //J
-
-
 
 #ifndef WHYDRO2
   #define OMEGAB (0.0)

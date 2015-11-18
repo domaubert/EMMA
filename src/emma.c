@@ -72,7 +72,9 @@
 #include "movie.h"
 #endif // MOVIE
 
-
+#ifdef WOMP
+#include <omp.h>
+#endif // WOMP
 
 
 void gdb_debug()
@@ -88,12 +90,14 @@ void gdb_debug()
 
 // ===============================================================================
 
-void init_MPI(struct CPUINFO *cpu){
 
 
+void init_MPI(struct CPUINFO *cpu, int argc, char **argv){
+#ifdef WMPI
 
 
 }
+
 //------------------------------------------------------------------------
  // the MAIN CODE
  //------------------------------------------------------------------------
@@ -301,7 +305,10 @@ int main(int argc, char *argv[])
 #ifdef MOVIE
 	init_movie(&param);
 #endif
-  //omp_set_num_threads(param.ompthread);
+
+#ifdef WOMP
+  omp_set_num_threads(param.ompthread);
+#endif // WOMP
 
 #ifdef MPIIO
   cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
@@ -320,7 +327,8 @@ int main(int argc, char *argv[])
   amax=param.tmax;
 #endif
 
-#ifdef WMPI
+
+  init_MPI(&cpu,argc,argv);
   MPI_Status stat;
 
   MPI_Init(&argc,&argv);
@@ -332,12 +340,7 @@ int main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-init_MPI(&cpu);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  //========= creating a PACKET MPI type =======
+ //========= creating a PACKET MPI type =======
   MPI_Datatype MPI_PACKET,oldtypes[16];
   int          blockcounts[16];
 
@@ -529,7 +532,7 @@ init_MPI(&cpu);
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-#endif // WRAD}
+#endif // WRAD
 
   cpu.MPI_PACKET=&MPI_PACKET;
 #ifdef PIC
@@ -543,9 +546,6 @@ init_MPI(&cpu);
 #ifdef WRAD
   cpu.MPI_RAD=&MPI_RAD;
 #endif
-
-  //============================================
-
 
   cpu.comm=MPI_COMM_WORLD;
 #else
@@ -2218,8 +2218,6 @@ init_MPI(&cpu);
 
 #endif // GPUAXL
 
-
-printf("free OK\n");
 ///////////////////////////////////////////
 ///////////////////////////////////////////
 ///////////////////////////////////////////

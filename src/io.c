@@ -178,7 +178,12 @@ float assign_grid_field(int field,struct CELL *cell){
     res=cell->rfield.temp;
     break;
 #endif // WCHEM
+  case 39:
+    res=cell->z_xion;
+    break;
 #endif // WRAD
+
+
 
   }
 

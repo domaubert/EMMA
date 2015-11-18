@@ -801,7 +801,7 @@ struct CELL
 #ifdef WRAD
   struct Rtype rfield; ///< photons/s/m3
   struct Rtype rfieldnew; ///< photons/s/m3
- // REAL z_xion; ///< redshift of reionisation
+  REAL z_xion; ///< redshift of reionisation
 #endif
 };
 

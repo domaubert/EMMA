@@ -571,11 +571,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
     }
   }
-
-
 }
-#endif
-
-#endif
-#endif
+#endif // 1
+#endif // WCHEM
+#endif // WRAD
 

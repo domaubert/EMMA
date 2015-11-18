@@ -14,6 +14,9 @@
 #include "communication.h"
 #endif
 
+#ifdef WOMP
+#include <omp.h>
+#endif // WOMP
 
 #ifdef WGRAV
 //================================================================
@@ -1038,6 +1041,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 	if(nread>0){
 	// ------------ solving the iteration
+
 	  PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
 
 	  // ------------ computing the residuals

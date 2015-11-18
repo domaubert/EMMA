@@ -154,7 +154,8 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
     "field.dXXHE",
     "field.xHE",
     "field.xxHE",
-    "rfield.temp"
+    "rfield.temp",
+    "field.z_xion"
   };
 
   int n_field=0;

@@ -1953,10 +1953,18 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	    // inject back thermal energy into the hydro
 	    curoct->cell[icell].field.p=(GAMMA-1.)*curoct->cell[icell].rfield.eint;
 	    curoct->cell[icell].field.dX=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(1.-YHE);
+
+      if(curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh <THRESH_Z_XION_MAP){ //THRESH_Z_XION_MAP defined in param.h
+        curoct->cell[icell].z_xion= 1./aexp-1.;
+      }
+      //TODO check z_xion with helium
 #ifdef HELIUM
 	    curoct->cell[icell].field.dXHE=curoct->cell[icell].rfield.nheplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(YHE)/yHE;
 	    curoct->cell[icell].field.dXXHE=curoct->cell[icell].rfield.nhepplus/curoct->cell[icell].rfield.nh*curoct->cell[icell].field.d*(YHE)/yHE;
 #endif
+
+
+
 	    getE(&curoct->cell[icell].field);
 #endif
 	}
