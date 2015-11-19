@@ -93,8 +93,6 @@ void gdb_debug()
 
 
 void init_MPI(struct CPUINFO *cpu, int argc, char **argv){
-#ifdef WMPI
-
 
 }
 
@@ -329,6 +327,8 @@ int main(int argc, char *argv[])
 
 
   init_MPI(&cpu,argc,argv);
+
+#ifdef WMPI
   MPI_Status stat;
 
   MPI_Init(&argc,&argv);

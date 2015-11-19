@@ -22,8 +22,6 @@
 
 
 #ifdef WHYDRO2
-
-
 REAL comp_grad_hydro(struct OCT *curoct, int icell){
   REAL gradd[3]={0.,0.,0.};
   REAL gradv[3]={0.,0.,0.};
@@ -143,9 +141,7 @@ REAL comp_grad_hydro(struct OCT *curoct, int icell){
   return ratio;
 
 }
-
-
-#endif
+#endif // WHYDRO2
 
 // =========================================================================================================
 // =========================================================================================================
@@ -563,9 +559,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 		       Ri[il].nheplus=Wi[il].dXHE/MHE_OVER_MH;
 		       Ri[il].nhepplus=Wi[il].dXXHE/MHE_OVER_MH;
 #endif
-
 #endif
-
 		     }
 
 		}
@@ -609,6 +603,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
+        newoct->cell[ii].z_xion=curoct->cell[icell].z_xion;
+
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype));
 		    memcpy(&(newoct->cell[ii].rfieldnew),Ri+ii,sizeof(struct Rtype));
 		  }

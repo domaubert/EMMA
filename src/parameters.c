@@ -623,8 +623,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #endif // WRAD
 
 #ifdef SUPERNOVAE
-  read_egy_loss(param);
-  read_mass_loss(param);
+  //read_egy_loss(param);
+  //read_mass_loss(param);
 #endif // SUPERNOVAE
 
 #if defined(WRADTEST) || defined(SNTEST)
