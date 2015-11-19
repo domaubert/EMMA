@@ -359,10 +359,10 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
   if (param->stars->density_cond>0) k=POW(aexp,3);  // Physical density case
 
   // Hydrogen atom per cubic meter in code unit
-  // REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d*param->unit.unit_N;
+   REAL thresh_1 = k * param->stars->density_cond * PROTON_MASS / param->unit.unit_d*param->unit.unit_N;
 
   // density in kg.m-3 in code unit
-  REAL thresh_1 = k * param->stars->density_cond / param->unit.unit_d*param->unit.unit_N;
+  //REAL thresh_1 = k * param->stars->density_cond / param->unit.unit_d*param->unit.unit_N;
 
   // overdensity
   REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
