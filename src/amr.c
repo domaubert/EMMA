@@ -603,7 +603,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
-        newoct->cell[ii].z_xion=curoct->cell[icell].z_xion;
+        newoct->cell[ii].z_first_xion=curoct->cell[icell].z_first_xion;
+        newoct->cell[ii].z_last_xion=curoct->cell[icell].z_last_xion;
 
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype));
 		    memcpy(&(newoct->cell[ii].rfieldnew),Ri+ii,sizeof(struct Rtype));

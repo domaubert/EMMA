@@ -179,8 +179,12 @@ float assign_grid_field(int field,struct CELL *cell){
     break;
 #endif // WCHEM
   case 39:
-      res=cell->z_xion;
+    res=cell->z_first_xion;
     break;
+  case 40:
+    res=cell->z_last_xion;
+    break;
+
 #endif // WRAD
 
 
@@ -193,7 +197,7 @@ float assign_grid_field(int field,struct CELL *cell){
 float assign_part_field(int field,struct PART *curp){
 
 /**
-  * return the appropriate paerticle field, depending of a given ID.
+  * return the appropriate particle field, depending of a given ID.
   */
 
   float res=0;
