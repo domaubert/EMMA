@@ -287,7 +287,6 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
 

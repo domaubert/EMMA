@@ -1925,7 +1925,8 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 	  child=curoct->cell[icell].child;
 	  memset(&R,0,sizeof(struct Rtype));
 
-    curoct->cell[icell].z_xion=0;
+  //  curoct->cell[icell].z_xion=0;
+
 	  for(i=0;i<8;i++){
 	    for(igrp=0;igrp<NGRP;igrp++){
 	      R.e[igrp] +=child->cell[i].rfield.e[igrp]*0.125;
@@ -1935,7 +1936,7 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
         R.src[igrp]+=child->cell[i].rfield.src[igrp]*0.125;
 	    }
 
-      curoct->cell[icell].z_xion +=child->cell[i].z_xion;
+   //   curoct->cell[icell].z_xion +=child->cell[i].z_xion*0.125;
 
 #ifdef WCHEM
 	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
