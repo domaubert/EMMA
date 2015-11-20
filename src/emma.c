@@ -908,6 +908,11 @@ int main(int argc, char *argv[])
 #endif
 	    }
 
+#ifdef WRAD
+        curoct->cell[icell].z_first_xion=-1;
+        curoct->cell[icell].z_last_xion=0;
+#endif // WRAD
+
 	    //the neighbours
 	    getcellnei(icell, vnei, vcell);
 	    for(ii=0;ii<6;ii++){
@@ -939,8 +944,6 @@ int main(int argc, char *argv[])
 
 	  }
 
-        curoct->cell[icell].z_first_xion=-1;
-        curoct->cell[icell].z_last_xion=0;
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
