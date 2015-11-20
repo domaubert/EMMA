@@ -78,6 +78,19 @@ void copy_param(const char *folder){
   #endif // ALLOCT
 }
 
+void printFileOnScreen(char *filename){
+/**
+  * print file on screen
+  */
+
+  FILE* fp=fopen(filename,"r");
+  if(fp == NULL){
+    printf("Cannot open %s : you may want to link it in the current directory\n", filename);
+  }
+  char ch;
+  while((ch=fgetc(fp))!=EOF) printf("%c",ch);
+}
+
 void dumpFile(char *filename_in, char *filename_out){
 /**
   * copy filename_in into filename_out and print it on screen
@@ -751,10 +764,29 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   * Dump on screen and into files, a set of parameters
   */
 
-  printf("Dumping parameter files \n\n");
-
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
   dumpInfo("param.info", param, cpu);
   printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.mk");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.h");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.run");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+#ifdef ALLOCT
+  printFileOnScreen("param.part_output");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.grid_output");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+#endif // ALLOCT
+
 /*
   dumpFile("param.mk", "param.mk");
   printf("\n");
