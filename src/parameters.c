@@ -168,7 +168,7 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
     "field.xHE",
     "field.xxHE",
     "rfield.temp",
-    "z_first_xion"
+    "z_first_xion",
     "z_last_xion"
   };
 
