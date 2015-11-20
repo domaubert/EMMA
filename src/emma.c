@@ -938,6 +938,9 @@ int main(int argc, char *argv[])
 	    newoct++;
 
 	  }
+
+        curoct->cell[icell].z_first_xion=-1;
+        curoct->cell[icell].z_last_xion=0;
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
@@ -945,7 +948,6 @@ int main(int argc, char *argv[])
  //   setOctList(firstoct[level-1], &cpu, &param,level);
 
   }
-
 
   if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
 
