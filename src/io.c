@@ -1095,6 +1095,15 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   int i;
   int n_field=0;
   int n_cell=0;
+  float xmin,xmax,ymin,ymax,zmin,zmax;
+
+  xmin=2;
+  xmax=-1;
+  ymin=2;
+  ymax=-1;
+  zmin=2;
+  zmax=-1;
+
 
 // Opening all the fields files
   static FILE **f_dat;
@@ -1116,6 +1125,13 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       }
 
       fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
+      fwrite(&xmin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&xmax,sizeof(float),1,f_dat[n_field]);
+      fwrite(&ymin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&ymax,sizeof(float),1,f_dat[n_field]);
+      fwrite(&zmin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&zmax,sizeof(float),1,f_dat[n_field]);
+
       n_field++;
     }
   }
@@ -1124,6 +1140,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 // writing the data
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
+    double dx=pow(0.5,level-1); // oct size
 
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
@@ -1144,6 +1161,16 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
               ii++;
             }
           }
+
+	  // update file boundaries
+	  if(oct->x<xmin) xmin=oct->x;
+	  if(oct->y<ymin) ymin=oct->y;
+	  if(oct->z<zmin) zmin=oct->z;
+
+	  if(oct->x+dx>xmax) xmax=oct->x+dx;
+	  if(oct->y+dx>ymax) ymax=oct->y+dx;
+	  if(oct->z+dx>zmax) zmax=oct->z+dx;
+	  
         }
       }
     }
@@ -1155,6 +1182,12 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
     if(param->out_grid->field_id[i]){
       rewind(f_dat[n_field]);
       fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
+      fwrite(&xmin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&xmax,sizeof(float),1,f_dat[n_field]);
+      fwrite(&ymin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&ymax,sizeof(float),1,f_dat[n_field]);
+      fwrite(&zmin,sizeof(float),1,f_dat[n_field]);
+      fwrite(&zmax,sizeof(float),1,f_dat[n_field]);
       fclose(f_dat[n_field]);
       n_field++;
     }

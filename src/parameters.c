@@ -443,11 +443,12 @@ void readAtomic(struct RUNPARAMS *param){
   for(i=0;i<4;i++)  rstat=fscanf(buf,"%s",stream);
 
   //read grp
+  double dummy; // to read recombination coeff
   for(i=0;i<param->atomic.n;i++){
-    rstat=fscanf(buf,"%lf",&param->atomic.hnu[i]);    if(!debug)  param->atomic.hnu[i]*=ELECTRONVOLT;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphae[i]); if(!debug)  param->atomic.alphae[i]*=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
-    rstat=fscanf(buf,"%lf",&param->atomic.alphai[i]); if(!debug)  param->atomic.alphai[i]*=param->clightorg*LIGHT_SPEED_IN_M_PER_S;
-    rstat=fscanf(buf,"%lf",&param->atomic.factgrp[i]);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.hnu[i]=dummy*ELECTRONVOLT;
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphae[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphai[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy);param->atomic.factgrp[i]=dummy;
     if(debug) printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
   }
   fclose(buf);
@@ -527,7 +528,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);
-      sprintf(param->atomic.path,"./src/atomic_data/%s ",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
+      sprintf(param->atomic.path,"./src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -619,8 +620,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #endif // WRAD
 
 #ifdef SUPERNOVAE
-  read_egy_loss(param);
-  read_mass_loss(param);
+  //read_egy_loss(param);
+  //read_mass_loss(param);
 #endif // SUPERNOVAE
 
 #if defined(WRADTEST) || defined(SNTEST)
