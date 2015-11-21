@@ -83,6 +83,24 @@ void W2U(struct Wtype *W, struct Utype *U)
 
 }
 
+
+void initUtype(struct Utype* u){
+  u->d=0;
+  u->du=0;
+  u->dv=0;
+  u->dw=0;
+  u->E=0;
+  u->eint=0;
+
+#ifdef WRADHYD
+  u->dX=0;
+#ifdef HELIUM
+  u->dXHE=0;
+  u->dXXHE=0;
+#endif // HELIUM
+#endif // WRADHYD
+}
+
 void printWtype(struct Wtype *W){
   printf("d=%e ", W->d);
   printf("u=%e ", W->u);
@@ -296,8 +314,8 @@ void coarse2fine_hydro2(struct CELL *cell, struct Wtype *Wi){
 	  struct OCT * oct;
 
 	  struct Wtype *W0;
-	  struct Wtype *Wp;
-	  struct Wtype *Wm;
+	  struct Wtype *Wp=NULL;
+	  struct Wtype *Wm=NULL;
 	  struct Wtype Wint;
 	  struct Wtype Dp,Dm;
 	  struct Wtype D[3];
@@ -1385,6 +1403,7 @@ void speedestimateZ_HLLC(struct Wtype *WL,struct Wtype *WR, REAL *SL, REAL *SR, 
 
 // =============================================================================================
 
+
 int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int stride,REAL dx, REAL dt){
 
   int inei,icell,iface;
@@ -1413,7 +1432,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-  struct Utype Us;
+  struct Utype Us; initUtype(&Us);
   REAL ebar;
   REAL ecen=0.;
   REAL divu,divuloc;
@@ -1682,7 +1701,7 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-  struct Utype Us;
+  struct Utype Us; initUtype(&Us);
   REAL ebar;
   REAL ecen=0.;
   REAL divu,divuloc;
@@ -1959,7 +1978,7 @@ int hydroM_sweepX(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-  struct Utype Us;
+  struct Utype Us; initUtype(&Us);
   REAL ebar;
   REAL ecen=0.;
   REAL divu,divuloc;
@@ -2837,12 +2856,12 @@ void recursive_neighbor_gather_oct(int ioct, int inei, int inei2, int inei3, int
   int i;
   int ioct2;
   int vnei[6],vcell[6];
-  int ineiloc;
+  int ineiloc=-1;
 
 
   struct OCT *oct;
   struct OCT *neioct;
-  struct CELL *neicell;
+  struct CELL *neicell=NULL;
 
   if(order==1){
     ineiloc=inei;

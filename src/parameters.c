@@ -78,6 +78,19 @@ void copy_param(const char *folder){
   #endif // ALLOCT
 }
 
+void printFileOnScreen(char *filename){
+/**
+  * print file on screen
+  */
+
+  FILE* fp=fopen(filename,"r");
+  if(fp == NULL){
+    printf("Cannot open %s : you may want to link it in the current directory\n", filename);
+  }
+  char ch;
+  while((ch=fgetc(fp))!=EOF) printf("%c",ch);
+}
+
 void dumpFile(char *filename_in, char *filename_out){
 /**
   * copy filename_in into filename_out and print it on screen
@@ -154,11 +167,14 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
     "field.dXXHE",
     "field.xHE",
     "field.xxHE",
-    "rfield.temp"
+    "rfield.temp",
+    "z_first_xion",
+    "z_last_xion"
   };
 
   int n_field=0;
   int n_field_tot=0;
+  param->out_grid->n_field_movie=0;
 
   FILE *f=fopen(fparam,"r");
   if(f==NULL){
@@ -178,6 +194,7 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
       size_t len=0;
       size_t status= getline(&line,&len,f);
       if (debug) printf("%s\t",line);
+      free(line);
       continue;
     }
 
@@ -269,6 +286,7 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     size_t len=0;
     size_t status= getline(&line,&len,f);
     if (debug) printf("%s\t",line);
+    free(line);
     continue;
   }
 
@@ -747,10 +765,29 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   * Dump on screen and into files, a set of parameters
   */
 
-  printf("Dumping parameter files \n\n");
-
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
   dumpInfo("param.info", param, cpu);
   printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.mk");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.h");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.run");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+#ifdef ALLOCT
+  printFileOnScreen("param.part_output");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+  printFileOnScreen("param.grid_output");
+  printf("\n");
+  printf("--------------------------------------------------------------\n");
+#endif // ALLOCT
+
 /*
   dumpFile("param.mk", "param.mk");
   printf("\n");
@@ -930,6 +967,17 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+  param->physical_state->sfr=0;
+  param->physical_state->Nsn=0;
+  param->physical_state->src=0;
+
+  REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
+  param->physical_state->mstar=0;
+
+  REAL prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
+  param->physical_state->t = param->cosmo->tphy;
+
+  REAL dt_yr = param->cosmo->tphy - prev_t;
 
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -937,12 +985,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
         initFieldInfo(&(param->physical_state->field[i]), param->physical_state->field[i].bin_min, param->physical_state->field[i].bin_max );
     }
   }
-
-  REAL prev_t = param->physical_state->t;
-  param->physical_state->t = param->cosmo->tphy;
-  REAL dt_yr = param->cosmo->tphy - prev_t;
-
-  REAL pre_mstar = param->physical_state->mstar;
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
@@ -1031,10 +1073,11 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   }
 
   REAL h=param->cosmo->H0;
-  REAL l= param->unit.unit_l/(1e6*PARSEC)/h ;
+  REAL l= param->unit.unit_l/(1e6*PARSEC)/h;
   REAL V_Mpc = POW(l,3);
 
-  param->physical_state->sfr = dm_M0 /dt_yr/V_Mpc;
+  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
+
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
@@ -1054,11 +1097,20 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     char* filename = "param.avg";
 
-    FILE* fp=NULL;
+
+
+
+    char* write_type;
+    if (nsteps==0){
+      write_type="w";
+    }else{
+      write_type="a+";
+    }
+
+    FILE* fp=fopen(filename,write_type);
+    if(fp == NULL) printf("Cannot open %s\n", filename);
 
     if (nsteps==0){
-      fp=fopen(filename,"w");
-      if(fp == NULL) printf("Cannot open %s\n", filename);
       fprintf(fp,"step\t");
 #ifdef TESTCOSMO
       fprintf(fp,"aexp\t\t");
@@ -1074,21 +1126,18 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"SN    \t\t");
       fprintf(fp,"src   \t\t");
       fprintf(fp,"\n");
-    }else{
-      fp=fopen(filename,"a+");
-      if(fp == NULL) printf("Cannot open %s\n", filename);
     }
 
     fprintf(fp, "%d\t",nsteps);
 #ifdef TESTCOSMO
-    fprintf(fp, real_format,param->cosmo->aexp);
-    fprintf(fp, real_format,1./param->cosmo->aexp-1.);
+    fprintf(fp, real_format,(float)param->cosmo->aexp);
+    fprintf(fp, real_format,(float)(1./param->cosmo->aexp-1.));
 #else
-    fprintf(fp, real_format,0.);
-    fprintf(fp, real_format,0.);
+    fprintf(fp, real_format,(float)0.);
+    fprintf(fp, real_format,(float)0.);
 #endif // TESTCOSMO
-    fprintf(fp, real_format,param->cosmo->tphy);
-    fprintf(fp, real_format,dt);
+    fprintf(fp, real_format,(float)param->cosmo->tphy);
+    fprintf(fp, real_format,(float)dt);
 
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
 
@@ -1097,13 +1146,13 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
     fprintf(fp, real_format ,(float)param->physical_state->sfr);
 #else
-    fprintf(fp, real_format ,0.);
-    fprintf(fp, real_format ,0.);
-    fprintf(fp, real_format ,0.);
+    fprintf(fp, real_format ,(float)0.);
+    fprintf(fp, real_format ,(float)0.);
+    fprintf(fp, real_format ,(float)0.);
 #endif // STARS
 
     fprintf(fp, real_format ,(float)param->physical_state->Nsn);
-    fprintf(fp, real_format , param->physical_state->src);
+    fprintf(fp, real_format ,(float)param->physical_state->src);
 
     fprintf(fp,"\n");
     fclose(fp);

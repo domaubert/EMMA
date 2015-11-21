@@ -178,7 +178,16 @@ float assign_grid_field(int field,struct CELL *cell){
     res=cell->rfield.temp;
     break;
 #endif // WCHEM
+  case 39:
+    res=cell->z_first_xion;
+    break;
+  case 40:
+    res=cell->z_last_xion;
+    break;
+
 #endif // WRAD
+
+
 
   }
 
@@ -188,7 +197,7 @@ float assign_grid_field(int field,struct CELL *cell){
 float assign_part_field(int field,struct PART *curp){
 
 /**
-  * return the appropriate paerticle field, depending of a given ID.
+  * return the appropriate particle field, depending of a given ID.
   */
 
   float res=0;
@@ -253,6 +262,7 @@ float assign_part_field(int field,struct PART *curp){
   return res;
 }
 
+#ifdef MPIIO
 void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
   * This function compute the MPIIO offset
@@ -340,6 +350,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   //printf("cpu=%d part_offset=%d\n",cpu->rank, cpu->mpiio_part_offsets);
   //printf("cpu=%d star_offset=%d\n",cpu->rank, cpu->mpiio_star_offsets);
 }
+#endif // MPIIO
 
 #ifdef PIC
 void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
@@ -366,6 +377,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 #ifdef STARS
   FILE **f_star=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
 #endif // STARS
+
 
   int n_field=0;
   int i;
@@ -495,6 +507,11 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 
   if (debug) printf("closing  OK\n");
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
+
+  free(f_part);
+#ifdef STARS
+  free(f_star);
+#endif // STARS
 }
 
 void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
@@ -634,6 +651,7 @@ void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse,
   //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 
+#ifdef MPIIO
 void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   int ipart=0;
@@ -790,7 +808,9 @@ void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, in
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 #endif // PIC
+#endif // MPIIO
 
+#ifdef MPIIO
 void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   int ipart=0;
@@ -946,6 +966,7 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 #endif // STARS
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
+#endif // MPIIO
 
 void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param){
 
@@ -1001,6 +1022,7 @@ void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, str
   fclose(fp);
 }
 
+#ifdef MPIIO
 void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 /**
@@ -1075,6 +1097,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   }
   free(tmp);
 }
+#endif // MPIIO
 
 void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
@@ -1106,7 +1129,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
 
 // Opening all the fields files
-  static FILE **f_dat;
+  FILE **f_dat;
   f_dat=(FILE **)malloc(param->out_grid->n_field*sizeof(FILE *));
 
   for(i=0;i<param->out_grid->n_field_tot;i++){
@@ -1192,6 +1215,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       n_field++;
     }
   }
+
+  free(f_dat);
 }
 
 void makeFolders(struct CPUINFO *cpu){
@@ -1278,18 +1303,25 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
-	    printf("%s %p\n",filename,cpu->part);
+	 //   printf("%s %p\n",filename,cpu->part);
+	    printf("%spart.%05d\n",folder_field,*(cpu->ndumps));
 	  }
 
-  MPI_Barrier(cpu->comm);
-  REAL tt1=MPI_Wtime();
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    REAL tt1=MPI_Wtime();
+#endif // WMPI
+
 #ifndef MPIIO
-	  dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
+    dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
 	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO
+
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
   REAL tt2=MPI_Wtime();
+#endif // WMPI
 
 //  printf("Total time for output writing %f \n", tt2-tt1);
 
@@ -1320,8 +1352,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 	    printf("Dumping .......");
 	    printf("%s\n",filename);
 	  }
+#ifdef WMPI
 MPI_Barrier(cpu->comm);
 REAL tt1=MPI_Wtime();
+#endif // WMPI
+
 #ifdef ALLOCT
 #ifdef MPIIO
 	  dumpalloct_MPI(folder_field,adump,param, cpu);
@@ -1331,9 +1366,11 @@ REAL tt1=MPI_Wtime();
 #else
     dumpgrid(param->lmax,firstoct,filename,adump,param);
 #endif // ALLOCT
+
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
   REAL tt2=MPI_Wtime();
-
+#endif // WMPI
 //  printf("Total time for output writing %f \n", tt2-tt1);
 
 

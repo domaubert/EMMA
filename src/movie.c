@@ -34,6 +34,13 @@
 //=================================================================================================
 
 
+void init_movie(struct RUNPARAMS *param){
+	const int n=POW(2, param->movie->lmap);
+	const int n_field=param->out_grid->n_field_movie;
+	param->movie->map=(float*)calloc(n_field*n*n,sizeof(float));
+	param->movie->map_reduce = (float*)calloc(n_field*n*n,sizeof(float));
+}
+
 void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
   const int debug = 0;
@@ -170,14 +177,18 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
 	float* mapred = param->movie->map_reduce;
 
+#ifdef WMPI
 	//TODO check that!!!
 	MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+#endif // WMPI
 
 	if(cpu->rank==RANK_DISP){
 
     int i,ii=0;
     for (i=0;i<param->out_grid->n_field_tot; i++){
       if (param->out_grid->field_state_movie[i]){
+
+        mkdir(ffolder, 0755);
 
         char fffolder[256];
         sprintf(fffolder,"%s%s/",ffolder,param->out_grid->field_name[i]);

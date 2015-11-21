@@ -43,7 +43,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   int icell;
   struct PART *nexp;
   struct PART *curp;
-  REAL mtot;
+  REAL mtot=0;
   REAL Mtot=0;
   REAL Mtotnew=0;
   REAL Etot=0;

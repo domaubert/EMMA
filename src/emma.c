@@ -72,7 +72,9 @@
 #include "movie.h"
 #endif // MOVIE
 
-
+#ifdef WOMP
+#include <omp.h>
+#endif // WOMP
 
 
 void gdb_debug()
@@ -89,6 +91,10 @@ void gdb_debug()
 // ===============================================================================
 
 
+
+void init_MPI(struct CPUINFO *cpu, int argc, char **argv){
+
+}
 
 //------------------------------------------------------------------------
  // the MAIN CODE
@@ -223,19 +229,16 @@ int main(int argc, char *argv[])
   param.stars=&stars;
 #endif
 
-
 #if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST unitary_stars_test;
   param.unitary_stars_test = &unitary_stars_test;
 #endif // defined
-
 
 #ifdef SUPERNOVAE
   struct SNPARAM sn;
   param.sn=&sn;
   param.sn->trig_sn=0;
 #endif
-
 
 #ifdef MOVIE
 	struct MOVIEPARAM movie;
@@ -284,10 +287,8 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
-
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
@@ -299,12 +300,12 @@ int main(int argc, char *argv[])
 
 
 #ifdef MOVIE
-	const int n    = POW(2, param.movie->lmap);
-	const int n_field= param.out_grid->n_field_movie;
-	param.movie->map = (float*)calloc(n_field*n*n,sizeof(float));
-	param.movie->map_reduce = (float*)calloc(n_field*n*n,sizeof(float));
+	init_movie(&param);
 #endif
-  //omp_set_num_threads(param.ompthread);
+
+#ifdef WOMP
+  omp_set_num_threads(param.ompthread);
+#endif // WOMP
 
 #ifdef MPIIO
   cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
@@ -314,12 +315,17 @@ int main(int argc, char *argv[])
 #endif // STARS
 #endif // MPIIO
 
+
+
 #ifndef TESTCOSMO
   tmax=param.tmax;
 #else
   //in  cosmo case tmax is understood as a maximal expansion factor
   amax=param.tmax;
 #endif
+
+
+  init_MPI(&cpu,argc,argv);
 
 #ifdef WMPI
   MPI_Status stat;
@@ -333,7 +339,7 @@ int main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-  //========= creating a PACKET MPI type =======
+ //========= creating a PACKET MPI type =======
   MPI_Datatype MPI_PACKET,oldtypes[16];
   int          blockcounts[16];
 
@@ -397,9 +403,7 @@ int main(int argc, char *argv[])
 
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
   MPI_Type_commit(&MPI_PART);
-
-
-#endif
+#endif // PIC
 
 #ifdef WHYDRO2
   //========= creating a WTYPE MPI type =======
@@ -419,10 +423,10 @@ int main(int argc, char *argv[])
   blockcounts[0]=10;
 #else
   blockcounts[0]=8;
-#endif
+#endif // HELIUM
 #else
   blockcounts[0]=7;
-#endif
+#endif // WRADHYD
 
   /* Now define structured type and commit it */
   MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
@@ -453,8 +457,7 @@ int main(int argc, char *argv[])
 /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
   MPI_Type_commit(&MPI_HYDRO);
-
-#endif
+#endif // WHYDRO2
 
 #ifdef WRAD
   //========= creating a RTYPE MPI type =======
@@ -528,10 +531,7 @@ int main(int argc, char *argv[])
   /* Now define structured type and commit it */
   MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
   MPI_Type_commit(&MPI_RAD);
-
-#endif
-
-  //============================================
+#endif // WRAD
 
   cpu.MPI_PACKET=&MPI_PACKET;
 #ifdef PIC
@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
 #else
   cpu.rank=0;
   cpu.nproc=1;
-#endif
+#endif // WMPI
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
@@ -611,10 +611,9 @@ int main(int argc, char *argv[])
 
   int memsize=0.;
   grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT)); memsize+=ngridmax*sizeof(struct OCT);// the oct grid
-
   cpu.locNoct =	(int *)calloc(levelmax,sizeof(int)); 				memsize+=levelmax*sizeof(int);			// the local number of octs per level
-
   cpu.octList = (struct OCT***)calloc(levelmax,sizeof(struct OCT**)); memsize+=levelmax*sizeof(struct OCT**);
+
   int iLev;
   for(iLev = 0; iLev<levelcoarse; iLev++){
     //cpu.locNoct[iLev] = POW(2,3*(iLev+1));
@@ -622,9 +621,8 @@ int main(int argc, char *argv[])
     cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
   }
   for(iLev = levelcoarse; iLev<levelmax; iLev++){
-	cpu.octList[iLev] = (struct OCT**)calloc(ngridmax,sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
+    cpu.octList[iLev] = (struct OCT**)calloc(ngridmax,sizeof(struct OCT*)); memsize+=ngridmax*sizeof(struct OCT**);
   }
-
 
   int ncellscoarse = POW(2,3*param.lcoarse)/8; // number of cells before refinement
   int ncellsmax    = (levelmax>levelcoarse?3:1) * ncellscoarse; 		 // max number of cells after refinement
@@ -684,7 +682,6 @@ int main(int argc, char *argv[])
   srand(SEED);
 #endif
 
-
 #ifndef PIC
 	part = NULL;
 #endif
@@ -721,8 +718,6 @@ int main(int argc, char *argv[])
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
 #endif
-
-
 
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
@@ -913,6 +908,11 @@ int main(int argc, char *argv[])
 #endif
 	    }
 
+#ifdef WRAD
+        curoct->cell[icell].z_first_xion=-1;
+        curoct->cell[icell].z_last_xion=0;
+#endif // WRAD
+
 	    //the neighbours
 	    getcellnei(icell, vnei, vcell);
 	    for(ii=0;ii<6;ii++){
@@ -943,6 +943,7 @@ int main(int argc, char *argv[])
 	    newoct++;
 
 	  }
+
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
@@ -950,7 +951,6 @@ int main(int argc, char *argv[])
  //   setOctList(firstoct[level-1], &cpu, &param,level);
 
   }
-
 
   if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
 
@@ -1057,7 +1057,6 @@ int main(int argc, char *argv[])
 
   int *ndt;
   ndt=(int *)malloc(sizeof(int)*levelmax);
-
 
   // INITIALISATION FROM INITIAL CONDITIONS =========================
   if(param.nrestart==0){
@@ -1754,7 +1753,6 @@ int main(int argc, char *argv[])
     int *ptot = (int*)calloc(2,sizeof(int));
     mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
 
-
 #ifdef ZOOM
     // we trigger the zoom region
     int izoom;
@@ -1860,7 +1858,7 @@ int main(int argc, char *argv[])
       }
 
       //Recursive Calls over levels
-      double tg1,tg2,tg3,tg4;
+      double tg1=0,tg2=0,tg3=0,tg4=0;
 #ifdef WMPI
       MPI_Barrier(cpu.comm);
       tg1=MPI_Wtime();
@@ -1883,7 +1881,7 @@ int main(int argc, char *argv[])
       if(cpu.rank==RANK_DISP) printf("START COARSE RAD with dt=%e\n",adt[levelcoarse-1]);
       while(trad<adt[levelcoarse-1]){
 	//if(cpu.rank==RANK_DISP) printf("step\n");
-	double tcr1,tcr2;
+	double tcr1=0,tcr2=0;
 
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
@@ -2062,11 +2060,148 @@ int main(int argc, char *argv[])
 
 #endif
 
-    // we are done let's free the ressources
+//printf("begin freeing\n");
+///////////////////////////////////////////
+// we are done let's free the ressources
+///////////////////////////////////////////
 
-    free(adt);
-    free(ndt);
+  free(grid);
+  free(firstoct);
+  free(lastoct);
 
+  for(iLev = 0; iLev<levelcoarse; iLev++){
+    free(cpu.octList[iLev]);
+  }
+  for(iLev = levelcoarse; iLev<levelmax; iLev++){
+    free(cpu.octList[iLev]);
+  }
+
+#ifdef PIC
+  free(part);
+#endif // PIC
+
+#ifndef GPUAXL
+  free(stencil);
+#ifdef WRAD
+  free(rstencil);
+#endif // WRAD
+  free(grav_stencil);
+  free(gstencil.res);
+  free(gstencil.pnew);
+  free(gstencil.resLR);
+#endif // GPUAXL
+
+#ifdef COARSERAD
+  free(adt_rad);
+#endif
+  free(adt);
+  free(ndt);
+  free(ptot);
+
+///////////////////////////////////////////
+// free cpu
+///////////////////////////////////////////
+
+  free(cpu.locNoct);
+  free(cpu.octList);
+
+#ifdef MPIIO
+  free(cpu.mpiio_ncells );
+  free(cpu.mpiio_nparts );
+#ifdef STARS
+  free(cpu.mpiio_nstars );
+#endif // STARS
+#endif // MPIIO
+
+  free(cpu.htable);
+  free(cpu.noct);
+  free(cpu.npart);
+
+#ifdef STARS
+  free(cpu.nstar);
+#endif // STARS
+
+  free(cpu.dict);
+  free(cpu.mpinei);
+
+  free(cpu.bndoct);
+  free(cpu.allkmin);
+  free(cpu.allkmax);
+
+  free(cpu.nsend);
+  free(cpu.nrecv);
+  free(cpu.nsend_coarse);
+  free(cpu.nrecv_coarse);
+
+#ifdef WMPI
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.sendbuffer[i]);
+    free(cpu.recvbuffer[i]);
+  }
+  free(cpu.sendbuffer);
+  free(cpu.recvbuffer);
+
+#ifdef PIC
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.psendbuffer[i]);
+    free(cpu.precvbuffer[i]);
+  }
+  free(cpu.psendbuffer);
+  free(cpu.precvbuffer);
+#endif // PIC
+
+#ifdef WHYDRO2
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.hsendbuffer[i]);
+    free(cpu.hrecvbuffer[i]);
+  }
+  free(cpu.hsendbuffer);
+  free(cpu.hrecvbuffer);
+#endif // WHYDRO2
+
+#ifdef WRAD
+  for(i=0;i<cpu.nnei;i++) {
+    free(cpu.Rsendbuffer[i]);
+    free(cpu.Rrecvbuffer[i]);
+  }
+  free(cpu.Rsendbuffer);
+  free(cpu.Rrecvbuffer);
+#endif // WRAD
+
+#endif // WMPI
+
+///////////////////////////////////////////
+// free param
+///////////////////////////////////////////
+
+  free(param.atomic.space_bound);
+  free(param.atomic.time_bound);
+  free(param.atomic.hnu);
+  free(param.atomic.alphae);
+  free(param.atomic.alphai);
+  free(param.atomic.factgrp);
+
+#ifdef SUPERNOVAE
+  free(param.sn->mass_loss_t);
+  free(param.sn->mass_loss_mass);
+  free(param.sn->egy_loss_t);
+  free(param.sn->egy_loss_egy);
+#endif // SUPERNOVAE
+
+#if defined(UVBKG) || defined(STARS_TO_UVBKG)
+  free(param.uv.redshift);
+  free(param.uv.Nphot);
+  free(param.uv.value);
+#endif // defined
+
+#ifdef MOVIE
+	free(param.movie->map);
+	free(param.movie->map_reduce);
+#endif // MOVIE
+
+///////////////////////////////////////////
+// free GPU
+///////////////////////////////////////////
 
 #ifdef GPUAXL
 
@@ -2085,7 +2220,11 @@ int main(int argc, char *argv[])
     destroy_radstencil_GPU(&cpu,rstride);
 #endif
 
-#endif
+#endif // GPUAXL
+
+///////////////////////////////////////////
+///////////////////////////////////////////
+///////////////////////////////////////////
 
     REAL tend=MPI_Wtime();
 

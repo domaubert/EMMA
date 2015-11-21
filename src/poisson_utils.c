@@ -14,6 +14,9 @@
 #include "communication.h"
 #endif
 
+#ifdef WOMP
+#include <omp.h>
+#endif // WOMP
 
 #ifdef WGRAV
 //================================================================
@@ -430,7 +433,7 @@ void recursive_neighbor_gather_oct_grav(int ioct, int inei, int inei2, int inei3
   int i;
   int ioct2;
   int vnei[6],vcell[6];
-  int ineiloc;
+  int ineiloc=-1;
   static int face[8]={0,1,2,3,4,5,6,7};
   REAL dxcur;
 
@@ -971,7 +974,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
   struct OCT *curoct;
   int nreadtot;
   int nread;
-  REAL fnorm,residual,residualold,dres;
+  REAL fnorm,residual=0,residualold,dres;
   int icell;
   int nitmax;
   REAL factdens;
@@ -1038,6 +1041,7 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 	if(nread>0){
 	// ------------ solving the iteration
+
 	  PoissonJacobi_single(stencil,level,cpu->rank,nread,stride,dxcur,(iter==0),factdens);
 
 	  // ------------ computing the residuals
@@ -1533,7 +1537,10 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
   struct OCT* curoct;
   struct OCT* nextoct;
   int icell;
+
   double t[10];
+  int i;
+  for(i=0;i<10;i++)t[i]=0;
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -1574,7 +1581,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     for(icell=0;icell<8;icell++){ // looping over cells in oct
       curcell=&(curoct->cell[icell]);
       if(curcell->child!=NULL){
-	
+
         coarse2fine_gravlin(curcell,Wi);
         for(icell2=0;icell2<8;icell2++){
 	  //		Wi[icell2].p=0.;

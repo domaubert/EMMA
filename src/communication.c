@@ -296,14 +296,12 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif
 
 #ifdef WHYDRO2
-
   cpu->hsendbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
   cpu->hrecvbuffer=(struct HYDRO_MPI **)(calloc(cpu->nnei,sizeof(struct HYDRO_MPI*)));
   for(i=0;i<cpu->nnei;i++) {
     cpu->hsendbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu->nbuff,sizeof(struct HYDRO_MPI)));
     cpu->hrecvbuffer[i]=(struct HYDRO_MPI *) (calloc(cpu->nbuff,sizeof(struct HYDRO_MPI)));
   }
-
 #endif
 
 #ifdef WRAD
@@ -516,13 +514,13 @@ void gather_ex_hydro(struct CPUINFO *cpu, struct HYDRO_MPI **sendbuffer,int leve
   int i,icell;
 
   memset(countpacket,0,cpu->nnei*sizeof(int));
-  
+
   if(cpu->noct[level-1]>0){ // correction must be done only if the current level exists
     for(i=0;i<cpu->nebnd;i++){ // scanning all the external boundary octs
       if(cpu->bndoct[i]->level!=(level-1)) continue; // only l-1 octs must be corrected from flux diffusion
       icpu=cpu->dict[cpu->bndoct[i]->cpu]; // getting the local destination cpu through the dictionnary
       pack=sendbuffer[icpu]+countpacket[icpu]; // taking a free slot in the send buffer
-      
+
 
       // assigning the values
       pack->level=cpu->bndoct[i]->level;

@@ -728,19 +728,20 @@ if(cond1||cond2||cond3){
 
    // ================= III Recursive call to finer level
 
-  double tt2,tt1;
+  double tt2=0,tt1=0;
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt1=MPI_Wtime();
 #endif
 
-    int nlevel=cpu->noct[level]; // number at next level
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
-
 #if 1
     if(level<param->lmax){
+
+      int nlevel=cpu->noct[level]; // number at next level
+#ifdef WMPI
+      MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+
       if(nlevel>0){
 	dtfine=Advance_level(level+1,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,ndt,nsteps,tloc);
 	// coarse and finer level must be synchronized now
@@ -835,15 +836,18 @@ if(cond1||cond2||cond3){
 
 
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
-#endif
+#endif // WMPI
 
 
-#endif
+#endif // PIC
 
 
     //=============== Hydro Update ======================
 #ifdef WHYDRO2
+
     double th[10];
+    int i_th;
+    for(i_th=0;i_th<10; i_th++) th[i_th]=0;
 
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
@@ -896,9 +900,13 @@ if(cond1||cond2||cond3){
     // ===================================== RADIATION
 #ifdef WRAD
     double tcomp[10];
+    int i;
+    for(i=0;i<10;i++) tcomp[i]=0;
     int chemonly;
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcomp[0]=MPI_Wtime();
+#endif // WMPI
     //=============== Building Sources and counting them ======================
     nsource=FillRad(level,param,firstoct,cpu,(level==param->lcoarse)&&(nsteps==0),aexp, tloc);  // Computing source distribution and filling the radiation fields
 
@@ -940,21 +948,18 @@ if(cond1||cond2||cond3){
     //printf("cpu #%d ready 4\n",cpu->rank);
 
 #ifdef WMPI
-    MPI_Barrier(cpu->comm);
-#endif // WMPI
-
-#ifdef WMPI
     //printf("proc %d waiting\n",cpu->rank);
     MPI_Barrier(cpu->comm);
     tcomp[3]=MPI_Wtime();
     if(level>param->lcoarse){
       mpi_rad_correct(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,level);
-
-      MPI_Barrier(cpu->comm);
-      tcomp[5]=MPI_Wtime();
     }
 
+    MPI_Barrier(cpu->comm);
+    tcomp[5]=MPI_Wtime();
+
     //mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
+
     MPI_Barrier(cpu->comm);
     tcomp[4]=MPI_Wtime();
 #endif // WMPI
@@ -1030,15 +1035,16 @@ if(cond1||cond2||cond3){
     }else{
       L_clean_marks(level,firstoct);
       KPCLIMIT_TRIGGER=1;
+#ifdef WMPI
       MPI_Barrier(cpu->comm);
       MPI_Allreduce(MPI_IN_PLACE,&KPCLIMIT_TRIGGER,1,MPI_INT,   MPI_SUM,cpu->comm);
-
-      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP)
-
-      if (level==param->lmax){
-        printf("Blocking refinement to level %d : level max reached\n",level+1);
-      }else{
-        printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+#endif // WMPI
+      if(KPCLIMIT_TRIGGER && cpu->rank==RANK_DISP){
+        if (level==param->lmax){
+          printf("Blocking refinement to level %d : level max reached\n",level+1);
+        }else{
+          printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+        }
       }
     }
     KPCLIMIT_TRIGGER=0;
@@ -1179,16 +1185,15 @@ if(cond1||cond2||cond3){
     // ================= III Recursive call to finer level
 
     double tt2,tt1;
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tt1=MPI_Wtime();
-
-    int nlevel=cpu->noct[level]; // number at next level
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
-
-
+#endif // WMPI
     if(level<param->lmax){
+      int nlevel=cpu->noct[level]; // number at next level
+#ifdef WMPI
+      MPI_Allreduce(MPI_IN_PLACE,&nlevel,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
       if(nlevel>0){
 	REAL dtfine;
 	dtfine=Advance_level_RAD(level+1,dtmax,adt,cpu,param,firstoct,lastoct,stencil,gstencil,rstencil,nsteps,tloc,nrad);
@@ -1210,10 +1215,13 @@ if(cond1||cond2||cond3){
     MPI_Allreduce(adt+level-2,&tdum2,1,MPI_REEL,MPI_MIN,cpu->comm);
     adt[level-1]=tdum;
     adt[level-2]=tdum2;
-#endif
 
     MPI_Barrier(cpu->comm);
     tt2=MPI_Wtime();
+#endif
+
+
+
 
     // ===================================== RADIATION
 
@@ -1225,8 +1233,6 @@ if(cond1||cond2||cond3){
 #endif
 
     //=============== Building Sources and counting them ======================
-
-
 
     nsource=FillRad(level,param,firstoct,cpu,0,aexp, tloc);  // Computing source distribution and filling the radiation fields // Note that we don't initialize the fields (done in advancelevel)
 
@@ -1240,10 +1246,6 @@ if(cond1||cond2||cond3){
       mpi_exchange_rad_level(cpu,cpu->Rsendbuffer,cpu->Rrecvbuffer,1,level);
       MPI_Barrier(cpu->comm);
       tcomp[2]=MPI_Wtime();
-#endif
-
-#ifdef WMPI
-      MPI_Barrier(cpu->comm);
 #endif
 
       //=============== Radiation Update ======================
@@ -1267,11 +1269,6 @@ int error;
 error = ccc_tremain(&time_remain)
  if (!error) printf("Time remaining :%lf\n", time_remain);
 #endif // CURIE
-
-
-#ifdef WMPI
-      MPI_Barrier(cpu->comm);
-#endif
 
 #ifdef WMPI
       //printf("proc %d waiting\n",cpu->rank);
@@ -1316,5 +1313,5 @@ error = ccc_tremain(&time_remain)
   return dt;
 
 }
-#endif
-#endif
+#endif // COARSERAD
+#endif // WRAD
