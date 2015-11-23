@@ -66,6 +66,8 @@ all:$(OBJ) $(CUDA_OBJ)
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
+field2grid:
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/field2grid.c -o utils/field2grid -lm
 alloct:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) -o utils/alloct utils/alloct.c -lm
 part2cic:
