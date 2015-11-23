@@ -407,8 +407,7 @@ void readAtomic(struct RUNPARAMS *param){
   int debug =0; //print what was readed and abort if !=0
 
   //openfile
-  FILE *buf=NULL;
-  buf=fopen(param->atomic.path,"r");
+  FILE *buf=fopen(param->atomic.path,"r");
   if(buf==NULL){
     printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
     abort();
