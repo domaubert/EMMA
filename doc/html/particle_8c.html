@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9.1"/>
-<title>EMMA: /home/deparis/Quartz/particle.c File Reference</title>
+<title>EMMA: /home/deparis/Quartz/src/particle.c File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -105,7 +105,7 @@ $(document).ready(function(){initNavTree('particle_8c.html','');});
   <div class="summary">
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">/home/deparis/Quartz/particle.c File Reference</div>  </div>
+<div class="title">particle.c File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -113,12 +113,16 @@ $(document).ready(function(){initNavTree('particle_8c.html','');});
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a6449d1c73fc79a1f6fb81427d0fb1e43"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a6449d1c73fc79a1f6fb81427d0fb1e43">printPart</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *part)</td></tr>
+<tr class="separator:a6449d1c73fc79a1f6fb81427d0fb1e43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a268daf34bb8d28af7a3cc8bb8cf3e1a2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a268daf34bb8d28af7a3cc8bb8cf3e1a2">checkPartNan</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *part)</td></tr>
+<tr class="separator:a268daf34bb8d28af7a3cc8bb8cf3e1a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8f45b45a995c56beddc80a5f33b450c9"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct_p_a_r_t.html">PART</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9">findlastpart</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *phead)</td></tr>
 <tr class="separator:a8f45b45a995c56beddc80a5f33b450c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad756d7a3f5947e819a195bee8681e3e0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#ad756d7a3f5947e819a195bee8681e3e0">countpart</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *phead)</td></tr>
 <tr class="separator:ad756d7a3f5947e819a195bee8681e3e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4129f67867c9e9b877ff5258376b762b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a4129f67867c9e9b877ff5258376b762b">countpartDM</a> (struct <a class="el" href="struct_c_e_l_l.html">CELL</a> *cell, int *npart)</td></tr>
-<tr class="separator:a4129f67867c9e9b877ff5258376b762b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9abb4926895418325c6336b24f872d9a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a9abb4926895418325c6336b24f872d9a">countpartDM</a> (struct <a class="el" href="struct_c_e_l_l.html">CELL</a> *cell, int *npart)</td></tr>
+<tr class="separator:a9abb4926895418325c6336b24f872d9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0301941ff68e533380ad2efcff0be6f"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#af0301941ff68e533380ad2efcff0be6f">countstar</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *phead)</td></tr>
 <tr class="separator:af0301941ff68e533380ad2efcff0be6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4bae0231087b82c848a1266936c0d09f"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="struct_p_a_r_t.html">PART</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="particle_8c.html#a4bae0231087b82c848a1266936c0d09f">modifpospart</a> (struct <a class="el" href="struct_p_a_r_t.html">PART</a> *phead, <a class="el" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> len, int dir)</td></tr>
@@ -145,6 +149,24 @@ Functions</h2></td></tr>
 <tr class="separator:a3331461d2511f83d3a2931016011b207"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a268daf34bb8d28af7a3cc8bb8cf3e1a2"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int checkPartNan </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="struct_p_a_r_t.html">PART</a> *&#160;</td>
+          <td class="paramname"><em>part</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00034">34</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+
+</div>
+</div>
 <a class="anchor" id="a4292a51e62244d53d41e645f893821ff"></a>
 <div class="memitem">
 <div class="memproto">
@@ -199,7 +221,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00136">136</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00260">260</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -217,16 +239,16 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00039">39</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00163">163</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a4129f67867c9e9b877ff5258376b762b"></a>
+<a class="anchor" id="a9abb4926895418325c6336b24f872d9a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int countpartDM </td>
+          <td class="memname">void countpartDM </td>
           <td>(</td>
           <td class="paramtype">struct <a class="el" href="struct_c_e_l_l.html">CELL</a> *&#160;</td>
           <td class="paramname"><em>cell</em>, </td>
@@ -245,14 +267,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00059">59</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
-
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="particle_8c_a4129f67867c9e9b877ff5258376b762b_cgraph.png" border="0" usemap="#particle_8c_a4129f67867c9e9b877ff5258376b762b_cgraph" alt=""/></div>
-</div>
-</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00183">183</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -270,7 +285,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00088">88</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00212">212</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -316,7 +331,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l01797">1797</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l01923">1923</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -334,7 +349,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00019">19</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00143">143</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -380,19 +395,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l01758">1758</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
-
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="particle_8c_a8b09d4dd0a695a66ad4f7b4a8ad65b0a_cgraph.png" border="0" usemap="#particle_8c_a8b09d4dd0a695a66ad4f7b4a8ad65b0a_cgraph" alt=""/></div>
-<map name="particle_8c_a8b09d4dd0a695a66ad4f7b4a8ad65b0a_cgraph" id="particle_8c_a8b09d4dd0a695a66ad4f7b4a8ad65b0a_cgraph">
-<area shape="rect" id="node2" href="cic_8c.html#a5a8a040cfe120a023f3edc146b33376e" title="cell2part_cic" alt="" coords="143,31,237,57"/>
-<area shape="rect" id="node3" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596" title="getcellnei" alt="" coords="285,5,363,32"/>
-<area shape="rect" id="node4" href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="291,56,357,83"/>
-</map>
-</div>
-</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l01884">1884</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -450,7 +453,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00240">240</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00364">364</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -484,7 +487,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00379">379</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00505">505</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -530,7 +533,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00312">312</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00436">436</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -558,19 +561,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00897">897</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
-
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="particle_8c_a698418140dc58eded69acabb9743a700_cgraph.png" border="0" usemap="#particle_8c_a698418140dc58eded69acabb9743a700_cgraph" alt=""/></div>
-<map name="particle_8c_a698418140dc58eded69acabb9743a700_cgraph" id="particle_8c_a698418140dc58eded69acabb9743a700_cgraph">
-<area shape="rect" id="node2" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596" title="getcellnei" alt="" coords="165,5,242,32"/>
-<area shape="rect" id="node3" href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="170,56,237,83"/>
-<area shape="rect" id="node4" href="particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9" title="findlastpart" alt="" coords="160,107,247,133"/>
-</map>
-</div>
-</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l01023">1023</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -598,7 +589,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00417">417</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00543">543</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -632,7 +623,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00111">111</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00235">235</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -666,18 +657,7 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l00455">455</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
-
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="particle_8c_af0760bb080b47965edbfbe6d60422a3c_cgraph.png" border="0" usemap="#particle_8c_af0760bb080b47965edbfbe6d60422a3c_cgraph" alt=""/></div>
-<map name="particle_8c_af0760bb080b47965edbfbe6d60422a3c_cgraph" id="particle_8c_af0760bb080b47965edbfbe6d60422a3c_cgraph">
-<area shape="rect" id="node2" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596" title="getcellnei" alt="" coords="151,5,229,32"/>
-<area shape="rect" id="node3" href="particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9" title="findlastpart" alt="" coords="147,56,233,83"/>
-</map>
-</div>
-</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00581">581</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -711,18 +691,25 @@ Here is the call graph for this function:</div>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="particle_8c_source.html#l01333">1333</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
+<p>Definition at line <a class="el" href="particle_8c_source.html#l01459">1459</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="particle_8c_a4268300ebf0c300d641d0951ce3e50f3_cgraph.png" border="0" usemap="#particle_8c_a4268300ebf0c300d641d0951ce3e50f3_cgraph" alt=""/></div>
-<map name="particle_8c_a4268300ebf0c300d641d0951ce3e50f3_cgraph" id="particle_8c_a4268300ebf0c300d641d0951ce3e50f3_cgraph">
-<area shape="rect" id="node2" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596" title="getcellnei" alt="" coords="187,5,265,32"/>
-<area shape="rect" id="node3" href="particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9" title="findlastpart" alt="" coords="183,56,269,83"/>
-</map>
 </div>
-</p>
+</div>
+<a class="anchor" id="a6449d1c73fc79a1f6fb81427d0fb1e43"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void printPart </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="struct_p_a_r_t.html">PART</a> *&#160;</td>
+          <td class="paramname"><em>part</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Definition at line <a class="el" href="particle_8c_source.html#l00017">17</a> of file <a class="el" href="particle_8c_source.html">particle.c</a>.</p>
 
 </div>
 </div>
@@ -731,8 +718,8 @@ Here is the call graph for this function:</div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="particle_8c.html">particle.c</a></li>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="particle_8c.html">particle.c</a></li>
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:18 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

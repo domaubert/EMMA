@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9.1"/>
-<title>EMMA: /home/deparis/Quartz/hydro_utils_gpu.h Source File</title>
+<title>EMMA: /home/deparis/Quartz/src/hydro_utils_gpu.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,7 +103,7 @@ $(document).ready(function(){initNavTree('hydro__utils__gpu_8h_source.html','');
 
 <div class="header">
   <div class="headertitle">
-<div class="title">/home/deparis/Quartz/hydro_utils_gpu.h</div>  </div>
+<div class="title">hydro_utils_gpu.h</div>  </div>
 </div><!--header-->
 <div class="contents">
 <a href="hydro__utils__gpu_8h.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="keywordtype">int</span> <a class="code" href="hydro__utils__gpu_8h.html#a88ddb544ba3ea7d0366c537a723439b6">advancehydroGPU</a>(<span class="keyword">struct</span> <a class="code" href="struct_o_c_t.html">OCT</a> **firstoct, <span class="keywordtype">int</span> <a class="code" href="struct_o_c_t.html#acf4d33ee4cff36f69b924471174dcb11">level</a>, <span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *<a class="code" href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">cpu</a>, <span class="keyword">struct</span> <a class="code" href="struct_h_g_r_i_d.html">HGRID</a> *stencil, <span class="keywordtype">int</span> stride, <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> dxcur, <a class="code" href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a> dtnew);</div>
@@ -111,24 +111,24 @@ $(document).ready(function(){initNavTree('hydro__utils__gpu_8h_source.html','');
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="keywordtype">void</span> <a class="code" href="hydro__utils__gpu_8h.html#ada297c033696c5ad89a2e9f0a35b1e54">create_pinned_stencil</a>(<span class="keyword">struct</span> <a class="code" href="struct_h_g_r_i_d.html">HGRID</a> **stencil, <span class="keywordtype">int</span> stride);</div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="keywordtype">void</span> <a class="code" href="hydro__utils__gpu_8h.html#af0e8edc6b90fcacf8993856d96cd5201">destroy_hydstencil_GPU</a>(<span class="keyword">struct</span> <a class="code" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *<a class="code" href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">cpu</a>, <span class="keywordtype">int</span> stride);</div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="keywordtype">void</span> <a class="code" href="hydro__utils__gpu_8h.html#a096c9b930d68b06e482f76b5476c89ed">destroy_pinned_stencil</a>(<span class="keyword">struct</span> <a class="code" href="struct_h_g_r_i_d.html">HGRID</a> **stencil, <span class="keywordtype">int</span> stride);</div>
-<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00252">prototypes.h:252</a></div></div>
-<div class="ttc" id="prototypes_8h_html_a5821460e95a0800cf9f24c38915cbbde"><div class="ttname"><a href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a></div><div class="ttdeci">float REAL</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00019">prototypes.h:19</a></div></div>
+<div class="ttc" id="struct_c_p_u_i_n_f_o_html"><div class="ttname"><a href="struct_c_p_u_i_n_f_o.html">CPUINFO</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00395">prototypes.h:395</a></div></div>
+<div class="ttc" id="prototypes_8h_html_a5821460e95a0800cf9f24c38915cbbde"><div class="ttname"><a href="prototypes_8h.html#a5821460e95a0800cf9f24c38915cbbde">REAL</a></div><div class="ttdeci">float REAL</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00026">prototypes.h:26</a></div></div>
 <div class="ttc" id="hydro__utils__gpu_8h_html_ada297c033696c5ad89a2e9f0a35b1e54"><div class="ttname"><a href="hydro__utils__gpu_8h.html#ada297c033696c5ad89a2e9f0a35b1e54">create_pinned_stencil</a></div><div class="ttdeci">void create_pinned_stencil(struct HGRID **stencil, int stride)</div></div>
 <div class="ttc" id="hydro__utils__gpu_8h_html_a096c9b930d68b06e482f76b5476c89ed"><div class="ttname"><a href="hydro__utils__gpu_8h.html#a096c9b930d68b06e482f76b5476c89ed">destroy_pinned_stencil</a></div><div class="ttdeci">void destroy_pinned_stencil(struct HGRID **stencil, int stride)</div></div>
 <div class="ttc" id="hydro__utils__gpu_8h_html_a88ddb544ba3ea7d0366c537a723439b6"><div class="ttname"><a href="hydro__utils__gpu_8h.html#a88ddb544ba3ea7d0366c537a723439b6">advancehydroGPU</a></div><div class="ttdeci">int advancehydroGPU(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct HGRID *stencil, int stride, REAL dxcur, REAL dtnew)</div></div>
 <div class="ttc" id="hydro__utils__gpu_8h_html_af0e8edc6b90fcacf8993856d96cd5201"><div class="ttname"><a href="hydro__utils__gpu_8h.html#af0e8edc6b90fcacf8993856d96cd5201">destroy_hydstencil_GPU</a></div><div class="ttdeci">void destroy_hydstencil_GPU(struct CPUINFO *cpu, int stride)</div></div>
-<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00791">prototypes.h:791</a></div></div>
-<div class="ttc" id="struct_o_c_t_html_a41a58b7c4446ab1abce89f43531cd523"><div class="ttname"><a href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">OCT::cpu</a></div><div class="ttdeci">int cpu</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00810">prototypes.h:810</a></div></div>
-<div class="ttc" id="struct_o_c_t_html_acf4d33ee4cff36f69b924471174dcb11"><div class="ttname"><a href="struct_o_c_t.html#acf4d33ee4cff36f69b924471174dcb11">OCT::level</a></div><div class="ttdeci">int level</div><div class="ttdoc">level of the cells in the oct </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00811">prototypes.h:811</a></div></div>
+<div class="ttc" id="struct_o_c_t_html"><div class="ttname"><a href="struct_o_c_t.html">OCT</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00979">prototypes.h:979</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_a41a58b7c4446ab1abce89f43531cd523"><div class="ttname"><a href="struct_o_c_t.html#a41a58b7c4446ab1abce89f43531cd523">OCT::cpu</a></div><div class="ttdeci">int cpu</div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00998">prototypes.h:998</a></div></div>
+<div class="ttc" id="struct_o_c_t_html_acf4d33ee4cff36f69b924471174dcb11"><div class="ttname"><a href="struct_o_c_t.html#acf4d33ee4cff36f69b924471174dcb11">OCT::level</a></div><div class="ttdeci">int level</div><div class="ttdoc">level of the cells in the oct </div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00999">prototypes.h:999</a></div></div>
 <div class="ttc" id="hydro__utils__gpu_8h_html_ac23852b39ae5103aadf72ff927189ee3"><div class="ttname"><a href="hydro__utils__gpu_8h.html#ac23852b39ae5103aadf72ff927189ee3">create_hydstencil_GPU</a></div><div class="ttdeci">void create_hydstencil_GPU(struct CPUINFO *cpu, int stride)</div></div>
-<div class="ttc" id="struct_h_g_r_i_d_html"><div class="ttname"><a href="struct_h_g_r_i_d.html">HGRID</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l00917">prototypes.h:917</a></div></div>
+<div class="ttc" id="struct_h_g_r_i_d_html"><div class="ttname"><a href="struct_h_g_r_i_d.html">HGRID</a></div><div class="ttdef"><b>Definition:</b> <a href="prototypes_8h_source.html#l01105">prototypes.h:1105</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="hydro__utils__gpu_8h.html">hydro_utils_gpu.h</a></li>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="hydro__utils__gpu_8h.html">hydro_utils_gpu.h</a></li>
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:18 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

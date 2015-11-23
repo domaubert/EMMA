@@ -13,6 +13,7 @@ var struct_p_a_r_t =
     [ "mass", "struct_p_a_r_t.html#a7709794c305d62392e3311b11def51d2", null ],
     [ "next", "struct_p_a_r_t.html#ad12309285b14d1887bdb05a814502a9f", null ],
     [ "prev", "struct_p_a_r_t.html#a20665285c0996954cf4630942784cde0", null ],
+    [ "radiative_state", "struct_p_a_r_t.html#ac3af5376f84f84e1f240d7313e8a4312", null ],
     [ "rhocell", "struct_p_a_r_t.html#aae829ed54d2a411a61afadf7c7a052c1", null ],
     [ "vx", "struct_p_a_r_t.html#ad5096e47ed42b0d4812afaf4daa9842a", null ],
     [ "vy", "struct_p_a_r_t.html#a800a8e844ae40ceefc14d9269fc6c767", null ],

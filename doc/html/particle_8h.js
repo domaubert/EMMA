@@ -1,8 +1,9 @@
 var particle_8h =
 [
+    [ "checkPartNan", "particle_8h.html#a268daf34bb8d28af7a3cc8bb8cf3e1a2", null ],
     [ "comptstep", "particle_8h.html#a4d9612d9e4757897949042982a220d0b", null ],
     [ "countpart", "particle_8h.html#ad756d7a3f5947e819a195bee8681e3e0", null ],
-    [ "countpartDM", "particle_8h.html#a4129f67867c9e9b877ff5258376b762b", null ],
+    [ "countpartDM", "particle_8h.html#a9abb4926895418325c6336b24f872d9a", null ],
     [ "egypart", "particle_8h.html#a3331461d2511f83d3a2931016011b207", null ],
     [ "findlastpart", "particle_8h.html#a8f45b45a995c56beddc80a5f33b450c9", null ],
     [ "forcevel", "particle_8h.html#a38cacae9193af100c2ef673ee1756282", null ],
@@ -15,5 +16,6 @@ var particle_8h =
     [ "L_reset_is_part", "particle_8h.html#adb13917cfd2e61666e7b84492d7996bb", null ],
     [ "modifpospart", "particle_8h.html#a4bae0231087b82c848a1266936c0d09f", null ],
     [ "movepart", "particle_8h.html#aaa27089f6a717e3c3fd07fc5515c544f", null ],
-    [ "partcellreorg", "particle_8h.html#af0760bb080b47965edbfbe6d60422a3c", null ]
+    [ "partcellreorg", "particle_8h.html#af0760bb080b47965edbfbe6d60422a3c", null ],
+    [ "printPart", "particle_8h.html#a6449d1c73fc79a1f6fb81427d0fb1e43", null ]
 ];

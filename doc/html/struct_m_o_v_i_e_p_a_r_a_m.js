@@ -4,6 +4,7 @@ var struct_m_o_v_i_e_p_a_r_a_m =
     [ "lmap", "struct_m_o_v_i_e_p_a_r_a_m.html#a34a27ab692ee4e44dfc2c1f8720f678f", null ],
     [ "map", "struct_m_o_v_i_e_p_a_r_a_m.html#ab25d3aee40d98485267507bdcf5ed4f8", null ],
     [ "map_reduce", "struct_m_o_v_i_e_p_a_r_a_m.html#a4d258f5fb7e0dde8e5bff177c89494f5", null ],
+    [ "mode_str", "struct_m_o_v_i_e_p_a_r_a_m.html#a2f06e86e45a83a4a8acb84ea14af6b56", null ],
     [ "xmax", "struct_m_o_v_i_e_p_a_r_a_m.html#a08a5fe838a1ac23e41bf3cc41a125e34", null ],
     [ "xmin", "struct_m_o_v_i_e_p_a_r_a_m.html#a34fb5afbfe8d3ddb1422adb0869335f5", null ],
     [ "ymax", "struct_m_o_v_i_e_p_a_r_a_m.html#a22f4d9938e323ae8f544c658a17b6455", null ],

@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9.1"/>
-<title>EMMA: /home/deparis/Quartz/chem_utils_gpu.cu Source File</title>
+<title>EMMA: /home/deparis/Quartz/src/chem_utils_gpu.cu Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,7 +103,7 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 
 <div class="header">
   <div class="headertitle">
-<div class="title">/home/deparis/Quartz/chem_utils_gpu.cu</div>  </div>
+<div class="title">chem_utils_gpu.cu</div>  </div>
 </div><!--header-->
 <div class="contents">
 <a href="chem__utils__gpu_8cu.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
@@ -416,7 +416,7 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;#endif</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;     // Cosmological Adiabatic expansion effects ==============</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;#ifdef TESTCOSMO</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;     REAL hubblet=param-&gt;cosmo-&gt;H0*SQRT(param-&gt;cosmo-&gt;om/aexp+param-&gt;cosmo-&gt;ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC))*0.; // s-1 // SOMETHING TO CHECK HERE</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;     REAL hubblet=param-&gt;cosmo-&gt;H0*SQRT(param-&gt;cosmo-&gt;om/aexp+param-&gt;cosmo-&gt;ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;#else</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;     REAL hubblet=0.;</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;#endif</div>
@@ -454,13 +454,13 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;       et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;       }</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;         else{</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;       et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]+3*hubblet));</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;       et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;         }</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;         if((et[igrp]&lt;0)||(isnan(et[igrp]))){</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;       test=1;</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;         }</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;         p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc])+4.*hubblet)*dtcool);</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;         p[igrp]=(1.+(alphai[igrp]*nH[idloc]*(1-x0[idloc]))*dtcool);</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;       }</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;     </div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;     ai_tmp1=0.;</div>
@@ -496,7 +496,7 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;#endif</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;#endif</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;     </div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;     xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1+3.*hubblet));</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;     xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;     ai_tmp1=0.;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;</div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;</div>
@@ -535,10 +535,10 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;#ifndef S_X</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;#ifdef SEMI_IMPLICIT</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;     for(igrp=0;igrp&lt;NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+5.*hubblet*dtcool);</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool));</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;#else</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;     for(igrp=0;igrp&lt;NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool));</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;#endif</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;#else</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;     //===================================== X RAYS ==============================</div>
@@ -559,10 +559,10 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;     }</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;#ifdef SEMI_IMPLICIT</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;     for(igrp=0;igrp&lt;NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp]*(!chemonly);}</div>
-<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool))/(1.+5.*hubblet*dtcool);</div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool));</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;#else</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;     for(igrp=0;igrp&lt;NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp]*(!chemonly);}</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool))/(1.+5*hubblet*dtcool);</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;     eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool));</div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;#endif</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;#endif</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;</div>
@@ -586,67 +586,68 @@ $(document).ready(function(){initNavTree('chem__utils__gpu_8cu_source.html','');
 <div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;     ai_tmp1=0;</div>
 <div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;     </div>
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;     eintt=FMAX(emin,eintt);</div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;#else</div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;     eintt=eint[idloc];</div>
-<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;#endif</div>
-<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;     }</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;     for(igrp =0;igrp&lt;NGRP;igrp++)</div>
-<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;       {</div>
-<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;         egyloc[idloc+igrp*BLOCKCOOL]=et[igrp];</div>
-<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;         if(!chemonly){</div>
-<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;       floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp];</div>
-<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;       floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp];</div>
-<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;       floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp];</div>
-<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;         } </div>
-<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;       }</div>
-<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;     </div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;     x0[idloc]=xt;</div>
-<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;     //printf(&quot;xt=%e\n&quot;,xt);</div>
-<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;#ifdef COOLING</div>
-<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;     eint[idloc]=eintt;</div>
-<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;#endif</div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;     </div>
-<div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;#ifdef TESTCOSMO</div>
-<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;     REAL da=hubblet*dtcool*aexp;</div>
-<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;     aexp+=da;</div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;#endif</div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;     currentcool_t+=dtcool;</div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;     fudgecool=param-&gt;fudgecool;</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;     nitcool++;</div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;     if((nitcool==ncvgcool)&amp;&amp;(ncvgcool!=0)) break;</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;   }</div>
-<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;#endif</div>
-<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;      // ====================== End of the cooling loop</div>
-<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;</div>
-<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;      aexp=aexporg;</div>
-<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;      // FIlling the rad structure to send it back</div>
-<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;       if(!chemonly){</div>
-<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;    for(igrp=0;igrp&lt;NGRP;igrp++)</div>
-<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;      {</div>
-<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        R.e[igrp]=FMAX(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])/param-&gt;unit.unit_N;</div>
-<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;        R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
-<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;        R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;      }</div>
-<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;       }</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;      R.nhplus=x0[idloc]*R.nh;</div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;      R.eint=eint[idloc]*POW(aexp,5)/param-&gt;unit.unit_n/param-&gt;unit.unit_d/POW(param-&gt;unit.unit_v,2);</div>
-<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;      </div>
-<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;      memcpy(&amp;stencil[i].New.cell[icell].rfieldnew,&amp;R,sizeof(struct Rtype));</div>
-<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;</div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;    }</div>
-<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;  }</div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;</div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;}</div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;#endif</div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;     }</div>
+<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;#else</div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;     eintt=eint[idloc];</div>
+<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;#endif</div>
+<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;</div>
+<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;     // inner update</div>
+<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;     REAL aold=aexp;</div>
+<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;#ifdef TESTCOSMO</div>
+<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;     REAL da=hubblet*dtcool*aexp;</div>
+<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;     aexp+=da;</div>
+<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;#endif</div>
+<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;</div>
+<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;     for(igrp =0;igrp&lt;NGRP;igrp++)</div>
+<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;       {</div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;         egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3);</div>
+<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;         if(!chemonly){</div>
+<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;       floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);</div>
+<div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;       floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);</div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;       floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);</div>
+<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;         } </div>
+<div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;       }</div>
+<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;     </div>
+<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;     x0[idloc]=xt;</div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;#ifdef COOLING</div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;     eint[idloc]=eintt*POW(aold/aexp,5);</div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;#endif</div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;     currentcool_t+=dtcool;</div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;     fudgecool=param-&gt;fudgecool;</div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;     nitcool++;</div>
+<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;     if((nitcool==ncvgcool)&amp;&amp;(ncvgcool!=0)) break;</div>
+<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;   }</div>
+<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;#endif</div>
+<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;      // ====================== End of the cooling loop</div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;</div>
+<div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;      // FIlling the rad structure to send it back</div>
+<div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;       if(!chemonly){</div>
+<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;    for(igrp=0;igrp&lt;NGRP;igrp++)</div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;      {</div>
+<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;        R.e[igrp]=FMAX(egyloc[idloc+igrp*BLOCKCOOL]*aexp*aexp*aexp,EMIN*factgrp[igrp])/param-&gt;unit.unit_N;</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;        R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param-&gt;unit.unit_l*param-&gt;unit.unit_t/param-&gt;unit.unit_N;</div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;      }</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;       }</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;      R.nhplus=x0[idloc]*R.nh;</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;      R.eint=eint[idloc]*POW(aexp,5)/param-&gt;unit.unit_n/param-&gt;unit.unit_d/POW(param-&gt;unit.unit_v,2);</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;      dE2T(&amp;R,aexp,param);</div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;      memcpy(&amp;stencil[i].New.cell[icell].rfieldnew,&amp;R,sizeof(struct Rtype));</div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;</div>
+<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;    }</div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;  }</div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;</div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;}</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;#endif</div>
+<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;#endif</div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="chem__utils__gpu_8cu.html">chem_utils_gpu.cu</a></li>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="chem__utils__gpu_8cu.html">chem_utils_gpu.cu</a></li>
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:18 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

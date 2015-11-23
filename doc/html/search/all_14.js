@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['v',['v',['../struct_s_c_a_l_e.html#a289065f973efac360cf6703e414fd14f',1,'SCALE::v()'],['../struct_wtype.html#a289065f973efac360cf6703e414fd14f',1,'Wtype::v()'],['../struct_wtype___m_p_i.html#a289065f973efac360cf6703e414fd14f',1,'Wtype_MPI::v()'],['../struct_l_c_e_l_l.html#a48d9522e58fa05906c6dba23e5745a72',1,'LCELL::v()']]],
+  ['v',['v',['../struct_s_c_a_l_e.html#a289065f973efac360cf6703e414fd14f',1,'SCALE::v()'],['../struct_p_h_y_s_i_c_a_l___s_t_a_t_e.html#a289065f973efac360cf6703e414fd14f',1,'PHYSICAL_STATE::v()'],['../struct_wtype.html#a289065f973efac360cf6703e414fd14f',1,'Wtype::v()'],['../struct_wtype___m_p_i.html#a289065f973efac360cf6703e414fd14f',1,'Wtype_MPI::v()'],['../struct_l_c_e_l_l.html#a48d9522e58fa05906c6dba23e5745a72',1,'LCELL::v()']]],
   ['v2code',['v2code',['../convert_8c.html#a9c3af1d7314e335f69427c48fcf255dd',1,'v2code(struct RUNPARAMS *param, REAL v):&#160;convert.c'],['../convert_8h.html#a9c3af1d7314e335f69427c48fcf255dd',1,'v2code(struct RUNPARAMS *param, REAL v):&#160;convert.c']]],
   ['valid',['valid',['../struct_s_t_e_n_g_r_a_v.html#a567bb44eca8622c71b588d99555c3bc2',1,'STENGRAV']]],
   ['value',['value',['../struct_u_v_b_a_c_k_g_r_o_u_n_d.html#a9883ab29421b9360060a72f5ff15ab1d',1,'UVBACKGROUND']]],
@@ -20,10 +20,6 @@ var searchData=
   ['vecpotnew',['vecpotnew',['../struct_m_u_l_t_i_v_e_c_t.html#a2e4e0117c0fbbc574fa4c0c276312892',1,'MULTIVECT']]],
   ['vecpotnew_5fd',['vecpotnew_d',['../struct_m_u_l_t_i_v_e_c_t.html#abfa0b110acf3f16e0359a402dd0ed8b6',1,'MULTIVECT']]],
   ['vecsum_5fd',['vecsum_d',['../struct_m_u_l_t_i_v_e_c_t.html#a605341d50c7e18b11b0f6df58047d850',1,'MULTIVECT']]],
-  ['vector_2ec',['vector.c',['../vector_8c.html',1,'']]],
-  ['vector_2eh',['vector.h',['../vector_8h.html',1,'']]],
-  ['vector_5fgpu_2ecu',['vector_gpu.cu',['../vector__gpu_8cu.html',1,'']]],
-  ['vector_5fgpu_2eh',['vector_gpu.h',['../vector__gpu_8h.html',1,'']]],
   ['vx',['vx',['../struct_p_a_r_t.html#ad5096e47ed42b0d4812afaf4daa9842a',1,'PART::vx()'],['../struct_p_a_r_t___m_p_i.html#ad5096e47ed42b0d4812afaf4daa9842a',1,'PART_MPI::vx()']]],
   ['vy',['vy',['../struct_p_a_r_t.html#a800a8e844ae40ceefc14d9269fc6c767',1,'PART::vy()'],['../struct_p_a_r_t___m_p_i.html#a800a8e844ae40ceefc14d9269fc6c767',1,'PART_MPI::vy()']]],
   ['vz',['vz',['../struct_p_a_r_t.html#af12ae472bf6fa19f01ac9abbd8d51c9c',1,'PART::vz()'],['../struct_p_a_r_t___m_p_i.html#af12ae472bf6fa19f01ac9abbd8d51c9c',1,'PART_MPI::vz()']]]

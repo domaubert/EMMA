@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['units',['UNITS',['../struct_u_n_i_t_s.html',1,'']]],
-  ['utype',['Utype',['../struct_utype.html',1,'']]],
-  ['utype1d',['Utype1D',['../struct_utype1_d.html',1,'']]],
-  ['uvbackground',['UVBACKGROUND',['../struct_u_v_b_a_c_k_g_r_o_u_n_d.html',1,'']]]
+  ['rad_5fmpi',['RAD_MPI',['../struct_r_a_d___m_p_i.html',1,'']]],
+  ['rgrid',['RGRID',['../struct_r_g_r_i_d.html',1,'']]],
+  ['rtype',['Rtype',['../struct_rtype.html',1,'']]],
+  ['runparams',['RUNPARAMS',['../struct_r_u_n_p_a_r_a_m_s.html',1,'']]]
 ];

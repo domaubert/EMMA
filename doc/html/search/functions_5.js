@@ -1,9 +1,9 @@
 var searchData=
 [
-  ['f_5faexp',['f_aexp',['../quartz_8c.html#a99470aec0979485dffdb62ffd8f2b55a',1,'quartz.c']]],
+  ['f_5faexp',['f_aexp',['../emma_8c.html#a99470aec0979485dffdb62ffd8f2b55a',1,'emma.c']]],
   ['faexp',['faexp',['../friedmann_8c.html#a335121794152d21f4d84060ee7ae363a',1,'faexp(double a, double om, double ov):&#160;friedmann.c'],['../friedmann_8h.html#a335121794152d21f4d84060ee7ae363a',1,'faexp(double a, double om, double ov):&#160;friedmann.c']]],
   ['faexp_5ftilde',['faexp_tilde',['../friedmann_8c.html#a1163dc5ce7264a51864f34cc908aa924',1,'faexp_tilde(double a, double om, double ov):&#160;friedmann.c'],['../friedmann_8h.html#a1163dc5ce7264a51864f34cc908aa924',1,'faexp_tilde(double a, double om, double ov):&#160;friedmann.c']]],
-  ['feedback',['feedback',['../supernovae_8c.html#a1863655f8673f7e11a485896f5c54569',1,'supernovae.c']]],
+  ['feedback',['feedback',['../supernovae_8c.html#a1863655f8673f7e11a485896f5c54569',1,'feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt):&#160;supernovae.c'],['../supernovae__old_8c.html#a1863655f8673f7e11a485896f5c54569',1,'feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, REAL aexp, int level, REAL dt):&#160;supernovae_old.c']]],
   ['filldens',['FillDens',['../poisson__utils_8c.html#a39287b7a3efdef7da8aac1ec1d55ccfd',1,'FillDens(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu):&#160;poisson_utils.c'],['../poisson__utils_8h.html#a39287b7a3efdef7da8aac1ec1d55ccfd',1,'FillDens(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu):&#160;poisson_utils.c']]],
   ['fillrad',['FillRad',['../src__utils_8c.html#a336df04b01d71681ee0502a0d641ce37',1,'FillRad(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, int init, REAL aexp, REAL tloc):&#160;src_utils.c'],['../src__utils_8h.html#a336df04b01d71681ee0502a0d641ce37',1,'FillRad(int level, struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, int init, REAL aexp, REAL tloc):&#160;src_utils.c']]],
   ['findlastpart',['findlastpart',['../particle_8c.html#a8f45b45a995c56beddc80a5f33b450c9',1,'findlastpart(struct PART *phead):&#160;particle.c'],['../particle_8h.html#a8f45b45a995c56beddc80a5f33b450c9',1,'findlastpart(struct PART *phead):&#160;particle.c']]],

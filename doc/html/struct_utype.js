@@ -5,6 +5,8 @@ var struct_utype =
     [ "dv", "struct_utype.html#a38df0de778242d543dcceaadf421cf74", null ],
     [ "dw", "struct_utype.html#a9548f7e780e936d2e69d9164bca89362", null ],
     [ "dX", "struct_utype.html#a4cae6ff4f7eade93a71b0909625a8a93", null ],
+    [ "dXHE", "struct_utype.html#ac17172d20e4eced8cc5222b182ac352f", null ],
+    [ "dXXHE", "struct_utype.html#a5b982fbd838a67a1882bdec15269bb25", null ],
     [ "E", "struct_utype.html#abb95084208bf19d32d01dc99e10a52aa", null ],
     [ "eint", "struct_utype.html#af85c0c0fca2bced5b1c077fcab589bd4", null ]
 ];

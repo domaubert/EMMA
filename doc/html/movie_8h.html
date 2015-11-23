@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9.1"/>
-<title>EMMA: /home/deparis/Quartz/movie.h File Reference</title>
+<title>EMMA: /home/deparis/Quartz/src/movie.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -105,7 +105,7 @@ $(document).ready(function(){initNavTree('movie_8h.html','');});
   <div class="summary">
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">/home/deparis/Quartz/movie.h File Reference</div>  </div>
+<div class="title">movie.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -113,23 +113,19 @@ $(document).ready(function(){initNavTree('movie_8h.html','');});
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a8d066609653c0fb4457e7ede91a64081"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="movie_8h.html#a8d066609653c0fb4457e7ede91a64081">dumpMovie</a> (struct <a class="el" href="struct_o_c_t.html">OCT</a> **firstoct, struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, struct <a class="el" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, int level, float aexp)</td></tr>
-<tr class="separator:a8d066609653c0fb4457e7ede91a64081"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22109696626d3fce7d1ab10f3372ed31"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="movie_8h.html#a22109696626d3fce7d1ab10f3372ed31">init_movie</a> (struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param)</td></tr>
+<tr class="separator:a22109696626d3fce7d1ab10f3372ed31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af36ebc83f8ccc6e7d2035378ec5a690b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="movie_8h.html#af36ebc83f8ccc6e7d2035378ec5a690b">dumpMovie</a> (struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, struct <a class="el" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, float aexp)</td></tr>
+<tr class="separator:af36ebc83f8ccc6e7d2035378ec5a690b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a8d066609653c0fb4457e7ede91a64081"></a>
+<a class="anchor" id="af36ebc83f8ccc6e7d2035378ec5a690b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void dumpMovie </td>
           <td>(</td>
-          <td class="paramtype">struct <a class="el" href="struct_o_c_t.html">OCT</a> **&#160;</td>
-          <td class="paramname"><em>firstoct</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *&#160;</td>
           <td class="paramname"><em>param</em>, </td>
         </tr>
@@ -138,12 +134,6 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype">struct <a class="el" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *&#160;</td>
           <td class="paramname"><em>cpu</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>level</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -159,7 +149,25 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Definition at line <a class="el" href="movie_8c_source.html#l00032">32</a> of file <a class="el" href="movie_8c_source.html">movie.c</a>.</p>
+<p>Definition at line <a class="el" href="movie_8c_source.html#l00044">44</a> of file <a class="el" href="movie_8c_source.html">movie.c</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a22109696626d3fce7d1ab10f3372ed31"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void init_movie </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *&#160;</td>
+          <td class="paramname"><em>param</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Definition at line <a class="el" href="movie_8c_source.html#l00037">37</a> of file <a class="el" href="movie_8c_source.html">movie.c</a>.</p>
 
 </div>
 </div>
@@ -168,8 +176,8 @@ Functions</h2></td></tr>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="movie_8h.html">movie.h</a></li>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="movie_8h.html">movie.h</a></li>
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:18 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

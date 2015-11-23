@@ -1,5 +1,5 @@
 var movie_8c =
 [
-    [ "dumpMovie", "movie_8c.html#a8d066609653c0fb4457e7ede91a64081", null ],
-    [ "MOVIE_SNAP_NUMBER", "movie_8c.html#a9bfb39229bb02590bd5c5b0dc9a02f27", null ]
+    [ "dumpMovie", "movie_8c.html#af36ebc83f8ccc6e7d2035378ec5a690b", null ],
+    [ "init_movie", "movie_8c.html#a22109696626d3fce7d1ab10f3372ed31", null ]
 ];

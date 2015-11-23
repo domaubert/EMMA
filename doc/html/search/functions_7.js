@@ -14,6 +14,7 @@ var searchData=
   ['hilbert_5fnextinbox',['hilbert_nextinbox',['../hilbert_8c.html#af0da92e8f9e2e30eb584b51f9d3c2740',1,'hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits, int findPrev, void *c1V, void *c2V, void const *ptV):&#160;hilbert.c'],['../hilbert_8h.html#a765f950311472e7539cede11ccce0680',1,'hilbert_nextinbox(unsigned nDims, unsigned nBytes, unsigned nBits, int findPrev, void *coord1, void *coord2, void const *point):&#160;hilbert.c']]],
   ['homosource',['homosource',['../src__utils_8c.html#a443f7a173bd5553bf99c314253d9a2d2',1,'homosource(struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, int levext):&#160;src_utils.c'],['../src__utils_8h.html#a443f7a173bd5553bf99c314253d9a2d2',1,'homosource(struct RUNPARAMS *param, struct OCT **firstoct, struct CPUINFO *cpu, int levext):&#160;src_utils.c']]],
   ['hydro',['hydro',['../hydro__utils_8h.html#a1e231c9b4e59a33eba4e0e227b044d78',1,'hydro_utils.h']]],
+  ['hydro_5fsources',['hydro_sources',['../src__utils_8c.html#a3b187df11c26feeadcda0f18526c0424',1,'src_utils.c']]],
   ['hydrom',['hydroM',['../hydro__utils_8h.html#a4bde99004b9078df22af783dfb0e4b61',1,'hydro_utils.h']]],
   ['hydrom_5fsweepx',['hydroM_sweepX',['../hydro__utils_8c.html#adbb7d81e7682f3c5a07ce2bf05385488',1,'hydro_utils.c']]],
   ['hydrom_5fsweepy',['hydroM_sweepY',['../hydro__utils_8c.html#a05460a84764038ed5281386e7e6cb990',1,'hydro_utils.c']]],

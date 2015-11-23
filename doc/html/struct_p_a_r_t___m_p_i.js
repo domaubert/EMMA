@@ -8,6 +8,7 @@ var struct_p_a_r_t___m_p_i =
     [ "key", "struct_p_a_r_t___m_p_i.html#a94bb892c30911cd62cba0707a5395be4", null ],
     [ "level", "struct_p_a_r_t___m_p_i.html#acf4d33ee4cff36f69b924471174dcb11", null ],
     [ "mass", "struct_p_a_r_t___m_p_i.html#a7709794c305d62392e3311b11def51d2", null ],
+    [ "radiative_state", "struct_p_a_r_t___m_p_i.html#ac3af5376f84f84e1f240d7313e8a4312", null ],
     [ "rhocell", "struct_p_a_r_t___m_p_i.html#aae829ed54d2a411a61afadf7c7a052c1", null ],
     [ "vx", "struct_p_a_r_t___m_p_i.html#ad5096e47ed42b0d4812afaf4daa9842a", null ],
     [ "vy", "struct_p_a_r_t___m_p_i.html#a800a8e844ae40ceefc14d9269fc6c767", null ],

@@ -7,5 +7,6 @@ var searchData=
   ['stars_2ec',['stars.c',['../stars_8c.html',1,'']]],
   ['stars_2eh',['stars.h',['../stars_8h.html',1,'']]],
   ['supernovae_2ec',['supernovae.c',['../supernovae_8c.html',1,'']]],
-  ['supernovae_2eh',['supernovae.h',['../supernovae_8h.html',1,'']]]
+  ['supernovae_2eh',['supernovae.h',['../supernovae_8h.html',1,'']]],
+  ['supernovae_5fold_2ec',['supernovae_old.c',['../supernovae__old_8c.html',1,'']]]
 ];

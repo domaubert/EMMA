@@ -15,6 +15,10 @@ var searchData=
   ['pos2key',['pos2key',['../segment_8c.html#a4252bc970d7a09f7857dc1b2e70b22b4',1,'pos2key(REAL xc, REAL yc, REAL zc, int level):&#160;segment.c'],['../segment_8h.html#a4252bc970d7a09f7857dc1b2e70b22b4',1,'pos2key(REAL xc, REAL yc, REAL zc, int level):&#160;segment.c']]],
   ['pos2levelzoom',['pos2levelzoom',['../zoom_8c.html#a777e7b23eb193a01a44e7285036da293',1,'pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param):&#160;zoom.c'],['../zoom_8h.html#a777e7b23eb193a01a44e7285036da293',1,'pos2levelzoom(REAL xc, REAL yc, REAL zc, struct RUNPARAMS *param):&#160;zoom.c']]],
   ['pot2force',['Pot2Force',['../poisson__utils_8c.html#a73d6dca76fe5555bad3446818db71086',1,'poisson_utils.c']]],
+  ['printfieldinfo',['printFieldInfo',['../parameters_8c.html#a22edc7b14fc0b0f2e4fd1c9895474cf6',1,'parameters.c']]],
+  ['printfileonscreen',['printFileOnScreen',['../parameters_8c.html#adefd80a95d91df77c83c3b4e42bb3924',1,'parameters.c']]],
+  ['printpart',['printPart',['../particle_8c.html#a6449d1c73fc79a1f6fb81427d0fb1e43',1,'printPart(struct PART *part):&#160;particle.c'],['../particle_8h.html#a6449d1c73fc79a1f6fb81427d0fb1e43',1,'printPart(struct PART *part):&#160;particle.c']]],
+  ['printwtype',['printWtype',['../hydro__utils_8c.html#abb6abe49d5e80f88b56f8ac29d32a991',1,'printWtype(struct Wtype *W):&#160;hydro_utils.c'],['../hydro__utils_8h.html#abb6abe49d5e80f88b56f8ac29d32a991',1,'printWtype(struct Wtype *W):&#160;hydro_utils.c']]],
   ['pute2coarse',['putE2coarse',['../src__utils_8c.html#a4c423b7d3ceb62e6e65789ee451916b9',1,'src_utils.c']]],
   ['putsource',['putsource',['../src__utils_8c.html#a415f5629e9ef62d4800e798f8b39288b',1,'src_utils.c']]],
   ['putsource2coarse',['putsource2coarse',['../src__utils_8c.html#a08c3a4b656c329d893b31f5961fa41b1',1,'src_utils.c']]]
