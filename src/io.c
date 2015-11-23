@@ -1148,6 +1148,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       }
 
       fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
+      fwrite(&tsim,sizeof(float),1,f_dat[n_field]);
       fwrite(&xmin,sizeof(float),1,f_dat[n_field]);
       fwrite(&xmax,sizeof(float),1,f_dat[n_field]);
       fwrite(&ymin,sizeof(float),1,f_dat[n_field]);

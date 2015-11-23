@@ -899,8 +899,8 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
 #ifdef WMPI
 void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
   MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_REEL,MPI_MIN,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
 
   MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_REEL,MPI_SUM,cpu->comm);
