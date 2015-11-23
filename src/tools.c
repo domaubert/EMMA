@@ -373,31 +373,27 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 }
 
 
-REAL rdm(REAL a, REAL b){
+double rdm(double a, double b){
 /// return a random number between a and b
-	return 	(rand()/(REAL)RAND_MAX ) * (b-a) + a ;
+	return 	(rand()/(double)RAND_MAX ) * (b-a) + a ;
 }
 
 unsigned int gpoiss(REAL lambda){
 /// Poisson distribution
 /// TODO use a better poisson algorithme
 
-#ifdef SINGLEPRECISION
-  const int kmax = log(FLT_MAX); // log( max(float32) )  = 88
-#else
   const int kmax = log(DBL_MAX);// log( max(float64) ) = 708
-#endif // SINGLEPRECISION
 
   int k=1;
-  REAL p = rdm(0,1);
-  REAL P = exp(-lambda);
-  REAL sum=P;
+  double p = rdm(0,1);
+  double P = exp(-(double)lambda);
+  double sum=P;
   if (sum>=p){
     k=0;
   }
   else{
     do {
- 	P*=lambda/(REAL)k;
+ 	P*=lambda/(double)k;
 	sum+=P;
 	if (sum>=p) break;
 	k++;
@@ -405,7 +401,7 @@ unsigned int gpoiss(REAL lambda){
 
     if (k==kmax) {
       printf("WARNING : numerical precision reached in Poisson drawning k=%d\n",k);
-      abort();
+      //abort();
     }
   }
   if(k==1e6) {

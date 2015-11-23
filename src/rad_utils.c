@@ -1629,6 +1629,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
       if(isnan(stencil[i].New.cell[icell].rfieldnew.e[1])){
 	printf(" WTFFFF %e %e %e %e ||%e\n",stencil[i].New.cell[icell].rfieldnew.e[0],stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],Rupdate.e[0]);
+	abort();
       }
 
     }

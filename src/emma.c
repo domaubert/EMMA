@@ -288,7 +288,8 @@ int main(int argc, char *argv[])
 #endif
 
   //=========== some initial calls =============
-  GetParameters(argv[1],&param); // reading the parameters file
+  //GetParameters(argv[1],&param); // reading the parameters file
+  GetParameters("./param.run",&param); // reading the parameters file
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
