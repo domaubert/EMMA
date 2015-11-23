@@ -1125,6 +1125,8 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"SFR   \t\t");
       fprintf(fp,"SN    \t\t");
       fprintf(fp,"src   \t\t");
+      fprintf(fp,"xion   \t\t");
+      fprintf(fp,"temp   \t\t");
       fprintf(fp,"\n");
     }
 
@@ -1153,6 +1155,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, real_format ,(float)param->physical_state->Nsn);
     fprintf(fp, real_format ,(float)param->physical_state->src);
+
+    fprintf(fp, real_format ,(float)param->physical_state->field[33].mean/(float)param->physical_state->field[13].mean); // mass weighted ionization fraction
+    fprintf(fp, real_format ,(float)param->physical_state->field[38].mean); // temperature
+
 
     fprintf(fp,"\n");
     fclose(fp);
