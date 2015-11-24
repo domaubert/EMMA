@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['ieee754_5fdouble',['ieee754_double',['../unionieee754__double.html',1,'']]]
+  ['ggrid',['GGRID',['../struct_g_g_r_i_d.html',1,'']]],
+  ['gtype',['Gtype',['../struct_gtype.html',1,'']]]
 ];

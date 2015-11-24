@@ -907,12 +907,14 @@ int main(int argc, char *argv[])
 	      memset(&(newoct->cell[icell].gdata),0,sizeof(struct Gtype));
 	      memset(newoct->cell[icell].f,0,sizeof(REAL)*3);
 #endif
-	    }
 
 #ifdef WRAD
-        curoct->cell[icell].z_first_xion=-1;
-        curoct->cell[icell].z_last_xion=0;
+        newoct->cell[ii].z_first_xion=-1.;
+        newoct->cell[ii].z_last_xion=0;
 #endif // WRAD
+	    }
+
+
 
 	    //the neighbours
 	    getcellnei(icell, vnei, vcell);

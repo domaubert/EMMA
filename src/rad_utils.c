@@ -1881,14 +1881,13 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 #endif
       for(icell=0;icell<8;icell++){
 
-  if(curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh <THRESH_Z_XION_MAP){ //THRESH_Z_XION_MAP defined in param.h
+  REAL xion=curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh;
+  if(xion<THRESH_Z_XION_MAP){ //THRESH_Z_XION_MAP defined in param.h
     curoct->cell[icell].z_last_xion=1./aexp-1.;
   }
 
-  if(curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh >=THRESH_Z_XION_MAP){ //THRESH_Z_XION_MAP defined in param.h
-    if(curoct->cell[icell].z_first_xion == -1.){
-      curoct->cell[icell].z_first_xion=1./aexp-1.;
-    }
+  if( (xion>=THRESH_Z_XION_MAP) && (curoct->cell[icell].z_first_xion==-1) ){ //THRESH_Z_XION_MAP defined in param.h
+    curoct->cell[icell].z_first_xion=1./aexp-1.;
   }
 
 	int is_unsplit;

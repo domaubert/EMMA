@@ -12,5 +12,7 @@ var struct_c_e_l_l =
     [ "pnew", "struct_c_e_l_l.html#a016cb480e23cd8a5121d79ce86bb92d1", null ],
     [ "res", "struct_c_e_l_l.html#a728937cafac07da177f0f62d23b19c9e", null ],
     [ "rfield", "struct_c_e_l_l.html#aa89f1856430a7c20070a7862714c3403", null ],
-    [ "rfieldnew", "struct_c_e_l_l.html#a6798b810357f0b799de2b8970ca22f34", null ]
+    [ "rfieldnew", "struct_c_e_l_l.html#a6798b810357f0b799de2b8970ca22f34", null ],
+    [ "z_first_xion", "struct_c_e_l_l.html#ab71400bb967c00c83f5cc19d33d9ca4f", null ],
+    [ "z_last_xion", "struct_c_e_l_l.html#ac2a43fd27e45c0ddfbe7f89e65aa6e35", null ]
 ];

@@ -14,6 +14,7 @@ var hydro__utils_8h =
     [ "hydroM", "hydro__utils_8h.html#a4bde99004b9078df22af783dfb0e4b61", null ],
     [ "hydroS", "hydro__utils_8h.html#aa9f25381617b7c276c2b484b90ab47d2", null ],
     [ "HydroSolver", "hydro__utils_8h.html#ad79fd8c3866c5b8cf60ac9f905b034c3", null ],
+    [ "printWtype", "hydro__utils_8h.html#abb6abe49d5e80f88b56f8ac29d32a991", null ],
     [ "U2W", "hydro__utils_8h.html#a6e7519f0b84c3255bf960bd9642116d2", null ],
     [ "W2U", "hydro__utils_8h.html#a14c3f5f01ec3fdcbb98608130856f417", null ]
 ];

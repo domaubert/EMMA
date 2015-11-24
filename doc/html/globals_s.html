@@ -145,16 +145,19 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="rad__utils_8h.html#ad9a66072c3f9c6b253d04e7e32986702">rad_utils.h</a>
 </li>
 <li>save_amr()
-: <a class="el" href="io_8h.html#a0ead970861658616d8fa84b99b84e36f">io.h</a>
-, <a class="el" href="io_8c.html#a303e86ed58a1ef3be05be8a6a78414bf">io.c</a>
+: <a class="el" href="restart_8h.html#a303e86ed58a1ef3be05be8a6a78414bf">restart.h</a>
+, <a class="el" href="restart_8c.html#a303e86ed58a1ef3be05be8a6a78414bf">restart.c</a>
 </li>
 <li>save_part()
-: <a class="el" href="io_8c.html#a9dbfc7ee5ce18722f7842b0587a91916">io.c</a>
-, <a class="el" href="io_8h.html#a9dbfc7ee5ce18722f7842b0587a91916">io.h</a>
+: <a class="el" href="restart_8c.html#a9dbfc7ee5ce18722f7842b0587a91916">restart.c</a>
+, <a class="el" href="restart_8h.html#a9dbfc7ee5ce18722f7842b0587a91916">restart.h</a>
 </li>
 <li>scatter_mpi()
 : <a class="el" href="communication_8h.html#a7efb9983b7224f49c7bdb755a0d828dd">communication.h</a>
 , <a class="el" href="communication_8c.html#a7efb9983b7224f49c7bdb755a0d828dd">communication.c</a>
+</li>
+<li>scatter_mpi_dens_ext()
+: <a class="el" href="communication_8c.html#a3f04c43fb4704c744aeade8c9981c612">communication.c</a>
 </li>
 <li>scatter_mpi_hydro()
 : <a class="el" href="communication_8c.html#af4c90522fd6867db3530bb7e3e9e8173">communication.c</a>
@@ -168,9 +171,12 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <li>scatter_mpi_level()
 : <a class="el" href="communication_8c.html#a20f92f15e2b2fc592fc18de4481bac8b">communication.c</a>
 </li>
+<li>scatter_mpi_mark_ext()
+: <a class="el" href="communication_8c.html#a984322ed36bef397a9f2af371951a6ec">communication.c</a>
+</li>
 <li>scatter_mpi_part()
-: <a class="el" href="communication_8c.html#a043b44ead697222021eaa1cba40a4867">communication.c</a>
-, <a class="el" href="communication_8h.html#a7631ad477a6b2f28df5a476d1b38d37b">communication.h</a>
+: <a class="el" href="communication_8h.html#a7631ad477a6b2f28df5a476d1b38d37b">communication.h</a>
+, <a class="el" href="communication_8c.html#a043b44ead697222021eaa1cba40a4867">communication.c</a>
 </li>
 <li>scatter_mpi_pot_level()
 : <a class="el" href="communication_8c.html#a0dbcc8da116913db1ed7406f262ebf05">communication.c</a>
@@ -180,10 +186,6 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 </li>
 <li>scatter_mpi_rad_level()
 : <a class="el" href="communication_8c.html#ab403f3c05df1f15cfc370ff38af5b918">communication.c</a>
-</li>
-<li>scattercomp()
-: <a class="el" href="vector_8c.html#afc5fbc109de21176cfb65de29bd89a7a">vector.c</a>
-, <a class="el" href="vector_8h.html#afc5fbc109de21176cfb65de29bd89a7a">vector.h</a>
 </li>
 <li>scatterstencil()
 : <a class="el" href="hydro__utils_8c.html#a24d1cce248721f83c0cac1b510e69011">hydro_utils.c</a>
@@ -198,21 +200,9 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <li>scatterstencilrad()
 : <a class="el" href="rad__utils_8c.html#a30a38da65d2fb45abf89a9c0e8828c3d">rad_utils.c</a>
 </li>
-<li>scattervec()
-: <a class="el" href="vector_8c.html#a4e18eac84f12d8d60f1df14170e368b0">vector.c</a>
-, <a class="el" href="vector_8h.html#a6e024d746989af6df2c56f4f5911e98e">vector.h</a>
-</li>
-<li>scattervec_light()
-: <a class="el" href="vector_8c.html#a67d6d8a3f8c90e0d44ddb52e2499c63c">vector.c</a>
-, <a class="el" href="vector_8h.html#a67d6d8a3f8c90e0d44ddb52e2499c63c">vector.h</a>
-</li>
-<li>scattervechydro()
-: <a class="el" href="vector_8c.html#a6e1e74a888bfbd126601551d4b5458d0">vector.c</a>
-, <a class="el" href="vector_8h.html#a6e1e74a888bfbd126601551d4b5458d0">vector.h</a>
-</li>
 <li>segment_cell()
-: <a class="el" href="segment_8h.html#a582a999cb0e5b871fb71a4f95c9fd29b">segment.h</a>
-, <a class="el" href="segment_8c.html#a582a999cb0e5b871fb71a4f95c9fd29b">segment.c</a>
+: <a class="el" href="segment_8c.html#a582a999cb0e5b871fb71a4f95c9fd29b">segment.c</a>
+, <a class="el" href="segment_8h.html#a582a999cb0e5b871fb71a4f95c9fd29b">segment.h</a>
 </li>
 <li>segment_part()
 : <a class="el" href="segment_8c.html#a3c252852d9be4376e68fe97e88d386b5">segment.c</a>
@@ -222,6 +212,9 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 : <a class="el" href="rad__utils_8c.html#ac1cdb0a761579693b02a988a84867572">rad_utils.c</a>
 , <a class="el" href="rad__utils_8h.html#ac1cdb0a761579693b02a988a84867572">rad_utils.h</a>
 </li>
+<li>set_offset()
+: <a class="el" href="io_8c.html#ad1c615aad4fc6799e08645d2f3f631c9">io.c</a>
+</li>
 <li>setmStar()
 : <a class="el" href="stars_8c.html#a25a6f2c80eee14ce88e85a7dd5c4a34a">stars.c</a>
 </li>
@@ -230,8 +223,11 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="oct_8h.html#a6880a95458ae34fb292d8758b7379421">oct.h</a>
 </li>
 <li>setScale()
-: <a class="el" href="convert_8c.html#a26a98e712364536ac3ec63f1ee6e1077">convert.c</a>
-, <a class="el" href="convert_8h.html#a26a98e712364536ac3ec63f1ee6e1077">convert.h</a>
+: <a class="el" href="convert_8h.html#a26a98e712364536ac3ec63f1ee6e1077">convert.h</a>
+, <a class="el" href="convert_8c.html#a26a98e712364536ac3ec63f1ee6e1077">convert.c</a>
+</li>
+<li>setSigmaFieldInfo()
+: <a class="el" href="parameters_8c.html#ac57f3648b8bda737e9662bdf6f7eca02">parameters.c</a>
 </li>
 <li>setStarsState()
 : <a class="el" href="stars_8c.html#a85047cf7e14e7b2d3f8c10d0f00bbdbf">stars.c</a>
@@ -245,11 +241,11 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 , <a class="el" href="src__utils_8h.html#a9bd6797689be9a1c9e2d6660c0ae3b2e">src_utils.h</a>
 </li>
 <li>setUVvalue()
-: <a class="el" href="src__utils_8c.html#acad3d1a272a116cbe4c2fba61909fb82">src_utils.c</a>
-, <a class="el" href="src__utils_8h.html#acad3d1a272a116cbe4c2fba61909fb82">src_utils.h</a>
+: <a class="el" href="src__utils_8h.html#acad3d1a272a116cbe4c2fba61909fb82">src_utils.h</a>
+, <a class="el" href="src__utils_8c.html#acad3d1a272a116cbe4c2fba61909fb82">src_utils.c</a>
 </li>
 <li>SN_TMP_PARAM
-: <a class="el" href="supernovae_8c.html#a8942f148a732ffd6a232d84c03604b0f">supernovae.c</a>
+: <a class="el" href="supernovae__old_8c.html#a8942f148a732ffd6a232d84c03604b0f">supernovae_old.c</a>
 </li>
 <li>speedestimateX_HLLC()
 : <a class="el" href="hydro__utils_8c.html#ac9caaf180947f6f99e92f03883207b9c">hydro_utils.c</a>
@@ -260,28 +256,19 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <li>speedestimateZ_HLLC()
 : <a class="el" href="hydro__utils_8c.html#a892ce492dfcc54fd18f4b29fb4afad38">hydro_utils.c</a>
 </li>
-<li>square()
-: <a class="el" href="vector_8h.html#a400946044c9b8f8e446480d7ac0cbade">vector.h</a>
-, <a class="el" href="vector_8c.html#a400946044c9b8f8e446480d7ac0cbade">vector.c</a>
-</li>
-<li>square_res()
-: <a class="el" href="vector_8h.html#a950b2f03d73ac9ce16f68ec7e4e55498">vector.h</a>
-, <a class="el" href="vector_8c.html#a950b2f03d73ac9ce16f68ec7e4e55498">vector.c</a>
-</li>
-<li>square_vec()
-: <a class="el" href="vector_8h.html#aa5686622a5891ac579218aee80001fe3">vector.h</a>
-, <a class="el" href="vector_8c.html#ae7e3bbd6349be3f722359cc2056d9863">vector.c</a>
-</li>
-<li>square_vec_GPU()
-: <a class="el" href="vector__gpu_8h.html#a8469625caaaa7f0782b8ed9c8c352af5">vector_gpu.h</a>
-</li>
 <li>Stars()
 : <a class="el" href="stars_8h.html#a4e854b114f5e5611f5bd5dfd91681568">stars.h</a>
 , <a class="el" href="stars_8c.html#a4e854b114f5e5611f5bd5dfd91681568">stars.c</a>
 </li>
+<li>stars_sources()
+: <a class="el" href="src__utils_8c.html#a9e73ccd9f4c7c80d48494c6c41096e9a">src_utils.c</a>
+</li>
+<li>stromgren_source()
+: <a class="el" href="src__utils_8c.html#af6077ab77eca899b443572246e6b6792">src_utils.c</a>
+</li>
 <li>supernovae()
-: <a class="el" href="supernovae_8c.html#a0f7639cb97870e489e06f2cdb2cc9b53">supernovae.c</a>
-, <a class="el" href="supernovae_8h.html#a0f7639cb97870e489e06f2cdb2cc9b53">supernovae.h</a>
+: <a class="el" href="supernovae_8h.html#a0f7639cb97870e489e06f2cdb2cc9b53">supernovae.h</a>
+, <a class="el" href="supernovae__old_8c.html#a0f7639cb97870e489e06f2cdb2cc9b53">supernovae_old.c</a>
 </li>
 </ul>
 </div><!-- contents -->
@@ -289,7 +276,7 @@ $(document).ready(function(){initNavTree('globals_s.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:19 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

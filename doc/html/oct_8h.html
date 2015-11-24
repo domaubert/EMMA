@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.9.1"/>
-<title>EMMA: /home/deparis/Quartz/oct.h File Reference</title>
+<title>EMMA: /home/deparis/Quartz/src/oct.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -105,7 +105,7 @@ $(document).ready(function(){initNavTree('oct_8h.html','');});
   <div class="summary">
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">/home/deparis/Quartz/oct.h File Reference</div>  </div>
+<div class="title">oct.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -121,6 +121,8 @@ Functions</h2></td></tr>
 <tr class="separator:a2576bba3bc305a971dd6d874a00a5ed8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6880a95458ae34fb292d8758b7379421"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="oct_8h.html#a6880a95458ae34fb292d8758b7379421">setOctList</a> (struct <a class="el" href="struct_o_c_t.html">OCT</a> *firstoct, struct <a class="el" href="struct_c_p_u_i_n_f_o.html">CPUINFO</a> *cpu, struct <a class="el" href="struct_r_u_n_p_a_r_a_m_s.html">RUNPARAMS</a> *param, int level)</td></tr>
 <tr class="separator:a6880a95458ae34fb292d8758b7379421"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa79c0b8ebc8298a84dd026908e8bf95f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="oct_8h.html#aa79c0b8ebc8298a84dd026908e8bf95f">oct2loct</a> (struct <a class="el" href="struct_o_c_t.html">OCT</a> *oct, struct <a class="el" href="struct_l_o_c_t.html">LOCT</a> *loct)</td></tr>
+<tr class="separator:aa79c0b8ebc8298a84dd026908e8bf95f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="a1fb4cba38b27e10f9e8c0ec38ebd4737"></a>
@@ -173,19 +175,6 @@ Functions</h2></td></tr>
 
 <p>Definition at line <a class="el" href="oct_8c_source.html#l00215">215</a> of file <a class="el" href="oct_8c_source.html">oct.c</a>.</p>
 
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="oct_8h_a2576bba3bc305a971dd6d874a00a5ed8_cgraph.png" border="0" usemap="#oct_8h_a2576bba3bc305a971dd6d874a00a5ed8_cgraph" alt=""/></div>
-<map name="oct_8h_a2576bba3bc305a971dd6d874a00a5ed8_cgraph" id="oct_8h_a2576bba3bc305a971dd6d874a00a5ed8_cgraph">
-<area shape="rect" id="node2" href="cic_8c.html#a274f741bd8f953c27aa75c57ceedfbe5" title="part2cell_cic" alt="" coords="248,31,343,57"/>
-<area shape="rect" id="node5" href="oct_8c.html#a2576bba3bc305a971dd6d874a00a5ed8" title="cic_child" alt="" coords="127,68,200,95"/>
-<area shape="rect" id="node3" href="oct_8c.html#a20add264fc085467b9fceb1d3d24a596" title="getcellnei" alt="" coords="391,5,468,32"/>
-<area shape="rect" id="node4" href="oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="396,56,463,83"/>
-</map>
-</div>
-</p>
-
 </div>
 </div>
 <a class="anchor" id="a20add264fc085467b9fceb1d3d24a596"></a>
@@ -219,6 +208,34 @@ Here is the call graph for this function:</div>
 </div><div class="memdoc">
 
 <p>Definition at line <a class="el" href="oct_8c_source.html#l00116">116</a> of file <a class="el" href="oct_8c_source.html">oct.c</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="aa79c0b8ebc8298a84dd026908e8bf95f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void oct2loct </td>
+          <td>(</td>
+          <td class="paramtype">struct <a class="el" href="struct_o_c_t.html">OCT</a> *&#160;</td>
+          <td class="paramname"><em>oct</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">struct <a class="el" href="struct_l_o_c_t.html">LOCT</a> *&#160;</td>
+          <td class="paramname"><em>loct</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Definition at line <a class="el" href="oct_8c_source.html#l00334">334</a> of file <a class="el" href="oct_8c_source.html">oct.c</a>.</p>
 
 </div>
 </div>
@@ -260,16 +277,6 @@ Here is the call graph for this function:</div>
 
 <p>Definition at line <a class="el" href="oct_8c_source.html#l00250">250</a> of file <a class="el" href="oct_8c_source.html">oct.c</a>.</p>
 
-<p><div class="dynheader">
-Here is the call graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="oct_8h_a6880a95458ae34fb292d8758b7379421_cgraph.png" border="0" usemap="#oct_8h_a6880a95458ae34fb292d8758b7379421_cgraph" alt=""/></div>
-<map name="oct_8h_a6880a95458ae34fb292d8758b7379421_cgraph" id="oct_8h_a6880a95458ae34fb292d8758b7379421_cgraph">
-<area shape="rect" id="node2" href="oct_8c.html#a4e2b4f563f714e52b4d3bfe587187d00" title="cleanOctList" alt="" coords="136,5,231,32"/>
-</map>
-</div>
-</p>
-
 </div>
 </div>
 </div><!-- contents -->
@@ -277,8 +284,8 @@ Here is the call graph for this function:</div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><a class="el" href="oct_8h.html">oct.h</a></li>
-    <li class="footer">Generated on Fri Mar 20 2015 16:22:48 for EMMA by
+    <li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="oct_8h.html">oct.h</a></li>
+    <li class="footer">Generated on Fri Nov 20 2015 17:39:18 for EMMA by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.9.1 </li>
   </ul>

@@ -407,8 +407,7 @@ void readAtomic(struct RUNPARAMS *param){
   int debug =0; //print what was readed and abort if !=0
 
   //openfile
-  FILE *buf=NULL;
-  buf=fopen(param->atomic.path,"r");
+  FILE *buf=fopen(param->atomic.path,"r");
   if(buf==NULL){
     printf("ERROR : cannot open the parameter file (%s given), please check\n",param->atomic.path);
     abort();
@@ -679,7 +678,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
 
     fprintf(fp, int_format,"nproc",(cpu->nproc)); 		// number of processor
 #ifdef TESTCOSMO
-    fprintf(fp, float_format,"box_size_Mpc/h",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
+    fprintf(fp, float_format,"box_size_hm1_Mpc",(param->unit.unit_l/PARSEC/1e6*param->cosmo->H0/100));
 #else
     fprintf(fp, float_format,"box_size_Kpc",(param->unit.unit_l/PARSEC/1e3));
 #endif // TESTCOSMO
@@ -773,7 +772,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   printFileOnScreen("param.mk");
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("param.h");
+  printFileOnScreen("src/param.h");
   printf("\n");
   printf("--------------------------------------------------------------\n");
   printFileOnScreen("param.run");
@@ -982,7 +981,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
      if (param->out_grid->field_state_stat[i]){
-        initFieldInfo(&(param->physical_state->field[i]), param->physical_state->field[i].bin_min, param->physical_state->field[i].bin_max );
+        initFieldInfo(&(param->physical_state->field[i]), param->physical_state->field[i].bin_min, param->physical_state->field[i].bin_max);
     }
   }
 
@@ -1040,7 +1039,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }while(nextoct!=NULL);
   }
 
-  REAL dm_M0 = (param->physical_state->mstar - pre_mstar)/SOLAR_MASS;
 
 #ifdef WMPI
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1054,6 +1052,8 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
+
+  REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
 
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1072,9 +1072,12 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
-  REAL h=param->cosmo->H0;
-  REAL l= param->unit.unit_l/(1e6*PARSEC)/h;
+  REAL h=param->cosmo->H0/100.;
+  REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
+
+  printf("dt_M0=%e\n",dm_M0);
+  printf("dt_yr=%e\n",dt_yr);
 
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
 
@@ -1115,18 +1118,19 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef TESTCOSMO
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
-      fprintf(fp,"t_[yrs]\t\t");
+      fprintf(fp,"t_yrs\t\t");
 #endif
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
 
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
-      fprintf(fp,"SFR   \t\t");
-      fprintf(fp,"SN    \t\t");
-      fprintf(fp,"src   \t\t");
-      fprintf(fp,"xion   \t\t");
-      fprintf(fp,"temp   \t\t");
+      fprintf(fp,"SFR\t\t\t");
+      fprintf(fp,"SN\t\t\t");
+      fprintf(fp,"src\t\t\t");
+      fprintf(fp,"xion\t\t\t");
+      fprintf(fp,"temp\t\t\t");
+
       fprintf(fp,"\n");
     }
 

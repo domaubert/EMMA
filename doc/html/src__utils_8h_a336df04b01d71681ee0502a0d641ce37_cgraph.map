@@ -1,8 +1,13 @@
 <map id="FillRad" name="FillRad">
-<area shape="rect" id="node2" href="$tools_8c.html#ad4cc2e6299d46ff6d90977cad9c84418" title="a2t" alt="" coords="143,5,183,32"/>
-<area shape="rect" id="node3" href="$src__utils_8c.html#acad3d1a272a116cbe4c2fba61909fb82" title="Linear fit of UV background. " alt="" coords="118,56,209,83"/>
-<area shape="rect" id="node4" href="$src__utils_8c.html#a4c423b7d3ceb62e6e65789ee451916b9" title="putE2coarse" alt="" coords="116,107,211,133"/>
-<area shape="rect" id="node6" href="$src__utils_8c.html#a415f5629e9ef62d4800e798f8b39288b" title="putsource" alt="" coords="124,157,203,184"/>
-<area shape="rect" id="node7" href="$chem__utils_8c.html#ac9dce21c64431f0b322b44953f5aae85" title="E2T" alt="" coords="140,208,187,235"/>
-<area shape="rect" id="node5" href="$src__utils_8c.html#a8c337fac455ad361c72ff7f8185c861a" title="collectE" alt="" coords="259,107,328,133"/>
+<area shape="rect" id="node2" href="$src__utils_8c.html#acad3d1a272a116cbe4c2fba61909fb82" title="setUVvalue" alt="" coords="118,31,209,57"/>
+<area shape="rect" id="node3" href="$src__utils_8c.html#a4c423b7d3ceb62e6e65789ee451916b9" title="putE2coarse" alt="" coords="116,81,211,108"/>
+<area shape="rect" id="node5" href="$src__utils_8c.html#a415f5629e9ef62d4800e798f8b39288b" title="putsource" alt="" coords="124,132,203,159"/>
+<area shape="rect" id="node12" href="$chem__utils_8c.html#ac9dce21c64431f0b322b44953f5aae85" title="E2T" alt="" coords="140,183,187,209"/>
+<area shape="rect" id="node4" href="$src__utils_8c.html#a8c337fac455ad361c72ff7f8185c861a" title="collectE" alt="" coords="287,5,357,32"/>
+<area shape="rect" id="node6" href="$src__utils_8c.html#af6077ab77eca899b443572246e6b6792" title="stromgren_source" alt="" coords="259,56,385,83"/>
+<area shape="rect" id="node7" href="$src__utils_8c.html#a458b9acff0aaf0a3d54427adaa6435e4" title="clump_sources" alt="" coords="267,107,377,133"/>
+<area shape="rect" id="node8" href="$src__utils_8c.html#a9e73ccd9f4c7c80d48494c6c41096e9a" title="stars_sources" alt="" coords="270,157,374,184"/>
+<area shape="rect" id="node10" href="$src__utils_8c.html#a7eadfed35390fb682f1dbec641b0cd49" title="uvbkg_sources" alt="" coords="267,208,377,235"/>
+<area shape="rect" id="node11" href="$src__utils_8c.html#a3b187df11c26feeadcda0f18526c0424" title="hydro_sources" alt="" coords="269,259,375,285"/>
+<area shape="rect" id="node9" href="$oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="433,157,500,184"/>
 </map>

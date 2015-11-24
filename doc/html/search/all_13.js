@@ -9,6 +9,7 @@ var searchData=
   ['unit_5fn',['unit_N',['../struct_u_n_i_t_s.html#a03ea96dec3db51b6bcb7be84f360eddb',1,'UNITS::unit_N()'],['../struct_u_n_i_t_s.html#a95383a5545af8d1a97c3f152cffcbedb',1,'UNITS::unit_n()']]],
   ['unit_5ft',['unit_t',['../struct_u_n_i_t_s.html#a395f5740a41782789f3d7ebcf37c1944',1,'UNITS']]],
   ['unit_5fv',['unit_v',['../struct_u_n_i_t_s.html#ad8fa59d5d6573e44b9cc91bda792ad7e',1,'UNITS']]],
+  ['unitary_5fstars_5ftest',['UNITARY_STARS_TEST',['../struct_u_n_i_t_a_r_y___s_t_a_r_s___t_e_s_t.html',1,'UNITARY_STARS_TEST'],['../struct_r_u_n_p_a_r_a_m_s.html#a1e039e7288559c9bec0750e2af48b6c1',1,'RUNPARAMS::unitary_stars_test()']]],
   ['units',['UNITS',['../struct_u_n_i_t_s.html',1,'']]],
   ['update_5fpot_5fin_5ftree',['update_pot_in_tree',['../poisson__utils_8c.html#aee724c4ebee5f5aa10fdc20d3038541b',1,'poisson_utils.c']]],
   ['updatefield',['updatefield',['../hydro__utils_8c.html#a35f5cdb40c8b9a94aaad0ca14002f2ad',1,'hydro_utils.c']]],
@@ -16,5 +17,6 @@ var searchData=
   ['utype',['Utype',['../struct_utype.html',1,'']]],
   ['utype1d',['Utype1D',['../struct_utype1_d.html',1,'']]],
   ['uv',['uv',['../struct_r_u_n_p_a_r_a_m_s.html#ae450cff8f486a33fe66f1956de0663c2',1,'RUNPARAMS']]],
-  ['uvbackground',['UVBACKGROUND',['../struct_u_v_b_a_c_k_g_r_o_u_n_d.html',1,'']]]
+  ['uvbackground',['UVBACKGROUND',['../struct_u_v_b_a_c_k_g_r_o_u_n_d.html',1,'']]],
+  ['uvbkg_5fsources',['uvbkg_sources',['../src__utils_8c.html#a7eadfed35390fb682f1dbec641b0cd49',1,'src_utils.c']]]
 ];

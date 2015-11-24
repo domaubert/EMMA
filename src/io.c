@@ -184,11 +184,7 @@ float assign_grid_field(int field,struct CELL *cell){
   case 40:
     res=cell->z_last_xion;
     break;
-
 #endif // WRAD
-
-
-
   }
 
   return res;
@@ -1194,7 +1190,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 	  if(oct->x+dx>xmax) xmax=oct->x+dx;
 	  if(oct->y+dx>ymax) ymax=oct->y+dx;
 	  if(oct->z+dx>zmax) zmax=oct->z+dx;
-	  
+
         }
       }
     }
@@ -1206,6 +1202,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
     if(param->out_grid->field_id[i]){
       rewind(f_dat[n_field]);
       fwrite(&n_cell,sizeof(int),1,f_dat[n_field]);
+      fwrite(&tsim,sizeof(float),1,f_dat[n_field]);
       fwrite(&xmin,sizeof(float),1,f_dat[n_field]);
       fwrite(&xmax,sizeof(float),1,f_dat[n_field]);
       fwrite(&ymin,sizeof(float),1,f_dat[n_field]);

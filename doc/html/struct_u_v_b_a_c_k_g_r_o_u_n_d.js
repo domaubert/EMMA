@@ -1,5 +1,6 @@
 var struct_u_v_b_a_c_k_g_r_o_u_n_d =
 [
+    [ "efficiency", "struct_u_v_b_a_c_k_g_r_o_u_n_d.html#ac3a9c9e0e4a589fa0f3c7b72f981eea8", null ],
     [ "N", "struct_u_v_b_a_c_k_g_r_o_u_n_d.html#a7722c8ecbb62d99aee7ce68b1752f337", null ],
     [ "Nphot", "struct_u_v_b_a_c_k_g_r_o_u_n_d.html#a2909c77209dbf83eb49cc69c9366077c", null ],
     [ "redshift", "struct_u_v_b_a_c_k_g_r_o_u_n_d.html#a921ef075709b23c570bf01f704e9d4df", null ],

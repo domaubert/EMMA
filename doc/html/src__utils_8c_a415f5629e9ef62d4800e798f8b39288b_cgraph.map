@@ -1,3 +1,8 @@
 <map id="putsource" name="putsource">
-<area shape="rect" id="node2" href="$convert_8c.html#a26a98e712364536ac3ec63f1ee6e1077" title="setScale" alt="" coords="132,5,205,32"/>
+<area shape="rect" id="node2" href="$src__utils_8c.html#af6077ab77eca899b443572246e6b6792" title="stromgren_source" alt="" coords="132,5,259,32"/>
+<area shape="rect" id="node3" href="$src__utils_8c.html#a458b9acff0aaf0a3d54427adaa6435e4" title="clump_sources" alt="" coords="140,56,251,83"/>
+<area shape="rect" id="node4" href="$src__utils_8c.html#a9e73ccd9f4c7c80d48494c6c41096e9a" title="stars_sources" alt="" coords="143,107,247,133"/>
+<area shape="rect" id="node6" href="$src__utils_8c.html#a7eadfed35390fb682f1dbec641b0cd49" title="uvbkg_sources" alt="" coords="140,157,251,184"/>
+<area shape="rect" id="node7" href="$src__utils_8c.html#a3b187df11c26feeadcda0f18526c0424" title="hydro_sources" alt="" coords="142,208,249,235"/>
+<area shape="rect" id="node5" href="$oct_8c.html#a1fb4cba38b27e10f9e8c0ec38ebd4737" title="cell2oct" alt="" coords="307,107,373,133"/>
 </map>
