@@ -12,8 +12,10 @@ func readfield(fname,&time){
   fp=open(fname,"rb");
   adress=0;
   ncells=array(int,3);
+  time=array(float);
   bounds=array(float,6);
   _read,fp,adress,ncells;adress+=sizeof(ncells);
+  _read,fp,adress,time;adress+=sizeof(time);
   _read,fp,adress,bounds;adress+=sizeof(bounds);
   dummy=array(float,ncells(1),ncells(2));
   field=array(float,ncells(1),ncells(2),ncells(3));

@@ -937,10 +937,10 @@ void writeFieldInfo(struct FIELD_INFO *field, FILE* fp){
   fprintf(fp, format,field->min);
   fprintf(fp, format,field->max);
 
-  int i;
-  for(i=0;i<N_BIN_PDF;i++){
-    fprintf(fp, format,field->pdf[i]);
-  }
+  /* int i; */
+  /* for(i=0;i<N_BIN_PDF;i++){ */
+  /*   fprintf(fp, format,field->pdf[i]); */
+  /* } */
   fprintf(fp,"\n");
 }
 
@@ -954,7 +954,7 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
     if (nsteps==0){
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
-      writeFieldInfoHeader(fp,field);
+      //writeFieldInfoHeader(fp,field);
     }else{
       fp=fopen(filename,"a+");
       if(fp == NULL) printf("Cannot open %s\n", filename);
