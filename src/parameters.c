@@ -1125,9 +1125,9 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
-      fprintf(fp,"SFR   \t\t");
-      fprintf(fp,"SN    \t\t");
-      fprintf(fp,"src   \t\t");
+      fprintf(fp,"SFR\t\t\t");
+      fprintf(fp,"SN\t\t\t");
+      fprintf(fp,"src\t\t\t");
       fprintf(fp,"\n");
     }
 
