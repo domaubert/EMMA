@@ -2100,7 +2100,8 @@ int main(int argc, char *argv[])
   free(adt);
   free(ndt);
   free(ptot);
-
+  
+  
 ///////////////////////////////////////////
 // free cpu
 ///////////////////////////////////////////
@@ -2177,6 +2178,7 @@ int main(int argc, char *argv[])
 // free param
 ///////////////////////////////////////////
 
+  if(cpu.rank==RANK_DISP) printf("FREE ATOMIC\n");
   free(param.atomic.space_bound);
   free(param.atomic.time_bound);
   free(param.atomic.hnu);
@@ -2185,10 +2187,13 @@ int main(int argc, char *argv[])
   free(param.atomic.factgrp);
 
 #ifdef SUPERNOVAE
-  free(param.sn->mass_loss_t);
-  free(param.sn->mass_loss_mass);
-  free(param.sn->egy_loss_t);
-  free(param.sn->egy_loss_egy);
+  if(cpu.rank==RANK_DISP) printf("FREE SN\n");
+  //free(param.sn->mass_loss_t);
+  //free(param.sn->mass_loss_mass);
+  //free(param.sn->egy_loss_t);
+  //free(param.sn->egy_loss_egy);
+  if(cpu.rank==RANK_DISP) printf("END FREE SN\n");
+
 #endif // SUPERNOVAE
 
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
@@ -2207,6 +2212,7 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////
 
 #ifdef GPUAXL
+  if(cpu.rank==RANK_DISP) printf("FREE GPU\n");
 
 #ifdef WGRAV
     destroy_pinned_gravstencil(&gstencil,gstride);

@@ -6,6 +6,25 @@
 // _read,fp,adress,dens;
 // close,fp;
 //dens=reform(dens,[3,128,128,128]);
+
+
+func readfield(fname,&time){
+  fp=open(fname,"rb");
+  adress=0;
+  ncells=array(int,3);
+  bounds=array(float,6);
+  _read,fp,adress,ncells;adress+=sizeof(ncells);
+  _read,fp,adress,bounds;adress+=sizeof(bounds);
+  dummy=array(float,ncells(1),ncells(2));
+  field=array(float,ncells(1),ncells(2),ncells(3));
+  for(i=1;i<=ncells(3);i++){
+    _read,fp,adress,dummy;adress+=sizeof(dummy);
+    field(,,i)=reform(dummy,[2,ncells(1),ncells(2)]);
+  }
+  close,fp;
+  return field;
+}
+
 func readavg(fname,&time){
   fp=open(fname,"rb");
   adress=0;
