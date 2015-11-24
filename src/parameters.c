@@ -1053,7 +1053,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
-  REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
+  //REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
 
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1076,10 +1076,10 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
-  printf("dt_M0=%e\n",dm_M0);
-  printf("dt_yr=%e\n",dt_yr);
+  /* printf("dt_M0=%e\n",dm_M0); */
+  /* printf("dt_yr=%e\n",dt_yr); */
 
-  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
+  /* param->physical_state->sfr = dm_M0/dt_yr/V_Mpc; */
 
 }
 
