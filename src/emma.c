@@ -288,8 +288,21 @@ int main(int argc, char *argv[])
 #endif
 
   //=========== some initial calls =============
-  //GetParameters(argv[1],&param); // reading the parameters file
-  GetParameters("./param.run",&param); // reading the parameters file
+  GetParameters(argv[1],&param); // reading the parameters file
+  strcpy(param.paramrunfile,argv[1]); 
+  copy_file(param.paramrunfile, "data/param.run");
+
+#ifdef ALLOCT
+  char gridoutput[512];
+  strcpy(gridoutput,param.paramrunfile);
+  strcat(gridoutput,".grid_output");
+  readOutputParam_grid(gridoutput, &param);
+  char partoutput[512];
+  strcpy(partoutput,param.paramrunfile);
+  strcat(partoutput,".part_output");
+  readOutputParam_part(partoutput, &param);
+#endif // ALLOCT
+
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
@@ -1315,7 +1328,7 @@ int main(int argc, char *argv[])
 
 #ifdef GRAFIC // ==================== read grafic file
     lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
-    printf("cpu %d\tread part =%d diff p=%ld\n",cpu.rank,npart,lastpart-part+1);
+    //printf("cpu %d\tread part =%d diff p=%ld\n",cpu.rank,npart,lastpart-part+1);
 #endif
 
 #ifdef ZELDOVICH // ==================== read ZELDOVICH file
@@ -2006,7 +2019,7 @@ int main(int argc, char *argv[])
 		  printf("Dumping .......");
 		  printf("%s\n",filename);
 		}
-		dumppart(firstoct,filename,levelcoarse,levelmax,tdump,&cpu);
+		dumppart(firstoct,filename,levelcoarse,levelmax,adump,&cpu);
 	#endif // PIC
 
 		// backups for restart
@@ -2026,7 +2039,7 @@ int main(int argc, char *argv[])
 	ndumps++;
       }
 
-    dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1], tsim);
+      dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1],(float)tsim);
 
 #ifdef MOVIE
   for(level=1;level<=levelmax;level++){

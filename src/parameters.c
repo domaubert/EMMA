@@ -12,7 +12,7 @@
 #include "src_utils.h" //setUVBKG
 #endif
 
-int copy(char const * const source, char const * const destination) {
+int copy_file(char const * const source, char const * const destination) {
 /**
   * copy a file name 'source' into 'destination'
   */
@@ -49,32 +49,32 @@ void copy_param(const char *folder){
   sprintf(param,"param.run");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
 
-  sprintf(param,"param.mk");
+  sprintf(param,"src/param.mk");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
 
   sprintf(param,"param.info");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
 
   sprintf(param,"param.avg");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
 
   sprintf(param,"param.h");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
 #ifdef ALLOCT
   sprintf(param,"param.output");
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
-  copy(param_src, param_dest);
+  copy_file(param_src, param_dest);
   #endif // ALLOCT
 }
 
@@ -557,7 +557,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);
-      sprintf(param->atomic.path,"./src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
+      sprintf(param->atomic.path,"./src/src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -639,10 +639,6 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   setUVBKG(param, "src/phys_data/uvbkg.dat");
 #endif // UVBKG
 
-#ifdef ALLOCT
-  readOutputParam_grid("param.grid_output", param);
-  readOutputParam_part("param.part_output", param);
-#endif // ALLOCT
 
 #ifdef WRAD
   readAtomic(param);
@@ -778,42 +774,33 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  dumpInfo("param.info", param, cpu);
+  dumpInfo("data/param.info", param, cpu);
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("param.mk");
+  printFileOnScreen("src/param.mk");
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("src/param.h");
+  printFileOnScreen("src/src/param.h");
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("param.run");
+  printFileOnScreen(param->paramrunfile);
   printf("\n");
   printf("--------------------------------------------------------------\n");
 #ifdef ALLOCT
-  printFileOnScreen("param.part_output");
+  char partoutput[512];
+  strcpy(partoutput,param->paramrunfile);
+  strcat(partoutput,".part_output");
+  printFileOnScreen(partoutput);
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("param.grid_output");
+  char gridoutput[512];
+  strcpy(gridoutput,param->paramrunfile);
+  strcat(gridoutput,".grid_output");
   printf("\n");
   printf("--------------------------------------------------------------\n");
 #endif // ALLOCT
 
-/*
-  dumpFile("param.mk", "param.mk");
-  printf("\n");
-  dumpFile("param.h", "param.h");
-  printf("\n");
-  dumpFile(fparam, "param.run");
-  printf("\n");
 
-#ifdef ALLOCT
-  dumpFile("param.part_output", "param.part_output");
-  printf("\n");
-  dumpFile("param.grid_output", "param.grid_output");
-  printf("\n");
-#endif // ALLOCT
-*/
 #ifdef TESTCOSMO
   REAL threshold=param->amrthresh0;
 #ifndef ZOOM
@@ -941,21 +928,20 @@ void writeFieldInfoHeader(FILE* fp,struct FIELD_INFO *field){
   fprintf(fp,"\n");
 }
 
-void writeFieldInfo(struct FIELD_INFO *field, FILE* fp){
+void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, REAL t){
   char* format = "%e\t";
+  fprintf(fp, format,t);
   fprintf(fp, format,field->mean);
   fprintf(fp, format,field->sigma);
   fprintf(fp, format,field->min);
   fprintf(fp, format,field->max);
 
-  int i;
-  for(i=0;i<N_BIN_PDF;i++){
-    fprintf(fp, format,field->pdf[i]);
-  }
+
+
   fprintf(fp,"\n");
 }
 
-void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_INFO *field, int nsteps){
+void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_INFO *field, int nsteps, REAL t){
 
     mkdir("data/avg/", 0755);
     char filename[256];
@@ -965,13 +951,12 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
     if (nsteps==0){
       fp=fopen(filename,"w");
       if(fp == NULL) printf("Cannot open %s\n", filename);
-      writeFieldInfoHeader(fp,field);
+      //writeFieldInfoHeader(fp,field);
     }else{
       fp=fopen(filename,"a+");
       if(fp == NULL) printf("Cannot open %s\n", filename);
     }
-
-    writeFieldInfo(field,fp);
+    writeFieldInfo(field,fp,t);
     fclose(fp);
 }
 
@@ -1065,11 +1050,12 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
-  printf("param->physical_state->mstar=%e\n",param->physical_state->mstar);
+/*  printf("param->physical_state->mstar=%e\n",param->physical_state->mstar);
   printf("pre_mstar=%e\n",pre_mstar);
   printf("SOLAR_MASS=%e\n",SOLAR_MASS);
   printf("param->unit.unit_mass=%e\n",param->unit.unit_mass);
   REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass;
+*/
 
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1092,14 +1078,14 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
-  printf("dt_M0=%e\n",dm_M0);
-  printf("dt_yr=%e\n",dt_yr);
+  /* printf("dt_M0=%e\n",dm_M0); */
+  /* printf("dt_yr=%e\n",dt_yr); */
 
-  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
+  /* param->physical_state->sfr = dm_M0/dt_yr/V_Mpc; */
 
 }
 
-void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt,REAL t){
+void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt, REAL t){
 /**
   * At each timestep, write information about the average state of several physical quantities
   */
@@ -1114,7 +1100,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
 
-    char* filename = "param.avg";
+    char* filename = "data/param.avg";
 
 
 
@@ -1186,9 +1172,18 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
     int i;
+    REAL tloc;
+#ifdef TESTCOSMO
+    tloc=(REAL)param->cosmo->aexp;
+#else
+    tloc=t;
+#endif // TESTCOSMO
+    printf("tloc=%e\n",tloc);
+
     for (i=0;i<param->out_grid->n_field_tot; i++){
       if (param->out_grid->field_state_stat[i]){
-          dumpStepInfoField(param,param->out_grid->field_name[i], &(param->physical_state->field[i]), nsteps);
+	dumpStepInfoField(param,param->out_grid->field_name[i], &(param->physical_state->field[i]), nsteps,tloc);
+
       }
     }
 

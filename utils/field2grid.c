@@ -124,6 +124,7 @@ int main(int argc, char *argv[]){
 
   // scanning files
   int i;
+  float tstep;
   for(i=2;i<nproc;i++){
     FILE *flocf;
     char fnameloc[256];
@@ -139,6 +140,7 @@ int main(int argc, char *argv[]){
     float bounds[6];
 
     fread(&ncell,sizeof(int),1,flocf);
+    fread(&tstep,sizeof(float),1,flocf);
     fread(bounds,sizeof(float),6,flocf);
     
     // should we consider this subfile ?
@@ -163,6 +165,7 @@ int main(int argc, char *argv[]){
       sprintf(fnameloc,format,snapnum,i-2);
       flocx=fopen(fnameloc,"rb");
       fread(&ncell,sizeof(int),1,flocx);
+      fread(&tstep,sizeof(float),1,flocx);
       fread(bounds,sizeof(float),6,flocx);
 
 
@@ -172,6 +175,7 @@ int main(int argc, char *argv[]){
       sprintf(fnameloc,format,snapnum,i-2);
       flocy=fopen(fnameloc,"rb");
       fread(&ncell,sizeof(int),1,flocy);
+      fread(&tstep,sizeof(float),1,flocy);
       fread(bounds,sizeof(float),6,flocy);
 
       FILE *flocz;
@@ -180,6 +184,8 @@ int main(int argc, char *argv[]){
       sprintf(fnameloc,format,snapnum,i-2);
       flocz=fopen(fnameloc,"rb");
       fread(&ncell,sizeof(int),1,flocz);
+      fread(&tstep,sizeof(float),1,flocz);
+
       fread(bounds,sizeof(float),6,flocz);
 
 
@@ -189,6 +195,8 @@ int main(int argc, char *argv[]){
       sprintf(fnameloc,format,snapnum,i-2);
       flocl=fopen(fnameloc,"rb");
       fread(&ncell,sizeof(int),1,flocl);
+      fread(&tstep,sizeof(float),1,flocl);
+
       fread(bounds,sizeof(float),6,flocl);
       
 
@@ -286,6 +294,7 @@ int main(int argc, char *argv[]){
   fwrite(&nx,sizeof(int),1,dumpfile);
   fwrite(&ny,sizeof(int),1,dumpfile);
   fwrite(&nz,sizeof(int),1,dumpfile);
+  fwrite(&tstep,sizeof(float),1,dumpfile);
   fwrite(&xmin,sizeof(float),1,dumpfile);
   fwrite(&xmax,sizeof(float),1,dumpfile);
   fwrite(&ymin,sizeof(float),1,dumpfile);
