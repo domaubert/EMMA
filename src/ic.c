@@ -317,7 +317,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   MPI_Barrier(cpu->comm);
 #endif
 
-  //if(cpu->rank==RANK_DISP)
+  if(cpu->rank==RANK_DISP)
   {
     printf("\nGrafic Particle Read ok\n");
   }
