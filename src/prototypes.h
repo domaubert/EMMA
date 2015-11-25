@@ -157,13 +157,13 @@ struct MOVIEPARAM{
 #endif
 
 struct UNITS{
-  REAL unit_l;///< comoving length size of the box [meters]
-  REAL unit_v;///< unit velocity
-  REAL unit_t;///< unit time [seconds]
-  REAL unit_n;///< unit number [moles typically]
-  REAL unit_mass;///< unit mass [in kg, total mass is equal to one in unit codes]
-  REAL unit_d;///< density unit [typically Omegam*rhoc in kg/m3]
-  REAL unit_N;///< number density unit [typically Omegam*rhoc/mp in 1./m3]
+  double unit_l;///< comoving length size of the box [meters]
+  double unit_v;///< unit velocity
+  double unit_t;///< unit time [seconds]
+  double unit_n;///< unit number [moles typically]
+  double unit_mass;///< unit mass [in kg, total mass is equal to one in unit codes]
+  double unit_d;///< density unit [typically Omegam*rhoc in kg/m3]
+  double unit_N;///< number density unit [typically Omegam*rhoc/mp in 1./m3]
 };
 
 struct SCALE{
