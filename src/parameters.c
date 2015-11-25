@@ -935,9 +935,6 @@ void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, REAL t){
   fprintf(fp, format,field->sigma);
   fprintf(fp, format,field->min);
   fprintf(fp, format,field->max);
-
-
-
   fprintf(fp,"\n");
 }
 
@@ -959,7 +956,6 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
     writeFieldInfo(field,fp,t);
     fclose(fp);
 }
-
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
@@ -1050,13 +1046,8 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
-/*  printf("param->physical_state->mstar=%e\n",param->physical_state->mstar);
-  printf("pre_mstar=%e\n",pre_mstar);
-  printf("SOLAR_MASS=%e\n",SOLAR_MASS);
-  printf("param->unit.unit_mass=%e\n",param->unit.unit_mass);
-  REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass;
-*/
-
+  double rhostar=3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G)*param->cosmo->om;
+  double dm_M0 = rhostar*(param->physical_state->mstar - pre_mstar)*pow(param->unit.unit_l,3);
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
     if (param->out_grid->field_state_stat[i]){
@@ -1078,10 +1069,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
-  /* printf("dt_M0=%e\n",dm_M0); */
-  /* printf("dt_yr=%e\n",dt_yr); */
-
-  /* param->physical_state->sfr = dm_M0/dt_yr/V_Mpc; */
+  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
 
 }
 
