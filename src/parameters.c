@@ -766,7 +766,7 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
 
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  dumpInfo("param.info", param, cpu);
+  dumpInfo("data/param.info", param, cpu);
   printf("\n");
   printf("--------------------------------------------------------------\n");
   printFileOnScreen("param.mk");
@@ -929,8 +929,9 @@ void writeFieldInfoHeader(FILE* fp,struct FIELD_INFO *field){
   fprintf(fp,"\n");
 }
 
-void writeFieldInfo(struct FIELD_INFO *field, FILE* fp){
+void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, REAL t){
   char* format = "%e\t";
+  fprintf(fp, format,&t);
   fprintf(fp, format,field->mean);
   fprintf(fp, format,field->sigma);
   fprintf(fp, format,field->min);
@@ -959,7 +960,7 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
       if(fp == NULL) printf("Cannot open %s\n", filename);
     }
 
-    writeFieldInfo(field,fp);
+    writeFieldInfo(field,fp,t);
     fclose(fp);
 }
 
@@ -1098,7 +1099,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
 
-    char* filename = "param.avg";
+    char* filename = "data/param.avg";
 
 
 
@@ -1172,7 +1173,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     int i;
     for (i=0;i<param->out_grid->n_field_tot; i++){
       if (param->out_grid->field_state_stat[i]){
-          dumpStepInfoField(param,param->out_grid->field_name[i], &(param->physical_state->field[i]), nsteps);
+	dumpStepInfoField(param,param->out_grid->field_name[i], &(param->physical_state->field[i]), nsteps,t);
       }
     }
 
