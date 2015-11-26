@@ -108,6 +108,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
 #ifdef WHYDRO2
+#ifdef FULLCHECK
  		  if(curoct->cell[icell].child==NULL) Mtot +=curoct->cell[icell].field.d*dv;
 		  if(curoct->cell[icell].child==NULL) Mtotnew +=curoct->cell[icell].fieldnew.d*dv;
 		  struct Utype U;
@@ -125,6 +126,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 			abort();
 		    }
 		  }
+#endif
 #endif
 
 #ifdef PIC
@@ -186,6 +188,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
     }
 
+#ifdef FULLCHECK
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&Mtot,1,MPI_REEL,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&Mtotnew,1,MPI_REEL,MPI_SUM,cpu->comm);
@@ -198,6 +201,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
     printf("Total Baryon Egy=%e (new=%e) deviation=%e\n",Etot,Etotnew, Etotnew-Etot);
 
   }
+#endif
 
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */
