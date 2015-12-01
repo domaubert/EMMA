@@ -224,7 +224,7 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
    	struct PART *curp=nexp;
     nexp=curp->next;
 
-    if ((curp->isStar==6) || (curp->isStar==7)){
+    if ((curp->isStar>=6)){
 
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
       REAL age =  param->cosmo->tphy - curp->age;

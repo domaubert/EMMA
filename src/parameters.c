@@ -834,10 +834,10 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
 
   int debug=0;
 
-  field->mean=0;
+  field->mean=0.;
   field->min=INFINITY;
-  field->max=0;
-  field->sigma=0;
+  field->max=0.;
+  field->sigma=0.;
 
   //int type = 0; //lin bins
   int type = 1; //log bins
@@ -867,8 +867,8 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
 }
 
 void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
-  field->mean+=value*vweight;
-  field->sigma+=value*value*vweight;
+  field->mean+=(double)value*(double)vweight;
+  field->sigma+=(double)value*(double)value*(double)vweight;
   field->min=FMIN(field->min, value);
   field->max=FMAX(field->max, value);
 
@@ -884,8 +884,8 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
 
 #ifdef WMPI
 void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
-  MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_REEL,MPI_MIN,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_DOUBLE,MPI_MIN,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
 
@@ -1010,7 +1010,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       nexp=curp->next;
       if(curp->isStar){
         param->physical_state->mstar += curp->mass;
-        if(curp->isStar==5||curp->isStar==7){
+        if(curp->isStar==5||(curp->isStar==7||curp->isStar==8)){
           param->physical_state->Nsn++;
         }
       }
