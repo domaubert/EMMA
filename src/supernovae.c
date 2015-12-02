@@ -572,7 +572,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
 #else
     if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
-      REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
+   REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
 #endif // CONTINUOUS_SN
 
       total_sn_egy+=E;
@@ -605,6 +605,10 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         thermalFeedbackCell(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
       }
       Nsn++;
+
+      if(curp->isStar==5) curp->isStar=4;
+      if(curp->isStar==7) curp->isStar=8;
+
     }
   }while(nexp!=NULL);
   return Nsn;

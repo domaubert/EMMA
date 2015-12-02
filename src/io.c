@@ -368,6 +368,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 
   int npart=0;
   int nstar=0;
+  int first=-1;
 
   FILE **f_part=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
 #ifdef STARS
@@ -379,6 +380,8 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
   int i;
   for(i=0;i<param->out_part->n_field_tot;i++){
     if(param->out_part->field_id[i]){
+
+      if(first==-1) first=i; // looking for the first non nil field
 
 #ifdef STARS
       char filenamestar[128];
@@ -462,10 +465,10 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
                 if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
 
 #ifdef STARS
-                if(curp->isStar) 	{	fp=f_star[ii];	nstar++;	}
-                else 			        {	fp=f_part[ii];	npart++;	}
+                if(curp->isStar) 	{	fp=f_star[ii];	if(i==first) nstar++;	}
+                else 			        {	fp=f_part[ii];	if(i==first) npart++;	}
 #else
-                fp=f_part[ii]; npart++;
+                fp=f_part[ii]; if(i==first) npart++;
 #endif // STARS
 
                 float dat = (float)assign_part_field(i,curp);

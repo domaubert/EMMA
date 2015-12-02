@@ -331,7 +331,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  //if(eint[idloc]!=E0) printf("3!\n");
 
-	  if(fudgecool<1e-6){
+	  if(fudgecool<1e-20){
 	    printf("eint=%e(%e<%e) nH=%e x0=%e(%e) T=%e(%e) N=%e(%e)\n",eint[idloc],eorg,emin,nH[idloc],x0[idloc],xorg,tloc,torg,et[0],etorg);
 	    if(fudgecool<1e-20) abort();
 	  }
