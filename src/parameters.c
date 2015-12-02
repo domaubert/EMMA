@@ -557,7 +557,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);
-      sprintf(param->atomic.path,"./src/src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
+      sprintf(param->atomic.path,"./SRC/src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -777,10 +777,10 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpInfo("data/param.info", param, cpu);
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("src/param.mk");
+  printFileOnScreen("SRC/param.mk");
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("src/src/param.h");
+  printFileOnScreen("SRC/src/param.h");
   printf("\n");
   printf("--------------------------------------------------------------\n");
   printFileOnScreen(param->paramrunfile);

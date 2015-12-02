@@ -1561,7 +1561,6 @@ int main(int argc, char *argv[])
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif // WRADHYD
 #endif // WCHEM
-printf("param.unit.unit_mass=%f",param.unit.unit_mass); abort();
 
 		}
 	      }
