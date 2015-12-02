@@ -72,7 +72,9 @@ DEFINES  += -DCOARSERAD
 #DEFINES  += -DJEANSCRIT // adds Jeans criterion to trigger SF
 #DEFINES  += -DSCHAYE // use Schaye Polytropic law and SF laws
 DEFINES  += -DDECREASE_EMMISIVITY_AFTER_TLIFE
-
+#DEFINES  += -DMULTIPLESTARS // N part of mass M instead of 1 part of mass N*M
+#DEFINES  += -DCONTINUOUSSTARS // All cells allowed to form star, effectivelly form stars  
+#DEFINES  += -DTEMPCRIT // add a 2e3K temperature criterion
 
 # ---- BOUNDARY CONDITIONS (PERIODIC BY DEFAULT)--
 #DEFINES  +=  -DTRANSZM
