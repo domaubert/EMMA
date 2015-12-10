@@ -252,9 +252,9 @@ float assign_part_field(int field,struct PART *curp){
 		    res=(float)(curp->age);
 		  }
     break;
-  }
-#endif // STARS
 
+#endif // STARS
+  }
   return res;
 }
 
@@ -561,7 +561,7 @@ void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse,
   fwrite(&tsimf,1,sizeof(float),fpart);
 
 #else
-  char filename[128];
+//  char filename[128];
 #ifdef MULTIFOLDER
   sprintf(filename,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
 #else
@@ -806,10 +806,7 @@ void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, in
 #endif // STARS
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
-#endif // PIC
-#endif // MPIIO
 
-#ifdef MPIIO
 void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   int ipart=0;
@@ -966,6 +963,7 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 #endif // MPIIO
+#endif // PIC
 
 void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param){
 

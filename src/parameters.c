@@ -323,6 +323,7 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
 
 }
 
+#ifdef SUPERNOVAE
 void read_egy_loss(struct RUNPARAMS *param){
 /**
   * Read parameter file
@@ -404,7 +405,7 @@ void read_mass_loss(struct RUNPARAMS *param){
     abort();
   }
 }
-
+#endif // SUPERNOVAE
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
 /**
@@ -487,7 +488,7 @@ void readAtomic(struct RUNPARAMS *param){
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
   int debug=0;
-
+  int i;
   FILE *buf=NULL;
   char stream[256];
   size_t rstat;
@@ -966,11 +967,11 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
 
+#ifdef TESTCOSMO
   REAL prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
   param->physical_state->t = param->cosmo->tphy;
-
   REAL dt_yr = param->cosmo->tphy - prev_t;
-
+#endif // TESTCOSMO
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
      if (param->out_grid->field_state_stat[i]){
@@ -1046,8 +1047,10 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
+#ifdef TESTCOSMO
   double rhostar=3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G)*param->cosmo->om;
   double dm_M0 = rhostar*(param->physical_state->mstar - pre_mstar)*pow(param->unit.unit_l,3);
+#endif // TESTCOSMO
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
     if (param->out_grid->field_state_stat[i]){
@@ -1065,12 +1068,13 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
+#ifdef TESTCOSMO
   REAL h=param->cosmo->H0/100.;
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
-
+#endif // TESTCOSMO
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt, REAL t){
@@ -1128,13 +1132,14 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef TESTCOSMO
     fprintf(fp, real_format,(float)param->cosmo->aexp);
     fprintf(fp, real_format,(float)(1./param->cosmo->aexp-1.));
+    fprintf(fp, real_format,(float)param->cosmo->tphy);
 #else
     fprintf(fp, real_format,(float)0.);
     fprintf(fp, real_format,(float)0.);
+    fprintf(fp, real_format,(float)0.);
 #endif // TESTCOSMO
-    fprintf(fp, real_format,(float)param->cosmo->tphy);
-    fprintf(fp, real_format,(float)dt);
 
+    fprintf(fp, real_format,(float)dt);
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
 
 #ifdef STARS
