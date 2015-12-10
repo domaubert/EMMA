@@ -7,4 +7,5 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param);
 void readOutputParam_part(char *fparam, struct RUNPARAMS *param);
 
 
-
+void readOutputParam_grid(char *fparam, struct RUNPARAMS *param);
+void readOutputParam_part(char *fparam, struct RUNPARAMS *param);

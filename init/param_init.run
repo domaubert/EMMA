@@ -36,6 +36,7 @@ clight 1e-1
 dens_threshold 5e20
 temp_threshold 1e5
 src_int_or_fesc 1e15
+atomic_file Starburst99_1grpT_1grpS.dat
 ##==StarFormation============
 overdensity_cond 200
 density_cond -500
@@ -43,10 +44,14 @@ efficiency 1.
 tlife 2e7
 mass_res -2
 ##==SuperNovae===============
-feedback_eff 0.
-feedback_frac 1.
+feedback_eff 1.
+feedback__kin_frac 1.
+ejecta_proportion 0.526
+sn_egy 9.736e11
+tlife_SN 3.897e7
 ##==Movie====================
 lmap 9
+mode avg
 xmin 0
 xmax 1
 ymin 0

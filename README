@@ -22,7 +22,7 @@ at this stage go to your working directory WORKDIR and create the dependencies
 
        ln -s EMMADIR/emmacpu ./ #create a local symbolic link to the binary
        mkdir data # will store the results (or create a symoblic link)
-       ln -s EMMADIR ./    #create a symlink to the EMMA directory
+       ln -s EMMADIR ./SRC    #create a symlink to the EMMA directory
        
 
 how to launch

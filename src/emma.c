@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
-  strcpy(param.paramrunfile,argv[1]); 
+  strcpy(param.paramrunfile,argv[1]);
   copy_file(param.paramrunfile, "data/param.run");
 
 #ifdef ALLOCT
@@ -1568,7 +1568,6 @@ int main(int argc, char *argv[])
       }
 
 
-
 #endif // WRADTEST
 #endif // WRAD
 
@@ -2114,8 +2113,8 @@ int main(int argc, char *argv[])
   free(adt);
   free(ndt);
   free(ptot);
-  
-  
+
+
 ///////////////////////////////////////////
 // free cpu
 ///////////////////////////////////////////

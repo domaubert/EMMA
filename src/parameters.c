@@ -198,7 +198,13 @@ void readOutputParam_grid(char *fparam, struct RUNPARAMS *param){
       continue;
     }
 
-    size_t status=fscanf(f, "%d %d %d %le %le\n",
+#ifdef SINGLEPRECISION
+    char* type= "%d %d %d %e %e\n";
+#else
+    char* type= "%d %d %d %le %le\n";
+#endif // SINGLEPRECISION
+
+    size_t status=fscanf(f, type,
           &(param->out_grid->field_state_grid[n_field_tot]),
           &(param->out_grid->field_state_movie[n_field_tot]),
           &(param->out_grid->field_state_stat[n_field_tot]),
@@ -410,6 +416,12 @@ void readAtomic(struct RUNPARAMS *param){
   */
   int debug =0; //print what was readed and abort if !=0
 
+#ifdef SINGLEPRECISION
+    char* type= "%e\n";
+#else
+    char* type= "%le\n";
+#endif // SINGLEPRECISION
+
   //openfile
   FILE *buf=fopen(param->atomic.path,"r");
   if(buf==NULL){
@@ -430,7 +442,7 @@ void readAtomic(struct RUNPARAMS *param){
   rstat=fscanf(buf,"%s",stream); // read SPACE_BOUND(eV)
   int i_space;
   for (i_space=0; i_space<param->atomic.ngrp_space; i_space++){
-    rstat=fscanf(buf,"%lf",&param->atomic.space_bound[i_space]);
+    rstat=fscanf(buf,type,&param->atomic.space_bound[i_space]);
     if(debug) printf("space_bound[%d]%e\n",i_space, param->atomic.space_bound[i_space]);
   }
   rstat=fscanf(buf,"%s",stream); //read inf
@@ -446,7 +458,7 @@ void readAtomic(struct RUNPARAMS *param){
   rstat=fscanf(buf,"%s",stream); //read TIME_BOUND(MYR)
   int i_time;
   for (i_time=0; i_time<param->atomic.ngrp_time; i_time++){
-    rstat=fscanf(buf,"%lf",&param->atomic.time_bound[i_time]);
+    rstat=fscanf(buf,type,&param->atomic.time_bound[i_time]);
     if(debug) printf("time_bound[%d]%e\n",i_time, param->atomic.time_bound[i_time]);
     param->atomic.time_bound[i_time]*=1e6; //Myrs in yrs
   }
@@ -549,7 +561,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);
-      sprintf(param->atomic.path,"./src/src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
+      sprintf(param->atomic.path,"./SRC/src/atomic_data/%s",filename);   if (debug) printf("param->atomic.path=%s\n", param->atomic.path);
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
@@ -770,10 +782,10 @@ void dumpHeader(struct RUNPARAMS *param, struct CPUINFO *cpu,char *fparam){
   dumpInfo("data/param.info", param, cpu);
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("src/param.mk");
+  printFileOnScreen("SRC/param.mk");
   printf("\n");
   printf("--------------------------------------------------------------\n");
-  printFileOnScreen("src/src/param.h");
+  printFileOnScreen("SRC/src/param.h");
   printf("\n");
   printf("--------------------------------------------------------------\n");
   printFileOnScreen(param->paramrunfile);
@@ -928,9 +940,6 @@ void writeFieldInfo(struct FIELD_INFO *field, FILE* fp, REAL t){
   fprintf(fp, format,field->sigma);
   fprintf(fp, format,field->min);
   fprintf(fp, format,field->max);
-
-  
-
   fprintf(fp,"\n");
 }
 
@@ -952,7 +961,6 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
     writeFieldInfo(field,fp,t);
     fclose(fp);
 }
-
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
@@ -1043,8 +1051,8 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
 #endif
 
-  //REAL dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
-
+  double rhostar=3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G)*param->cosmo->om;
+  double dm_M0 = rhostar*(param->physical_state->mstar - pre_mstar)*pow(param->unit.unit_l,3);
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
     if (param->out_grid->field_state_stat[i]){
@@ -1066,10 +1074,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
-  /* printf("dt_M0=%e\n",dm_M0); */
-  /* printf("dt_yr=%e\n",dt_yr); */
-
-  /* param->physical_state->sfr = dm_M0/dt_yr/V_Mpc; */
+  param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
 
 }
 

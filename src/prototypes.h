@@ -1,4 +1,4 @@
-/**
+  /**
   * \file prototypes.h
   *
   *
@@ -309,7 +309,7 @@ struct RUNPARAMS{
 
   struct OUTPUTPARAM *out_grid;
   struct OUTPUTPARAM *out_part;
-  
+
   char paramrunfile[256]; // contains the parameter file name used on command line
 
 #ifdef TESTCOSMO
