@@ -703,7 +703,6 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
   //  fprintf(fp,"\n");
 
-
   #ifdef TESTCOSMO
   fprintf(fp,"##=Cosmology========================\n" );
     fprintf(fp, real_format,"om",(param->cosmo->om) );			// Omega matter

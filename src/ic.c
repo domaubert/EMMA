@@ -1234,7 +1234,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     param->unit.unit_v=vstar;
     param->unit.unit_t=param->unit.unit_l/param->unit.unit_v;
     param->unit.unit_n=1.;//(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*rhostar; //
-    param->unit.unit_mass=rhostar*POW(param->unit.unit_l,3);
+    param->unit.unit_mass=rhostar*pow(param->unit.unit_l,3);
     param->unit.unit_d=rhostar; // kg/m3
     param->unit.unit_N=rhostar/PROTON_MASS; // atom/m3
   }
