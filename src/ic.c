@@ -306,13 +306,31 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     fclose(fz);
   }
 
+
+  // supercomoving unit values
+  double rhostar;
+  double rstar;
+  double vstar;
+  double tstar;
+  double tstar2;
+  double pstar;
+  double mpc=3.08568025e22; // Mpc in m
+  double H0=h0*1e3/3.08568025e22; // Hubble constant (s-1)
+
+  rstar= np1*dx*mpc; // box size in m
+
+
   *munit=mass;
   *ainit=astart;
   param->cosmo->om=om;
   param->cosmo->ov=ov;
   param->cosmo->ob=ob;
-  //param->cosmo->Hubble=h0;
+  param->cosmo->H0=h0;
+  param->cosmo->unit_l=rstar;
   *npart=ip;
+
+
+
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif
@@ -1254,7 +1272,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #endif // TESTCOSMO
 #endif // WHYDRO2
 
-
+#ifdef WHYDRO2
 int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
 /**
   * initialize the grid for sedov test
@@ -1297,3 +1315,4 @@ int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
   }
   return 0;
 }
+#endif
