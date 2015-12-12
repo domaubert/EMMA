@@ -855,7 +855,7 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
   int type = 1; //log bins
 
   if (type){
-    REAL bin= (log10(pdf_max)-log10(pdf_min))/N_BIN_PDF;
+    double bin= (log10(pdf_max)-log10(pdf_min))/N_BIN_PDF;
     if(debug)printf("bin=%e\n",bin);
     int i;
     for(i=0;i<N_BIN_PDF+1;i++){
@@ -863,7 +863,7 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
       if(debug) printf("field->bins[i]=%e\n",field->bins_edges[i]);
     }
   }else{
-    REAL bin= (pdf_max-pdf_min)/N_BIN_PDF;
+    double bin= (pdf_max-pdf_min)/N_BIN_PDF;
     int i;
     for(i=0;i<N_BIN_PDF+1;i++){
       field->bins_edges[i]=i*bin;
@@ -878,11 +878,11 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
   if(debug) abort();
 }
 
-void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
-  field->mean+=(double)value*(double)vweight;
-  field->sigma+=(double)value*(double)value*(double)vweight;
-  field->min=FMIN(field->min, value);
-  field->max=FMAX(field->max, value);
+void getFieldInfo(struct FIELD_INFO *field, double value, double vweight){
+  field->mean+=value*vweight;
+  field->sigma+=value*value*vweight;
+  field->min=fmin(field->min, value);
+  field->max=fmin(field->max, value);
 
   int i;
   for(i=0;i<N_BIN_PDF;i++){
@@ -897,15 +897,15 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
 void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
   MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_DOUBLE,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 
-  MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_DOUBLE,MPI_SUM,cpu->comm);
 }
 #endif // WMPI
 
 void setSigmaFieldInfo(struct FIELD_INFO *field){
-  field->sigma = SQRT(field->sigma - field->mean*field->mean);
+  field->sigma = sqrt(field->sigma - field->mean*field->mean);
 }
 
 void writeFieldInfoHeader(FILE* fp,struct FIELD_INFO *field){
@@ -962,13 +962,13 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   param->physical_state->Nsn=0;
   param->physical_state->src=0;
 
-  REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
+  double pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
 
 #ifdef TESTCOSMO
-  REAL prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
+  double prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
   param->physical_state->t = param->cosmo->tphy;
-  REAL dt_yr = param->cosmo->tphy - prev_t;
+  double dt_yr = param->cosmo->tphy - prev_t;
 #endif // TESTCOSMO
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -980,7 +980,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
     struct OCT *nextoct=firstoct[level-1];
-    REAL vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
+    double vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
     do{
       if(nextoct==NULL) continue;
       struct OCT *curoct=nextoct;
@@ -1039,10 +1039,10 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->src,1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->src,      1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,   MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,      1,MPI_INT,   MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,    1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 #endif
 
 #ifdef TESTCOSMO

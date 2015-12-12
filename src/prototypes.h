@@ -241,15 +241,15 @@ struct OUTPUTPARAM{
 };
 
 struct FIELD_INFO{
-  REAL min;
-  REAL max;
-  REAL mean;
-  REAL sigma;
+  double min;
+  double max;
+  double mean;
+  double sigma;
 
-  REAL bin_min;
-  REAL bin_max;
-  REAL bins_edges[N_BIN_PDF+1];
-  REAL pdf[N_BIN_PDF];
+  double bin_min;
+  double bin_max;
+  double bins_edges[N_BIN_PDF+1];
+  double pdf[N_BIN_PDF];
 };
 
 struct PHYSICAL_STATE{
@@ -257,12 +257,12 @@ struct PHYSICAL_STATE{
   int n_field;
   struct FIELD_INFO field[OUTPUTPARAM_n_field_max];
 
-  REAL sfr;
-  REAL v;
+  double sfr;
+  double v;
 
-  REAL src;
-  REAL mstar;
-  REAL t;
+  double src;
+  double mstar;
+  double t;
 
   int max_level;
   int Nsn;
