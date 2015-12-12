@@ -659,8 +659,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   param->unitary_stars_test->src_pos_z=0.;
 */
 
-  param->unitary_stars_test->lifetime = 0.;
-  param->unitary_stars_test->mass=2e3;
+  param->unitary_stars_test->lifetime = 8e6;
+  param->unitary_stars_test->mass=2e2;
   param->unitary_stars_test->src_pos_x=0.5;
   param->unitary_stars_test->src_pos_y=0.5;
   param->unitary_stars_test->src_pos_z=0.5;
@@ -891,7 +891,6 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
       break;
     }
   }
-
 }
 
 #ifdef WMPI
@@ -1047,8 +1046,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 #endif
 
 #ifdef TESTCOSMO
-  double rhostar=3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G)*param->cosmo->om;
-  double dm_M0 = rhostar*(param->physical_state->mstar - pre_mstar)*pow(param->unit.unit_l,3);
+  double dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
 #endif // TESTCOSMO
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1108,21 +1106,21 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     if (nsteps==0){
       fprintf(fp,"step\t");
-#ifdef TESTCOSMO
+
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
       fprintf(fp,"t_yrs\t\t");
-#endif
+
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
 
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
-      fprintf(fp,"SFR\t\t\t");
-      fprintf(fp,"SN\t\t\t");
-      fprintf(fp,"src\t\t\t");
-      fprintf(fp,"xion\t\t\t");
-      fprintf(fp,"temp\t\t\t");
+      fprintf(fp,"SFR\t\t");
+      fprintf(fp,"SN\t\t");
+      fprintf(fp,"src\t\t");
+      fprintf(fp,"xion\t\t");
+      fprintf(fp,"temp\t\t");
 
       fprintf(fp,"\n");
     }

@@ -1262,8 +1262,7 @@ int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
   *
   * density is set to 1
   * velocity to 0
-  * pressure
- to 1e-5
+  * pressure to 1e-5
   **/
 
   param->unit.unit_l=0.125;

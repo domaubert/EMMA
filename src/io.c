@@ -1098,6 +1098,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
 void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+
 /**
   * This function dump the output data with STDIO
   * only the most reffined cell are dumped
@@ -1262,11 +1263,12 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   int idir=cpu->rank%8;
 
-#ifdef MPIIO
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
     setOctList(firstoct[level-1], cpu, param,level);
   }
+
+#ifdef MPIIO
   set_offset(param,cpu);
 #endif // MPIIO
 

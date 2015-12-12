@@ -284,23 +284,27 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
   // ============= STROMGREN SPHERE CASE =======================
   int flag=0;
 
-  REAL X0=1./POW(2,param->lcoarse);
-  REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
+  const REAL X0= 1./POW2(param->lcoarse);
+  const REAL tcur_in_yrs = tcur*param->unit.unit_t/MYR *1e6;
+  const REAL dxcur=POW(0.5,curoct->level);
 
-  REAL x_src=param->unitary_stars_test->src_pos_x;
-  REAL y_src=param->unitary_stars_test->src_pos_y;
-  REAL z_src=param->unitary_stars_test->src_pos_z;
+  const REAL x_src=param->unitary_stars_test->src_pos_x;
+  const REAL y_src=param->unitary_stars_test->src_pos_y;
+  const REAL z_src=param->unitary_stars_test->src_pos_z;
 
-  REAL dxcur=POW(0.5,curoct->level);
-  int icell=cell->idx;
-  REAL xc=curoct->x+( icell&1    )*dxcur+dxcur*0.5;
-  REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-  REAL zc=curoct->z+((icell>>2)  )*dxcur+dxcur*0.5;
+  const REAL xc=curoct->x+( cell->idx&1    )*dxcur+dxcur*0.5;
+  const REAL yc=curoct->y+((cell->idx>>1)&1)*dxcur+dxcur*0.5;
+  const REAL zc=curoct->z+((cell->idx>>2)  )*dxcur+dxcur*0.5;
 
-  //if((FABS(xc-0.5)<=X0)*(FABS(yc-0.5)<=X0)*(FABS(zc-0.5)<=X0) && lifetime_test){
-  if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0){
-    if((xc>0.)*(yc>0.)*(zc>0.)){
-      //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
+  const int nsub=1;
+  const REAL R = SQRT(POW(xc-x_src,2) + POW(yc-y_src,2) + POW(zc-z_src,2));
+
+  //if((FABS(xc-x_src)<=X0)*(FABS(yc-y_src)<=X0)*(FABS(zc-z_src)<=X0) && lifetime_test){
+
+    if( (R<=4.*X0) && ( fmod(tcur_in_yrs,param->unitary_stars_test->lifetime) < param->unitary_stars_test->lifetime/nsub )){ //2103.
+    //if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0){
+      if((xc>0.)*(yc>0.)*(zc>0.)){
+        //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);
 
         int igrp_time;
         for(igrp_time=0;igrp_time<NGRP_TIME;igrp_time++){
@@ -314,10 +318,10 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
             int igrp_space;
             for(igrp_space=0;igrp_space<NGRP_SPACE;igrp_space++){
 
-              int igrp= igrp_time*NGRP_SPACE + igrp_space;
+              const int igrp= igrp_time*NGRP_SPACE + igrp_space;
 
               //REAL srcint = param->srcint*(tcur>0?1.:0);
-              REAL srcint = param->unitary_stars_test->mass* SOLAR_MASS * param->srcint*(tcur>0?1.:0);
+              const REAL srcint = param->unitary_stars_test->mass* SOLAR_MASS * param->srcint*(tcur>0?1.:0) *nsub/8.;
 
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
               REAL t = tcur_in_yrs;
@@ -760,7 +764,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
   MPI_Allreduce(&nc,&nctot,1,MPI_INT,MPI_SUM,cpu->comm);
   nc=nctot;
 #endif // WMPI
-  //if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
+//  if(cpu->rank==RANK_DISP) printf("== SRC STAT === > Found %d sources \n",nc);
   return nc;
 }
 #endif

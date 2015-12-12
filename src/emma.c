@@ -1560,6 +1560,24 @@ int main(int argc, char *argv[])
 		 // printf("PP=%e eint=%e pstar=%e\n",curoct->cell[icell].field.p,eint,pstar);
 		 //  printf("rho=%e eint=%e \n",curoct->cell[icell].field.d,eint*dxcur*param.unit.unit_l);
 #endif // WRADHYD
+
+//#define NFW
+#ifdef NFW
+      REAL rho0 = curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  REAL RS = 16./POW2(levelcoarse);
+		  REAL r=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
+		  curoct->cell[icell].field.d=rho0 /(r/RS *POW(1+r/RS,2));
+#endif // NFW
+
+//#define PLUMER
+#ifdef PLUMER
+      REAL rho0 = curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
+		  REAL RS = 8./POW2(levelcoarse);
+		  REAL r=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
+		  curoct->cell[icell].field.d=2*rho0 *POW( 1.+ POW(r/RS,2) , -5./2.);
+#endif // NFW
+
+
 #endif // WCHEM
 
 		}
@@ -1982,6 +2000,11 @@ int main(int argc, char *argv[])
 	  }
 	}
 	else{
+ #ifdef WRADTEST
+    for(level=1;level<=levelmax;level++){
+      setOctList(firstoct[level-1], &cpu, &param,level);
+    }
+#endif // WRADTEST
 	  dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 	}
 #else

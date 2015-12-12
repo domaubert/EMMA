@@ -420,23 +420,22 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 
 //------------------------------------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------//
-  #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
+#ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
               REAL tlife_rad = 100*param->stars->tlife;
-  #else
+#else
               REAL tlife_rad = param->stars->tlife;
-  #endif
-
+#endif
               REAL tlife_sn  = param->sn->tlife;
 
+              int SNdead=(curp->isStar==8);
               int isSN =age>=tlife_sn ?1:0;
-	      int SNdead=(curp->isStar==8);
               int isRAD=age>=tlife_rad?0:1;
 
-	      printf("age=%e  tsn=%e\n",age,tlife_sn);
-	      
+//	      printf("age=%e  tsn=%e\n",age,tlife_sn);
+
 
 	      if(SNdead){
-		if(isRAD){ 
+		if(isRAD){
 		  curp->isStar=8;
 		}
 		else{
@@ -444,12 +443,12 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 		}
 	      }
 	      else{
-		if( (isRAD==0) && (isSN==0)) curp->isStar=4; 
+		if( (isRAD==0) && (isSN==0)) curp->isStar=4;
 		if( (isRAD==0) && (isSN==1)) curp->isStar=5;
 		if( (isRAD==1) && (isSN==0)) curp->isStar=6;
 		if( (isRAD==1) && (isSN==1)) curp->isStar=7;
 	      }
- 
+
 //------------------------------------------------------------------------------------------------//
 //------------------------------------------------------------------------------------------------//
 

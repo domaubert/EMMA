@@ -49,13 +49,13 @@ void save_amr(char filename[], struct OCT **firstoct,REAL tsim, REAL tinit,int n
   dumpunit=1;
 #endif
   if(dumpunit){
-    fwrite(&(param->unit.unit_l),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_v),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_t),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_n),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_mass),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_d),sizeof(REAL),1,fp);
-    fwrite(&(param->unit.unit_N),sizeof(REAL),1,fp);
+    fwrite(&(param->unit.unit_l),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_v),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_t),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_n),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_mass),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_d),sizeof(double),1,fp);
+    fwrite(&(param->unit.unit_N),sizeof(double),1,fp);
   }
 
 
@@ -172,13 +172,13 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
 
   // reading units
   if(setunit){
-    outf=fread(&(param->unit.unit_l),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_v),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_t),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_n),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_mass),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_d),sizeof(REAL),1,fp);
-    outf=fread(&(param->unit.unit_N),sizeof(REAL),1,fp);
+    outf=fread(&(param->unit.unit_l),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_v),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_t),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_n),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_mass),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_d),sizeof(double),1,fp);
+    outf=fread(&(param->unit.unit_N),sizeof(double),1,fp);
   }
   //printf("UNIT L=%e\n",param->unit.unit_l);
 
