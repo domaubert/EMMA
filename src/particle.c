@@ -24,7 +24,9 @@ void printPart(struct PART* part){
   printf("vz=%e ",part->vz);
 
   printf("m=%e ",part->mass);
+#ifdef STARS
   printf("isStar=%d ",part->isStar);
+#endif
 
 
   printf("\n");

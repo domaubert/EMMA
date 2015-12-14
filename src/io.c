@@ -252,7 +252,6 @@ float assign_part_field(int field,struct PART *curp){
 		    res=(float)(curp->age);
 		  }
     break;
-
 #endif // STARS
   }
   return res;
@@ -420,20 +419,27 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
 
 #else
-      char filename[128];
+      // NOSTARS CASE
+      char filenamepart[128];
 #ifdef MULTIFOLDER
-      sprintf(filename,"data/%05d/part/%s.%05d.p%05d",*(cpu->ndumps),param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+      char folder_field_part[128];
+      sprintf(folder_field_part,"data/%05d/part_%s/",*(cpu->ndumps),param->out_part->field_name[i]);
+      mkdir(folder_field_part, 0755);
+      sprintf(filenamepart,"%s%s.%05d.p%05d",folder_field_part,param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
 #else
-      sprintf(filename,"data/part.%s.%05d.p%05d",param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
+      sprintf(filenamepart,"data/part.%s.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
-      if(debug) printf("openning %s\n",filename);
-      fp=fopen(filename,"wb");
-      if(fp == NULL){
-        printf("Cannot open %s\n", filename);
+
+      if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
+      f_part[n_field]=fopen(filenamepart,"wb");
+      if(f_part[n_field] == NULL){
+        printf("Cannot open %s\n", filenamepart);
         abort();
       }
-      fwrite(&npart,1,sizeof(int)  ,fp);
-      fwrite(&tsimf,1,sizeof(float),fp);
+      fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+
+
 #endif // STARS
       n_field++;
     }
@@ -561,7 +567,7 @@ void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse,
   fwrite(&tsimf,1,sizeof(float),fpart);
 
 #else
-//  char filename[128];
+
 #ifdef MULTIFOLDER
   sprintf(filename,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
 #else

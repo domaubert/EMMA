@@ -405,7 +405,9 @@ void read_mass_loss(struct RUNPARAMS *param){
     abort();
   }
 }
+
 #endif // SUPERNOVAE
+
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
 /**
@@ -562,7 +564,8 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       param->fudgecool=1.0;
       param->ncvgcool=0;
 #else
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+      int i;
+	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
                       rstat=fscanf(buf,"%s %s",stream, stream);
 #endif
 
