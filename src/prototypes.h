@@ -126,7 +126,7 @@ struct SNPARAM{
   REAL Esnfb;///<  total Energy of a SN
   REAL ejecta_proportion;
   REAL sn_egy;
-  REAL trig_sn;
+  REAL trig_sn; ///< trigger for first SN
   REAL tlife; ///< time for SN explosion in year
 
   REAL *egy_loss_t;

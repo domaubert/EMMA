@@ -91,11 +91,13 @@ has to be done. */
 #endif
 
 
-int ReadSimulationFile(KD kd, char *inputfile, int nfile, int rank, int nproc)
+int ReadSimulationFile(KD kd, char *inputfile, int nfile, int rank, int nproc,	int stepnum)
 {
-  int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc);
+//  int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc);
+//  ReadQuartz(kd, inputfile, nfile, rank, nproc);
 
-  ReadQuartz(kd, inputfile, nfile, rank, nproc);
+  int ReadEMMA(KD kd,char *inputfile, int nfile, int rank, int nproc,	int stepnum);
+  ReadEMMA(kd, inputfile, nfile, rank, nproc,stepnum);
 
   return;
 }
@@ -951,6 +953,131 @@ int ReadQuartz(KD kd,char *inputfile, int nfile, int rank, int nproc)
   float avgx=0.,avgy=0.,avgz=0.;
 
 
+  printf("Renormalizing particle masses to get Mtot=1\n");
+#ifdef DIFFERENT_MASSES
+  for(j=0;j<=nparttotal-1;j++){
+    kd->p[j].fMass=1./nparttotal;   
+    avgx+= kd->p[j].r[0];
+    avgy+= kd->p[j].r[1];
+    avgz+= kd->p[j].r[2];
+  }
+#else
+  kd->fMass=1./float(nparttotal);
+#endif  
+
+  avgx/=nparttotal;
+  avgy/=nparttotal;
+  avgz/=nparttotal;
+
+  printf(" avg x=%e y=%e z=%e\n",avgx,avgy,avgz);
+
+  return kd->nActive;
+}
+
+
+int ReadEMMA(KD kd,char *inputfile, int nfile, int rank, int nproc,	int stepnum)
+{
+  int j,dummy;
+  float pos[3], mass;
+  int ifile;
+  char currfile[256];
+  char tempi[256];
+  int nparttotal=0,npart;
+  float time;
+  float x;
+  float y;
+  float z;
+  float dum;
+
+  FILE *fp;
+
+ 
+
+
+
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,"%05d/part_x/x.%05d.p%05d");
+    sprintf(currfile,tempi,stepnum,stepnum,ifile);
+    printf("%s\n",currfile);
+    fp=fopen(currfile,"rb");
+    fread(&npart,sizeof(int),1,fp);
+		//printf("%d\n",npart);
+    fclose(fp);
+    nparttotal+=npart;
+  }
+
+
+  printf("Found %d particles in %d files\n",nparttotal,nfile);
+
+  kd->nActive = nparttotal;
+  
+  kd->p = (PARTICLE *)malloc(kd->nActive*sizeof(PARTICLE));
+
+// Read x
+  int ipx=0;
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,"%05d/part_x/x.%05d.p%05d");
+    sprintf(currfile,tempi,stepnum,stepnum,ifile);
+    fp=fopen(currfile,"r");
+    //printf("Reading %s\n",currfile);
+    fread(&npart,sizeof(int),1,fp);
+    fread(&time,sizeof(float),1,fp);
+
+    for(j=0;j<npart;j++){
+      fread(&x,sizeof(float),1,fp);
+      kd->p[ipx].r[0] = x;
+      ipx++;
+    }
+    fclose(fp);
+  }
+
+
+// Read y
+  int ipy=0;
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,"%05d/part_y/y.%05d.p%05d");
+    sprintf(currfile,tempi,stepnum,stepnum,ifile);
+    fp=fopen(currfile,"r");
+    //printf("Reading %s\n",currfile);
+    fread(&npart,sizeof(int),1,fp);
+    fread(&time,sizeof(float),1,fp);
+
+    for(j=0;j<npart;j++){
+      fread(&x,sizeof(float),1,fp);
+      kd->p[ipy].r[1] = y;
+      ipy++;
+    }
+    fclose(fp);
+  }
+
+// Read z
+  int ipz=0;
+  for(ifile=0;ifile<nfile;ifile++){
+    strcpy(tempi,inputfile);
+    strcat(tempi,"%05d/part_z/z.%05d.p%05d");
+    sprintf(currfile,tempi,stepnum,stepnum,ifile);
+    fp=fopen(currfile,"r");
+    //printf("Reading %s\n",currfile);
+    fread(&npart,sizeof(int),1,fp);
+    fread(&time,sizeof(float),1,fp);
+
+    for(j=0;j<npart;j++){
+      fread(&x,sizeof(float),1,fp);
+      kd->p[ipz].r[2] = z;
+      ipz++;
+    }
+    fclose(fp);
+  }
+
+	if ( (ipx!=ipy) || (ipx!=ipz) ){
+		printf("ERROR : particles numbers inconsistants\n");
+		abort();
+	}
+
+  float avgx=0.,avgy=0.,avgz=0.;
   printf("Renormalizing particle masses to get Mtot=1\n");
 #ifdef DIFFERENT_MASSES
   for(j=0;j<=nparttotal-1;j++){

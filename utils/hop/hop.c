@@ -28,7 +28,7 @@ http://www.sns.ias.edu/~eisenste/hop/hop_doc.html */
 
 // HACKED BY DOM
 //int ReadSimulationFile(KD, FILE *);
-int ReadSimulationFile(KD, char *, int, int, int);
+int ReadSimulationFile(KD, char *, int, int, int, int);
 // END HACKED BY DOM
 
 void smDensityTH(SMX smx,int pi,int nSmooth,int *pList,float *fList);
@@ -80,7 +80,7 @@ void main(int argc,char **argv)
 	FILE *fp, *fpb;
 	char ach[80],achFile[80], *inputfile, *densfile;
 	float fPeriod[3];
-	int bDensity,bGroup,bSym,bMerge,nDens,nHop,nMerge,bTopHat,nfile,rank,nproc;
+	int bDensity,bGroup,bSym,bMerge,nDens,nHop,nMerge,bTopHat,nfile,rank,nproc,stepnum;
 	float fDensThresh;
 	
    	nBucket = 16;
@@ -196,7 +196,12 @@ void main(int argc,char **argv)
 		else if (!strcmp(argv[i],"-nogbound")) {
 			bMerge = 0; ++i; /* If we're not writing it, we needn't
 					waste time computing it */
+			}		
+		else if (!strcmp(argv[i],"-step")) {
+			++i;
+			stepnum= atoi(argv[i]); ++i; /* for EMMA input */
 			}
+
 		else usage();
 		}
 	if (nHop<0) nHop=nDens;
@@ -230,7 +235,7 @@ void main(int argc,char **argv)
 /* 	if (fp!=NULL) fclose(fp); */
 
 	printf("nfile=%d\n",nfile);
-	ReadSimulationFile(kd, inputfile, nfile, rank, nproc);
+	ReadSimulationFile(kd, inputfile, nfile, rank, nproc,stepnum);
 
 	// STOP HACKING BY DOM
 

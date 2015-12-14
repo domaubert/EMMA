@@ -725,14 +725,17 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_SUM,cpu->comm);
-    MPI_Allreduce(MPI_IN_PLACE,& param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
     if(cpu->rank==RANK_DISP){
       if (Nsn){
-        if(!param->sn->trig_sn){
+        if(!(param->sn->trig_sn)){
           printf("FIRST_SN at z=%e\n",1./aexp-1.);
           param->sn->trig_sn=1;
+#ifdef WMPI
+    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
         }
         printf("%d\tActive SN\n",Nsn);
       }
