@@ -375,6 +375,8 @@ struct RUNPARAMS{
 
   struct PHYSICAL_STATE *physical_state;
 
+  REAL aexpdump; // the next expansion factor to be dumped
+
 };
 
 

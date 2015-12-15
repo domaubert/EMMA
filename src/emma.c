@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
   REAL dt;
   int ntot=0,nlev,noct;
   REAL ntotd=0.,nlevd=0.;
-  int cond1,cond2,cond3;
+  int cond1,cond2,cond3,cond4;
   REAL disp,mdisp;
 
   int dir;
@@ -290,7 +290,9 @@ int main(int argc, char *argv[])
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
   strcpy(param.paramrunfile,argv[1]);
-  copy_file(param.paramrunfile, "data/param.run");
+
+  
+
 
 #ifdef ALLOCT
   char gridoutput[512];
@@ -302,6 +304,8 @@ int main(int argc, char *argv[])
   strcat(partoutput,".part_output");
   readOutputParam_part(partoutput, &param);
 #endif // ALLOCT
+
+
 
 
 #ifdef ZOOM
@@ -572,7 +576,33 @@ int main(int argc, char *argv[])
     printf("      Engines Are Running on    \n");
     printf("             %d process         \n",cpu.nproc);
     printf("================================\n");
+
+    copy_file(param.paramrunfile, "data/param.run");
+
   }
+
+
+#ifdef TESTCOSMO
+  //reading outputlist
+  char outputlist[512];
+  strcpy(outputlist,param.paramrunfile);
+  strcat(outputlist,".list_aexp");
+  FILE *foutputs;
+
+  param.aexpdump=0;
+  if((foutputs=fopen(outputlist,"r"))!=NULL){
+    fscanf(foutputs,"%e",&param.aexpdump);
+    if(cpu.rank==RANK_DISP){
+      printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
+    }
+  }
+  else{
+    if(cpu.rank==RANK_DISP)
+      printf("WARNING NOT OUTPUT LIST FOUND !! \n");
+  }
+#endif
+
+
 
   //=========== assigning values =============
   levelcoarse=param.lcoarse;
@@ -1943,6 +1973,26 @@ int main(int argc, char *argv[])
       cond1 = nsteps%param.ndumps==0;
       cond2 = 0;
       cond3 = tsim+adt[levelcoarse-1]>=tmax;
+      cond4 = 0;
+
+#ifdef TESTCOSMO
+      if(param.aexpdump){
+	// dumpfile at specific outputs
+	cond4=cosmo.aexp>param.aexpdump;
+	if(cond4){
+	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	    param.aexpdump=0;
+	  }
+	  else{
+	    if(cpu.rank==RANK_DISP){
+	      printf("next output aexp=%e\n",param.aexpdump);
+	    }
+	  }
+	}
+      }
+#endif
+
+
 
       if (param.dt_dump){
 	cond1=0;
@@ -1966,7 +2016,7 @@ int main(int argc, char *argv[])
 #endif // SNTEST
       }
 
-      if(cond1||cond2||cond3){
+      if(cond1||cond2||cond3||cond4){
 #ifndef EDBERT
 
 	int fdump=8;
@@ -2051,29 +2101,29 @@ int main(int argc, char *argv[])
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
-}
+    }
 
-	// writting the last particle file
-	ndumps-=1;
-  	//dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-
-	int fdump=8;
-	if(cpu.nproc>fdump){
-	  // dumping fields only
-	  int idump;
-	  for(idump=0;idump<fdump;idump++){
-	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
-	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-	    sleep(1);
+    // writting the last particle file
+    ndumps-=1;
+    //dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+    
+    int fdump=8;
+    if(cpu.nproc>fdump){
+      // dumping fields only
+      int idump;
+      for(idump=0;idump<fdump;idump++){
+	if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+	sleep(1);
 #ifdef WMPI
-	    MPI_Barrier(cpu.comm);
+	MPI_Barrier(cpu.comm);
 #endif
-	  }
-	}
-	else{
-	  dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-	}
-
+      }
+    }
+    else{
+      dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+    }
+    
 #endif
 
 //printf("begin freeing\n");

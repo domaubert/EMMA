@@ -81,6 +81,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
 #ifndef EMMAZELDO
+    
+    printf("ICS: READING DISPLACEMENTS FROM FILE\n");
+    
     sprintf(filename,"./level_%03d/ic_poscz",level);
     fpz=fopen(filename,"rb");
     if(fpz == NULL) {
@@ -140,8 +143,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
         abort();
       }
     }
-
-
+#else
+    printf("ICS: APPLYING ZELDOVICH DISPLACEMENT\n");
 #endif
 
 
