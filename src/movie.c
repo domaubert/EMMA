@@ -143,7 +143,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
         }
 
         switch(mode){
-
           case 0:
             for(i=0;i<n_field;i++){
               param->movie->map[id+i*ntot] = fmax( param->movie->map[id+i*ntot], field[i]);
@@ -162,7 +161,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
         }
 
 //============================================================================================================
-
 							}
 						}
 					}
@@ -178,8 +176,14 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 	float* mapred = param->movie->map_reduce;
 
 #ifdef WMPI
-	//TODO check that!!!
-	MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+	switch(mode){
+    case 0:
+      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_MAX, 0, cpu->comm);
+      break;
+    case 1:
+      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+      break;
+	}
 #endif // WMPI
 
 	if(cpu->rank==RANK_DISP){

@@ -126,7 +126,7 @@ struct SNPARAM{
   REAL Esnfb;///<  total Energy of a SN
   REAL ejecta_proportion;
   REAL sn_egy;
-  REAL trig_sn;
+  REAL trig_sn; ///< trigger for first SN
   REAL tlife; ///< time for SN explosion in year
 
   REAL *egy_loss_t;
@@ -157,13 +157,13 @@ struct MOVIEPARAM{
 #endif
 
 struct UNITS{
-  REAL unit_l;///< comoving length size of the box [meters]
-  REAL unit_v;///< unit velocity
-  REAL unit_t;///< unit time [seconds]
-  REAL unit_n;///< unit number [moles typically]
-  REAL unit_mass;///< unit mass [in kg, total mass is equal to one in unit codes]
-  REAL unit_d;///< density unit [typically Omegam*rhoc in kg/m3]
-  REAL unit_N;///< number density unit [typically Omegam*rhoc/mp in 1./m3]
+  double unit_l;///< comoving length size of the box [meters]
+  double unit_v;///< unit velocity
+  double unit_t;///< unit time [seconds]
+  double unit_n;///< unit number [moles typically]
+  double unit_mass;///< unit mass [in kg, total mass is equal to one in unit codes]
+  double unit_d;///< density unit [typically Omegam*rhoc in kg/m3]
+  double unit_N;///< number density unit [typically Omegam*rhoc/mp in 1./m3]
 };
 
 struct SCALE{
@@ -241,15 +241,15 @@ struct OUTPUTPARAM{
 };
 
 struct FIELD_INFO{
-  REAL min;
-  REAL max;
-  REAL mean;
-  REAL sigma;
+  double min;
+  double max;
+  double mean;
+  double sigma;
 
-  REAL bin_min;
-  REAL bin_max;
-  REAL bins_edges[N_BIN_PDF+1];
-  REAL pdf[N_BIN_PDF];
+  double bin_min;
+  double bin_max;
+  double bins_edges[N_BIN_PDF+1];
+  double pdf[N_BIN_PDF];
 };
 
 struct PHYSICAL_STATE{
@@ -257,12 +257,12 @@ struct PHYSICAL_STATE{
   int n_field;
   struct FIELD_INFO field[OUTPUTPARAM_n_field_max];
 
-  REAL sfr;
-  REAL v;
+  double sfr;
+  double v;
 
-  REAL src;
-  REAL mstar;
-  REAL t;
+  double src;
+  double mstar;
+  double t;
 
   int max_level;
   int Nsn;

@@ -251,10 +251,9 @@ float assign_part_field(int field,struct PART *curp){
 		  if(curp->isStar) {
 		    res=(float)(curp->age);
 		  }
-		  break;
+    break;
 #endif // STARS
   }
-
   return res;
 }
 
@@ -568,6 +567,7 @@ void dumppart_serial_bkp(struct OCT **firstoct,char filename[], int levelcoarse,
   fwrite(&tsimf,1,sizeof(float),fpart);
 
 #else
+
 #ifdef MULTIFOLDER
   sprintf(filename,"data/%05d/part/part.%05d.p%05d",*(cpu->ndumps),*(cpu->ndumps),cpu->rank);
 #else
@@ -812,10 +812,7 @@ void dumppart_MPI_bkp(struct OCT **firstoct,char filename[], int levelcoarse, in
 #endif // STARS
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
-#endif // PIC
-#endif // MPIIO
 
-#ifdef MPIIO
 void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu, struct RUNPARAMS *param){
 
   int ipart=0;
@@ -972,6 +969,7 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 //printf("wrote %d particles (%d expected) in %s\n",ipart,npart,filename);
 }
 #endif // MPIIO
+#endif // PIC
 
 void dumpgrid(int levelmax,struct OCT **firstoct, char filename[],REAL tsim, struct RUNPARAMS *param){
 
@@ -1105,6 +1103,7 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 #endif // MPIIO
 
 void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
+
 
 /**
   * This function dump the output data with STDIO
@@ -1270,11 +1269,12 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   int idir=cpu->rank%8;
 
-#ifdef MPIIO
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
     setOctList(firstoct[level-1], cpu, param,level);
   }
+
+#ifdef MPIIO
   set_offset(param,cpu);
 #endif // MPIIO
 

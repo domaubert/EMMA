@@ -323,7 +323,6 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
 
 }
 
-
 #ifdef SUPERNOVAE
 void read_egy_loss(struct RUNPARAMS *param){
 /**
@@ -406,8 +405,8 @@ void read_mass_loss(struct RUNPARAMS *param){
     abort();
   }
 }
-#endif
 
+#endif // SUPERNOVAE
 
 #ifdef WRAD
 void readAtomic(struct RUNPARAMS *param){
@@ -491,7 +490,7 @@ void readAtomic(struct RUNPARAMS *param){
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
   int debug=0;
-
+  int i;
   FILE *buf=NULL;
   char stream[256];
   size_t rstat;
@@ -663,8 +662,8 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
   param->unitary_stars_test->src_pos_z=0.;
 */
 
-  param->unitary_stars_test->lifetime = 0.;
-  param->unitary_stars_test->mass=2e3;
+  param->unitary_stars_test->lifetime = 8e6;
+  param->unitary_stars_test->mass=2e2;
   param->unitary_stars_test->src_pos_x=0.5;
   param->unitary_stars_test->src_pos_y=0.5;
   param->unitary_stars_test->src_pos_z=0.5;
@@ -706,7 +705,6 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
   fprintf(fp, real_format,"unit_n",(param->unit.unit_n) );		// unit number [moles typically]
   fprintf(fp, real_format,"unit_mass",(param->unit.unit_mass) );	// unit mass [in kg, total mass is equal to one in unit codes]
   //  fprintf(fp,"\n");
-
 
   #ifdef TESTCOSMO
   fprintf(fp,"##=Cosmology========================\n" );
@@ -860,7 +858,7 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
   int type = 1; //log bins
 
   if (type){
-    REAL bin= (log10(pdf_max)-log10(pdf_min))/N_BIN_PDF;
+    double bin= (log10(pdf_max)-log10(pdf_min))/N_BIN_PDF;
     if(debug)printf("bin=%e\n",bin);
     int i;
     for(i=0;i<N_BIN_PDF+1;i++){
@@ -868,7 +866,7 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
       if(debug) printf("field->bins[i]=%e\n",field->bins_edges[i]);
     }
   }else{
-    REAL bin= (pdf_max-pdf_min)/N_BIN_PDF;
+    double bin= (pdf_max-pdf_min)/N_BIN_PDF;
     int i;
     for(i=0;i<N_BIN_PDF+1;i++){
       field->bins_edges[i]=i*bin;
@@ -883,11 +881,11 @@ void initFieldInfo(struct FIELD_INFO *field, REAL pdf_min, REAL pdf_max){
   if(debug) abort();
 }
 
-void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
-  field->mean+=(double)value*(double)vweight;
-  field->sigma+=(double)value*(double)value*(double)vweight;
-  field->min=FMIN(field->min, value);
-  field->max=FMAX(field->max, value);
+void getFieldInfo(struct FIELD_INFO *field, double value, double vweight){
+  field->mean+=value*vweight;
+  field->sigma+=value*value*vweight;
+  field->min=fmin(field->min, value);
+  field->max=fmin(field->max, value);
 
   int i;
   for(i=0;i<N_BIN_PDF;i++){
@@ -896,22 +894,21 @@ void getFieldInfo(struct FIELD_INFO *field, REAL value, REAL vweight){
       break;
     }
   }
-
 }
 
 #ifdef WMPI
 void comFieldInfo(struct CPUINFO *cpu, struct FIELD_INFO *field){
   MPI_Allreduce(MPI_IN_PLACE,&(field->mean  ),1,MPI_DOUBLE,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&(field->min   ),1,MPI_DOUBLE,MPI_MIN,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_REEL,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->max   ),1,MPI_DOUBLE,MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&(field->sigma ),1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 
-  MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,field->pdf ,N_BIN_PDF,MPI_DOUBLE,MPI_SUM,cpu->comm);
 }
 #endif // WMPI
 
 void setSigmaFieldInfo(struct FIELD_INFO *field){
-  field->sigma = SQRT(field->sigma - field->mean*field->mean);
+  field->sigma = sqrt(field->sigma - field->mean*field->mean);
 }
 
 void writeFieldInfoHeader(FILE* fp,struct FIELD_INFO *field){
@@ -968,14 +965,14 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   param->physical_state->Nsn=0;
   param->physical_state->src=0;
 
-  REAL pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
+  double pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
 
-  REAL prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
+#ifdef TESTCOSMO
+  double prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
   param->physical_state->t = param->cosmo->tphy;
-
-  REAL dt_yr = param->cosmo->tphy - prev_t;
-
+  double dt_yr = param->cosmo->tphy - prev_t;
+#endif // TESTCOSMO
   int i;
   for (i=0;i<param->out_grid->n_field_tot; i++){
      if (param->out_grid->field_state_stat[i]){
@@ -986,7 +983,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
     struct OCT *nextoct=firstoct[level-1];
-    REAL vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
+    double vweight=POW(0.5,3*level); // volume d'une cellule de niveau level
     do{
       if(nextoct==NULL) continue;
       struct OCT *curoct=nextoct;
@@ -1045,14 +1042,15 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->src,1,MPI_REEL,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,1,MPI_INT,MPI_MAX,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,1,MPI_REEL,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->src,      1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,   MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,      1,MPI_INT,   MPI_MAX,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,    1,MPI_DOUBLE,MPI_SUM,cpu->comm);
 #endif
 
-  double rhostar=3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G)*param->cosmo->om;
-  double dm_M0 = rhostar*(param->physical_state->mstar - pre_mstar)*pow(param->unit.unit_l,3);
+#ifdef TESTCOSMO
+  double dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
+#endif // TESTCOSMO
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
     if (param->out_grid->field_state_stat[i]){
@@ -1070,12 +1068,13 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
+#ifdef TESTCOSMO
   REAL h=param->cosmo->H0/100.;
   REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
   REAL V_Mpc = POW(l,3);
 
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
-
+#endif // TESTCOSMO
 }
 
 void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu, int nsteps,REAL dt, REAL t){
@@ -1110,21 +1109,21 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     if (nsteps==0){
       fprintf(fp,"step\t");
-#ifdef TESTCOSMO
+
       fprintf(fp,"aexp\t\t");
       fprintf(fp,"z\t\t");
       fprintf(fp,"t_yrs\t\t");
-#endif
+
       fprintf(fp,"dt\t\t");
       fprintf(fp,"max_level\t");
 
       fprintf(fp,"Nstars\t\t");
       fprintf(fp,"Mstars\t\t");
-      fprintf(fp,"SFR\t\t\t");
-      fprintf(fp,"SN\t\t\t");
-      fprintf(fp,"src\t\t\t");
-      fprintf(fp,"xion\t\t\t");
-      fprintf(fp,"temp\t\t\t");
+      fprintf(fp,"SFR\t\t");
+      fprintf(fp,"SN\t\t");
+      fprintf(fp,"src\t\t");
+      fprintf(fp,"xion\t\t");
+      fprintf(fp,"temp\t\t");
 
       fprintf(fp,"\n");
     }
@@ -1133,13 +1132,14 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 #ifdef TESTCOSMO
     fprintf(fp, real_format,(float)param->cosmo->aexp);
     fprintf(fp, real_format,(float)(1./param->cosmo->aexp-1.));
+    fprintf(fp, real_format,(float)param->cosmo->tphy);
 #else
     fprintf(fp, real_format,(float)0.);
     fprintf(fp, real_format,(float)0.);
+    fprintf(fp, real_format,(float)0.);
 #endif // TESTCOSMO
-    fprintf(fp, real_format,(float)param->cosmo->tphy);
-    fprintf(fp, real_format,(float)dt);
 
+    fprintf(fp, real_format,(float)dt);
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
 
 #ifdef STARS
