@@ -55,14 +55,14 @@ CUDA_OBJ=$(patsubst %,$(OBJDIR)/%,$(CUDA_OBJS))
 NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
 CC = mpicc
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $< -o $@ -lgsl -lgslcblas
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $< -o $@ 
 ifeq ($(ARCH),GPU)
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -arch=sm_35 -c $< -o $@
 endif
 
 all:$(OBJ) $(CUDA_OBJ)
-	$(CC) $(OBJ)  $(CUDA_OBJ) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE)  -lgsl -lgslcblas
+	$(CC) $(OBJ)  $(CUDA_OBJ) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE)  
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
