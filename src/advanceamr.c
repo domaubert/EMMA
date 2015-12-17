@@ -1006,7 +1006,12 @@ if(cond1||cond2||cond3){
 
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
+#ifdef TESTCOSMO
     REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
+#else
+    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
+#endif // TESTCOSMO
+
 #ifdef TUBE
     dxkpc=0.;
 #endif
@@ -1043,7 +1048,11 @@ if(cond1||cond2||cond3){
         if (level==param->lmax){
           printf("Blocking refinement to level %d : level max reached\n",level+1);
         }else{
+#ifdef TESTCOSMO
           printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->cosmo->unit_l,dxkpc/PARSEC*param->cosmo->unit_l);
+#else
+          printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+#endif // TESTCOSMO
         }
       }
     }

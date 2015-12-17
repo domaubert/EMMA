@@ -1569,13 +1569,13 @@ int main(int argc, char *argv[])
 		  curoct->cell[icell].field.d=rho0 /(r/RS *POW(1+r/RS,2));
 #endif // NFW
 
-//#define PLUMER
-#ifdef PLUMER
+#define PLUMMER
+#ifdef PLUMMER
       REAL rho0 = curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  REAL RS = 8./POW2(levelcoarse);
 		  REAL r=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
-		  curoct->cell[icell].field.d=2*rho0 *POW( 1.+ POW(r/RS,2) , -5./2.);
-#endif // NFW
+		  curoct->cell[icell].field.d= rho0(1.+ 16 *POW( 1.+ POW(r/RS,2) , -5./2.));
+#endif // PLUMMER
 
 
 #endif // WCHEM

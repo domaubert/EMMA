@@ -301,7 +301,7 @@ int stromgren_source(struct CELL *cell,struct OCT *curoct,struct RUNPARAMS *para
 
   //if((FABS(xc-x_src)<=X0)*(FABS(yc-y_src)<=X0)*(FABS(zc-z_src)<=X0) && lifetime_test){
 
-    if( (R<=4.*X0) && ( fmod(tcur_in_yrs,param->unitary_stars_test->lifetime) < param->unitary_stars_test->lifetime/nsub )){ //2103.
+    if( (R<=X0) && ( fmod(tcur_in_yrs,param->unitary_stars_test->lifetime) < param->unitary_stars_test->lifetime/nsub )){ //2103.
     //if(curoct->x==x_src && curoct->y==y_src && curoct->z==z_src && icell==0){
       if((xc>0.)*(yc>0.)*(zc>0.)){
         //cell->rfield.src=param->srcint/POW(X0,3)*param->unit.unit_t/param->unit.unit_n*POW(aexp,2)/8.;///8.;///8.;///POW(1./16.,3);

@@ -369,6 +369,13 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
   int nstar=0;
   int first=-1;
 
+  float xmin=2;
+  float xmax=-1;
+  float ymin=2;
+  float ymax=-1;
+  float zmin=2;
+  float zmax=-1;
+
   FILE **f_part=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
 #ifdef STARS
   FILE **f_star=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
@@ -417,6 +424,12 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       }
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+      fwrite(&xmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&xmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymin,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymax,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmax,sizeof(float),1,f_part[n_field]);
 
 #else
       // NOSTARS CASE
@@ -483,6 +496,14 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
               }
             }
 
+      // update file boundaries
+      if(curp->x<xmin) xmin=curp->x;
+      if(curp->y<ymin) ymin=curp->y;
+      if(curp->z<zmin) zmin=curp->z;
+      if(curp->x>xmax) xmax=curp->x;
+      if(curp->y>ymax) ymax=curp->y;
+      if(curp->z>zmax) zmax=curp->z;
+
 		  ipart++;
 
 		}while(nexp!=NULL);
@@ -499,10 +520,24 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 
       rewind(f_part[n_field]);
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+      fwrite(&xmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&xmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymin,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymax,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmax,sizeof(float),1,f_part[n_field]);
       fclose(f_part[n_field]);
 #ifdef STARS
       rewind(f_star[n_field]);
       fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+      fwrite(&xmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&xmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymin,sizeof(float),1,f_part[n_field]);
+      fwrite(&ymax,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&zmax,sizeof(float),1,f_part[n_field]);
       fclose(f_star[n_field]);
 #endif // STARS
 
