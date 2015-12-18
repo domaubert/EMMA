@@ -88,8 +88,9 @@ void thermalFeedbackCell(struct RUNPARAMS *param, struct CELL *cell,struct PART 
 /// Inject an energy "E" in the cell "cell" on thermal form.
 //----------------------------------------------------------
 #ifdef SNTEST
-  printf("injecting Energy in thermal form within a cell\n");
 #endif // SNTEST
+
+  printf("injecting Energy in thermal form within a cell\n");
 
   //REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
   //REAL dv = POW(0.5,3.*level);
@@ -97,6 +98,7 @@ void thermalFeedbackCell(struct RUNPARAMS *param, struct CELL *cell,struct PART 
 
   //curp->mass -= mtot_feedback;
   //cell->field.d += d_e;
+  
 
   cell->field.E += E;
   cell->field.p += E*(GAMMA-1.);
@@ -577,7 +579,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       total_sn_egy+=E;
 
-      //printf("Energy injected =%e mass=%e aexp=%e cellE=%e\n",E,curp->mass,aexp, cell->field.E);
+      //printf("Energy injected =%e mass=%e aexp=%e cellE=%e on RANK %d\n",E,curp->mass,aexp, cell->field.E,cpu->rank);
 
       if(param->sn->feedback_frac){
          /* oct feedback
@@ -603,7 +605,9 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
           */
 
         thermalFeedbackCell(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
+
       }
+
       Nsn++;
 
       if(curp->isStar==5) curp->isStar=4;
@@ -723,21 +727,18 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
       }
     }
 
+    printf("%d\tActive SN on rank %d\n",Nsn,cpu->rank);
+    
+
+
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_SUM,cpu->comm);
-    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
-    if(cpu->rank==RANK_DISP){
-      if (Nsn){
-        if(!(param->sn->trig_sn)){
-          printf("FIRST_SN at z=%e\n",1./aexp-1.);
-          param->sn->trig_sn=1;
-#ifdef WMPI
-    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
-        }
-        printf("%d\tActive SN\n",Nsn);
+    if (Nsn){
+      if(!(param->sn->trig_sn)){
+	param->sn->trig_sn=1;
+	if(cpu->rank==RANK_DISP) printf("FIRST_SN at z=%e\n",1./aexp-1.);
       }
     }
 
