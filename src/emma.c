@@ -1654,6 +1654,7 @@ int main(int argc, char *argv[])
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 
+
     nstepstart+=1.; // next timestep is n+1
     ndumps+=1.;    // next timestep is n+1
 
@@ -1664,6 +1665,23 @@ int main(int argc, char *argv[])
 
 
 #ifdef TESTCOSMO
+    // prepare the next in aexplist
+    if(param.aexpdump){
+      while(param.aexpdump<=tsim){
+	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	    param.aexpdump=0;
+	    break;
+	  }
+      }
+    }
+    if(cpu.rank==RANK_DISP){
+      printf("Next dump in the list at aexp=%e\n",param.aexpdump);
+    }
+#endif
+
+
+
+#ifdef TESTCOSMO
     // temporal boundaries of the full run
     ainit=tinit;
 #endif
@@ -1671,10 +1689,10 @@ int main(int argc, char *argv[])
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
 #endif
-    /* int errcode=777; */
-    /* MPI_Abort(cpu.comm,errcode); */
 
+    //==================================== END Restart =================================================
   }
+
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
