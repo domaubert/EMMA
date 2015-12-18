@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
-    printf("            EMMA V1.1           \n");
+    printf("            EMMA V1.2           \n");
     printf("      Engines Are Running on    \n");
     printf("             %d process         \n",cpu.nproc);
     printf("================================\n");
