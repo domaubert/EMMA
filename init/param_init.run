@@ -1,23 +1,23 @@
 ##==MemoryManagement=========
-max_number_of_octs 500000
+max_number_of_octs 100000
 max_number_of_part 1000000
 mpi_buffer_size 500000
 ##==TimestepManagement=======
-output_frequency 50
-dt_dump 0
+output_frequency 100
+dt_dump 1e8
 max_nuber_of_steps 9000
 time_step_max  1e0
 tmax_or_amax 0.15
 ##==AMRGrid==================
 level_coarse 6
-level_max 10
-amr_thresh 8
+level_max 7
+amr_thresh 16
 n_smooth 2
 ##==DM=======================
 dm_res 0
 dx_res 1e3
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 100
+max_number_of_relaxation_poisson 1000
 poisson_accuracy 1e-3
 mgrid_lmin 3
 mgrid_nvcycles 3
@@ -38,11 +38,11 @@ temp_threshold 1e5
 src_int_or_fesc 1e15
 atomic_file Starburst99_1grpT_1grpS.dat
 ##==StarFormation============
-overdensity_cond 200
-density_cond -500
-efficiency 1.
-tlife 2e7
-mass_res -2
+overdensity_cond 50
+density_cond 0.
+efficiency 0.01
+tlife 3e7
+mass_res 4e3
 ##==SuperNovae===============
 feedback_eff 1.
 feedback__kin_frac 1.
