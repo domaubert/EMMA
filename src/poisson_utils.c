@@ -7,7 +7,7 @@
 #include <mpi.h>
 
 #ifdef GPUAXL
-#include "poisson_utils_gpu.h"
+//#include "poisson_utils_gpu.h"
 #endif
 
 #ifdef WMPI
@@ -1551,7 +1551,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   if(cpu->rank==RANK_DISP)  printf("on CPU\n");
 #else
-  if(cpu->rank==RANK_DISP)  printf("on GPU\n");
+  if(cpu->rank==RANK_DISP)  printf("on CPU\n");
 #endif
   //breakmpi();
 
@@ -1601,7 +1601,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
    printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #else
-   printf(" === GPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
+   printf(" === CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
  }
   return 0;
