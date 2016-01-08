@@ -1,7 +1,7 @@
 ##########################################
 ARCH = GPU
 
-C_LIBS = -O2 -lm #-Wimplicit   #-lm -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+C_LIBS = -O2 -lm -lstdc++ #-Wimplicit   #-lm -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
