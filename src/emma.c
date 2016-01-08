@@ -110,7 +110,10 @@ REAL f_aexp(REAL aexp, REAL omegam, REAL omegav)
 int main(int argc, char *argv[])
 {
 
-	REAL tstart=MPI_Wtime();
+#ifdef WMPI
+  MPI_Init(&argc,&argv);
+  REAL tstart=MPI_Wtime();
+#endif
 
   struct OCT *grid;
   struct OCT **firstoct;
@@ -348,7 +351,6 @@ int main(int argc, char *argv[])
 #ifdef WMPI
   MPI_Status stat;
 
-  MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD,&(cpu.nproc));
   MPI_Comm_rank(MPI_COMM_WORLD,&(cpu.rank));
 

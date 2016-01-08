@@ -727,7 +727,7 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
       }
     }
 
-    printf("%d\tActive SN on rank %d\n",Nsn,cpu->rank);
+    //    printf("%d\tActive SN on rank %d\n",Nsn,cpu->rank);
     
 
 
