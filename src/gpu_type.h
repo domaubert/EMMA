@@ -1,5 +1,5 @@
 
-#include <cudpp.h>
+//#include <cudpp.h>
 
 #ifdef WCUDA_ERR
 #  define CUDA_CHECK_ERROR(errorMessage) {                                    \
@@ -15,8 +15,8 @@
 #endif
 
 // ====================== structure for CUDPP =======
-struct CUPARAM{
-  CUDPPHandle theCudpp;
-  CUDPPConfiguration config;
-  CUDPPHandle scanplan;
-};
+/* struct CUPARAM{ */
+/*   CUDPPHandle theCudpp; */
+/*   CUDPPConfiguration config; */
+/*   CUDPPHandle scanplan; */
+/* }; */

@@ -146,8 +146,6 @@ __device__ void getcellnei_gpu_rad(int cindex, int *neip, int *cell)
 }
 
 
-
-
 //================================================================================
 __device__ void ddiffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
   int igrp;
@@ -156,24 +154,29 @@ __device__ void ddiffR(struct Rtype *W2, struct Rtype *W1, struct Rtype *WR){
     WR->fx[igrp]=W2->fx[igrp]- W1->fx[igrp];
     WR->fy[igrp]=W2->fy[igrp]- W1->fy[igrp];
     WR->fz[igrp]=W2->fz[igrp]- W1->fz[igrp];
+    WR->src[igrp]=W2->src[igrp]- W1->src[igrp];
   }
-  WR->src=W2->src- W1->src;
-#ifdef STARS
-  WR->snfb=W2->snfb- W1->snfb;
+
+#ifdef SUPERNOVAE
+    WR->snfb=W2->snfb- W1->snfb;
 #endif
 #ifdef WCHEM
-  WR->nhplus=W2->nhplus-W1->nhplus;
+    WR->nhplus=W2->nhplus-W1->nhplus;
 #ifdef HELIUM
-  WR->nheplus=W2->nheplus-W1->nheplus;
-  WR->nhepplus=W2->nhepplus-W1->nhepplus;
+    WR->nheplus=W2->nheplus-W1->nheplus;
+    WR->nhepplus=W2->nhepplus-W1->nhepplus;
 #endif
-  WR->eint=W2->eint-W1->eint;
-  WR->nh=W2->nh-W1->nh;
+    WR->eint=W2->eint-W1->eint;
+    WR->nh=W2->nh-W1->nh;
 #endif
 }
 
+
+
+
 //================================================================================
 __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
+
   REAL beta=1.; // 1. for MINBEE 2. for SUPERBEE
   // FLUX LIMITER
   int igrp;
@@ -210,17 +213,19 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
       Wr->fz[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->fz[igrp],Wp->fz[igrp])),FMAX(Wm->fz[igrp],beta*Wp->fz[igrp]));
     }
 
-  }
-
-  if(Wp->src>0){
-      Wr->src=FMAX(FMAX(0.,FMIN(beta*Wm->src,Wp->src)),FMIN(Wm->src,beta*Wp->src));
+    if(Wp->src[igrp]>0){
+      Wr->src[igrp]=FMAX(FMAX(0.,FMIN(beta*Wm->src[igrp],Wp->src[igrp])),FMIN(Wm->src[igrp],beta*Wp->src[igrp]));
     }
     else{
-      Wr->src=FMIN(FMIN(0.,FMAX(beta*Wm->src,Wp->src)),FMAX(Wm->src,beta*Wp->src));
+      Wr->src[igrp]=FMIN(FMIN(0.,FMAX(beta*Wm->src[igrp],Wp->src[igrp])),FMAX(Wm->src[igrp],beta*Wp->src[igrp]));
     }
 
+  }
 
-#ifdef STARS
+
+
+
+#ifdef SUPERNOVAE
   if(Wp->snfb>0){
       Wr->snfb=FMAX(FMAX(0.,FMIN(beta*Wm->snfb,Wp->snfb)),FMIN(Wm->snfb,beta*Wp->snfb));
     }
@@ -236,6 +241,7 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   else{
     Wr->nhplus=FMIN(FMIN(0.,FMAX(beta*Wm->nhplus,Wp->nhplus)),FMAX(Wm->nhplus,beta*Wp->nhplus));
   }
+
 #ifdef HELIUM
   if(Wp->nheplus>0){
     Wr->nheplus=FMAX(FMAX(0.,FMIN(beta*Wm->nheplus,Wp->nheplus)),FMIN(Wm->nheplus,beta*Wp->nheplus));
@@ -268,20 +274,21 @@ __device__ void dminmod_R(struct Rtype *Wm, struct Rtype *Wp, struct Rtype *Wr){
   }
 #endif
 
-
 }
+
+
 
 //================================================================================
 __device__ void dinterpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype *Dx, struct Rtype *Dy, struct Rtype *Dz,REAL dx,REAL dy,REAL dz){
   int igrp;
-  
   for(igrp=0;igrp<NGRP;igrp++){
     Wp->e[igrp] =W0->e[igrp] +dx*Dx->e[igrp] +dy*Dy->e[igrp] +dz*Dz->e[igrp];
     Wp->fx[igrp] =W0->fx[igrp] +dx*Dx->fx[igrp] +dy*Dy->fx[igrp] +dz*Dz->fx[igrp];
     Wp->fy[igrp] =W0->fy[igrp] +dx*Dx->fy[igrp] +dy*Dy->fy[igrp] +dz*Dz->fy[igrp];
     Wp->fz[igrp] =W0->fz[igrp] +dx*Dx->fz[igrp] +dy*Dy->fz[igrp] +dz*Dz->fz[igrp];
+    Wp->src[igrp] =W0->src[igrp] +dx*Dx->src[igrp] +dy*Dy->src[igrp] +dz*Dz->src[igrp];
   }
-    Wp->src =W0->src +dx*Dx->src +dy*Dy->src +dz*Dz->src;
+
 
 #ifdef WCHEM
     Wp->nhplus =W0->nhplus + dx*Dx->nhplus + dy*Dy->nhplus + dz*Dz->nhplus;
@@ -289,15 +296,14 @@ __device__ void dinterpminmod_R(struct Rtype *W0, struct Rtype *Wp, struct Rtype
     Wp->nheplus =W0->nheplus + dx*Dx->nheplus + dy*Dy->nheplus + dz*Dz->nheplus;
     Wp->nhepplus =W0->nhepplus + dx*Dx->nhepplus + dy*Dy->nhepplus + dz*Dz->nhepplus;
 #endif
-
     Wp->eint =W0->eint +dx*Dx->eint +dy*Dy->eint +dz*Dz->eint;
     Wp->nh =W0->nh +dx*Dx->nh +dy*Dy->nh +dz*Dz->nh;
 #endif
-#ifdef STARS
+#ifdef SUPERNOVAE
     Wp->snfb =W0->snfb +dx*Dx->snfb +dy*Dy->snfb +dz*Dz->snfb;
 #endif
-
 }
+
 
 
 //================================================================================

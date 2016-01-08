@@ -772,7 +772,7 @@ int main(int argc, char *argv[])
 
   // FOR THE MOMENT: GPU POISSON IS DISABLED, HENCE NO NEED FOR ALLOCATIONS on GPU
 #ifdef WGRAV
-  create_pinned_gravstencil(&gstencil,gstride);
+  //create_pinned_gravstencil(&gstencil,gstride);
 /* #ifdef FASTGRAV */
 /*   struct STENGRAV dev_stencil; */
 /*   cpu.dev_stencil=&dev_stencil; */
@@ -2319,8 +2319,8 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) printf("FREE GPU\n");
 
 #ifdef WGRAV
-    destroy_pinned_gravstencil(&gstencil,gstride);
-    destroy_gravstencil_GPU(&cpu,gstride);
+  //destroy_pinned_gravstencil(&gstencil,gstride);
+  //destroy_gravstencil_GPU(&cpu,gstride);
 #endif
 
 #ifdef WHYDRO2

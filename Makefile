@@ -1,7 +1,7 @@
 ##########################################
-ARCH = CPU
+ARCH = GPU
 
-C_LIBS = -O2 -Wimplicit #-lm  #-lm -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+C_LIBS = -O2 -lm #-Wimplicit   #-lm -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
@@ -41,8 +41,8 @@ include param.mk
 ifeq ($(ARCH),GPU)
 DEFINESGLOB= $(DEFINES) -DGPUAXL
 EXECUTABLE = emmagpu
-CUDA_OBJS= interface.o poisson_utils_gpu.o hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o
-CUDA_LIBS =  -I/workdir/observatoire/aubert/cudpp_src_2.0/include -L/workdir/observatoire/aubert/cudpp_src_2.0/lib -L/usr/local/cuda-5.0/lib64 -lcudart  -I/usr/local/cuda-5.0/include -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl -lcudpp #-lcuda
+CUDA_OBJS= interface.o  hydro_utils_gpu.o rad_utils_gpu.o chem_utils_gpu.o # cic_gpu.o poisson_utils_gpu.o
+CUDA_LIBS =   -L/usr/local/cuda-7.5/lib64 -lcudart  -I/usr/local/cuda-7.5/include -I/usr/lib/openmpi/include -L/usr/lib/openmpi/lib/ -lmpi -lopen-rte -lopen-pal -ldl -lnsl -lutil -ldl #-lcudpp #-lcuda
 else
 DEFINESGLOB= $(DEFINES)
 EXECUTABLE = emmacpu
