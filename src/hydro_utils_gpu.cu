@@ -6,7 +6,7 @@
 #include <string.h>
 #include "prototypes.h"
 #include <mpi.h>
-#include <cudpp.h>
+//#include <cudpp.h>
 #include "gpu_type.h"
 
 #define NITERMAX 10
