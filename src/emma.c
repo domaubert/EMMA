@@ -748,7 +748,6 @@ int main(int argc, char *argv[])
   struct STENGRAV gstencil;
   struct RGRID *rstencil;
 
-#ifndef GPUAXL
   //printf("stencil=%p with stride=%d\n",stencil,hstride);
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
   //printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
@@ -763,7 +762,6 @@ int main(int argc, char *argv[])
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-#endif
 
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============

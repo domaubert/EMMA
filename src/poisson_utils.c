@@ -1345,14 +1345,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  if(level>=7){
-    //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  else{
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
 
 
@@ -1383,7 +1376,6 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
     PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #else
-    //PoissonJacobiGPU(level-1,param,firstoct,cpu,stencil,stride,tsim);
     PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   }
@@ -1417,14 +1409,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  if(level>=7){
-    //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  else{
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   return dres;
 }
@@ -1567,7 +1552,6 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
 #else
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
-    //PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
 #endif
 
   }
