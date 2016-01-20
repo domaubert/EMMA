@@ -1507,7 +1507,8 @@ int main(int argc, char *argv[])
 #else
 #ifndef TESTCLUMP
       temperature=1e2;
-      xion=1e-6;
+      //xion=1e-6;
+      xion=1.-1e-5;
 #else
       temperature=8000.;
       xion=1e-5;
@@ -1569,7 +1570,7 @@ int main(int argc, char *argv[])
 		  curoct->cell[icell].field.d=rho0 /(r/RS *POW(1+r/RS,2));
 #endif // NFW
 
-#define PLUMMER
+//#define PLUMMER
 #ifdef PLUMMER
       REAL rho0 = curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  REAL RS = 8./POW2(levelcoarse);

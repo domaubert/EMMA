@@ -415,14 +415,21 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       sprintf(filenamepart,"data/part.%s.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
 
+
+      if(debug) printf("openning %s at %p\n",filenamestar, f_star[n_field]);
       f_star[n_field]=fopen(filenamestar,"wb");
       if(f_star[n_field] == NULL) {
         printf("Cannot open %s\n", filenamestar);
         abort();
       }
-      if(debug) printf("openning %s at %p\n",filenamestar, f_star[n_field]);
-      fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
+      fwrite(&npart,1,sizeof(int)  ,f_star[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
+      fwrite(&star_xmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_xmax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmax,sizeof(float),1,f_star[n_field]);
 
       if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
       f_part[n_field]=fopen(filenamepart,"wb");
@@ -430,6 +437,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
         printf("Cannot open %s\n", filenamepart);
         abort();
       }
+
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
       fwrite(&part_xmin,sizeof(float),1,f_part[n_field]);

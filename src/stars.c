@@ -267,16 +267,22 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 /// And do a random draw in a Poisson law
 // ----------------------------------------------------------//
 
-  REAL dv=pow(0.5,3*level);
-  REAL SFR=getSFR(cell,param,aexp,level);
+  const REAL dv=pow(0.5,3*level);
+  const REAL SFR=getSFR(cell,param,aexp,level);
   // Average number of stars created
-	REAL lambda =  SFR  / mstar * dt * dv;
+	const REAL lambda =  SFR  / mstar * dt * dv;
 
+//#define NOPOISS
+
+#ifdef NOPOISS
 #ifdef GSLRAND
 	unsigned int N = gsl_ran_poisson (param->stars->rpoiss, (double)lambda);
 #else
 	unsigned int N = gpoiss(lambda); //Poisson drawing
 #endif // GSLRAND
+#else
+  unsigned int N = round(lambda);
+#endif // NOPOISS
 
 	if(N){
 	  //printf("tstar=%e lambda=%e\n",t0/(3600.*24.*365.*1e9),lambda);
