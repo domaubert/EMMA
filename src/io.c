@@ -350,7 +350,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef PIC
 void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
-  int debug =0;
+  const int debug =0;
 
   FILE *fp = NULL;
   float val;
@@ -422,7 +422,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
         printf("Cannot open %s\n", filenamestar);
         abort();
       }
-      fwrite(&npart,1,sizeof(int)  ,f_star[n_field]);
+      fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
       fwrite(&star_xmin,sizeof(float),1,f_star[n_field]);
       fwrite(&star_xmax,sizeof(float),1,f_star[n_field]);
@@ -468,14 +468,13 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
 
-
 #endif // STARS
       n_field++;
     }
   }
 
   if(debug) printf("opening file OK\n");
-
+  abort();
   for(level=levelcoarse;level<=levelmax;level++){
     if (debug) printf("entering level %d\n",level);
 
@@ -497,7 +496,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
             for (i=0;i<param->out_part->n_field_tot; i++){
               if(param->out_part->field_id[i]){
 
-                if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
+            //    if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
 
 #ifdef STARS
                 if(curp->isStar) 	{	fp=f_star[ii];	if(i==first) nstar++;	}
@@ -556,13 +555,13 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 #ifdef STARS
       rewind(f_star[n_field]);
       fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
-      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
-      fwrite(&star_xmin,sizeof(float),1,f_part[n_field]);
-      fwrite(&star_xmax,sizeof(float),1,f_part[n_field]);
-      fwrite(&star_ymin,sizeof(float),1,f_part[n_field]);
-      fwrite(&star_ymax,sizeof(float),1,f_part[n_field]);
-      fwrite(&star_zmin,sizeof(float),1,f_part[n_field]);
-      fwrite(&star_zmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
+      fwrite(&star_xmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_xmax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmax,sizeof(float),1,f_star[n_field]);
       fclose(f_star[n_field]);
 #endif // STARS
 
@@ -1179,6 +1178,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   *
   */
 
+  const int debug=0;
+
   int i;
   int n_field=0;
   int n_cell=0;
@@ -1193,8 +1194,11 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
 
 // Opening all the fields files
+  if(debug) printf("Allocating %d file pointers \n", param->out_grid->n_field);
+
   FILE **f_dat;
   f_dat=(FILE **)malloc(param->out_grid->n_field*sizeof(FILE *));
+
 
   for(i=0;i<param->out_grid->n_field_tot;i++){
     if(param->out_grid->field_id[i]){
@@ -1204,6 +1208,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       mkdir(folder_field, 0755);
       char dat_name[256];
       sprintf(dat_name,"%s%s.%05d.p%05d",folder_field,param->out_grid->field_name[i],*(cpu->ndumps),cpu->rank);
+
+      if(debug) printf("Openning : %s",dat_name);
 
       f_dat[n_field]=fopen(dat_name,"wb");
       if(f_dat[n_field] == NULL){
@@ -1224,6 +1230,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
     }
   }
 
+  if(debug) printf("Files open, let's write");
 
 // writing the data
   int level;
@@ -1263,6 +1270,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       }
     }
   }
+
+  if(debug) printf("Write OK, header update and close");
 
   // write n_cells and close the fields files
   n_field=0;

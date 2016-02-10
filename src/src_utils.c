@@ -226,8 +226,26 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 
     if ((curp->isStar>=6)){
 
+#define CONSTRAIN_SRC_CELL_STATE
+#ifdef CONSTRAIN_SRC_CELL_STATE
+      REAL xion = 1.;
+      REAL temperature = 100000.;
+
+      // Setting xion
+      cell->rfield.nhplus=xion*cell->rfield.nh;
+      cell->rfieldnew.nhplus=cell->rfield.nhplus;
+
+      // Setting temp
+      REAL eint=(1.5*cell->rfield.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexp,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;
+      cell->rfield.eint=eint;
+      cell->rfieldnew.eint=eint;
+      E2T(&cell->rfield,aexp,param);
+      E2T(&cell->rfieldnew,aexp,param);
+#endif
+
+
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-      REAL age =  param->cosmo->tphy - curp->age;
+REAL age =  param->cosmo->tphy - curp->age;
       if (age<param->stars->tlife){
 #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
 
