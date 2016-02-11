@@ -1482,3 +1482,75 @@ REAL tt1=MPI_Wtime();
 
 	}
 }
+
+
+#ifdef HDF5
+
+void dumpalloct_HDF5(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+/**
+  * This function dump the output data with HDF5
+  */
+  int i;
+
+  int n_cell_tot=0;
+  for (i=0;i<cpu->nproc;i++){
+    n_cell_tot+=cpu->mpiio_ncells[i];
+  }
+
+  float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
+
+  int n_field=0;
+  for (i=0;i<param->out_grid->n_field_tot; i++){
+    if(param->out_grid->field_id[i]){
+
+      //reduce data
+      int i_tmp=0;
+      int level;
+      for(level=param->lcoarse;level<=param->lmax;level++){
+        int iOct;
+        for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+          struct OCT *oct=cpu->octList[level-1][iOct];
+          int icell;
+          for(icell=0;icell<8;icell++){
+            struct CELL * cell= &oct->cell[icell];
+            if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
+              tmp[i_tmp++] = (float)assign_grid_field(i,cell);
+            }
+          }
+        }
+      }
+
+      //Open the field file
+      char dat_name[256];
+      sprintf(dat_name,"%s%s.%05d",folder,param->out_grid->field_name[i],*(cpu->ndumps));
+
+      MPI_File f_dat;
+      MPI_File_open(cpu->comm,dat_name,MPI_MODE_CREATE|MPI_MODE_WRONLY,MPI_INFO_NULL,&f_dat);
+
+      if(f_dat == NULL){
+       printf("Cannot open %s\n", dat_name);
+       abort();
+      }
+
+      //write header
+      MPI_File_write(f_dat, &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
+      const size_t grid_header_size = sizeof(int);
+
+      //set view
+      MPI_Offset grid_offset = cpu->mpiio_grid_offsets*sizeof(float) + grid_header_size ;
+      MPI_File_set_view(f_dat, grid_offset, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
+
+      //write data
+      MPI_File_write(f_dat, tmp, cpu->mpiio_ncells[cpu->rank], MPI_FLOAT, MPI_STATUS_IGNORE);
+
+      // close the field file
+      MPI_File_close(&f_dat);
+      n_field++;
+    }
+  }
+  free(tmp);
+}
+#endif // MPIIO
+
+#endif // HDF5
