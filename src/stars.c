@@ -53,14 +53,12 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vy = field->v;
 	star->vz = field->w;
 
-//#define RDM_STARS
+#define RDM_STARS
 #ifdef RDM_STARS
   // random position
 	star->x += rdm(-0.5,0.5);
 	star->y += rdm(-0.5,0.5);
 	star->z += rdm(-0.5,0.5);
-
-	if(isnan(star->vx)) printf("HOHO\n");
 
   // compute random component
 	REAL r = rdm(0,1) * field->a ;
@@ -167,7 +165,6 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U.dw -= star->vz * drho;
 
 //	internal energy
-
 #ifdef DUAL_E
 	U.eint=U.eint*(1.-drho/W.d); // assuming T and x remain constant
 #endif
