@@ -273,8 +273,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	const REAL lambda =  SFR  / mstar * dt * dv;
 
 //#define NOPOISS
-
-#ifdef NOPOISS
+#ifndef NOPOISS
 #ifdef GSLRAND
 	unsigned int N = gsl_ran_poisson (param->stars->rpoiss, (double)lambda);
 #else

@@ -460,11 +460,13 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 #endif // MUTLTIFOLDER
 
       if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
+
       f_part[n_field]=fopen(filenamepart,"wb");
       if(f_part[n_field] == NULL){
         printf("Cannot open %s\n", filenamepart);
         abort();
       }
+
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
 
@@ -474,7 +476,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
   }
 
   if(debug) printf("opening file OK\n");
-  abort();
+
   for(level=levelcoarse;level<=levelmax;level++){
     if (debug) printf("entering level %d\n",level);
 
@@ -512,6 +514,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
             }
 
       // update file boundaries
+#ifdef STARS
       if(curp->isStar) 	{
         if(curp->x<star_xmin) star_xmin=curp->x;
         if(curp->y<star_ymin) star_ymin=curp->y;
@@ -519,7 +522,9 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
         if(curp->x>star_xmax) star_xmax=curp->x;
         if(curp->y>star_ymax) star_ymax=curp->y;
         if(curp->z>star_zmax) star_zmax=curp->z;
-      }else{
+      }else
+#endif // STARS
+      {
         if(curp->x<part_xmin) part_xmin=curp->x;
         if(curp->y<part_ymin) part_ymin=curp->y;
         if(curp->z<part_zmin) part_zmin=curp->z;

@@ -281,6 +281,15 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);
 
+#ifdef CONSTRAIN_SRC_CELL_STATE
+      REAL xion = 1-1.e-5;
+      REAL temperature = 100000.;
+      // Setting temp
+      eint[idloc]=(1.5*R.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexporg,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;
+#endif
+
+
+
       // at this stage we are ready to do the calculations
 
       // DEALING WITH CLUMPING ----------------------
