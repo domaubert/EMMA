@@ -1006,11 +1006,7 @@ if(cond1||cond2||cond3){
 
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
-#ifdef TESTCOSMO
-    REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
-#else
     REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
-#endif // TESTCOSMO
 
 #ifdef TUBE
     dxkpc=0.;

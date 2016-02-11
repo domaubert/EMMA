@@ -43,18 +43,25 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->isStar = 6;
 	star->rhocell = field->d;
 
-  // random position
-	star->x = xc + rdm(-0.5,0.5) * dx;
-	star->y = yc + rdm(-0.5,0.5) * dx;
-	star->z = zc + rdm(-0.5,0.5) * dx;
+  // set star position to cell center
+  star->x = xc + dx/2;
+	star->y = yc + dx/2;
+	star->z = zc + dx/2;
 
   // set star velocity to fluid velocity
  	star->vx = field->u;
 	star->vy = field->v;
 	star->vz = field->w;
 
+//#define RDM_STARS
+#ifdef RDM_STARS
+  // random position
+	star->x += rdm(-0.5,0.5);
+	star->y += rdm(-0.5,0.5);
+	star->z += rdm(-0.5,0.5);
+
 	if(isnan(star->vx)) printf("HOHO\n");
-/*
+
   // compute random component
 	REAL r = rdm(0,1) * field->a ;
 	REAL theta  = acos(rdm(-1,1));
@@ -64,10 +71,11 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
-*/
+
 	if(isnan(star->vx)){
 	  printf("HOHO %e %e %e %e\n",r,theta,phi,field->a);
 	}
+#endif // RDM_STARS
 
   //mass
 	star->mass = mstar;
@@ -353,7 +361,6 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
 /// Compute the density threshold of star formation
 // ----------------------------------------------------------//
 
-
 #ifdef TESTCOSMO
 #ifdef SCHAYE
 	// std value for overdensity = 55.7
@@ -464,6 +471,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
             }
           }
 
+#ifdef WRAD
           int igrp_time;
           for(igrp_time=0;igrp_time<NGRP_TIME;igrp_time++){
             if (age>param->atomic.time_bound[igrp_time]){
@@ -471,8 +479,9 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
               break;
             }
           }
+#endif // WRAD
 
-          //------------------------------------------------//
+ //------------------------------------------------//
 
         }while(nexp!=NULL);
       }
@@ -512,10 +521,7 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 
   }
 #endif // TESTCOSMO
-
 // TODO considere ifndef TESTCOSMO
-
-
   return mstars_level;
 }
 
@@ -529,6 +535,8 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 /// and add them to the linked list\n
 // ----------------------------------------------------------//
 
+const int debug=0;
+
 #ifdef GSLRAND
   const gsl_rng_type * T;
   gsl_rng * r;
@@ -539,6 +547,8 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
 #endif
 
   if(cpu->rank == RANK_DISP) printf("STARS\n");
+
+  if(debug) printf("setting star states\n");
   setStarsState(param, cpu, level);
 
   REAL mmax = 0;
@@ -549,9 +559,13 @@ void Stars(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int
   int nstarsmax_in_one_cell=0;
   int nstarsmin_in_one_cell=1e3;
 
+  if(debug) printf("init threshold\n");
   initThresh(param, aexp);
+
+  if(debug) printf("init mstar\n");
   REAL mstars_level = setmStar(param,level);
 
+  if(debug) printf("main loop\n");
   int iOct;
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
     struct OCT *curoct=cpu->octList[level-1][iOct];
