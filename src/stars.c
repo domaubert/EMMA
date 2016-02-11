@@ -54,7 +54,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vz = field->w;
 
 	if(isnan(star->vx)) printf("HOHO\n");
-
+/*
   // compute random component
 	REAL r = rdm(0,1) * field->a ;
 	REAL theta  = acos(rdm(-1,1));
@@ -64,7 +64,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
-
+*/
 	if(isnan(star->vx)){
 	  printf("HOHO %e %e %e %e\n",r,theta,phi,field->a);
 	}
@@ -430,8 +430,12 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 #else
               const REAL tlife_rad = param->stars->tlife;
 #endif
-              const REAL tlife_sn  = param->sn->tlife;
 
+#ifdef SUPERNOVAE
+              const REAL tlife_sn  = param->sn->tlife;
+#else
+              const REAL tlife_sn  = param->stars->tlife;
+#endif // SUPERNOVAE
               const int SNdead=(curp->isStar==8);
               const int isSN =age>=tlife_sn ?1:0;
               const int isRAD=age>=tlife_rad?0:1;
