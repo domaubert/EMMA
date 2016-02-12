@@ -733,6 +733,7 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_SUM,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
 

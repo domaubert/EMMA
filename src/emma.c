@@ -604,8 +604,6 @@ int main(int argc, char *argv[])
   }
 #endif
 
-
-
   //=========== assigning values =============
   levelcoarse=param.lcoarse;
   levelmax=param.lmax;
