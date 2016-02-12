@@ -1871,7 +1871,6 @@ int main(int argc, char *argv[])
     // Loop over time
     for(nsteps=nstepstart;(nsteps<=param.nsteps)*(tsim<tmax);nsteps++){
 
-
       cpu.nsteps=nsteps;
 
 #ifdef TESTCOSMO
@@ -2214,8 +2213,8 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////
 // free param
 ///////////////////////////////////////////
+  if(cpu.rank==RANK_DISP) printf("FREE\n");
 
-  if(cpu.rank==RANK_DISP) printf("FREE ATOMIC\n");
   free(param.atomic.space_bound);
   free(param.atomic.time_bound);
   free(param.atomic.hnu);
@@ -2224,12 +2223,10 @@ int main(int argc, char *argv[])
   free(param.atomic.factgrp);
 
 #ifdef SUPERNOVAE
-  if(cpu.rank==RANK_DISP) printf("FREE SN\n");
   //free(param.sn->mass_loss_t);
   //free(param.sn->mass_loss_mass);
   //free(param.sn->egy_loss_t);
   //free(param.sn->egy_loss_egy);
-  if(cpu.rank==RANK_DISP) printf("END FREE SN\n");
 #endif // SUPERNOVAE
 
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
@@ -2238,20 +2235,16 @@ int main(int argc, char *argv[])
   free(param.uv.value);
 #endif // defined
 
-if(cpu.rank==RANK_DISP) printf("MOVIE\n");
 #ifdef MOVIE
-  if(cpu.rank==RANK_DISP) printf("1\n");
 	free(param.movie->map);
-	if(cpu.rank==RANK_DISP) printf("2\n");
 	free(param.movie->map_reduce);
 #endif // MOVIE
-if(cpu.rank==RANK_DISP) printf("END FREE\n");
+
 ///////////////////////////////////////////
 // free GPU
 ///////////////////////////////////////////
 
 #ifdef GPUAXL
-  if(cpu.rank==RANK_DISP) printf("FREE GPU\n");
 
 #ifdef WGRAV
     destroy_pinned_gravstencil(&gstencil,gstride);
@@ -2281,7 +2274,6 @@ if(cpu.rank==RANK_DISP) printf("END FREE\n");
       printf("Done ..... in %.2e CPU hours\n", (tend-tstart)/3600*cpu.nproc);
     }
 #ifdef WMPI
-
     MPI_Barrier(cpu.comm);
     MPI_Finalize();
 #endif

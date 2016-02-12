@@ -499,6 +499,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 if(cond1||cond2||cond3){
 
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
+
 	dumpIO(tloc,param,cpu,firstoct,adt,1);
 	//dumpIO(tloc,param,cpu,firstoct,adt,0);
 	//abort();

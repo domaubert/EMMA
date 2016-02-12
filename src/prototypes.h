@@ -449,6 +449,15 @@ struct CPUINFO{
 
   int mpiio_part_offsets;
   int *mpiio_nparts;
+
+  REAL *xmin;
+  REAL *xmax;
+  REAL *ymin;
+  REAL *ymax;
+  REAL *zmin;
+  REAL *zmax;
+
+
 #ifdef STARS
   int mpiio_star_offsets;
   int *mpiio_nstars;

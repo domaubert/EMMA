@@ -29,8 +29,6 @@
 
 #define AVGFACT (1.) // set to 0 to get an homogenous cosmo field 1
 
-
-
 float assign_grid_field(int field,struct CELL *cell){
 
 /**
@@ -1203,7 +1201,6 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   zmin=2;
   zmax=-1;
 
-
 // Opening all the fields files
   if(debug) printf("Allocating %d file pointers \n", param->out_grid->n_field);
 
@@ -1352,16 +1349,14 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
  	hid_t plist;
 
 	//Set up file access property list with parallel I/O access
-	plist = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+  plist = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
 
-	char file_name[256];
-  sprintf(file_name,"data/step_%05d.h5", *cpu->ndumps);
-
-	//Create a new file collectively
-  hid_t file = H5Fopen(file_name, H5F_ACC_RDWR, plist);
-	H5Pclose(plist);
-
+  //Create a new file collectively
+  char file_name[256];
+  sprintf(file_name,"data/grid_%05d.h5", *cpu->ndumps);
+  hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
+  H5Pclose(plist);
 
   hsize_t n_cell_tot=0;
   int i;
@@ -1384,7 +1379,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 	hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
 	// Create dataset.
-
   float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
   int ifield;
   for (ifield=0;ifield<param->out_grid->n_field_tot; ifield++){
@@ -1408,7 +1402,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       }
 
       char field_name[256];
-      sprintf(field_name,"grid_%s",param->out_grid->field_name[ifield]);
+      sprintf(field_name,"%s",param->out_grid->field_name[ifield]);
       hid_t  dataset = H5Dcreate(file, field_name, H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
@@ -1419,7 +1413,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   H5Pclose(plist);
 	H5Fclose(file);
 }
-#endif // HDF5
 
 #ifdef PIC
 void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -1429,15 +1422,14 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
  	hid_t plist;
 
 	//Set up file access property list with parallel I/O access
-	plist = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+  plist = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
 
-	char file_name[256];
-  sprintf(file_name,"data/step_%05d.h5", *cpu->ndumps);
-
-	//Create a new file collectively
-  hid_t file = H5Fopen(file_name, H5F_ACC_RDWR, plist);
-	H5Pclose(plist);
+  //Create a new file collectively
+  char file_name[256];
+  sprintf(file_name,"data/part_%05d.h5", *cpu->ndumps);
+  hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
+  H5Pclose(plist);
 
   hsize_t n_part_tot=0;
   int i;
@@ -1461,7 +1453,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
   float *tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],sizeof(float));
   int ifield;
-  for (ifield=0;ifield<param->out_part->n_field_tot-1; ifield++){ // the -1 is to exclude the age
+  for (ifield=0;ifield<param->out_part->n_field_tot-1; ifield++){ // the -1 is to exclude the age which doesnt exist for DM part
     if(param->out_part->field_id[ifield]){
 
       //reduce data
@@ -1487,7 +1479,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 	    }
 
       char field_name[256];
-      sprintf(field_name,"part_%s",param->out_part->field_name[ifield]);
+      sprintf(field_name,"%s",param->out_part->field_name[ifield]);
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
@@ -1503,23 +1495,24 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 }
 
 #ifdef STARS
-void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
+void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
 
-  const int debug =0;
+  const int debug =2;
 
  	hid_t plist;
 
 	//Set up file access property list with parallel I/O access
-	plist = H5Pcreate(H5P_FILE_ACCESS);
-	H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+  plist = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
 
-	char file_name[256];
-  sprintf(file_name,"data/step_%05d.h5", *cpu->ndumps);
+  //Create a new file collectively
+  char file_name[256];
+  sprintf(file_name,"data/star_%05d.h5", *cpu->ndumps);
+  hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
+  H5Pclose(plist);
 
-	//Create a new file collectively
-  hid_t file = H5Fopen(file_name, H5F_ACC_RDWR, plist);
-	H5Pclose(plist);
 
+  if (debug) printf("getting n stars tot \n");
   hsize_t n_star_tot=0;
   int i;
   for (i=0;i<cpu->nproc;i++){
@@ -1529,6 +1522,7 @@ void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct
 	// Create the data space for the dataset.
 	hid_t dataspace = H5Screate_simple(1, &n_star_tot, NULL);
 
+  if (debug) printf("hyperslab \n");
 	//Select hyperslab in the file.
 	hsize_t offset = cpu->mpiio_star_offsets;
 	hsize_t n_loc = cpu->mpiio_nstars[cpu->rank];
@@ -1540,10 +1534,13 @@ void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct
 
 	hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
+  if (debug) printf("Starting main reducing/writting loop\n");
   float *tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],sizeof(float));
   int ifield;
   for (ifield=0;ifield<param->out_part->n_field_tot; ifield++){
     if(param->out_part->field_id[ifield]){
+
+      if (debug>1) printf("begin reduce for field %s \n", param->out_part->field_name[ifield]);
 
       //reduce data
       int i_tmp=0;
@@ -1568,9 +1565,12 @@ void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct
 	    }
 
       char field_name[256];
-      sprintf(field_name,"star_%s",param->out_part->field_name[ifield]);
+      sprintf(field_name,"%s",param->out_part->field_name[ifield]);
+      if (debug>1) printf("creating dataset for field %s \n", param->out_part->field_name[ifield]);
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      if (debug>1) printf("writing dataset for field %s \n", param->out_part->field_name[ifield]);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
+      if (debug>1) printf("closing dataset for field %s \n", param->out_part->field_name[ifield]);
       H5Dclose(dataset);
     }
   }
@@ -1584,19 +1584,6 @@ void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct
 }
 #endif // STARS
 #endif // PIC
-
-
-#ifdef HDF5
-void creat_HDF5_file(struct CPUINFO *cpu){
-    //Set up file access property list with parallel I/O access
-    hid_t plist = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
-    char file_name[256];
-    sprintf(file_name,"data/step_%05d.h5", *cpu->ndumps);
-    hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
-    H5Pclose(plist);
-    H5Fclose(file);
-}
 #endif // HDF5
 
 
@@ -1611,13 +1598,11 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   for(level=param->lcoarse;level<=param->lmax;level++){
     setOctList(firstoct[level-1], cpu, param,level);
   }
-#ifdef HDF5
-  creat_HDF5_file(cpu);
-#endif // HDF5
 
-#ifdef MPIIO
+
+#if defined(MPIIO) || defined(HDF5)
   set_offset(param,cpu);
-#endif // MPIIO
+#endif
 
 #ifndef TESTCOSMO
 #ifdef WRAD
@@ -1660,12 +1645,18 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
     REAL tt1=MPI_Wtime();
 #endif // WMPI
 
+#ifdef HDF5
+  dump_HDF5_part(folder_field,adump,param, cpu);
+#ifdef STARS
+  if (param->stars->n) dump_HDF5_star(folder_field,adump,param, cpu);
+#endif // STARS
+#else
 #ifndef MPIIO
     dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
-	  //dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
-	  dump_HDF5_part(folder_field,adump,param, cpu);
+	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO
+#endif // HDF5
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -1706,16 +1697,20 @@ MPI_Barrier(cpu->comm);
 REAL tt1=MPI_Wtime();
 #endif // WMPI
 
+
+#ifdef HDF5
+  dump_HDF5_grid(folder_field,adump,param, cpu);
+#else
 #ifdef ALLOCT
 #ifdef MPIIO
-	  //dumpalloct_MPI(folder_field,adump,param, cpu);
-	  dump_HDF5_grid(folder_field,adump,param, cpu);
+	  dumpalloct_MPI(folder_field,adump,param, cpu);
 #else
     dumpalloct_serial(folder_field,adump,param, cpu);
 #endif // MPIIO
 #else
     dumpgrid(param->lmax,firstoct,filename,adump,param);
 #endif // ALLOCT
+#endif // HDF5
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
