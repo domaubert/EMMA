@@ -2230,7 +2230,6 @@ int main(int argc, char *argv[])
   //free(param.sn->egy_loss_t);
   //free(param.sn->egy_loss_egy);
   if(cpu.rank==RANK_DISP) printf("END FREE SN\n");
-
 #endif // SUPERNOVAE
 
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
@@ -2239,11 +2238,14 @@ int main(int argc, char *argv[])
   free(param.uv.value);
 #endif // defined
 
+if(cpu.rank==RANK_DISP) printf("MOVIE\n");
 #ifdef MOVIE
+  if(cpu.rank==RANK_DISP) printf("1\n");
 	free(param.movie->map);
+	if(cpu.rank==RANK_DISP) printf("2\n");
 	free(param.movie->map_reduce);
 #endif // MOVIE
-
+if(cpu.rank==RANK_DISP) printf("END FREE\n");
 ///////////////////////////////////////////
 // free GPU
 ///////////////////////////////////////////
@@ -2279,6 +2281,7 @@ int main(int argc, char *argv[])
       printf("Done ..... in %.2e CPU hours\n", (tend-tstart)/3600*cpu.nproc);
     }
 #ifdef WMPI
+
     MPI_Barrier(cpu.comm);
     MPI_Finalize();
 #endif

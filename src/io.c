@@ -1461,7 +1461,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
   float *tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],sizeof(float));
   int ifield;
-  for (ifield=0;ifield<param->out_part->n_field_tot; ifield++){
+  for (ifield=0;ifield<param->out_part->n_field_tot-1; ifield++){ // the -1 is to exclude the age
     if(param->out_part->field_id[ifield]){
 
       //reduce data
@@ -1478,7 +1478,8 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
               do{
                 struct PART *curp=nexp;
                 nexp=curp->next;
-                tmp[i_tmp++] = (float)assign_part_field(ifield,curp);
+                if(!(curp->isStar))
+                  tmp[i_tmp++] = (float)assign_part_field(ifield,curp);
               }while(nexp!=NULL);
             }
           }
@@ -1500,6 +1501,88 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 	H5Fclose(file);
 
 }
+
+#ifdef STARS
+void dump_HDF5_stars(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+  const int debug =0;
+
+ 	hid_t plist;
+
+	//Set up file access property list with parallel I/O access
+	plist = H5Pcreate(H5P_FILE_ACCESS);
+	H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+
+	char file_name[256];
+  sprintf(file_name,"data/step_%05d.h5", *cpu->ndumps);
+
+	//Create a new file collectively
+  hid_t file = H5Fopen(file_name, H5F_ACC_RDWR, plist);
+	H5Pclose(plist);
+
+  hsize_t n_star_tot=0;
+  int i;
+  for (i=0;i<cpu->nproc;i++){
+    n_star_tot+=cpu->mpiio_nstars[i];
+  }
+
+	// Create the data space for the dataset.
+	hid_t dataspace = H5Screate_simple(1, &n_star_tot, NULL);
+
+	//Select hyperslab in the file.
+	hsize_t offset = cpu->mpiio_star_offsets;
+	hsize_t n_loc = cpu->mpiio_nstars[cpu->rank];
+	H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
+
+	// Create property list
+	plist = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+
+	hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
+
+  float *tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],sizeof(float));
+  int ifield;
+  for (ifield=0;ifield<param->out_part->n_field_tot; ifield++){
+    if(param->out_part->field_id[ifield]){
+
+      //reduce data
+      int i_tmp=0;
+      int level;
+      for(level=param->lcoarse;level<=param->lmax;level++){
+        int iOct;
+        for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+          struct OCT *oct=cpu->octList[level-1][iOct];
+          int icell;
+          for(icell=0;icell<8;icell++){ // looping over cells in oct
+            struct PART * nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
+            if(nexp!=NULL){
+              do{
+                struct PART *curp=nexp;
+                nexp=curp->next;
+                if(curp->isStar)
+                  tmp[i_tmp++] = (float)assign_part_field(ifield,curp);
+              }while(nexp!=NULL);
+            }
+          }
+	      }
+	    }
+
+      char field_name[256];
+      sprintf(field_name,"star_%s",param->out_part->field_name[ifield]);
+      hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
+      H5Dclose(dataset);
+    }
+  }
+
+  free(tmp);
+
+// Close
+  H5Pclose(plist);
+	H5Fclose(file);
+
+}
+#endif // STARS
 #endif // PIC
 
 
