@@ -694,7 +694,7 @@ int main(int argc, char *argv[])
   cpu.trigstar=0;
   //  srand(time(NULL));
   srand(SEED);
-#endif
+#endif // STARS
 
 #ifndef PIC
 	part = NULL;

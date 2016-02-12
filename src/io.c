@@ -1340,6 +1340,7 @@ void makeFolders(struct CPUINFO *cpu){
 }
 
 #ifdef HDF5
+
 void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 /**
@@ -1410,9 +1411,71 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   }
   free(tmp);
 
+
+  // reduce domains
+  float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
+  int i_tmp=0;
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    REAL dx = POW(0.5,-level);
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
+        if(oct->x<xmin) xmin=oct->x;
+        if(oct->y<ymin) ymin=oct->y;
+        if(oct->z<zmin) zmin=oct->z;
+        if(oct->x+dx>xmax) xmax=oct->x+dx;
+        if(oct->y+dx>ymax) ymax=oct->y+dx;
+        if(oct->z+dx>zmax) zmax=oct->z+dx;
+    }
+  }
+
+  hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
+  hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
+
+  // Create the data space for the dataset.
+	hsize_t  n_tot= cpu->nproc;
+  dataspace = H5Screate_simple(1, &n_tot, NULL);
+
+	//Select hyperslab in the file.
+  offset = cpu->rank;
+	n_loc = 1;
+	H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
+	memspace = H5Screate_simple (1, &n_loc, NULL);
+  hid_t dataset;
+
+  dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "xmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmax);
+  H5Dclose(dataset);
+
+  H5Pclose(gcpl);
+  H5Gclose(group);
   H5Pclose(plist);
 	H5Fclose(file);
 }
+
+
+
 
 #ifdef PIC
 void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -1485,8 +1548,78 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dclose(dataset);
     }
   }
-
   free(tmp);
+
+
+  // reduce domains
+  float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
+  int i_tmp=0;
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    REAL dx = POW(0.5,-level);
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
+      int icell;
+      for(icell=0;icell<8;icell++){ // looping over cells in oct
+        struct PART * nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
+        if(nexp!=NULL){
+          do{
+            struct PART *curp=nexp;
+            nexp=curp->next;
+
+              if(curp->x<xmin) xmin=curp->x;
+              if(curp->y<ymin) ymin=curp->y;
+              if(curp->z<zmin) zmin=curp->z;
+              if(curp->x+dx>xmax) xmax=curp->x+dx;
+              if(curp->y+dx>ymax) ymax=curp->y+dx;
+              if(curp->z+dx>zmax) zmax=curp->z+dx;
+          }while(nexp!=NULL);
+        }
+      }
+    }
+  }
+
+  hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
+  hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
+
+  // Create the data space for the dataset.
+	hsize_t  n_tot= cpu->nproc;
+  dataspace = H5Screate_simple(1, &n_tot, NULL);
+
+	//Select hyperslab in the file.
+  offset = cpu->rank;
+	n_loc = 1;
+	H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
+	memspace = H5Screate_simple (1, &n_loc, NULL);
+  hid_t dataset;
+
+  dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "xmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmax);
+  H5Dclose(dataset);
+
+  H5Pclose(gcpl);
+  H5Gclose(group);
 
 // Close
   H5Pclose(plist);
@@ -1574,8 +1707,80 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dclose(dataset);
     }
   }
-
   free(tmp);
+
+
+  // reduce domains
+  float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
+  int i_tmp=0;
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    REAL dx = POW(0.5,-level);
+    int iOct;
+    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+      struct OCT *oct=cpu->octList[level-1][iOct];
+      int icell;
+      for(icell=0;icell<8;icell++){ // looping over cells in oct
+        struct PART * nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
+        if(nexp!=NULL){
+          do{
+            struct PART *curp=nexp;
+            nexp=curp->next;
+            if(curp->isStar){
+              if(curp->x<xmin) xmin=curp->x;
+              if(curp->y<ymin) ymin=curp->y;
+              if(curp->z<zmin) zmin=curp->z;
+              if(curp->x+dx>xmax) xmax=curp->x+dx;
+              if(curp->y+dx>ymax) ymax=curp->y+dx;
+              if(curp->z+dx>zmax) zmax=curp->z+dx;
+            }
+          }while(nexp!=NULL);
+        }
+      }
+    }
+  }
+
+  hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
+  hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
+
+  // Create the data space for the dataset.
+	hsize_t  n_tot= cpu->nproc;
+  dataspace = H5Screate_simple(1, &n_tot, NULL);
+
+	//Select hyperslab in the file.
+  offset = cpu->rank;
+	n_loc = 1;
+	H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
+	memspace = H5Screate_simple (1, &n_loc, NULL);
+  hid_t dataset;
+
+  dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "xmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "ymax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &ymax);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmin);
+  H5Dclose(dataset);
+
+  dataset= H5Dcreate(group, "zmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmax);
+  H5Dclose(dataset);
+
+  H5Pclose(gcpl);
+  H5Gclose(group);
+
 
 // Close
   H5Pclose(plist);
