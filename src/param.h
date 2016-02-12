@@ -36,7 +36,7 @@
 #ifndef WHYDRO2
   #define OMEGAB (0.0)
 #else
-  #define OMEGAB (0.049) // 0.049 for PLANCK
+  #define OMEGAB (0.046) // 0.049 for PLANCK
 #endif
 
 #ifdef HELIUM

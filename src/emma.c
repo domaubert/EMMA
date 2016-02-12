@@ -110,7 +110,10 @@ REAL f_aexp(REAL aexp, REAL omegam, REAL omegav)
 int main(int argc, char *argv[])
 {
 
-	REAL tstart=MPI_Wtime();
+#ifdef WMPI
+  MPI_Init(&argc,&argv);
+  REAL tstart=MPI_Wtime();
+#endif
 
   struct OCT *grid;
   struct OCT **firstoct;
@@ -165,7 +168,7 @@ int main(int argc, char *argv[])
   REAL dt;
   int ntot=0,nlev,noct;
   REAL ntotd=0.,nlevd=0.;
-  int cond1,cond2,cond3;
+  int cond1,cond2,cond3,cond4;
   REAL disp,mdisp;
 
   int dir;
@@ -290,7 +293,9 @@ int main(int argc, char *argv[])
   //=========== some initial calls =============
   GetParameters(argv[1],&param); // reading the parameters file
   strcpy(param.paramrunfile,argv[1]);
-  copy_file(param.paramrunfile, "data/param.run");
+
+  
+
 
 #ifdef ALLOCT
   char gridoutput[512];
@@ -302,6 +307,8 @@ int main(int argc, char *argv[])
   strcat(partoutput,".part_output");
   readOutputParam_part(partoutput, &param);
 #endif // ALLOCT
+
+
 
 
 #ifdef ZOOM
@@ -344,7 +351,6 @@ int main(int argc, char *argv[])
 #ifdef WMPI
   MPI_Status stat;
 
-  MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD,&(cpu.nproc));
   MPI_Comm_rank(MPI_COMM_WORLD,&(cpu.rank));
 
@@ -568,11 +574,37 @@ int main(int argc, char *argv[])
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
-    printf("            EMMA V1.1           \n");
+    printf("            EMMA V1.2           \n");
     printf("      Engines Are Running on    \n");
     printf("             %d process         \n",cpu.nproc);
     printf("================================\n");
+
+    copy_file(param.paramrunfile, "data/param.run");
+
   }
+
+
+#ifdef TESTCOSMO
+  //reading outputlist
+  char outputlist[512];
+  strcpy(outputlist,param.paramrunfile);
+  strcat(outputlist,".list_aexp");
+  FILE *foutputs;
+
+  param.aexpdump=0;
+  if((foutputs=fopen(outputlist,"r"))!=NULL){
+    fscanf(foutputs,"%e",&param.aexpdump);
+    if(cpu.rank==RANK_DISP){
+      printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
+    }
+  }
+  else{
+    if(cpu.rank==RANK_DISP)
+      printf("WARNING NOT OUTPUT LIST FOUND !! \n");
+  }
+#endif
+
+
 
   //=========== assigning values =============
   levelcoarse=param.lcoarse;
@@ -716,7 +748,6 @@ int main(int argc, char *argv[])
   struct STENGRAV gstencil;
   struct RGRID *rstencil;
 
-#ifndef GPUAXL
   //printf("stencil=%p with stride=%d\n",stencil,hstride);
   stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
   //printf("stenci=%p mem=%f\n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.));
@@ -731,7 +762,6 @@ int main(int argc, char *argv[])
   gstencil.res=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.pnew=(REAL *)calloc(gstride*8,sizeof(REAL));
   gstencil.resLR=(REAL *)calloc(gstride,sizeof(REAL));
-#endif
 
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
@@ -742,7 +772,7 @@ int main(int argc, char *argv[])
 
   // FOR THE MOMENT: GPU POISSON IS DISABLED, HENCE NO NEED FOR ALLOCATIONS on GPU
 #ifdef WGRAV
-  create_pinned_gravstencil(&gstencil,gstride);
+  //create_pinned_gravstencil(&gstencil,gstride);
 /* #ifdef FASTGRAV */
 /*   struct STENGRAV dev_stencil; */
 /*   cpu.dev_stencil=&dev_stencil; */
@@ -1625,6 +1655,7 @@ int main(int argc, char *argv[])
     freeoct=restore_amr(filename,firstoct,lastoct,&tsim,&tinit,&nstepstart,&ndumps,&param,&cpu,part,adt,&root);
     cpu.freeoct=freeoct;
 
+
     nstepstart+=1.; // next timestep is n+1
     ndumps+=1.;    // next timestep is n+1
 
@@ -1635,6 +1666,23 @@ int main(int argc, char *argv[])
 
 
 #ifdef TESTCOSMO
+    // prepare the next in aexplist
+    if(param.aexpdump){
+      while(param.aexpdump<=tsim){
+	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	    param.aexpdump=0;
+	    break;
+	  }
+      }
+    }
+    if(cpu.rank==RANK_DISP){
+      printf("Next dump in the list at aexp=%e\n",param.aexpdump);
+    }
+#endif
+
+
+
+#ifdef TESTCOSMO
     // temporal boundaries of the full run
     ainit=tinit;
 #endif
@@ -1642,10 +1690,10 @@ int main(int argc, char *argv[])
 #ifdef WMPI
     MPI_Barrier(cpu.comm);
 #endif
-    /* int errcode=777; */
-    /* MPI_Abort(cpu.comm,errcode); */
 
+    //==================================== END Restart =================================================
   }
+
   //===================================================================================================================================
   //===================================================================================================================================
   //===================================================================================================================================
@@ -1962,6 +2010,26 @@ int main(int argc, char *argv[])
       cond1 = nsteps%param.ndumps==0;
       cond2 = 0;
       cond3 = tsim+adt[levelcoarse-1]>=tmax;
+      cond4 = 0;
+
+#ifdef TESTCOSMO
+      if(param.aexpdump){
+	// dumpfile at specific outputs
+	cond4=cosmo.aexp>param.aexpdump;
+	if(cond4){
+	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	    param.aexpdump=0;
+	  }
+	  else{
+	    if(cpu.rank==RANK_DISP){
+	      printf("next output aexp=%e\n",param.aexpdump);
+	    }
+	  }
+	}
+      }
+#endif
+
+
 
       if (param.dt_dump){
 	cond1=0;
@@ -1985,7 +2053,7 @@ int main(int argc, char *argv[])
 #endif // SNTEST
       }
 
-      if(cond1||cond2||cond3){
+      if(cond1||cond2||cond3||cond4){
 #ifndef EDBERT
 
 	int fdump=8;
@@ -2075,29 +2143,29 @@ int main(int argc, char *argv[])
       //==================================== timestep completed, looping
       dt=adt[param.lcoarse-1];
       tsim+=dt;
-}
+    }
 
-	// writting the last particle file
-	ndumps-=1;
-  	//dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-
-	int fdump=8;
-	if(cpu.nproc>fdump){
-	  // dumping fields only
-	  int idump;
-	  for(idump=0;idump<fdump;idump++){
-	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
-	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-	    sleep(1);
+    // writting the last particle file
+    ndumps-=1;
+    //dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+    
+    int fdump=8;
+    if(cpu.nproc>fdump){
+      // dumping fields only
+      int idump;
+      for(idump=0;idump<fdump;idump++){
+	if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+	sleep(1);
 #ifdef WMPI
-	    MPI_Barrier(cpu.comm);
+	MPI_Barrier(cpu.comm);
 #endif
-	  }
-	}
-	else{
-	  dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-	}
-
+      }
+    }
+    else{
+      dumpIO(tsim,&param,&cpu,firstoct,adt,1);
+    }
+    
 #endif
 
 //printf("begin freeing\n");
@@ -2252,8 +2320,8 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) printf("FREE GPU\n");
 
 #ifdef WGRAV
-    destroy_pinned_gravstencil(&gstencil,gstride);
-    destroy_gravstencil_GPU(&cpu,gstride);
+  //destroy_pinned_gravstencil(&gstencil,gstride);
+  //destroy_gravstencil_GPU(&cpu,gstride);
 #endif
 
 #ifdef WHYDRO2

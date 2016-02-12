@@ -187,6 +187,7 @@ struct OCT * restore_amr(char filename[], struct OCT **firstoct,struct OCT **las
   outf=fread(&(param->cosmo->ov),sizeof(REAL),1,fp);
   outf=fread(&(param->cosmo->ob),sizeof(REAL),1,fp);
   outf=fread(&(param->cosmo->H0),sizeof(REAL),1,fp);
+  param->cosmo->unit_l=param->unit.unit_l;
 #endif
 
   // reading pointer informations in the snapshot

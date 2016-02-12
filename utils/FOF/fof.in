@@ -1,0 +1,15 @@
+./halo13
+EMM
+./data_orage/00013/part/part.00013
+dummyname
+dummyname
+0 !group size should be set to zero
+0.2 !percolation parameter
+10 !min mass
+100000000 !mass max
+.false. !star ?
+.false. ! metal ?
+.true. !output apres lecture
+.true.  !detection des structures
+.false. !lire depuis cube
+.true. !timings
