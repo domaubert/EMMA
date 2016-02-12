@@ -1,7 +1,8 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -O2 -Wimplicit  -g -lm# -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+C_LIBS = -O2 -Wimplicit  -g -lm  # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+HDF5_LIBS = -I /usr/local/hdf5/include/ -L /usr/local/hdf5/lib/
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
@@ -55,14 +56,14 @@ CUDA_OBJ=$(patsubst %,$(OBJDIR)/%,$(CUDA_OBJS))
 NVCC= nvcc -lstdc++ --ptxas-options=-v #-g -G #--device-emulation
 CC = mpicc
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $< -o $@ -lgsl -lgslcblas
+	$(CC) $(DEFINESGLOB) $(C_LIBS) $(HDF5_LIBS) $(CUDA_LIBS) $(C_FLAGS) -c $< -o $@ -lgsl -lgslcblas -lhdf5
 ifeq ($(ARCH),GPU)
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(NVCC) $(DEFINESGLOB) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -arch=sm_35 -c $< -o $@
 endif
 
 all:$(OBJ) $(CUDA_OBJ)
-	$(CC) $(OBJ)  $(CUDA_OBJ) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE)  -lgsl -lgslcblas
+	$(CC) $(OBJ)  $(CUDA_OBJ) $(HDF5_LIBS) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE) -lgsl -lgslcblas -lhdf5
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm
