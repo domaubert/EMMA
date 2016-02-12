@@ -261,7 +261,7 @@ float assign_part_field(int field,struct PART *curp){
   return res;
 }
 
-#ifdef MPIIO
+#if defined(MPIIO) || defined(HDF5)
 void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 /**
   * This function compute the MPIIO offset
@@ -1411,7 +1411,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   }
   free(tmp);
 
-
   // reduce domains
   float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
   int i_tmp=0;
@@ -1473,9 +1472,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   H5Pclose(plist);
 	H5Fclose(file);
 }
-
-
-
 
 #ifdef PIC
 void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
@@ -1709,7 +1705,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   }
   free(tmp);
 
-
   // reduce domains
   float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
   int i_tmp=0;
@@ -1803,7 +1798,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   for(level=param->lcoarse;level<=param->lmax;level++){
     setOctList(firstoct[level-1], cpu, param,level);
   }
-
 
 #if defined(MPIIO) || defined(HDF5)
   set_offset(param,cpu);
