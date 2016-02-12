@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
   GetParameters(argv[1],&param); // reading the parameters file
   strcpy(param.paramrunfile,argv[1]);
 
-  
+
 
 
 #ifdef ALLOCT
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 
   param.aexpdump=0;
   if((foutputs=fopen(outputlist,"r"))!=NULL){
-    fscanf(foutputs,"%e",&param.aexpdump);
+    int dump = fscanf(foutputs,"%e",&param.aexpdump);
     if(cpu.rank==RANK_DISP){
       printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
     }
@@ -2148,7 +2148,7 @@ int main(int argc, char *argv[])
     // writting the last particle file
     ndumps-=1;
     //dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-    
+
     int fdump=8;
     if(cpu.nproc>fdump){
       // dumping fields only
@@ -2165,7 +2165,7 @@ int main(int argc, char *argv[])
     else{
       dumpIO(tsim,&param,&cpu,firstoct,adt,1);
     }
-    
+
 #endif
 
 //printf("begin freeing\n");
