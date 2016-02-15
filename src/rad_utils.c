@@ -1244,6 +1244,7 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	}
       }
 #endif
+
 #ifdef TRANSXP
       if(ineiloc==1){
 	if((oct->x+2.*dxcur)==1.){
@@ -1260,7 +1261,6 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	}
       }
 #endif
-
 
 #ifdef TRANSYP
       if(ineiloc==3){
@@ -1297,9 +1297,6 @@ void recursive_neighbor_gather_oct_rad(int ioct, int inei, int inei2, int inei3,
 	}
       }
 #endif
-
-
-
 
 #ifdef TRANSYM
       if(ineiloc==2){
