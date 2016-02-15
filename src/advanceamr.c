@@ -1139,7 +1139,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     tmk[0]=MPI_Wtime();
 #endif
     REAL dxnext=POW(0.5,level+1)*aexp;
-    REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
+    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
+
 #ifdef TUBE
     dxkpc=0.;
 #endif
@@ -1176,7 +1177,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
         if (level==param->lmax){
           printf("Blocking refinement to level %d : level max reached\n",level+1);
         }else{
+#ifdef TESTCOSMO
           printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->cosmo->unit_l,dxkpc/PARSEC*param->cosmo->unit_l);
+#else
+          printf("Blocking refinement to level %d : dx[%d]=%e pc dxlim=%e pc\n",level+1,level+1,dxnext/PARSEC*param->unit.unit_l,dxkpc/PARSEC*param->unit.unit_l);
+#endif // TESTCOSMO
         }
       }
     }

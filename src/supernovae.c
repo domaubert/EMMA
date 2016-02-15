@@ -98,7 +98,7 @@ void thermalFeedbackCell(struct RUNPARAMS *param, struct CELL *cell,struct PART 
 
   //curp->mass -= mtot_feedback;
   //cell->field.d += d_e;
-  
+
 
   cell->field.E += E;
   cell->field.p += E*(GAMMA-1.);
@@ -728,17 +728,23 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
     }
 
     //    printf("%d\tActive SN on rank %d\n",Nsn,cpu->rank);
-    
+
 
 
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_SUM,cpu->comm);
+    MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
-    if (Nsn){
-      if(!(param->sn->trig_sn)){
-	param->sn->trig_sn=1;
-	if(cpu->rank==RANK_DISP) printf("FIRST_SN at z=%e\n",1./aexp-1.);
+
+    if(cpu->rank==RANK_DISP){
+      if (Nsn){
+        if(!(param->sn->trig_sn)){
+          printf("FIRST_SN at z=%e\n",1./aexp-1.);
+          param->sn->trig_sn=1;
+
+        }
+        printf("%d\tActive SN\n",Nsn);
       }
     }
 

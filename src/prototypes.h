@@ -144,12 +144,12 @@ struct MOVIEPARAM{
 	char* folder;
 	int lmap;
 	char mode_str[3];
-	REAL xmin;
-	REAL xmax;
-	REAL ymin;
-	REAL ymax;
-	REAL zmin;
-	REAL zmax;
+	double xmin;
+	double xmax;
+	double ymin;
+	double ymax;
+	double zmin;
+	double zmax;
 
 	float* map;
 	float* map_reduce;

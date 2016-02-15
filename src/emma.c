@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
   GetParameters(argv[1],&param); // reading the parameters file
   strcpy(param.paramrunfile,argv[1]);
 
-  
+
 
 
 #ifdef ALLOCT
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 
   param.aexpdump=0;
   if((foutputs=fopen(outputlist,"r"))!=NULL){
-    fscanf(foutputs,"%e",&param.aexpdump);
+    int dump = fscanf(foutputs,"%e",&param.aexpdump);
     if(cpu.rank==RANK_DISP){
       printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
     }
@@ -603,8 +603,6 @@ int main(int argc, char *argv[])
       printf("WARNING NOT OUTPUT LIST FOUND !! \n");
   }
 #endif
-
-
 
   //=========== assigning values =============
   levelcoarse=param.lcoarse;
@@ -1539,7 +1537,8 @@ int main(int argc, char *argv[])
 #else
 #ifndef TESTCLUMP
       temperature=1e2;
-      xion=1e-6;
+      //xion=1e-6;
+      xion=1.-1e-5;
 #else
       temperature=8000.;
       xion=1e-5;
@@ -1601,13 +1600,13 @@ int main(int argc, char *argv[])
 		  curoct->cell[icell].field.d=rho0 /(r/RS *POW(1+r/RS,2));
 #endif // NFW
 
-//#define PLUMER
-#ifdef PLUMER
+//#define PLUMMER
+#ifdef PLUMMER
       REAL rho0 = curoct->cell[icell].rfield.nh*PROTON_MASS*MOLECULAR_MU/param.unit.unit_mass;
 		  REAL RS = 8./POW2(levelcoarse);
 		  REAL r=SQRT(POW(xc-0.5,2)+POW(yc-0.5,2)+POW(zc-0.5,2));
-		  curoct->cell[icell].field.d=2*rho0 *POW( 1.+ POW(r/RS,2) , -5./2.);
-#endif // NFW
+		  curoct->cell[icell].field.d= rho0(1.+ 16 *POW( 1.+ POW(r/RS,2) , -5./2.));
+#endif // PLUMMER
 
 
 #endif // WCHEM
@@ -2149,7 +2148,7 @@ int main(int argc, char *argv[])
     // writting the last particle file
     ndumps-=1;
     //dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-    
+
     int fdump=8;
     if(cpu.nproc>fdump){
       // dumping fields only
@@ -2166,7 +2165,7 @@ int main(int argc, char *argv[])
     else{
       dumpIO(tsim,&param,&cpu,firstoct,adt,1);
     }
-    
+
 #endif
 
 //printf("begin freeing\n");

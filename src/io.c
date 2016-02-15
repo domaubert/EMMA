@@ -350,7 +350,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #ifdef PIC
 void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filename[], int levelcoarse, int levelmax, REAL tsim, struct CPUINFO *cpu){
 
-  int debug =0;
+  const int debug =0;
 
   FILE *fp = NULL;
   float val;
@@ -368,6 +368,21 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
   int npart=0;
   int nstar=0;
   int first=-1;
+
+  float part_xmin=2;
+  float part_xmax=-1;
+  float part_ymin=2;
+  float part_ymax=-1;
+  float part_zmin=2;
+  float part_zmax=-1;
+
+  float star_xmin=2;
+  float star_xmax=-1;
+  float star_ymin=2;
+  float star_ymax=-1;
+  float star_zmin=2;
+  float star_zmax=-1;
+
 
   FILE **f_part=(FILE **)malloc(param->out_part->n_field*sizeof(FILE *));
 #ifdef STARS
@@ -400,14 +415,21 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       sprintf(filenamepart,"data/part.%s.%05d.p%05d",*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
 
+
+      if(debug) printf("openning %s at %p\n",filenamestar, f_star[n_field]);
       f_star[n_field]=fopen(filenamestar,"wb");
       if(f_star[n_field] == NULL) {
         printf("Cannot open %s\n", filenamestar);
         abort();
       }
-      if(debug) printf("openning %s at %p\n",filenamestar, f_star[n_field]);
       fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
+      fwrite(&star_xmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_xmax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmax,sizeof(float),1,f_star[n_field]);
 
       if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
       f_part[n_field]=fopen(filenamepart,"wb");
@@ -415,8 +437,15 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
         printf("Cannot open %s\n", filenamepart);
         abort();
       }
+
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+      fwrite(&part_xmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_xmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_ymin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_ymax,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_zmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_zmax,sizeof(float),1,f_part[n_field]);
 
 #else
       // NOSTARS CASE
@@ -431,14 +460,15 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 #endif // MUTLTIFOLDER
 
       if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
+
       f_part[n_field]=fopen(filenamepart,"wb");
       if(f_part[n_field] == NULL){
         printf("Cannot open %s\n", filenamepart);
         abort();
       }
+
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
       fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
-
 
 #endif // STARS
       n_field++;
@@ -468,7 +498,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
             for (i=0;i<param->out_part->n_field_tot; i++){
               if(param->out_part->field_id[i]){
 
-                if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
+            //    if(debug) printf("field_id=%d\n",param->out_part->field_id[i]);
 
 #ifdef STARS
                 if(curp->isStar) 	{	fp=f_star[ii];	if(i==first) nstar++;	}
@@ -482,6 +512,26 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
                 ii++;
               }
             }
+
+      // update file boundaries
+#ifdef STARS
+      if(curp->isStar) 	{
+        if(curp->x<star_xmin) star_xmin=curp->x;
+        if(curp->y<star_ymin) star_ymin=curp->y;
+        if(curp->z<star_zmin) star_zmin=curp->z;
+        if(curp->x>star_xmax) star_xmax=curp->x;
+        if(curp->y>star_ymax) star_ymax=curp->y;
+        if(curp->z>star_zmax) star_zmax=curp->z;
+      }else
+#endif // STARS
+      {
+        if(curp->x<part_xmin) part_xmin=curp->x;
+        if(curp->y<part_ymin) part_ymin=curp->y;
+        if(curp->z<part_zmin) part_zmin=curp->z;
+        if(curp->x>part_xmax) part_xmax=curp->x;
+        if(curp->y>part_ymax) part_ymax=curp->y;
+        if(curp->z>part_zmax) part_zmax=curp->z;
+      }
 
 		  ipart++;
 
@@ -499,10 +549,24 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
 
       rewind(f_part[n_field]);
       fwrite(&npart,1,sizeof(int)  ,f_part[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_part[n_field]);
+      fwrite(&part_xmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_xmax,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_ymin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_ymax,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_zmin,sizeof(float),1,f_part[n_field]);
+      fwrite(&part_zmax,sizeof(float),1,f_part[n_field]);
       fclose(f_part[n_field]);
 #ifdef STARS
       rewind(f_star[n_field]);
       fwrite(&nstar,1,sizeof(int)  ,f_star[n_field]);
+      fwrite(&tsimf,1,sizeof(float),f_star[n_field]);
+      fwrite(&star_xmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_xmax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_ymax,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmin,sizeof(float),1,f_star[n_field]);
+      fwrite(&star_zmax,sizeof(float),1,f_star[n_field]);
       fclose(f_star[n_field]);
 #endif // STARS
 
@@ -1119,6 +1183,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
   *
   */
 
+  const int debug=0;
+
   int i;
   int n_field=0;
   int n_cell=0;
@@ -1133,8 +1199,11 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
 
 
 // Opening all the fields files
+  if(debug) printf("Allocating %d file pointers \n", param->out_grid->n_field);
+
   FILE **f_dat;
   f_dat=(FILE **)malloc(param->out_grid->n_field*sizeof(FILE *));
+
 
   for(i=0;i<param->out_grid->n_field_tot;i++){
     if(param->out_grid->field_id[i]){
@@ -1144,6 +1213,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       mkdir(folder_field, 0755);
       char dat_name[256];
       sprintf(dat_name,"%s%s.%05d.p%05d",folder_field,param->out_grid->field_name[i],*(cpu->ndumps),cpu->rank);
+
+      if(debug) printf("Openning : %s",dat_name);
 
       f_dat[n_field]=fopen(dat_name,"wb");
       if(f_dat[n_field] == NULL){
@@ -1164,6 +1235,7 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
     }
   }
 
+  if(debug) printf("Files open, let's write");
 
 // writing the data
   int level;
@@ -1203,6 +1275,8 @@ void dumpalloct_serial(char folder[],REAL tsim, struct RUNPARAMS *param, struct 
       }
     }
   }
+
+  if(debug) printf("Write OK, header update and close");
 
   // write n_cells and close the fields files
   n_field=0;
