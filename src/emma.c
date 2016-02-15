@@ -766,7 +766,7 @@ int main(int argc, char *argv[])
 #ifdef GPUAXL
   // ================================== GPU ALLOCATIONS ===============
   countdevices(0);
-  //  initlocaldevice(0,1);
+  initlocaldevice(0,1);
   checkdevice(0);
 
 
@@ -789,11 +789,12 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-  stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
+    //stencil=(struct HGRID*)calloc(hstride,sizeof(struct HGRID));
   //printf("hstencil=%p mem=%f mem/elem=%f \n",stencil,hstride*sizeof(struct HGRID)/(1024.*1024.),sizeof(struct HGRID)/(1024.*1024.));
   // UNCOMMENT BELOW FOR FASTHYDRO GPU
-  create_pinned_stencil(&stencil,hstride);
-  create_hydstencil_GPU(&cpu,hstride);
+    stencil=NULL;
+    create_pinned_stencil(&stencil,hstride);
+    create_hydstencil_GPU(&cpu,hstride);
 #endif
 
 #ifdef WMPI
@@ -802,12 +803,13 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WRAD
-  rstencil=(struct RGRID*)calloc(rstride,sizeof(struct RGRID));
+    //rstencil=(struct RGRID*)calloc(rstride,sizeof(struct RGRID));
   //printf("rstencil=%p mem=%f\n",rstencil,rstride*sizeof(struct RGRID)/(1024.*1024.));
 
   // UNCOMMENT BELOW FOR FASTRT GPU
-  create_pinned_stencil_rad(&rstencil,rstride);
-  create_radstencil_GPU(&cpu,rstride);
+    rstencil=NULL;
+    create_pinned_stencil_rad(&rstencil,rstride);
+    create_radstencil_GPU(&cpu,rstride);
 #endif
 
 #ifdef WMPI
@@ -2324,12 +2326,12 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef WHYDRO2
-    destroy_pinned_stencil(&stencil,hstride);
-    destroy_hydstencil_GPU(&cpu,hstride);
+  //destroy_pinned_stencil(&stencil,hstride);
+  destroy_hydstencil_GPU(&cpu,hstride);
 #endif
 
 #ifdef WRAD
-    destroy_pinned_stencil_rad(&rstencil,rstride);
+  //destroy_pinned_stencil_rad(&rstencil,rstride);
     destroy_radstencil_GPU(&cpu,rstride);
 #endif
 

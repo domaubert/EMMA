@@ -61,7 +61,12 @@ void copy_param(const char *folder){
   sprintf(param_dest,"%s%s",folder,param);
   copy_file(param_src, param_dest);
 
-  sprintf(param,"param.avg");
+#ifdef GPUAXL
+  sprintf(param,"param.avg.gpu");
+#else
+  sprintf(param,"param.avg.cpu");
+#endif
+
   sprintf(param_src,"%s%s","data/",param);
   sprintf(param_dest,"%s%s",folder,param);
   copy_file(param_src, param_dest);
@@ -1092,8 +1097,11 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
   if(cpu->rank==RANK_DISP){
 
-    char* filename = "data/param.avg";
-
+#ifdef GPUAXL
+    char* filename = "data/param.avg.gpu";
+#else
+    char* filename = "data/param.avg.cpu";
+#endif
 
 
 
@@ -1124,6 +1132,8 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"src\t\t");
       fprintf(fp,"xion\t\t");
       fprintf(fp,"temp\t\t");
+      fprintf(fp,"densb**2\t\t");
+      fprintf(fp,"pressb\t\t");
 
       fprintf(fp,"\n");
     }
@@ -1157,6 +1167,9 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, real_format ,(float)param->physical_state->field[32].mean); // mass weighted ionization fraction
     fprintf(fp, real_format ,(float)param->physical_state->field[38].mean); // temperature
+
+    fprintf(fp, real_format ,(float)param->physical_state->field[13].sigma); // density
+    fprintf(fp, real_format ,(float)param->physical_state->field[17].mean); // pressure
 
 
     fprintf(fp,"\n");
