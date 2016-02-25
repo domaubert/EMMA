@@ -1373,6 +1373,10 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
 
   float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
+  if (tmp == NULL){
+    printf("can't allocate tmp vector in dump_HDF5_grid\n");
+    abort();
+  }
 
   int ifield;
   for (ifield=0;ifield<param->out_grid->n_field_tot; ifield++){
@@ -1531,6 +1535,10 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
 
   float *tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],sizeof(float));
+  if (tmp == NULL){
+    printf("can't allocate tmp vector in dump_HDF5_part\n");
+    abort();
+  }
 
   int ifield;
   for (ifield=0;ifield<param->out_part->n_field_tot-2; ifield++){ // the -2 is to exclude the age which doesnt exist for DM part and the mass which is not relevant
@@ -1692,6 +1700,10 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   }
 
   float *tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],sizeof(float));
+  if (tmp == NULL){
+    printf("can't allocate tmp vector in dump_HDF5_star\n");
+    abort();
+  }
 
   if (debug) printf("Starting main reducing/writting loop\n");
   int ifield;
