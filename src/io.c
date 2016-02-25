@@ -1449,8 +1449,12 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
 
       // Write domains
-      dataset= H5Dcreate(group, "offset", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-      H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &cpu->mpiio_ncells[cpu->rank]);
+      dataset= H5Dcreate(group, "offset", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_grid_offsets);
+      H5Dclose(dataset);
+
+      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_ncells[cpu->rank]);
       H5Dclose(dataset);
 
       dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
