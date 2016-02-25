@@ -1358,7 +1358,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,level);
+    REAL dx = POW(0.5,level-1);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
@@ -1509,7 +1509,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,level);
+    REAL dx = POW(0.5,level-1);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
@@ -1674,7 +1674,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,level);
+    REAL dx = POW(0.5,level-1);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
