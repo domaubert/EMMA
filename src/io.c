@@ -238,19 +238,21 @@ float assign_part_field(int field,struct PART *curp){
 		  res=(float)(curp->idx);
 		  break;
     case 10:
-		  res=(float)(curp->mass);
-		  break;
-    case 11:
 		  res=(float)(curp->epot);
 		  break;
-    case 12:
+    case 11:
 		  res=(float)(curp->ekin);
 		  break;
-    case 13:
+    case 12:
 		  res=(float)(curp->ekin+curp->epot);
 		  break;
 
 #ifdef STARS
+    case 13:
+		  res=(float)(curp->mass);
+		  break;
+
+
     case 14:
 		  if(curp->isStar) {
 		    res=(float)(curp->age);

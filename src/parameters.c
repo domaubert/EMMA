@@ -265,10 +265,10 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     "fy",
     "fz",
     "idx",
-    "mass",
     "epot",
     "ekin",
     "etot",
+    "mass",
     "age"
   };
 
