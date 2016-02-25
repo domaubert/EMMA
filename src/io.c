@@ -1428,7 +1428,9 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       }
 
       char field_name[256];
-      sprintf(field_name,"%s",param->out_grid->field_name[ifield]);
+      //sprintf(field_name,"%s",param->out_grid->field_name[ifield]);
+      sprintf(field_name,"data");
+
       hid_t  dataset = H5Dcreate(file, field_name, H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
@@ -1446,7 +1448,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       n_loc = 1;
       H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
       memspace = H5Screate_simple (1, &n_loc, NULL);
-
 
       // Write domains
       dataset= H5Dcreate(group, "offset", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -1589,7 +1590,9 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 	    }
 
       char field_name[256];
-      sprintf(field_name,"%s",param->out_part->field_name[ifield]);
+      //sprintf(field_name,"%s",param->out_part->field_name[ifield]);
+      sprintf(field_name,"data");
+
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
@@ -1753,14 +1756,15 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 	    }
 
       char field_name[256];
-      sprintf(field_name,"%s",param->out_part->field_name[ifield]);
+      //sprintf(field_name,"%s",param->out_part->field_name[ifield]);
+      sprintf(field_name,"data");
+
       if (debug>1) printf("creating dataset for field %s \n", param->out_part->field_name[ifield]);
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       if (debug>1) printf("writing dataset for field %s \n", param->out_part->field_name[ifield]);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       if (debug>1) printf("closing dataset for field %s \n", param->out_part->field_name[ifield]);
       H5Dclose(dataset);
-
 
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
