@@ -1609,6 +1609,14 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       memspace = H5Screate_simple (1, &n_loc, NULL);
 
       // Write domains
+      dataset= H5Dcreate(group, "offset", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_part_offsets);
+      H5Dclose(dataset);
+
+      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_nparts[cpu->rank]);
+      H5Dclose(dataset);
+
       dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
       H5Dclose(dataset);
@@ -1769,6 +1777,14 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       memspace = H5Screate_simple (1, &n_loc, NULL);
 
       // Write domains
+      dataset= H5Dcreate(group, "offset", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_star_offsets);
+      H5Dclose(dataset);
+
+      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_nstars[cpu->rank]);
+      H5Dclose(dataset);
+
       dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
       H5Dclose(dataset);
