@@ -1358,7 +1358,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,-level);
+    REAL dx = POW(0.5,level);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
@@ -1386,7 +1386,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
       //Create a new file collectively
       char file_name[512];
-      sprintf(file_name,"data/%05d/grid_%s.%05d.h5", *cpu->ndumps, param->out_grid->field_name[ifield], *cpu->ndumps);
+      sprintf(file_name,"data/%05d/grid_%s_%05d.h5", *cpu->ndumps, param->out_grid->field_name[ifield], *cpu->ndumps);
 
       hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
       H5Pclose(plist);
@@ -1505,7 +1505,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,-level);
+    REAL dx = POW(0.5,level);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
@@ -1544,7 +1544,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       //Create a new file collectively
       char file_name[256];
-      sprintf(file_name,"data/%05d/part_%s.%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
+      sprintf(file_name,"data/%05d/part_%s_%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
       hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
       H5Pclose(plist);
 
@@ -1666,7 +1666,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   int i_tmp=0;
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,-level);
+    REAL dx = POW(0.5,level);
     int iOct;
     for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
       struct OCT *oct=cpu->octList[level-1][iOct];
@@ -1706,7 +1706,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       //Create a new file collectively
       char file_name[256];
-      sprintf(file_name,"data/%05d/part_%s.%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
+      sprintf(file_name,"data/%05d/part_%s_%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
       hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
       H5Pclose(plist);
 
