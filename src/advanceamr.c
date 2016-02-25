@@ -1009,7 +1009,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
-    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
+    REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
 
 #ifdef TUBE
     dxkpc=0.;
