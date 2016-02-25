@@ -252,7 +252,6 @@ float assign_part_field(int field,struct PART *curp){
 		  res=(float)(curp->mass);
 		  break;
 
-
     case 14:
 		  if(curp->isStar) {
 		    res=(float)(curp->age);
@@ -1534,7 +1533,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   float *tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],sizeof(float));
 
   int ifield;
-  for (ifield=0;ifield<param->out_part->n_field_tot-1; ifield++){ // the -1 is to exclude the age which doesnt exist for DM part
+  for (ifield=0;ifield<param->out_part->n_field_tot-2; ifield++){ // the -2 is to exclude the age which doesnt exist for DM part and the mass which is not relevant
     if(param->out_part->field_id[ifield]){
 
       hid_t plist;
