@@ -1449,6 +1449,10 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
 
       // Write domains
+      dataset= H5Dcreate(group, "offset", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &cpu->mpiio_ncells[cpu->rank]);
+      H5Dclose(dataset);
+
       dataset= H5Dcreate(group, "xmin", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &xmin);
       H5Dclose(dataset);
@@ -1671,7 +1675,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
     }
   }
 
-
   float *tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],sizeof(float));
 
   if (debug) printf("Starting main reducing/writting loop\n");
@@ -1690,7 +1693,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       sprintf(file_name,"data/%05d/part_%s.%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
       hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
       H5Pclose(plist);
-
 
       if (debug) printf("getting n stars tot \n");
       hsize_t n_star_tot=0;
@@ -1713,8 +1715,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
-
-
 
       if (debug>1) printf("begin reduce for field %s \n", param->out_part->field_name[ifield]);
 
