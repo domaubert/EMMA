@@ -321,11 +321,11 @@ int main(int argc, char *argv[])
   omp_set_num_threads(param.ompthread);
 #endif // WOMP
 
-#ifdef MPIIO
-  cpu.mpiio_ncells  = (int*)calloc(cpu.nproc,sizeof(int));
-  cpu.mpiio_nparts  = (int*)calloc(cpu.nproc,sizeof(int));
+#if defined(MPIIO) || defined(HDF5)
+  cpu.mpiio_ncells  = (long int*)calloc(cpu.nproc,sizeof(long int));
+  cpu.mpiio_nparts  = (long int*)calloc(cpu.nproc,sizeof(long int));
 #ifdef STARS
-  cpu.mpiio_nstars = (int*)calloc(cpu.nproc,sizeof(int));
+  cpu.mpiio_nstars = (long int*)calloc(cpu.nproc,sizeof(long int));
 #endif // STARS
 #endif // MPIIO
 
@@ -2145,7 +2145,7 @@ int main(int argc, char *argv[])
   free(cpu.locNoct);
   free(cpu.octList);
 
-#ifdef MPIIO
+#if defined(MPIIO) || defined(HDF5)
   free(cpu.mpiio_ncells );
   free(cpu.mpiio_nparts );
 #ifdef STARS
