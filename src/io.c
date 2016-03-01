@@ -270,19 +270,16 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   * Then it set the offset corresponding to the local processor rank.
   */
 
-  const int debug=1;
+  const int debug=0;
 
   // init n_cell to zero
-  int i;
-  for (i=0;i<cpu->nproc ;i++){
-    cpu->mpiio_ncells[i]=0;
+  int ncells=0;
 #ifdef PIC
-    cpu->mpiio_nparts[i]=0;
+  int nparts=0;
 #endif // PIC
 #ifdef STARS
-    cpu->mpiio_nstars[i]=0;
+  int nstars=0;
 #endif // STARS
-  }
 
   // count the cells, parts and stars
   int level;
@@ -298,7 +295,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
         if(((oct->cell[icell].child==0)||(oct->level==param->lmax))){
 
-          cpu->mpiio_ncells[cpu->rank]+=1;
+          ncells++;
 
 #ifdef PIC
           struct PART *nexp=cell->phead;
@@ -308,10 +305,10 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
               nexp=curp->next;
 
 #ifdef STARS
-              if (curp->isStar) cpu->mpiio_nstars[cpu->rank]+=1;
-              else              cpu->mpiio_nparts[cpu->rank]+=1;
+              if (curp->isStar) nstars++;
+              else              nparts++;
 #else
-                                cpu->mpiio_nparts[cpu->rank]+=1;
+                                nparts++;
 #endif // STARS
               }while(nexp!=NULL);
           }
@@ -321,22 +318,28 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
     }
   }
 
-  if (debug) printf("br cpu=%d ncells=%lu\n",cpu->rank, cpu->mpiio_ncells[cpu->rank]);
-  if (debug) printf("br cpu=%d npart=%lu\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
-  if (debug) printf("br cpu=%d nstar=%lu\n",cpu->rank, cpu->mpiio_nstars[cpu->rank]);
+  //if (debug) printf("br cpu=%d ncells=%d\n",cpu->rank, ncells);
+  //if (debug) printf("br cpu=%d nparts=%d\n",cpu->rank, nparts);
+  //if (debug) printf("br cpu=%d nstars=%d\n",cpu->rank, nstars);
 
-  // braodcast the result
-  MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_ncells,cpu->nproc,MPI_UNSIGNED_LONG,MPI_SUM,cpu->comm);
+  // broadcast the result
+
+ // MPI_Barrier(cpu->comm);
+
+  MPI_Allgather(&ncells,1,MPI_INT, cpu->mpiio_ncells,1,MPI_INT, cpu->comm);
 #ifdef PIC
-  MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_nparts,cpu->nproc,MPI_UNSIGNED_LONG,MPI_SUM,cpu->comm);
+  MPI_Allgather(&nparts,1,MPI_INT, cpu->mpiio_nparts,1,MPI_INT, cpu->comm);
 #endif // PIC
 #ifdef STARS
-  MPI_Allreduce(MPI_IN_PLACE,cpu->mpiio_nstars,cpu->nproc,MPI_UNSIGNED_LONG,MPI_SUM,cpu->comm);
+  MPI_Allgather(&nstars,1,MPI_INT, cpu->mpiio_nstars,1,MPI_INT, cpu->comm);
 #endif // STARS
 
-  if (debug) printf("ar cpu=%d ncells=%lu\n",cpu->rank, cpu->mpiio_ncells[cpu->rank]);
-  if (debug) printf("ar cpu=%d npart=%lu\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
-  if (debug) printf("ar cpu=%d nstar=%lu\n",cpu->rank, cpu->mpiio_nstars[cpu->rank]);
+  //MPI_Barrier(cpu->comm);
+
+
+  //if (debug) printf("ar cpu=%d ncells=%d\n",cpu->rank, cpu->mpiio_ncells[cpu->rank]);
+  //if (debug) printf("ar cpu=%d nparts=%d\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
+  //if (debug) printf("ar cpu=%d nstars=%d\n",cpu->rank, cpu->mpiio_nstars[cpu->rank]);
 
   // compute the offset
   cpu->mpiio_grid_offsets=0;
@@ -347,6 +350,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
     cpu->mpiio_star_offsets=0;
 #endif // STARS
 
+  int i;
   for (i=1;i<=cpu->rank;i++){
     cpu->mpiio_grid_offsets += cpu->mpiio_ncells[i-1];
 #ifdef PIC
@@ -357,11 +361,10 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif // STARS
   }
 
-  if (debug) printf("cpu=%d grid_offset=%lu\n",cpu->rank, cpu->mpiio_grid_offsets);
-  if (debug) printf("cpu=%d part_offset=%lu\n",cpu->rank, cpu->mpiio_part_offsets);
-  if (debug) printf("cpu=%d star_offset=%lu\n",cpu->rank, cpu->mpiio_star_offsets);
+  //if (debug) printf("cpu=%d grid_offset=%lu\n",cpu->rank, cpu->mpiio_grid_offsets);
+  //if (debug) printf("cpu=%d part_offset=%lu\n",cpu->rank, cpu->mpiio_part_offsets);
+  //if (debug) printf("cpu=%d star_offset=%lu\n",cpu->rank, cpu->mpiio_star_offsets);
 
-abort();
 }
 #endif // MPIIO
 
@@ -1361,6 +1364,8 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   * This function dump the output data with HDF5
   */
 
+  const int debug=0;
+
   // Create step folder
   char folder_step[128];
   sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
@@ -1402,7 +1407,9 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 
       //Set up file access property list with parallel I/O access
       plist = H5Pcreate(H5P_FILE_ACCESS);
+#ifdef PHDF5
       H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+#endif // PHDF5
 
       //Create a new file collectively
       char file_name[512];
@@ -1420,18 +1427,19 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       // Create the data space for the dataset.
       hid_t dataspace = H5Screate_simple(1, &n_cell_tot, NULL);
 
-
       //Select hyperslab in the file.
-      //hsize_t offset = cpu->mpiio_grid_offsets;
-      hsize_t offset = 0;
+      hsize_t offset = cpu->mpiio_grid_offsets;
       hsize_t n_loc = cpu->mpiio_ncells[cpu->rank];
-      printf("ncell_tot=%llu nloc=%llu \n",n_cell_tot,n_loc);
+      if (debug) printf("ncell_tot=%llu nloc=%llu \n",n_cell_tot,n_loc);
 
       H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
+
+#ifdef PHDF5
       H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+#endif // PHDF5
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
@@ -1459,7 +1467,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       hid_t  dataset = H5Dcreate(file, field_name, H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
-/*
+
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1510,7 +1518,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       // Close
       H5Pclose(gcpl);
       H5Gclose(group);
-  */
       H5Pclose(plist);
       H5Fclose(file);
 
@@ -1523,7 +1530,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
 #ifdef PIC
 void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct CPUINFO *cpu){
 
-  const int debug =1;
+  const int debug =0;
 
   // Create step folder
   char folder_step[128];
@@ -1559,7 +1566,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
     }
   }
 
-  if (debug) printf("allocating %ld float\n",cpu->mpiio_nparts[cpu->rank]);
+  if (debug) printf("allocating %d float\n",cpu->mpiio_nparts[cpu->rank]);
 
   float *tmp = (float*)calloc(cpu->mpiio_nparts[cpu->rank],sizeof(float));
   if (tmp == NULL){
@@ -1577,7 +1584,9 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       //Set up file access property list with parallel I/O access
       plist = H5Pcreate(H5P_FILE_ACCESS);
+#ifdef PHDF5
       H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+#endif // PHDF5
 
       //Create a new file collectively
       char file_name[256];
@@ -1598,14 +1607,15 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       hsize_t offset = (hsize_t)cpu->mpiio_part_offsets;
       hsize_t n_loc = (hsize_t)cpu->mpiio_nparts[cpu->rank];
 
-      printf("npart_tot=%llu nloc=%llu offset=%llu \n",n_part_tot,n_loc,offset );
+      if (debug) printf("npart_tot=%llu nloc=%llu offset=%llu \n",n_part_tot,n_loc,offset );
 
       H5Sselect_hyperslab(dataspace,H5S_SELECT_SET,&offset,NULL,&n_loc,NULL);
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
+#ifdef PHDF5
       H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
-
+#endif // PHDF5
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
       //reduce data
@@ -1637,7 +1647,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
-/*
+
       //Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1688,13 +1698,11 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       // Close
       H5Pclose(gcpl);
       H5Gclose(group);
-      */
       H5Pclose(plist);
       H5Fclose(file);
     }
   }
   free(tmp);
-
 }
 
 #ifdef STARS
@@ -1752,7 +1760,9 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       //Set up file access property list with parallel I/O access
       plist = H5Pcreate(H5P_FILE_ACCESS);
+#ifdef PHDF5
       H5Pset_fapl_mpio(plist, cpu->comm, MPI_INFO_NULL);
+#endif // PHDF5
 
       //Create a new file collectively
       char file_name[256];
@@ -1778,7 +1788,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
-      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+//      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
@@ -1879,6 +1889,14 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
 
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
+
+
+  const int debug=0;
+  MPI_Barrier(cpu->comm);
+  double  tstart=MPI_Wtime();
+
+
+
 
   REAL tdump,adump;
   char filename[128];
@@ -2035,5 +2053,15 @@ REAL tt1=MPI_Wtime();
 
 
 	}
+
+
+
+  MPI_Barrier(cpu->comm);
+  double tend=MPI_Wtime();
+  if(cpu->rank==RANK_DISP){
+    printf("dump IO in %f \n", tend-tstart);
+  }
+
+
 }
 

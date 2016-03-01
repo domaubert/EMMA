@@ -321,15 +321,6 @@ int main(int argc, char *argv[])
   omp_set_num_threads(param.ompthread);
 #endif // WOMP
 
-#if defined(MPIIO) || defined(HDF5)
-  cpu.mpiio_ncells  = (long int*)calloc(cpu.nproc,sizeof(long int));
-  cpu.mpiio_nparts  = (long int*)calloc(cpu.nproc,sizeof(long int));
-#ifdef STARS
-  cpu.mpiio_nstars = (long int*)calloc(cpu.nproc,sizeof(long int));
-#endif // STARS
-#endif // MPIIO
-
-
 
 #ifndef TESTCOSMO
   tmax=param.tmax;
@@ -565,6 +556,16 @@ int main(int argc, char *argv[])
   cpu.rank=0;
   cpu.nproc=1;
 #endif // WMPI
+
+
+#if defined(MPIIO) || defined(HDF5)
+  cpu.mpiio_ncells = (int*)calloc(cpu.nproc,sizeof(int));
+  cpu.mpiio_nparts = (int*)calloc(cpu.nproc,sizeof(int));
+#ifdef STARS
+  cpu.mpiio_nstars = (int*)calloc(cpu.nproc,sizeof(int));
+#endif // STARS
+#endif // MPIIO
+
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
@@ -1987,7 +1988,7 @@ int main(int argc, char *argv[])
       if(cond1||cond2||cond3){
 #ifndef EDBERT
 
-	int fdump=8;
+	int fdump=FDUMP;
 	if(cpu.nproc>fdump){
 	  // dumping fields only
 	  int idump;
@@ -2080,7 +2081,7 @@ int main(int argc, char *argv[])
 	ndumps-=1;
   	//dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 
-	int fdump=8;
+	int fdump=FDUMP;
 	if(cpu.nproc>fdump){
 	  // dumping fields only
 	  int idump;
@@ -2268,7 +2269,6 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////
 
     REAL tend=MPI_Wtime();
-
     if(cpu.rank==RANK_DISP){
       //fclose(param.fpegy);
       printf("Done ..... in %.2e CPU hours\n", (tend-tstart)/3600*cpu.nproc);

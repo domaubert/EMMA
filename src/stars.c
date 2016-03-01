@@ -245,7 +245,6 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 REAL getMstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL aexp, int level){
 
   REAL dv=pow(0.5,3*level);

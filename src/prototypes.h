@@ -444,15 +444,15 @@ struct CPUINFO{
   struct RAD_MPI **Rsendbuffer;
   struct RAD_MPI **Rrecvbuffer;
 
-  unsigned long int mpiio_grid_offsets;
-  unsigned long int *mpiio_ncells;
+  int mpiio_grid_offsets;
+  int *mpiio_ncells;
 
-  unsigned long int mpiio_part_offsets;
-  unsigned long int *mpiio_nparts;
+  int mpiio_part_offsets;
+  int *mpiio_nparts;
 
 #ifdef STARS
-  unsigned long int mpiio_star_offsets;
-  unsigned long int *mpiio_nstars;
+  int mpiio_star_offsets;
+  int *mpiio_nstars;
 #endif // STARS
 
 #ifdef PIC

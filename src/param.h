@@ -1,5 +1,6 @@
 #define RANK_DISP (0)
 #define FBKP (1)
+#define FDUMP (1)
 #define GAMMA (5./3.)
 #define CFL (0.85)
 #define GRAV (0.25)
@@ -11,6 +12,7 @@
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 #define FRAC_VAR (0.1)
 #define N_BIN_PDF (128)
+
 
 
 
