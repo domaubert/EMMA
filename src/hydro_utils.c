@@ -16,7 +16,7 @@
 
 #define NITERMAX 10
 #define ERRTOL 1e-10
-#define DEFDENS 10 // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
+#define DEFDENS 10. // DEFDENS USED FOR CELL WITH ZERO DENSITY (MAY HAPPEN IN BORDERS)
 
 // ===================================================
 //
@@ -1432,7 +1432,8 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
   int ffact[2]={0,0};
   REAL fact;
 
-  struct Utype Us; initUtype(&Us);
+  struct Utype Us; 
+  initUtype(&Us);
   REAL ebar;
   REAL ecen=0.;
   REAL divu,divuloc;
@@ -1445,6 +1446,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memset(FL,0,sizeof(REAL)*NVAR);
       memset(FR,0,sizeof(REAL)*NVAR);
 
+#if 1
       // Getting the original state ===========================
 
       curcell=&(stencil[i].oct[ioct[6]].cell[icell].field);
@@ -1472,6 +1474,8 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       for(iface=0;iface<2;iface++){
 	inei=iface+4;
 	memcpy(WC+iface,WC+inei,sizeof(struct Wtype)); // moving the data towards idx=0,1
+	//memcpy(WC+iface,&(stencil[i].oct[13].cell[inei].field),sizeof(struct Wtype)); // moving the data towards idx=0,1 //HACK
+
 	W2U(WC+iface,UC+iface);
       }
 
@@ -1482,7 +1486,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
 
 	memcpy(WN+iface,WT+idxnei[inei],sizeof(struct Wtype));
-	//memcpy(WN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype));
+	//memcpy(WN+iface,&(stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].field),sizeof(struct Wtype)); //HACK
 	W2U(WN+iface,UN+iface);
 
 	if(!stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].split){
@@ -1648,6 +1652,8 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
 
       // Cancelling the fluxes from splitted neighbours
 
+#endif
+
       for(iface=0;iface<NVAR;iface++) FL[iface]*=ffact[0];
       for(iface=0;iface<NVAR;iface++) FR[iface]*=ffact[1];
 
@@ -1655,9 +1661,7 @@ int hydroM_sweepZ(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memcpy(stencil[i].New.cell[icell].flux+4*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+5*NVAR,FR,sizeof(REAL)*NVAR);
 
-#ifdef DUAL_E
       stencil[i].New.cell[icell].divu=divu;
-#endif
 
       // ready for the next cell
     }
@@ -1935,9 +1939,7 @@ int hydroM_sweepY(struct HGRID *stencil, int level, int curcpu, int nread,int st
       memcpy(stencil[i].New.cell[icell].flux+2*NVAR,FL,sizeof(REAL)*NVAR);
       memcpy(stencil[i].New.cell[icell].flux+3*NVAR,FR,sizeof(REAL)*NVAR);
 
-#ifdef DUAL_E
       stencil[i].New.cell[icell].divu=divu;
-#endif
 
       // ready for the next cell
     }
@@ -3333,9 +3335,9 @@ int advancehydro(struct OCT **firstoct, int level, struct CPUINFO *cpu, struct H
 	t[2]=MPI_Wtime();
       // ------------ solving the hydro
 
-      hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
-      hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
-      hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+	hydroM_sweepX(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);
+	hydroM_sweepY(stencil,level,cpu->rank,nread,stride,dxcur,dtnew); 
+	hydroM_sweepZ(stencil,level,cpu->rank,nread,stride,dxcur,dtnew);   
 
       // ------------ updating values within the stencil
 
