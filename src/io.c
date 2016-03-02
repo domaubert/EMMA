@@ -1400,9 +1400,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
   for (ifield=0;ifield<param->out_grid->n_field_tot; ifield++){
     if(param->out_grid->field_id[ifield]){
 
-
-      MPI_Barrier(cpu->comm);
-
       hid_t plist;
 
       //Set up file access property list with parallel I/O access
@@ -1487,7 +1484,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_grid_offsets);
       H5Dclose(dataset);
 
-      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      dataset= H5Dcreate(group, "n", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_ncells[cpu->rank]);
       H5Dclose(dataset);
 
@@ -1667,7 +1664,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_part_offsets);
       H5Dclose(dataset);
 
-      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      dataset= H5Dcreate(group, "n", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_nparts[cpu->rank]);
       H5Dclose(dataset);
 
@@ -1846,7 +1843,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_star_offsets);
       H5Dclose(dataset);
 
-      dataset= H5Dcreate(group, "ncells", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      dataset= H5Dcreate(group, "n", H5T_NATIVE_INT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_INT, memspace, dataspace, plist, &cpu->mpiio_nstars[cpu->rank]);
       H5Dclose(dataset);
 

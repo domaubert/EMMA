@@ -1,7 +1,7 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -O2 -Wimplicit  -g -lm  # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+C_LIBS = -O2 -Wimplicit  -g -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
 HDF5_LIBS = -I /usr/local/hdf5/include/ -L /usr/local/hdf5/lib/
 C_FLAGS =
 C_OBJS= emma.o \
@@ -31,7 +31,7 @@ C_OBJS= emma.o \
 				ic.o\
 
 
-DEFINES  =
+DEFINES =
 OBJDIR = obj
 SRCDIR = src
 OBJ=$(patsubst %,$(OBJDIR)/%,$(C_OBJS))
