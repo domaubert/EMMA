@@ -499,7 +499,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   }
 
     if(level==param->lcoarse){
-
       if(cond1||cond2||cond3||cond4){
 
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
