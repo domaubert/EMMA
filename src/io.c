@@ -1357,6 +1357,7 @@ void makeFolders(struct CPUINFO *cpu){
 }
 
 #ifdef HDF5
+#define PHDF5
 
 void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
