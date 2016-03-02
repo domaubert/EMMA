@@ -330,6 +330,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // == Ready to advance
 
   // ================= I we refine the current level
+
+    double tref[10];
+    MPI_Barrier(cpu->comm);
+    tref[0]=MPI_Wtime();
+
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
 
     if(ndt[level-1]%2==0){
@@ -390,6 +395,21 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
   }
 
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tref[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU REF TOTAL TIME =%e\n",tref[2]-tref[0]);
+#else
+      printf("==== GPU REF TOTAL TIME =%e\n",tref[2]-tref[0]);
+#endif // GPUAXL
+    }
+#endif
+
+
+
     // =============================== cleaning
 #ifdef WHYDRO2
   clean_new_hydro(level,param,firstoct,cpu);
@@ -411,6 +431,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     if(cpu->rank==RANK_DISP) printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
+    double tcic[10];
+    MPI_Barrier(cpu->comm);
+    tcic[0]=MPI_Wtime();
 
 
 #ifdef PIC
@@ -437,12 +460,45 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     FillDens(level,param,firstoct,cpu);  // Here Hydro and Gravity are coupled
 
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tcic[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU CIC TOTAL TIME =%e\n",tcic[2]-tcic[0]);
+#else
+      printf("==== GPU CIC TOTAL TIME =%e\n",tcic[2]-tcic[0]);
+#endif // GPUAXL
+    }
+#endif
+
+
     /* //====================================  Poisson Solver ========================== */
     setOctList(firstoct[level-1], cpu, param,level);
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tcic[3]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU SETO TOTAL TIME =%e\n",tcic[3]-tcic[2]);
+#else
+      printf("==== GPU SETO TOTAL TIME =%e\n",tcic[3]-tcic[2]);
+#endif // GPUAXL
+    }
+#endif
+
+
     PoissonSolver(level,param,firstoct,cpu,gstencil,gstride,aexp);
 
 
     /* //====================================  Force Field ========================== */
+    MPI_Barrier(cpu->comm);
+    tcic[4]=MPI_Wtime();
+
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
 #endif
@@ -458,6 +514,20 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
     L_levpart(level,firstoct,is); // assigning all the particles to the current level
 #endif
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tcic[5]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU FORCE TOTAL TIME =%e\n",tcic[5]-tcic[4]);
+#else
+      printf("==== GPU FORCE TOTAL TIME =%e\n",tcic[5]-tcic[4]);
+#endif // GPUAXL
+    }
+#endif
+
 
     /* //====================================  I/O======= ========================== */
     // at this stage particles are synchronized at aexp
@@ -794,7 +864,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 #ifdef PIC
     //================ Part. Update ===========================
+    double tpic[10];
     int maxnpart;
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tpic[0]=MPI_Wtime();
+#endif
+
 #ifdef WMPI
     MPI_Allreduce(cpu->npart+level-1,&maxnpart,1,MPI_INT,MPI_SUM,cpu->comm);
 #else
@@ -842,6 +918,19 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 #endif // WMPI
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tpic[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU PIC TOTAL TIME =%e\n",tpic[2]-tpic[0]);
+#else
+      printf("==== GPU PIC TOTAL TIME =%e\n",tpic[2]-tpic[0]);
+#endif // GPUAXL
+    }
+#endif
 
 
 #endif // PIC
@@ -945,7 +1034,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifndef GPUAXL
       printf("==== CPU RAD TOTAL TIME =%e\n",time_rad);
 #else
-      printf(" === GPU RAD TOTAL TIME =%e\n",time_rad);
+      printf("==== GPU RAD TOTAL TIME =%e\n",time_rad);
 #endif // GPUAXL
     }
 #endif // COARSERAD
@@ -980,9 +1069,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     /* //===================================creating new stars=================================// */
 
+
+
 #ifdef STARS
 #ifdef WMPI
+    double tst[10];
   MPI_Barrier(cpu->comm);
+  tst[0]=MPI_Wtime();
 #endif // WMPI
 #ifdef ZOOM
     if(level>=param->lmaxzoom)
@@ -994,11 +1087,28 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,7);
 
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tst[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU STAR TOTAL TIME =%e\n",tst[2]-tst[0]);
+#else
+      printf("==== GPU STAR TOTAL TIME =%e\n",tst[2]-tst[0]);
+#endif // GPUAXL
+    }
+#endif
+
+
     /* //===================================Supernovae=========================================// */
 
 #ifdef SUPERNOVAE
 #ifdef WMPI
-  MPI_Barrier(cpu->comm);
+    double tsn[10];
+    MPI_Barrier(cpu->comm);
+    tsn[0]=MPI_Wtime();
 #endif // WMPI
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
@@ -1009,7 +1119,27 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif // SNTEST
 #endif // SUPERNOVAE
 
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tsn[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU SN TOTAL TIME =%e\n",tsn[2]-tsn[0]);
+#else
+      printf("==== GPU SN TOTAL TIME =%e\n",tsn[2]-tsn[0]);
+#endif // GPUAXL
+    }
+#endif
+
+
     // ================= V Computing the new refinement map
+#ifdef WMPI
+    double tmk[10];
+    MPI_Barrier(cpu->comm);
+    tmk[0]=MPI_Wtime();
+#endif
     REAL dxnext=POW(0.5,level+1)*aexp;
     REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
 
@@ -1059,6 +1189,21 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     }
     KPCLIMIT_TRIGGER=0;
     //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,10);
+
+
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tmk[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU MARK TOTAL TIME =%e\n",tmk[2]-tmk[0]);
+#else
+      printf("==== GPU MARK TOTAL TIME =%e\n",tmk[2]-tmk[0]);
+#endif // GPUAXL
+    }
+#endif
 
     // ====================== VI Some bookkeeping ==========
     dt+=adt[level-1]; // advance local time

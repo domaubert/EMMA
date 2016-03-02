@@ -23,7 +23,6 @@ void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
   REAL nH=R->nh;
   REAL x=R->nhplus/R->nh;
   REAL pstar=param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
-
   nH=nH/POW(aexp,3)*param->unit.unit_N;
   eint=eint/POW(aexp,5)*pstar;
   tloc=eint/(1.5*nH*KBOLTZ*(1.+x));

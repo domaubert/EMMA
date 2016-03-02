@@ -30,7 +30,7 @@ extern "C" void create_param_GPU(struct RUNPARAMS *param, struct CPUINFO *cpu);
 void create_radstencil_GPU(struct CPUINFO *cpu, int stride){
   cudaMalloc((void **)&(cpu->rad_stencil),sizeof(struct RGRID)*stride);
   cudaDeviceSynchronize(); 
-  printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+  //  printf("Start Error =%s\n",cudaGetErrorString(cudaGetLastError()));
 
   
 }
@@ -39,7 +39,7 @@ void create_radstencil_GPU(struct CPUINFO *cpu, int stride){
 void create_pinned_stencil_rad(struct RGRID **stencil, int stride){
   cudaMallocHost( (void**)stencil, sizeof(struct RGRID)*stride );
   cudaDeviceSynchronize(); 
-  printf("Start2 Error =%s\n",cudaGetErrorString(cudaGetLastError()));
+  //  printf("Start2 Error =%s\n",cudaGetErrorString(cudaGetLastError()));
 }
 
 // ===================================================================
@@ -66,6 +66,39 @@ void create_param_GPU(struct RUNPARAMS *param, struct CPUINFO *cpu){
   cudaMalloc((void **)&(dCG),sizeof(struct COSMOPARAM)); // allocate cosmo struct on GPU
   cudaMemcpy(dCG,&CG,sizeof(struct COSMOPARAM),cudaMemcpyHostToDevice);  
   paramgpu.cosmo=dCG; // we save the pointer location
+
+#ifdef WRAD
+  REAL *space_bound;
+  cudaMalloc((void **)&(space_bound),(param->atomic.ngrp_space+1)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(space_bound,param->atomic.space_bound,(param->atomic.ngrp_space+1)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.space_bound=space_bound;
+
+  REAL *time_bound;
+  cudaMalloc((void **)&(time_bound),(param->atomic.ngrp_time+1)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(time_bound,param->atomic.time_bound,(param->atomic.ngrp_time+1)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.time_bound=time_bound;
+
+  REAL *hnu;
+  cudaMalloc((void **)&(hnu),(param->atomic.n)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(hnu,param->atomic.hnu,(param->atomic.n)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.hnu=hnu;
+
+  REAL *alphae;
+  cudaMalloc((void **)&(alphae),(param->atomic.n)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(alphae,param->atomic.alphae,(param->atomic.n)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.alphae=alphae;
+
+  REAL *alphai;
+  cudaMalloc((void **)&(alphai),(param->atomic.n)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(alphai,param->atomic.alphai,(param->atomic.n)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.alphai=alphai;
+
+  REAL *factgrp;
+  cudaMalloc((void **)&(factgrp),(param->atomic.n)*sizeof(REAL)); // allocate cosmo struct on GPU
+  cudaMemcpy(factgrp,param->atomic.factgrp,(param->atomic.n)*sizeof(REAL),cudaMemcpyHostToDevice);
+  paramgpu.atomic.factgrp=factgrp;
+#endif
+
 
   cudaMalloc((void **)&(cpu->dparam),sizeof(struct RUNPARAMS));
   cudaMemcpy(cpu->dparam,&paramgpu,sizeof(struct RUNPARAMS),cudaMemcpyHostToDevice);  
@@ -981,7 +1014,7 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
   int nt;
 
   if((nextoct!=NULL)&&(cpu->noct[level-1]!=0)){
-    do {
+    do{
       curoct0=nextoct;
       curoct=curoct0;
 
@@ -993,7 +1026,9 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	// ------------ gathering the stencil value values
 	curoct=nextoct;
 	if(curoct!=NULL){
+	  //printf("Start Error  -2fg=%s is=%d vnread=%d offset=%d\n",cudaGetErrorString(cudaGetLastError()),is,vnread[is],offset);
 	  nextoct= gatherstencilrad(curoct,stencil+offset,stride/cpu->nstream,cpu, vnread+is,cloc);
+	  //printf("Start Error  -1=%s is=%d vnread=%d offset=%d\n",cudaGetErrorString(cudaGetLastError()),is,vnread[is],offset);
 	  if(vnread[is]!=0){
 
 	    ng=((vnread[is]-1)/cpu->nthread)+1; // +1 to treat leftovers
@@ -1014,9 +1049,11 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 
 	    //t[2]=MPI_Wtime();
 	  
+	    //printf("Start Error  0=%s is=%d vnread=%d offset=%d\n",cudaGetErrorString(cudaGetLastError()),is,vnread[is],offset);
+
 	    cudaMemcpyAsync(cpu->rad_stencil+offset,stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyHostToDevice,stream[is]);  
 	  
-	    //	printf("Start Error  1=%s\n",cudaGetErrorString(cudaGetLastError()));
+	    //printf("Start Error  1=%s is=%d vnread=%d offset=%d\n",cudaGetErrorString(cudaGetLastError()),is,vnread[is],offset);
 	  
 #ifndef COARSERAD
 	    int condadvec=1;
@@ -1039,14 +1076,12 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
 	    //t[4]=MPI_Wtime();
 	  
 	    if(condadvec) dupdatefieldrad<<<gridoct,blockoct,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cloc); 
-	  
-	    // ----------- perform physical cooling and ionisation 
 	    //printf("Start Error  3=%s\n",cudaGetErrorString(cudaGetLastError()));
-	    //	    cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
+	    // ----------- perform physical cooling and ionisation 
 #ifdef WCHEM
 	    dchemrad<<<gridoct_chem,blockoct_chem,0,stream[is]>>>(cpu->rad_stencil+offset,vnread[is],stride,cpu,dxcur,dtnew,cpu->dparam,aexp,chemonly); 
 #endif
-
+	    
 #endif
 	    cudaMemcpyAsync(stencil+offset,cpu->rad_stencil+offset,vnread[is]*sizeof(struct RGRID),cudaMemcpyDeviceToHost,stream[is]);
 	    //printf("Start Error  4=%s\n",cudaGetErrorString(cudaGetLastError()));
@@ -1057,12 +1092,16 @@ int advanceradGPU (struct OCT **firstoct, int level, struct CPUINFO *cpu, struct
       }
       
       // ------------ scatter back the FLUXES
+      //CUDA_CHECK_ERROR("Bef Sync");
       cudaDeviceSynchronize();
+      //CUDA_CHECK_ERROR("Af Sync");
       //t[6]=MPI_Wtime();
    
       nread=offset;
+      //printf("Start Error  5=%s\n",cudaGetErrorString(cudaGetLastError()));
       nextoct=scatterstencilrad(curoct0,stencil, nread, cpu,dxcur,dtnew,cloc);
 
+      //printf("Start Error  6=%s\n",cudaGetErrorString(cudaGetLastError()));
 
       //t[8]=MPI_Wtime();
 
