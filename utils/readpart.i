@@ -1,5 +1,76 @@
 
 
+
+func readpartmulti(dirname,isnap,ncpu,&time){
+
+  time=array(float);
+
+  npart=0;
+  for(icpu=0;icpu<ncpu;icpu++){
+    fname=swrite(format=dirname+"/%05d/part_x/x.%05d.p%05d",isnap,isnap,icpu);
+    ff=open(fname,"rb");
+    adress=0;
+    nploc=array(int);
+    _read,ff,adress,nploc;
+    close,ff;
+    npart+=nploc;
+  }
+
+  npart;
+
+  x=array(float,npart);
+  y=array(float,npart);
+  z=array(float,npart);
+
+  offset=1;
+  
+  for(icpu=0;icpu<ncpu;icpu++){
+    fname=swrite(format=dirname+"/%05d/part_x/x.%05d.p%05d",isnap,isnap,icpu);
+    ff=open(fname,"rb");
+    adress=0;
+    nploc=array(int);
+    _read,ff,adress,nploc;adress+=sizeof(nploc);
+    _read,ff,adress,time;adress+=sizeof(time);
+    dummy=array(float,nploc);
+    _read,ff,adress,dummy;
+    close,ff;
+    x(offset:offset+nploc-1)=dummy;
+
+    fname=swrite(format=dirname+"/%05d/part_y/y.%05d.p%05d",isnap,isnap,icpu);
+    ff=open(fname,"rb");
+    adress=0;
+    nploc=array(int);
+    _read,ff,adress,nploc;adress+=sizeof(nploc);
+    _read,ff,adress,time;adress+=sizeof(time);
+    dummy=array(float,nploc);
+    _read,ff,adress,dummy;
+    close,ff;
+    y(offset:offset+nploc-1)=dummy;
+
+    fname=swrite(format=dirname+"/%05d/part_z/z.%05d.p%05d",isnap,isnap,icpu);
+    ff=open(fname,"rb");
+    adress=0;
+    nploc=array(int);
+    _read,ff,adress,nploc;adress+=sizeof(nploc);
+    _read,ff,adress,time;adress+=sizeof(time);
+    dummy=array(float,nploc);
+    _read,ff,adress,dummy;
+    close,ff;
+    z(offset:offset+nploc-1)=dummy;
+
+
+    offset+=nploc;
+    
+  }
+
+  return [x,y,z];
+  
+
+  
+}
+
+
+
 func readnpart(fname){
   fp=open(fname,"rb");
   adress=0;

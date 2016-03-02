@@ -226,11 +226,33 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 
     if ((curp->isStar>=6)){
 
+
 #ifdef CONSTRAIN_SRC_CELL_STATE
-      REAL xion = 1-1.e-5;
+
+      REAL xion = 1.;
+      REAL temperature = 100000.;
+
       // Setting xion
       cell->rfield.nhplus=xion*cell->rfield.nh;
       cell->rfieldnew.nhplus=cell->rfield.nhplus;
+
+/*
+      // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
+      REAL eint=(1.5*cell->rfield.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexp,2)/powf(param->unit.unit_v,2)/param->unit.unit_mass;
+
+      printf("phy=%e code=%e\n",(1.5*cell->rfield.nh*KBOLTZ*(1.+xion)*temperature), POW(aexp,2)/powf(param->unit.unit_v,2)/param->unit.unit_mass);
+
+      printf("nh=%f aexp=%f uV=%f uM=%e \n",cell->rfield.nh, aexp, param->unit.unit_v,1./param->unit.unit_mass);
+
+      printf("eint_init = %f eint_end = %e\n",cell->rfield.eint, eint);
+
+      cell->rfield.eint=eint; // 10000 K for a start
+      cell->rfieldnew.eint=eint; // 10000 K for a start
+
+      E2T(&cell->rfieldnew,aexp,param);
+      E2T(&cell->rfield,aexp,param);
+*/
+
 #endif
 
 
@@ -716,8 +738,6 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	  REAL xion=1e-5;
 #endif // COOLING
 
-	  REAL eint;
-
 	  curoct->cell[icell].rfield.nhplus=xion*curoct->cell[icell].rfield.nh;
 	  curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].rfield.nhplus;
 
@@ -731,7 +751,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
 #ifndef WRADHYD
 	  // note below the a^5 dependance is modified to a^2 because a^3 is already included in the density
-	  eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexp,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;
+	  REAL eint=(1.5*curoct->cell[icell].rfield.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexp,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;
 	  curoct->cell[icell].rfield.eint=eint; // 10000 K for a start
 	  curoct->cell[icell].rfieldnew.eint=eint; // 10000 K for a start
 	  E2T(&curoct->cell[icell].rfieldnew,aexp,param);

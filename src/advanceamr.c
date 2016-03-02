@@ -469,9 +469,12 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
       int cond1 = nsteps%param->ndumps==0;
       int cond2 = 0;
       int cond3 = tloc>=param->time_max;
+      int cond4 = 0;
+#ifdef TESTCOSMO
+      if(param->aexpdump) cond4=aexp>param->aexpdump;
+#endif
 
-
-      if (param->dt_dump){
+      if(param->dt_dump){
         cond1=0;
         int offset=0;
 
@@ -496,7 +499,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   }
 
     if(level==param->lcoarse){
-if(cond1||cond2||cond3){
+
+      if(cond1||cond2||cond3||cond4){
 
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);
 
@@ -1008,11 +1012,7 @@ if(cond1||cond2||cond3){
 
     // ================= V Computing the new refinement map
     REAL dxnext=POW(0.5,level+1)*aexp;
-#ifdef TESTCOSMO
     REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
-#else
-    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
-#endif // TESTCOSMO
 
 #ifdef TUBE
     dxkpc=0.;

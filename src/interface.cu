@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cudpp.h>
+//#include <cudpp.h>
 #include "prototypes.h"
 #include "gpu_type.h"
 
@@ -91,20 +91,20 @@ REAL * GPUallocREAL(int nmem){
   return resA;
 }
 
-unsigned long int GPUallocScanPlan(int nmem){
-  struct CUPARAM *cuparam;
+/* unsigned long int GPUallocScanPlan(int nmem){ */
+/*   struct CUPARAM *cuparam; */
 
-  cudaMallocHost( (void**)&cuparam, sizeof(struct CUPARAM));
+/*   cudaMallocHost( (void**)&cuparam, sizeof(struct CUPARAM)); */
 
-  cudppCreate(&(cuparam->theCudpp));
+/*   cudppCreate(&(cuparam->theCudpp)); */
     
-  cuparam->config.algorithm = CUDPP_SCAN;
-  cuparam->config.datatype = CUDPP_REAL; // homemade type
-  cuparam->config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE;
-  cuparam->config.op=CUDPP_ADD;
+/*   cuparam->config.algorithm = CUDPP_SCAN; */
+/*   cuparam->config.datatype = CUDPP_REAL; // homemade type */
+/*   cuparam->config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE; */
+/*   cuparam->config.op=CUDPP_ADD; */
 
-  cuparam->scanplan =0;
-  cudppPlan(cuparam->theCudpp,&(cuparam->scanplan), cuparam->config, nmem, 1, 0);
+/*   cuparam->scanplan =0; */
+/*   cudppPlan(cuparam->theCudpp,&(cuparam->scanplan), cuparam->config, nmem, 1, 0); */
 
-  return (unsigned long int) cuparam;
-}
+/*   return (unsigned long int) cuparam; */
+/* } */

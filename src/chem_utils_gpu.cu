@@ -9,7 +9,7 @@
 #include "oct.h"
 #include <string.h>
 #include <mpi.h>
-#include "atomic_data/Atomic.h"
+//#include "atomic_data/Atomic.h"
 #include "gpu_type.h"
 
 
@@ -169,10 +169,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
     xt,
     eintt,
     ai_tmp1=0.,
-    hnu[NGRP],		// ! Average Photon Energy (J)
-    factgrp[NGRP],		
-    alphae[NGRP],
-    alphai[NGRP],		
     et[NGRP],
     p[NGRP];
 
@@ -180,7 +176,20 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
   REAL ebkg[NGRP];
   REAL z=1./aexporg-1.;
 
-  REAL c=param->clight*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+  REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+
+  REAL hnu[NGRP];
+  REAL alphae[NGRP];
+  REAL alphai[NGRP];
+  REAL factgrp[NGRP];
+
+  for(igrp=0;igrp<NGRP;igrp++) {
+    hnu[igrp]=param->atomic.hnu[igrp];
+    alphae[igrp]=param->atomic.alphae[igrp];
+    alphai[igrp]=param->atomic.alphai[igrp];
+    factgrp[igrp]=param->atomic.factgrp[igrp];
+  }
+
 
 #ifdef S_X
   REAL E0overI[NGRP];
@@ -188,8 +197,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
   REAL F2[NGRP];
 #endif
 
-  SECTION_EFFICACE; // defined in Atomic.h
-  FACTGRP; //defined in Atomic.h
 
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
@@ -244,12 +251,14 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 
       x0[idloc]=R.nhplus/R.nh;
       xorg= x0[idloc];
-
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)*param->unit.unit_N;
 
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
-      srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/POW(aexporg,3); 
+      //srcloc[idloc]=(R.src*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg)+ebkg[0])/POW(aexporg,3); 
+      for (igrp=0;igrp<NGRP;igrp++){
+      srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+      }
 
       /// BELOW THE FULL EXPRESSION OF E in natural units
       //emin=PMIN/(GAMMA-1.)/POW(aexporg,5)/POW(param->unit.unit_l,3)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
@@ -292,20 +301,6 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
       while(currentcool_t<dt)
 	{
 
-	  z=1./aexp-1.;
-	  // ==================== UV Background
-#ifdef UVBKG
-	  if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
-	  //for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=3.6*(z<3?1.:4./(1+z))  ;  // Katz simple model
-	  
-	  // Poor FIT to Haardt & MAdau 2012
-	  for(igrp=0;igrp<NGRP;igrp++){
-	    REAL amp=1.2e-16,sig=1.,zavg=2,mz=1e-18,pz=1.2e-17;
-	    ebkg[igrp]=amp/(sig*SQRT(2*M_PI))*exp(-POW((z-zavg),2)/(2.*POW(sig,2)))+mz*z+pz; // comoving photons/s/m3
-	  }
-#else
-	  for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
-#endif
 	  // Cosmological Adiabatic expansion effects ==============
 #ifdef TESTCOSMO
 	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
@@ -337,6 +332,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 	    {
 #ifdef OTSA
 	      factotsa[igrp]=0;
+	      alpha=alphab; // recombination is limited to non ground state levels
 #else
 	      factotsa[igrp]=(igrp==0);
 #endif
@@ -346,7 +342,7 @@ __global__ void dchemrad(struct RGRID *stencil, int nread, int stride, struct CP
 		et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 		}
 	      else{
-		et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));
+		et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*(1.-x0[idloc])*nH[idloc]));
 	      }
 
 	      if((et[igrp]<0)||(isnan(et[igrp]))){

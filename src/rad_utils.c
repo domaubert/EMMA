@@ -1596,8 +1596,6 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
 
 #if 0
-
-
 	// ================================ START MEGA DIAGNOSE =========================
       if((Rupdate.e[1]<0||isnan(Rupdate.e[1]))){
 	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[1],stencil[i].New.cell[icell].rfieldnew.e[1],R.e[1],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,stencil[i].oct[6].cell[icell].rfield.e[1],stencil[i].oct[6].cell[icell].rfield.temp);

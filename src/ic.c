@@ -18,6 +18,12 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   FILE *fy = NULL;
   FILE *fz = NULL;
 
+#ifndef EMMAZELDO
+  FILE *fpx = NULL;
+  FILE *fpy = NULL;
+  FILE *fpz = NULL;
+#endif
+
   int np1,np2,np3;
   float dx,x1o,x2o,x3o,astart,om,ov,h0,ob;
   int dummy;
@@ -74,6 +80,74 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     }
 
 
+#ifndef EMMAZELDO
+    
+    printf("ICS: READING DISPLACEMENTS FROM FILE\n");
+    
+    sprintf(filename,"./level_%03d/ic_poscz",level);
+    fpz=fopen(filename,"rb");
+    if(fpz == NULL) {
+
+      printf("Cannot open %s : ", filename);
+      sprintf(filename,"./level_%03d/ic_poscz",level);
+      printf("trying %s\n", filename);
+
+      fpz=fopen(filename,"rb");
+      if(fpz == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
+    sprintf(filename,"./level_%03d/ic_poscz",level);
+    fpz=fopen(filename,"rb");
+    if(fpz == NULL) {
+
+      printf("Cannot open %s : ", filename);
+      sprintf(filename,"./level_%03d/ic_poscz",level);
+      printf("trying %s\n", filename);
+
+      fpz=fopen(filename,"rb");
+      if(fpz == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
+    sprintf(filename,"./level_%03d/ic_poscy",level);
+    fpy=fopen(filename,"rb");
+    if(fpy == NULL) {
+
+      printf("Cannot open %s : ", filename);
+      sprintf(filename,"./level_%03d/ic_poscy",level);
+      printf("trying %s\n", filename);
+
+      fpy=fopen(filename,"rb");
+      if(fpy == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+
+    sprintf(filename,"./level_%03d/ic_poscx",level);
+    fpx=fopen(filename,"rb");
+    if(fpx == NULL) {
+
+      printf("Cannot open %s : ", filename);
+      sprintf(filename,"./level_%03d/ic_poscx",level);
+      printf("trying %s\n", filename);
+
+      fpx=fopen(filename,"rb");
+      if(fpx == NULL) {
+        printf("Cannot open %s\n", filename);
+        abort();
+      }
+    }
+#else
+    printf("ICS: APPLYING ZELDOVICH DISPLACEMENT\n");
+#endif
+
+
     // reading the headers
     size_t outf;
 
@@ -91,6 +165,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&ov,1,4,fx);
     outf=fread(&h0,1,4,fx);
     outf=fread(&dummy,1,sizeof(dummy),fx);
+
     outf=fread(&dummy,1,sizeof(dummy),fy);
     outf=fread(&np1,1,4,fy);
     outf=fread(&np2,1,4,fy);
@@ -118,6 +193,54 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     outf=fread(&ov,1,4,fz);
     outf=fread(&h0,1,4,fz);
     outf=fread(&dummy,1,sizeof(dummy),fz);
+
+#ifndef EMMAZELDO
+    outf=fread(&dummy,1,sizeof(dummy),fpx);
+    outf=fread(&np1,1,4,fpx);
+    outf=fread(&np2,1,4,fpx);
+    outf=fread(&np3,1,4,fpx);
+    outf=fread(&dx,1,4,fpx);
+    outf=fread(&x1o,1,4,fpx);
+    outf=fread(&x2o,1,4,fpx);
+    outf=fread(&x3o,1,4,fpx);
+    outf=fread(&astart,1,4,fpx);
+    outf=fread(&om,1,4,fpx);
+    outf=fread(&ov,1,4,fpx);
+    outf=fread(&h0,1,4,fpx);
+    outf=fread(&dummy,1,sizeof(dummy),fpx);
+
+    outf=fread(&dummy,1,sizeof(dummy),fpy);
+    outf=fread(&np1,1,4,fpy);
+    outf=fread(&np2,1,4,fpy);
+    outf=fread(&np3,1,4,fpy);
+    outf=fread(&dx,1,4,fpy);
+    outf=fread(&x1o,1,4,fpy);
+    outf=fread(&x2o,1,4,fpy);
+    outf=fread(&x3o,1,4,fpy);
+    outf=fread(&astart,1,4,fpy);
+    outf=fread(&om,1,4,fpy);
+    outf=fread(&ov,1,4,fpy);
+    outf=fread(&h0,1,4,fpy);
+    outf=fread(&dummy,1,sizeof(dummy),fpy);
+
+    outf=fread(&dummy,1,sizeof(dummy),fpz);
+    outf=fread(&np1,1,4,fpz);
+    outf=fread(&np2,1,4,fpz);
+    outf=fread(&np3,1,4,fpz);
+    outf=fread(&dx,1,4,fpz);
+    outf=fread(&x1o,1,4,fpz);
+    outf=fread(&x2o,1,4,fpz);
+    outf=fread(&x3o,1,4,fpz);
+    outf=fread(&astart,1,4,fpz);
+    outf=fread(&om,1,4,fpz);
+    outf=fread(&ov,1,4,fpz);
+    outf=fread(&h0,1,4,fpz);
+    outf=fread(&dummy,1,sizeof(dummy),fpz);
+
+
+#endif
+
+
   }
 
 #ifdef WMPI
@@ -167,6 +290,13 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   float *vely;
   float *velz;
 
+#ifndef EMMAZELDO
+  float *dispx;
+  float *dispy;
+  float *dispz;
+
+#endif
+
   double x;
   double y;
   double z;
@@ -195,11 +325,15 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   }
 #endif
 
-
-
   velx=(float*)malloc(sizeof(float)*np1*np2);
   vely=(float*)malloc(sizeof(float)*np1*np2);
   velz=(float*)malloc(sizeof(float)*np1*np2);
+
+#ifndef EMMAZELDO
+  dispx=(float*)malloc(sizeof(float)*np1*np2);
+  dispy=(float*)malloc(sizeof(float)*np1*np2);
+  dispz=(float*)malloc(sizeof(float)*np1*np2);
+#endif
 
   //REAL rmin=2.;
 
@@ -220,6 +354,22 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       outf=fread(&dummy,1,sizeof(dummy),fz);
       outf=fread(velz,np1*np2,sizeof(float),fz);
       outf=fread(&dummy,1,sizeof(dummy),fz);
+
+#ifndef EMMAZELDO
+      outf=fread(&dummy,1,sizeof(dummy),fpx);
+      outf=fread(dispx,np1*np2,sizeof(float),fpx);
+      outf=fread(&dummy,1,sizeof(dummy),fpx);
+
+      outf=fread(&dummy,1,sizeof(dummy),fpy);
+      outf=fread(dispy,np1*np2,sizeof(float),fpy);
+      outf=fread(&dummy,1,sizeof(dummy),fpy);
+
+      outf=fread(&dummy,1,sizeof(dummy),fpz);
+      outf=fread(dispz,np1*np2,sizeof(float),fpz);
+      outf=fread(&dummy,1,sizeof(dummy),fpz);
+#endif
+
+
     }
 
 
@@ -228,6 +378,13 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     MPI_Bcast(velx,np1*np2,MPI_FLOAT,0,cpu->comm);
     MPI_Bcast(vely,np1*np2,MPI_FLOAT,0,cpu->comm);
     MPI_Bcast(velz,np1*np2,MPI_FLOAT,0,cpu->comm);
+
+#ifndef EMMAZELDO
+    MPI_Bcast(dispx,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(dispy,np1*np2,MPI_FLOAT,0,cpu->comm);
+    MPI_Bcast(dispz,np1*np2,MPI_FLOAT,0,cpu->comm);
+#endif
+
 #endif
 
 
@@ -237,10 +394,15 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       for(i1=1;i1<=np1;i1++){
 	x0=(i1-0.5)*dx;
 	// computing the displacements
+#ifdef EMMAZELDO
 	x=(x0+velx[(i1-1)+(i2-1)*np1]/vfact)/(np1*dx);
 	y=(y0+vely[(i1-1)+(i2-1)*np1]/vfact)/(np2*dx);
 	z=(z0+velz[(i1-1)+(i2-1)*np1]/vfact)/(np3*dx);
-
+#else
+	x=(x0+dispx[(i1-1)+(i2-1)*np1]/(h0/100.))/(np1*dx);
+	y=(y0+dispy[(i1-1)+(i2-1)*np1]/(h0/100.))/(np2*dx);
+	z=(z0+dispz[(i1-1)+(i2-1)*np1]/(h0/100.))/(np3*dx);
+#endif
 	// periodic boundary conditions
 
 	x+=((x<0.)-(x>1.))*1.;
@@ -299,6 +461,12 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   free(velx);
   free(vely);
   free(velz);
+
+#ifndef EMMAZELDO
+  free(dispx);
+  free(dispy);
+  free(dispz);
+#endif
 
   if(cpu->rank==0){
     fclose(fx);

@@ -7,7 +7,7 @@
 #include <mpi.h>
 
 #ifdef GPUAXL
-#include "poisson_utils_gpu.h"
+//#include "poisson_utils_gpu.h"
 #endif
 
 #ifdef WMPI
@@ -1345,14 +1345,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  if(level>=7){
-    //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  else{
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
 
 
@@ -1383,7 +1376,6 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
     PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #else
-    //PoissonJacobiGPU(level-1,param,firstoct,cpu,stencil,stride,tsim);
     PoissonJacobi(level-1,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   }
@@ -1417,14 +1409,7 @@ REAL PoissonMgrid(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #else
-  //dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  if(level>=7){
-    //dres=PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,tsim);
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
-  else{
-    dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
-  }
+  dres=PoissonJacobi(level,param,firstoct,cpu,stencil,stride,tsim);
 #endif
   return dres;
 }
@@ -1551,7 +1536,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
   if(cpu->rank==RANK_DISP)  printf("on CPU\n");
 #else
-  if(cpu->rank==RANK_DISP)  printf("on GPU\n");
+  if(cpu->rank==RANK_DISP)  printf("on CPU\n");
 #endif
   //breakmpi();
 
@@ -1567,7 +1552,6 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
 #else
     PoissonJacobi(level,param,firstoct,cpu,stencil,stride,aexp);
-    //PoissonJacobiGPU(level,param,firstoct,cpu,stencil,stride,aexp);
 #endif
 
   }
@@ -1601,7 +1585,7 @@ int PoissonSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  st
 #ifndef GPUAXL
    printf("==== CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #else
-   printf(" === GPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
+   printf(" === CPU POISSON TOTAL TIME =%e\n",t[9]-t[0]);
 #endif
  }
   return 0;

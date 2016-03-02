@@ -274,21 +274,13 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       for (igrp=0;igrp<NGRP;igrp++){
       srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
       }
+
 // R.src phot/unit_t/unit_dv (comobile)
       REAL eorg=eint[idloc];
       REAL etorg=egyloc[idloc];
       REAL torg=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);
-
-#ifdef CONSTRAIN_SRC_CELL_STATE
-      REAL xion = 1-1.e-5;
-      REAL temperature = 100000.;
-      // Setting temp
-      eint[idloc]=(1.5*R.nh*KBOLTZ*(1.+xion)*temperature)*POW(aexporg,2)/POW(param->unit.unit_v,2)/param->unit.unit_mass;
-#endif
-
-
 
       // at this stage we are ready to do the calculations
 
@@ -346,6 +338,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  }
 
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*egyloc[idloc+igrp*BLOCKCOOL];
+
 	  tcool=FABS(eint[idloc]/(nH[idloc]*(1.0-x0[idloc])*ai_tmp1*(!chemonly)-Cool));
 	  ai_tmp1=0.;
 	  dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);

@@ -1,0 +1,3 @@
+Npro 64
+Ndim 3
+lmin 8

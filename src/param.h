@@ -13,8 +13,9 @@
 #define FRAC_VAR (0.1)
 #define N_BIN_PDF (128)
 
-
-
+#define NGRP_SPACE (1)
+#define NGRP_TIME (1)
+#define NGRP (NGRP_SPACE * NGRP_TIME)
 
 #define THRESH_Z_XION_MAP (0.5)
 
@@ -36,7 +37,7 @@
 #ifndef WHYDRO2
   #define OMEGAB (0.0)
 #else
-  #define OMEGAB (0.049) // 0.049 for PLANCK
+  #define OMEGAB (0.046) // 0.049 for PLANCK
 #endif
 
 #ifdef HELIUM
