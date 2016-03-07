@@ -2116,14 +2116,8 @@ REAL tt1=MPI_Wtime();
 
 	}
 
-
-
   MPI_Barrier(cpu->comm);
   double tend=MPI_Wtime();
-  if(cpu->rank==RANK_DISP){
-    printf("dump IO in %f \n", tend-tstart);
-  }
-
-
+//  if(cpu->rank==RANK_DISP) printf("dump IO in %fs \n", tend-tstart);
 }
 

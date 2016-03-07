@@ -2145,14 +2145,13 @@ int main(int argc, char *argv[])
       tsim+=dt;
     }
 
-
   ndumps-=1;
 	int fdump=FDUMP;
 	if(cpu.nproc>fdump){
 	  // dumping fields only
 	  int idump;
 	  for(idump=0;idump<fdump;idump++){
-	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
+	    if(cpu.rank==RANK_DISP && FDUMP>1) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 	    sleep(1);
 #ifdef WMPI
