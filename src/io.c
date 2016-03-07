@@ -998,7 +998,20 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
 
 	MPI_File_write(fpart, &npart,1, MPI_INT, MPI_STATUS_IGNORE);
   MPI_File_write(fpart, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  const size_t part_header_size = sizeof(int)+sizeof(float);
+
+
+  //TODO fix theses values
+  int ncell[cpu->nproc];
+  float bounds[6*cpu->nproc];
+
+  MPI_File_write(fpart, ncell, cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_write(fpart, bounds, 6*cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+
+  const size_t part_header_size = sizeof(int) +
+                                  sizeof(float) +
+                                  cpu->nproc *sizeof(int) +
+                                  6* cpu->nproc *sizeof(float);
+
 
   const size_t part_size = 10;
   MPI_Datatype part_type;
@@ -1035,9 +1048,22 @@ void dumppart_MPI(struct OCT **firstoct,char filename[], int levelcoarse, int le
     printf("Cannot open %s\n", filenamestar);
     abort();
   }
+
+
+
+
+
   MPI_File_write(fstar, &nstar,1, MPI_INT, MPI_STATUS_IGNORE);
   MPI_File_write(fstar, &tsimf,1, MPI_FLOAT, MPI_STATUS_IGNORE);
-  const size_t star_header_size = sizeof(int)+sizeof(float);
+  MPI_File_write(fpart, ncell, cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+  MPI_File_write(fpart, bounds, 6*cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+
+  const size_t star_header_size = sizeof(int) +
+                                  sizeof(float) +
+                                  cpu->nproc *sizeof(int) +
+                                  6* cpu->nproc *sizeof(float);
+
+
 
   const size_t star_size = 11;
 
@@ -1167,9 +1193,21 @@ void dumpalloct_MPI(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
        abort();
       }
 
+      //TODO fix theses values
+      float tsim;
+      int ncell[cpu->nproc];
+      float bounds[6*cpu->nproc];
+
       //write header
       MPI_File_write(f_dat, &n_cell_tot,1, MPI_INT, MPI_STATUS_IGNORE);
-      const size_t grid_header_size = sizeof(int);
+      MPI_File_write(f_dat, &tsim,1, MPI_FLOAT, MPI_STATUS_IGNORE);
+      MPI_File_write(f_dat, ncell, cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+      MPI_File_write(f_dat, bounds, 6*cpu->nproc, MPI_FLOAT, MPI_STATUS_IGNORE);
+
+      const size_t grid_header_size = sizeof(int) +
+                                      sizeof(float) +
+                                      cpu->nproc *sizeof(int) +
+                                      6* cpu->nproc *sizeof(float);
 
       //set view
       MPI_Offset grid_offset = cpu->mpiio_grid_offsets*sizeof(float) + grid_header_size ;
@@ -1466,6 +1504,16 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
 
+      // tsim attribute
+      hsize_t dims = 1;
+      hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);
+      hid_t attribute_id = H5Acreate2 (file, "a", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      float attr_data=(float)tsim;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
+
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1646,6 +1694,16 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
 
+
+      // tsim attribute
+      hsize_t dims = 1;
+      hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);
+      hid_t attribute_id = H5Acreate2 (file, "a", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      float attr_data=(float)tsim;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
       //Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1824,6 +1882,16 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       if (debug>1) printf("closing dataset for field %s \n", param->out_part->field_name[ifield]);
       H5Dclose(dataset);
+
+      // tsim attribute
+      hsize_t dims = 1;
+      hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);
+      hid_t attribute_id = H5Acreate2 (file, "a", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      float attr_data=(float)tsim;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
 
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
