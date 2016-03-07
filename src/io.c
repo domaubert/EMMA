@@ -1396,7 +1396,6 @@ void makeFolders(struct CPUINFO *cpu){
 
 #ifdef HDF5
 #define PHDF5
-
 void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 /**
@@ -1960,9 +1959,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
   const int debug=0;
   MPI_Barrier(cpu->comm);
   double  tstart=MPI_Wtime();
-
-
-
 
   REAL tdump,adump;
   char filename[128];

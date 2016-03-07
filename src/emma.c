@@ -2145,7 +2145,8 @@ int main(int argc, char *argv[])
       tsim+=dt;
     }
 
-//<<<<<<< HEAD
+
+  ndumps-=1;
 	int fdump=FDUMP;
 	if(cpu.nproc>fdump){
 	  // dumping fields only
@@ -2154,22 +2155,6 @@ int main(int argc, char *argv[])
 	    if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
 	    if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
 	    sleep(1);
-/*
-=======
-    // writting the last particle file
-    ndumps-=1;
-    //dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-
-    int fdump=8;
-    if(cpu.nproc>fdump){
-      // dumping fields only
-      int idump;
-      for(idump=0;idump<fdump;idump++){
-	if(cpu.rank==RANK_DISP) printf("Dump batch # %d/%d\n",idump,fdump-1);
-	if(cpu.rank%fdump==idump) dumpIO(tsim,&param,&cpu,firstoct,adt,1);
-	sleep(1);
->>>>>>> develop
-*/
 #ifdef WMPI
 	MPI_Barrier(cpu.comm);
 #endif
