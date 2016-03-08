@@ -2017,7 +2017,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifdef HDF5
   dump_HDF5_part(folder_field,adump,param, cpu);
 #ifdef STARS
-//  if (param->stars->n) dump_HDF5_star(folder_field,adump,param, cpu);
+  if (param->stars->n) dump_HDF5_star(folder_field,adump,param, cpu);
 #endif // STARS
 #else
 #ifndef MPIIO
@@ -2068,7 +2068,7 @@ REAL tt1=MPI_Wtime();
 
 
 #ifdef HDF5
-  //dump_HDF5_grid(folder_field,adump,param, cpu);
+  dump_HDF5_grid(folder_field,adump,param, cpu);
 #else
 #ifdef ALLOCT
 #ifdef MPIIO
