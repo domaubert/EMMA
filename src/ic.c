@@ -81,9 +81,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
 #ifndef EMMAZELDO
-    
+
     printf("ICS: READING DISPLACEMENTS FROM FILE\n");
-    
+
     sprintf(filename,"./level_%03d/ic_poscz",level);
     fpz=fopen(filename,"rb");
     if(fpz == NULL) {
@@ -1482,4 +1482,60 @@ int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct){
   }
   return 0;
 }
-#endif
+#endif // WHYDRO2
+
+#ifdef WHYDRO2
+int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct){
+/**
+  * initialize the grid for star formation test
+  * the grid is fill up with an uniform and unitary medium
+  *
+  * density is set to 1
+  * velocity to 0
+  * pressure to 1e-5
+  *
+  * the central cell is filled with an overdensity where stars can form
+  **/
+
+  param->unit.unit_l=0.125;
+  param->unit.unit_t=1.;
+  //param->unit.unit_v=param->unit.unit_l/param->unit.unit_t;
+  param->unit.unit_v=1.;
+  param->unit.unit_d=1.;
+  param->unit.unit_N=1.;
+  param->unit.unit_mass=1.;
+
+  int level;
+  for(level=param->lcoarse;level<=param->lmax;level++){
+    REAL dxcur=POW(0.5,level);
+    struct OCT *nextoct=firstoct[level-1];
+    if(nextoct==NULL) continue;
+    do{
+      struct OCT * curoct=nextoct;
+      nextoct=curoct->next;
+      int icell;
+      for(icell=0;icell<8;icell++){
+        struct CELL *curcell= &curoct->cell[icell];
+        curcell->field.d=1.0;
+        curcell->field.u=0.0;
+        curcell->field.v=0.0;
+        curcell->field.w=0.0;
+        curcell->field.p=1e-5;
+        curcell->field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
+        getE(&(curcell->field));
+
+
+        REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+        REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
+        REAL zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
+
+
+        REAL r= SQRT((xc-0.5)*(xc-0.5) + (yc-0.5)*(yc-0.5) + (yc-0.5)*(yc-0.5));
+        REAL dx = 1./POW2(param->lcoarse);
+        if (r<dx) curcell->field.d=100;
+      }
+    }while(nextoct!=NULL);
+  }
+  return 0;
+}
+#endif // WHYDRO2
