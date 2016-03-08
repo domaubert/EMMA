@@ -1821,7 +1821,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       //Create a new file collectively
       char file_name[256];
-      sprintf(file_name,"data/%05d/part_%s_%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
+      sprintf(file_name,"data/%05d/star_%s_%05d.h5", *cpu->ndumps, param->out_part->field_name[ifield], *cpu->ndumps);
       hid_t file = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist);
       H5Pclose(plist);
 
