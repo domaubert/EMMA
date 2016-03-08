@@ -1512,7 +1512,7 @@ int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct){
       int icell;
       for(icell=0;icell<8;icell++){
         struct CELL *curcell= &curoct->cell[icell];
-        curcell->field.d=1.0;
+        curcell->field.d=1e-3;
         curcell->field.u=0.0;
         curcell->field.v=0.0;
         curcell->field.w=0.0;

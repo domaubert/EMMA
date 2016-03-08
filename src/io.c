@@ -319,7 +319,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   }
 
   //if (debug) printf("br cpu=%d ncells=%d\n",cpu->rank, ncells);
-  //if (debug) printf("br cpu=%d nparts=%d\n",cpu->rank, nparts);
+  if (debug) printf("br cpu=%d nparts=%d\n",cpu->rank, nparts);
   //if (debug) printf("br cpu=%d nstars=%d\n",cpu->rank, nstars);
 
   // broadcast the result
@@ -334,11 +334,10 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   MPI_Allgather(&nstars,1,MPI_INT, cpu->mpiio_nstars,1,MPI_INT, cpu->comm);
 #endif // STARS
 
-  //MPI_Barrier(cpu->comm);
-
+  MPI_Barrier(cpu->comm);
 
   //if (debug) printf("ar cpu=%d ncells=%d\n",cpu->rank, cpu->mpiio_ncells[cpu->rank]);
-  //if (debug) printf("ar cpu=%d nparts=%d\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
+  if (debug) printf("ar cpu=%d nparts=%d\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
   //if (debug) printf("ar cpu=%d nstars=%d\n",cpu->rank, cpu->mpiio_nstars[cpu->rank]);
 
   // compute the offset
@@ -357,7 +356,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
     cpu->mpiio_part_offsets += cpu->mpiio_nparts[i-1];
 #endif // PIC
 #ifdef STARS
-    cpu->mpiio_part_offsets += cpu->mpiio_nstars[i-1];
+    cpu->mpiio_star_offsets += cpu->mpiio_nstars[i-1];
 #endif // STARS
   }
 
@@ -2018,7 +2017,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifdef HDF5
   dump_HDF5_part(folder_field,adump,param, cpu);
 #ifdef STARS
-  if (param->stars->n) dump_HDF5_star(folder_field,adump,param, cpu);
+//  if (param->stars->n) dump_HDF5_star(folder_field,adump,param, cpu);
 #endif // STARS
 #else
 #ifndef MPIIO
@@ -2069,7 +2068,7 @@ REAL tt1=MPI_Wtime();
 
 
 #ifdef HDF5
-  dump_HDF5_grid(folder_field,adump,param, cpu);
+  //dump_HDF5_grid(folder_field,adump,param, cpu);
 #else
 #ifdef ALLOCT
 #ifdef MPIIO
