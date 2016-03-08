@@ -1753,6 +1753,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       // Close
       H5Pclose(gcpl);
       H5Gclose(group);
+
       H5Pclose(plist);
       H5Fclose(file);
     }

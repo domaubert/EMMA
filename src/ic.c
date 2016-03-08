@@ -1490,11 +1490,7 @@ int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct){
   * initialize the grid for star formation test
   * the grid is fill up with an uniform and unitary medium
   *
-  * density is set to 1
-  * velocity to 0
-  * pressure to 1e-5
-  *
-  * the central cell is filled with an overdensity where stars can form
+  * central cells are filled with an overdensity where stars can form
   **/
 
   param->unit.unit_l=0.125;

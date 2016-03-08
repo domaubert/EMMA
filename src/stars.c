@@ -486,7 +486,6 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
   return 0;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL setmStar(struct RUNPARAMS *param,int level){
@@ -626,6 +625,9 @@ printWtype(&curcell->field);
       mmax = FMAX(curcell->field.d, mmax);
     }
   }
+
+//    printf("Adding %d stars on cpu %d\n",n_part_stars, cpu->rank);
+
 
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&n_unit_stars,1,MPI_INT,MPI_SUM,cpu->comm);
