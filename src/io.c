@@ -1692,7 +1692,6 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
 
-
       // tsim attribute
       hsize_t dims = 1;
       hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);

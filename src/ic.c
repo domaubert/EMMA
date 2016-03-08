@@ -1528,7 +1528,7 @@ int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct){
 
         REAL r= SQRT((xc-0.5)*(xc-0.5) + (yc-0.5)*(yc-0.5) + (yc-0.5)*(yc-0.5));
         REAL dx = 1./POW2(param->lcoarse);
-        if (r<dx) curcell->field.d=100;
+        if (r<10*dx) curcell->field.d=100;
       }
     }while(nextoct!=NULL);
   }
