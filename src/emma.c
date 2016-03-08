@@ -1630,6 +1630,12 @@ int main(int argc, char *argv[])
 #endif // WRAD
 #endif // WRADTEST
 
+
+#ifdef TEST_STAR_FORMATION
+  init_star_test(&param, firstoct);
+  tinit=tsim;
+#endif // TEST_STAR_FORMATION
+
     // saving the absolute initial time
 #ifdef TESTCOSMO
     tinit=ainit;

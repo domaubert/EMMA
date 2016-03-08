@@ -339,7 +339,7 @@ void addStar(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, RE
 
 		REAL dx = POW(2.0,-level);
 
-		initStar(init_field, star, param, level, xc, yc, zc, param->stars->n+nstars, aexp, is, dttilde, dx,mstar);
+		initStar(init_field, star, param, level, xc, yc, zc, -1, aexp, is, dttilde, dx,mstar);
 
 		conserveField(&cell->field   , param, star,  dx, aexp,mstar);
 		conserveField(&cell->fieldnew, param, star,  dx, aexp,mstar);
@@ -486,7 +486,6 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
   return 0;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 REAL setmStar(struct RUNPARAMS *param,int level){
@@ -518,6 +517,92 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 #endif // TESTCOSMO
 // TODO considere ifndef TESTCOSMO
   return mstars_level;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
+/**
+  * Compute the Id of newly formed stars
+  * We need to know the total numbers of new stars for all process
+  */
+
+
+  const int debug=0;
+
+
+  //count old and new stars
+  int locNstarsOld=0;
+  int locNstarsNew=0;
+
+  int iOct;
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=cpu->octList[level-1][iOct];
+
+    int icell;
+    for(icell=0;icell<8;icell++) {
+      struct CELL *curcell = &curoct->cell[icell];
+
+      struct PART * nexp=curoct->cell[icell].phead;
+      if(nexp!=NULL){
+        do{
+          struct PART *curp=nexp;
+          nexp=curp->next;
+          if(curp->isStar){
+             if(curp->idx==-1) locNstarsNew++;
+             else              locNstarsOld++;
+          }
+        }while(nexp!=NULL);
+      }
+    }
+  }
+
+  //reduce
+  int*NstarsOld = (int*)calloc(cpu->nproc,sizeof(int));
+  int*NstarsNew = (int*)calloc(cpu->nproc,sizeof(int));
+
+  MPI_Allgather(&locNstarsNew,1,MPI_INT,NstarsNew ,1,MPI_INT, cpu->comm);
+  MPI_Allgather(&locNstarsOld,1,MPI_INT,NstarsOld ,1,MPI_INT, cpu->comm);
+
+
+  int ntot=0;
+  int i;
+  for (i=0;i<cpu->nproc;i++){
+    ntot += NstarsOld[i];
+  }
+
+  int offset = 0;
+  for (i=0;i<cpu->rank;i++){
+    offset += NstarsNew[i];
+  }
+
+  if (debug) printf("offset %d\n", offset);
+
+
+  // setting ID
+  int curID=0;
+
+  for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
+    struct OCT *curoct=cpu->octList[level-1][iOct];
+
+    int icell;
+    for(icell=0;icell<8;icell++) {
+      struct CELL *curcell = &curoct->cell[icell];
+
+      struct PART * nexp=curoct->cell[icell].phead;
+      if(nexp!=NULL){
+        do{
+          struct PART *curp=nexp;
+          nexp=curp->next;
+          if(curp->isStar && curp->idx==-1 ){
+
+            curp->idx = ntot+ offset + curID++;
+
+          }
+        }while(nexp!=NULL);
+      }
+    }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -627,7 +712,12 @@ printWtype(&curcell->field);
     }
   }
 
+//    printf("Adding %d stars on cpu %d\n",n_part_stars, cpu->rank);
+
+
 #ifdef WMPI
+
+
   MPI_Allreduce(MPI_IN_PLACE,&n_unit_stars,1,MPI_INT,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&n_part_stars,1,MPI_INT,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&mmax,1,MPI_REEL,MPI_MAX,cpu->comm);
@@ -650,6 +740,8 @@ printWtype(&curcell->field);
 #ifdef GSLRAND
   gsl_rng_free (r);
 #endif
+
+  setID(param, cpu,level);
 
 }
 #endif//STARS

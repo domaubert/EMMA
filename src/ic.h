@@ -5,4 +5,5 @@ void read_shocktube(struct CPUINFO *cpu, REAL *ainit, struct RUNPARAMS *param, s
 int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAMS *param);
 int read_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param,int level);
 int init_sedov(struct RUNPARAMS *param, struct OCT **firstoct);
+int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct);
 
