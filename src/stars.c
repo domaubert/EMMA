@@ -121,9 +121,8 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	REAL t_j = dx/cell->field.a;
 
 	B = t_j > t_ff;
-#endif
-#endif
-
+#endif // JEANSCRIT
+#endif // WGRAV
 
 #ifdef WRAD
 #ifdef TEMPCRIT

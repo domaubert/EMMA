@@ -1955,7 +1955,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
 
-
   const int debug=0;
   MPI_Barrier(cpu->comm);
   double  tstart=MPI_Wtime();
@@ -2088,7 +2087,6 @@ REAL tt1=MPI_Wtime();
 #endif // WMPI
 //  printf("Total time for output writing %f \n", tt2-tt1);
 
-
 /// backups for restart
 #ifdef BKP
 	  if(*(cpu->ndumps)%FBKP==0){
@@ -2111,9 +2109,6 @@ REAL tt1=MPI_Wtime();
 
 	  }
 #endif // BKP
-
-
-
 	}
 
   MPI_Barrier(cpu->comm);
