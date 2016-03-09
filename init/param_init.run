@@ -51,6 +51,7 @@ feddback_egy 9.736e11
 feedback_tlife 3e6
 ##==Movie====================
 lmap 9
+mode avg
 xmin 0
 xmax 1
 ymin 0

@@ -604,7 +604,6 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
     }
   }
 
-
   free(NstarsOld);
   free(NstarsNew);
 }
