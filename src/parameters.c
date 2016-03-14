@@ -1103,8 +1103,6 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     char* filename = "data/param.avg.cpu";
 #endif
 
-
-
     char* write_type;
     if (nsteps==0){
       write_type="w";
