@@ -966,12 +966,17 @@ void dumpStepInfoField(struct RUNPARAMS *param, char* field_name, struct FIELD_I
 
 void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
+  const int debug =0;
+
   param->physical_state->sfr=0;
   param->physical_state->Nsn=0;
   param->physical_state->src=0;
 
   double pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
+
+  double pre_mstar_sfr=(cpu->nsteps>0)? param->physical_state->mstar_sfr:0;
+  param->physical_state->mstar_sfr=0;
 
 #ifdef TESTCOSMO
   double prev_t =(cpu->nsteps>0)? param->physical_state->t:0;
@@ -1024,7 +1029,15 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       curp=nexp;
       nexp=curp->next;
       if(curp->isStar){
+
         param->physical_state->mstar += curp->mass;
+
+        if (param->cosmo->tphy - curp->age < param->sn->tlife){
+          param->physical_state->mstar_sfr += curp->mass;
+        }else{
+          param->physical_state->mstar_sfr += curp->mass/(1.-param->sn->ejecta_proportion);
+        }
+
         if(curp->isStar==5||(curp->isStar==7||curp->isStar==8)){
           param->physical_state->Nsn++;
         }
@@ -1039,7 +1052,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }while(nextoct!=NULL);
   }
 
-
 #ifdef WMPI
   for (i=0;i<param->out_grid->n_field_tot; i++){
     if (param->out_grid->field_state_stat[i]){
@@ -1051,10 +1063,12 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->max_level,1,MPI_INT,   MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->Nsn,      1,MPI_INT,   MPI_MAX,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar,    1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+  MPI_Allreduce(MPI_IN_PLACE,&param->physical_state->mstar_sfr,1,MPI_DOUBLE,MPI_SUM,cpu->comm);
+
 #endif
 
 #ifdef TESTCOSMO
-  double dm_M0 = (param->physical_state->mstar - pre_mstar)*param->unit.unit_mass/SOLAR_MASS;
+  double dm_M0 = (param->physical_state->mstar_sfr - pre_mstar_sfr)*param->unit.unit_mass/SOLAR_MASS;
 #endif // TESTCOSMO
 
   for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1063,7 +1077,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
   }
 
-  int debug=0;
   if (debug){
     int i;
     for (i=0;i<param->out_grid->n_field_tot; i++){
@@ -1078,7 +1091,12 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   REAL l= param->unit.unit_l/(1e6*PARSEC);
   REAL V_Mpc = POW(l,3);
 
+  if (debug) printf("dm_M0%lf dt_yr=%lf V_Mpc=%lf\n",dm_M0,dt_yr,V_Mpc);
+
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
+
+  if (debug) printf("param->physical_state->sfr = %lf\n",param->physical_state->sfr);
+  if (debug) abort();
 #endif // TESTCOSMO
 }
 

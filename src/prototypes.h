@@ -262,6 +262,7 @@ struct PHYSICAL_STATE{
 
   double src;
   double mstar;
+  double mstar_sfr;
   double t;
 
   int max_level;
