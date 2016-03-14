@@ -1075,7 +1075,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
 
 #ifdef TESTCOSMO
   REAL h=param->cosmo->H0/100.;
-  REAL l= param->unit.unit_l/(1e6*PARSEC)*h;
+  REAL l= param->unit.unit_l/(1e6*PARSEC);
   REAL V_Mpc = POW(l,3);
 
   param->physical_state->sfr = dm_M0/dt_yr/V_Mpc;
