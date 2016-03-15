@@ -261,14 +261,14 @@ void kineticFeedback(struct RUNPARAMS *param, struct CELL *cell,struct PART *cur
     curcell->field.d += rho_e; //new density
 
     //Energy conservation
-#ifdef DUAL_E
-    struct Utype U; // conservative field structure
-    W2U(&curcell->field, &U); // primitive to conservative
-    U.eint*=1.+rho_e/curcell->field.d; // compute new internal energy
-    U2W(&U, &curcell->field); // back to primitive
-#else
-    curcell->field.p*=1.+rho_e/curcell->field.d; // compute new internal energy
-#endif
+/* #ifdef DUAL_E */
+/*     struct Utype U; // conservative field structure */
+/*     W2U(&curcell->field, &U); // primitive to conservative */
+/*     U.eint*=1.+rho_e/curcell->field.d; // compute new internal energy */
+/*     U2W(&U, &curcell->field); // back to primitive */
+/* #else */
+/*     curcell->field.p*=1.+rho_e/curcell->field.d; // compute new internal energy */
+/* #endif */
 
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
@@ -332,14 +332,15 @@ void kineticFeedback_simple(struct RUNPARAMS *param, struct CELL *cell,struct PA
     curcell->field.w += v_e*dir_z[i]/SQRT(3.);
 
     //Energy conservation
-#ifdef DUAL_E
-    struct Utype U; // conservative field structure
-    W2U(&cell->field, &U); // primitive to conservative
-    U.eint*=1.+d_e/cell->field.d; // compute new internal energy
-    U2W(&U, &cell->field); // back to primitive
-#else
-    cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy
-#endif
+/* #ifdef DUAL_E */
+/*     struct Utype U; // conservative field structure */
+/*     W2U(&cell->field, &U); // primitive to conservative */
+/*     U.eint*=1.+d_e/cell->field.d; // compute new internal energy */
+/*     U2W(&U, &cell->field); // back to primitive */
+/* #else */
+/*     cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy */
+/* #endif */
+
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
@@ -410,14 +411,14 @@ void kineticFeedback_impulsion(struct RUNPARAMS *param, struct CELL *cell,struct
 
 
     //Energy conservation
-#ifdef DUAL_E
-    struct Utype U; // conservative field structure
-    W2U(&curcell->field, &U); // primitive to conservative
-    U.eint*=1.+d_e/curcell->field.d; // compute new internal energy
-    U2W(&U, &curcell->field); // back to primitive
-#else
-    curcell->field.p*=1.+d_e/curcell->field.d; // compute new internal energy
-#endif
+/* #ifdef DUAL_E */
+/*     struct Utype U; // conservative field structure */
+/*     W2U(&curcell->field, &U); // primitive to conservative */
+/*     U.eint*=1.+d_e/curcell->field.d; // compute new internal energy */
+/*     U2W(&U, &curcell->field); // back to primitive */
+/* #else */
+/*     curcell->field.p*=1.+d_e/curcell->field.d; // compute new internal energy */
+/* #endif */
 
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);
@@ -519,14 +520,14 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
     curcell->field.d += d_e; //new density
 
     //Energy conservation
-#ifdef DUAL_E
-    struct Utype U; // conservative field structure
-    W2U(&curcell->field, &U); // primitive to conservative
-    U.eint*=1.+d_e/curcell->field.d; // compute new internal energy
-    U2W(&U, &curcell->field); // back to primitive
-#else
-    curcell->field.p*=1.+d_e/curcell->field.d; // compute new internal energy
-#endif
+/* #ifdef DUAL_E */
+/*     struct Utype U; // conservative field structure */
+/*     W2U(&curcell->field, &U); // primitive to conservative */
+/*     U.eint*=1.+d_e/curcell->field.d; // compute new internal energy */
+/*     U2W(&U, &curcell->field); // back to primitive */
+/* #else */
+/*     curcell->field.p*=1.+d_e/curcell->field.d; // compute new internal energy */
+/* #endif */
 
     getE(&curcell->field); //compute new total energy
     curcell->field.p=FMAX(curcell->field.p,PMIN);

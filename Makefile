@@ -1,8 +1,8 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -O2 -Wimplicit  -g -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
-HDF5_LIBS = -I /usr/local/hdf5/include/ -L /usr/local/hdf5/lib/
+C_LIBS = -O2 -Wimplicit -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+HDF5_LIBS = -L/usr/lib/x86_64-linux-gnu/ -I/usr/include/x86_64-linux-gnu/
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
