@@ -1070,10 +1070,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //===================================creating new stars=================================// */
 
 
-
+double tst[10];
 #ifdef STARS
 #ifdef WMPI
-    double tst[10];
   MPI_Barrier(cpu->comm);
   tst[0]=MPI_Wtime();
 #endif // WMPI
@@ -1104,9 +1103,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     /* //===================================Supernovae=========================================// */
 
+double tsn[10];
 #ifdef SUPERNOVAE
 #ifdef WMPI
-    double tsn[10];
     MPI_Barrier(cpu->comm);
     tsn[0]=MPI_Wtime();
 #endif // WMPI
@@ -1141,7 +1140,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     tmk[0]=MPI_Wtime();
 #endif
     REAL dxnext=POW(0.5,level+1)*aexp;
-    REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
+    //REAL dxkpc=param->dx_res*PARSEC/param->cosmo->unit_l;
+    REAL dxkpc=param->dx_res*PARSEC/param->unit.unit_l;
 
 #ifdef TUBE
     dxkpc=0.;
