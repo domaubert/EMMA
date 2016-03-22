@@ -1394,7 +1394,11 @@ void makeFolders(struct CPUINFO *cpu){
 }
 
 #ifdef HDF5
+
 #define PHDF5
+#define HDF5_METHOD H5FD_MPIO_COLLECTIVE
+//#define HDF5_METHOD H5FD_MPIO_INDEPENDENT
+
 void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 /**
@@ -1471,8 +1475,8 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
 
-#ifdef PHDF5
-      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
@@ -1510,7 +1514,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
-
 
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
@@ -1564,11 +1567,9 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Gclose(group);
       H5Pclose(plist);
       H5Fclose(file);
-
     }
   }
   free(tmp);
-
 }
 
 #ifdef PIC
@@ -1655,8 +1656,9 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
-#ifdef PHDF5
-      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
@@ -1841,7 +1843,10 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
-//      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
+#endif // PHDF5
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
