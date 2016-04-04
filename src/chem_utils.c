@@ -14,7 +14,7 @@
 #include "oct.h"
 
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
-#define FSCHAYE 2.5
+#define FSCHAYE 1.0
 //================================================================================
 void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 

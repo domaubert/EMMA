@@ -27,7 +27,7 @@ func read_grafic(filename,&L,&h,nslice=,bigendian=,decendian=)
   dummy=array(float);_read,ff,adress,h0;adress+=sizeof(dummy);
   dummy=array(int);_read,ff,adress,dummy;adress+=sizeof(dummy);
 
-  if(dummy!=expsize) error,"I/O header error";
+  //if(dummy!=expsize) error,"I/O header error";
   if(!is_void(nslice)) np3=nslice;
   
   write,"*********";
@@ -39,6 +39,7 @@ func read_grafic(filename,&L,&h,nslice=,bigendian=,decendian=)
   write,"astart=",astart;
   write,"zstart=",1./astart-1.;
   write,"dx=",dx;
+  write,"x1o",x1o,"x2o",x2o,"x3o",x3o;
   field=array(float,np1,np2,np3);
   
   for(i=1;i<=np3;i++)

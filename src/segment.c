@@ -19,7 +19,7 @@
 
 int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelcoarse)
 {
-
+  
   int res=-1;
   REAL xc,yc,zc;
   REAL xc0,yc0,zc0;
@@ -248,13 +248,6 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 #endif
     cpuloc=keyloc/cpu->nkeys;
     curoct->cpu=(cpuloc>(cpu->nproc-1)?cpu->nproc-1:cpuloc);
-
-    /* if(xc==0.53125) */
-    /* if(yc==0.53125) */
-    /*   if(zc==0.53125){ */
-    /* 	printf("TESTO rank=%d\n",curoct->cpu); */
-    /* 	abort(); */
-    /*   } */
   }
 }
 
@@ -262,7 +255,7 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 
 int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
 {
-
+  
   int ix,iy,iz;
   REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
@@ -294,7 +287,7 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
   else{
     return 0;
   }
-
+  
 }
 
  //------------------------------------------------------------------------
@@ -309,7 +302,7 @@ unsigned long long hfun(unsigned long long key, unsigned long long maxval){
   return key&(maxval-1);
 }
 
- //------------------------------------------------------------------------
+//------------------------------------------------------------------------
 
 #ifdef PIC
 void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
@@ -319,11 +312,13 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
   struct OCT *curoct;
   struct PART *curp;
 
+  int miss=0;
   for(i=0;i<npart;i++){
     unsigned long long key;
     unsigned long long hidx;
     
     int found=0;
+
     key=pos2key(part[i].x,part[i].y,part[i].z,part[i].level);
     hidx=hfun(key,cpu->maxhash);
     nextoct=cpu->htable[hidx];
@@ -358,11 +353,6 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
 	// new cell coordinates
 	xp=(int)(DFACT*(part[i].x-newoct->x)/dxcur2);
 
-	/* if(xp>1){ */
-	/*   printf("WEIRDA !!\n"); */
-	/*   printf("px=%e ox=%e dxcur2=%e xp=%d\n",part[i].x,newoct->x,dxcur2,xp); */
-	/*   abort(); */
-	/* } */
 	xp=(xp>1?1:xp);
 	xp=(xp<0?0:xp);
 	yp=(int)(DFACT*(part[i].y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
@@ -386,8 +376,117 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
 	part[i].prev=NULL;
       }
     }
+    else{
+      miss++;
+    }
   }
+
+  printf("proc %d part=%d miss=%d\n",cpu->rank,npart,miss);
+
 }
+
+//============================================================
+//============================================================
+
+void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
+
+  int i;
+  struct OCT *nextoct;
+  struct OCT *curoct;
+  struct PART *curp;
+
+  int miss=0;
+  int local=0;
+  for(i=0;i<npart;i++){
+    unsigned long long key;
+    unsigned long long hidx;
+    
+    int found=0;
+
+    REAL xs,ys,zs;
+
+    xs=part[i].x;
+    ys=part[i].y;
+    zs=part[i].z;
+
+    if(xs<0) xs+=(REAL)1.;
+    if(ys<0) ys+=(REAL)1.;
+    if(zs<0) zs+=(REAL)1.;
+
+
+    if(xs>1.) xs-=(REAL)1.;
+    if(ys>1.) ys-=(REAL)1.;
+    if(zs>1.) zs-=(REAL)1.;
+
+
+    key=pos2key(xs,ys,zs,part[i].level);
+    hidx=hfun(key,cpu->maxhash);
+    nextoct=cpu->htable[hidx];
+    if(nextoct!=NULL){
+      do{ // resolving collisions
+	curoct=nextoct;
+	nextoct=curoct->nexthash;
+	found=((oct2key(curoct,curoct->level)==key)&&(part[i].level==curoct->level));
+      }while((nextoct!=NULL)&&(!found));
+    }
+    
+    if(found){ // the reception oct has been found
+
+      local++;
+      REAL dxcur=POW(0.5,part[i].level);
+      
+      int xp=(int)((xs-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
+      int yp=(int)((ys-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+      int zp=(int)((zs-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+      int ip=xp+yp*2+zp*4;
+      
+      
+      // the reception cell 
+      struct CELL *newcell=&(curoct->cell[ip]);
+      struct OCT *newoct;
+      REAL dxcur2;
+
+      // if refined we assign the particle to a refined cell
+      if(newcell->child!=NULL){
+	newoct=newcell->child;
+	dxcur2=1./POW(2.,newoct->level);
+
+	// new cell coordinates
+	xp=(int)(DFACT*(part[i].x-newoct->x)/dxcur2);
+
+	xp=(xp>1?1:xp);
+	xp=(xp<0?0:xp);
+	yp=(int)(DFACT*(part[i].y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
+	zp=(int)(DFACT*(part[i].z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
+	ip=xp+yp*2+zp*4;
+	
+	newcell=&(newoct->cell[ip]);
+
+      }
+      // ready to assign part to cell
+
+      curp=findlastpart(newcell->phead);
+      if(curp!=NULL){
+	curp->next=part+i;
+	part[i].next=NULL;
+	part[i].prev=curp;
+      }
+      else{
+	newcell->phead=part+i;
+	part[i].next=NULL;
+	part[i].prev=NULL;
+      }
+    }
+    else{
+      miss++;
+    }
+  }
+
+  printf("proc %d part=%d miss=%d\n",cpu->rank,local,miss);
+
+}
+
+
 #endif
 
  //------------------------------------------------------------------------
@@ -405,5 +504,5 @@ void load_balance(int levelcoarse,struct CPUINFO *cpu){
     cpu->kmax=keymax; // the last proc should go until the end of the chain
   }
     
-  //printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
+  printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
 }

@@ -262,6 +262,7 @@ struct PHYSICAL_STATE{
 
   double src;
   double mstar;
+  double mstar_sfr;
   double t;
 
   int max_level;
@@ -525,6 +526,13 @@ struct CPUINFO{
   REAL * gresB;
   unsigned long cuparam;
 #endif
+
+#ifdef SPLIT
+  REAL boxx[2];
+  REAL boxy[2];
+  REAL boxz[2];
+#endif
+
 };
 
 

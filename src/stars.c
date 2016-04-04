@@ -194,7 +194,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 #ifdef SCHAYE
 	/* REAL A=1.515e-4; // Ms/yr/kpc2 */
 	/* A=A*(2e30)/(3600.*24.*365)/POW(1e3*PARSEC,2.); // kg/sec/m2 */
-	REAL A=1.0028e-20; // Kag/sec/m2
+	REAL A=1.0028e-20; // Kg/sec/m2
 	REAL E=1.; // Ms/pc2
 	E=E*SOLAR_MASS/POW(PARSEC,2.);
 
@@ -207,10 +207,8 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t; //tstars in code unit
 
-	REAL dv=pow(0.5,3*level);
-	REAL M_in_cell 	= ; // mass of the curent cell in code unit
 
-  REAL SFR=param->stars->efficiency * cell->field.d / tstartilde;
+	REAL SFR=cell->field.d / tstartilde; // NOTE the efficiency is neutralized
 
 #else
 #ifndef SIMPLESTAR
@@ -603,6 +601,9 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
       }
     }
   }
+
+  free(NstarsOld);
+  free(NstarsNew);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
