@@ -1395,6 +1395,7 @@ int main(int argc, char *argv[])
 
 #ifdef SPLIT
     part2gridsplit(part,&cpu,npart);
+    // part2grid(part,&cpu,npart);
 #else
     part2grid(part,&cpu,npart);
 #endif
@@ -1967,7 +1968,7 @@ int main(int argc, char *argv[])
   //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank); 
   
 
-  //L_partcellreorg(param.lcoarse,firstoct); // reorganizing the particles of the level throughout the mesh 
+  L_partcellreorg(param.lcoarse,firstoct); // reorganizing the particles of the level throughout the mesh 
 
    /* ptot[0]=0; */
    /* ptot[1]=0; */
@@ -1979,6 +1980,8 @@ int main(int argc, char *argv[])
       
    /* printf("BEFORE proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,ntotsplit); */
   
+  mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,10); 
+
    setup_mpi(&cpu,firstoct,param.lmax,param.lcoarse,param.ngridmax,1); // out of WMPI to compute the hash table 
    MPI_Barrier(cpu.comm); 
    
@@ -1995,7 +1998,7 @@ int main(int argc, char *argv[])
    /* MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm); */
   
     
-   /* printf("proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,ntotsplit); */
+    printf("proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,262144+deltan[0]);
 
    ptot[0]=0; 
    ptot[1]=0; 

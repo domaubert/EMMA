@@ -409,16 +409,16 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
     ys=part[i].y;
     zs=part[i].z;
 
-    if(xs<0) xs+=(REAL)1.;
-    if(ys<0) ys+=(REAL)1.;
-    if(zs<0) zs+=(REAL)1.;
-
-
-    if(xs>1.) xs-=(REAL)1.;
-    if(ys>1.) ys-=(REAL)1.;
-    if(zs>1.) zs-=(REAL)1.;
-
-
+    if(xs<0) xs+=(REAL)1.;  
+    if(ys<0) ys+=(REAL)1.;  
+    if(zs<0) zs+=(REAL)1.;  
+    
+    
+    if(xs>1.) xs=xs-(REAL)1.;
+    if(ys>1.) ys=ys-(REAL)1.;
+    if(zs>1.) zs=zs-(REAL)1.;
+    
+     
     key=pos2key(xs,ys,zs,part[i].level);
     hidx=hfun(key,cpu->maxhash);
     nextoct=cpu->htable[hidx];
@@ -504,5 +504,5 @@ void load_balance(int levelcoarse,struct CPUINFO *cpu){
     cpu->kmax=keymax; // the last proc should go until the end of the chain
   }
     
-  printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
+  //printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
 }

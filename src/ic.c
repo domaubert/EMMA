@@ -423,9 +423,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 	// ugly fix for huge config in SINGLE FLOAT precision
 	// generally affects a tiny fraction of particle (like 1 over 1e7)
- 	if(x>0.99999) x=0.;
-	if(y>0.99999) y=0.;
-	if(z>0.99999) z=0.;
+ 	/* if(x>0.99999) x=0.; */
+	/* if(y>0.99999) y=0.; */
+	/* if(z>0.99999) z=0.; */
 
 	// computing the velocities
 	vx=(velx[(i1-1)+(i2-1)*np1]+veloff/astart*1e-3)*astart/(np1*dx*h0)/(sqrt(om)*0.5);
@@ -519,7 +519,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   param->cosmo->unit_l=rstar;
   *npart=ip;
 
-  printf("READ DONE ON %d with npart=%d xmin=%f xmax=%f ymin=%f ymax=%f zmin=%f zmax=%f\n",cpu->rank,ip,xmin,xmax,ymin,ymax,zmin,zmax);
+  printf("READ DONE ON %d with npart=%d xmin=%f xmax=%f ymin=%f ymax=%f zmin=%f zmax=%f rstar=%e mass=%e\n",cpu->rank,ip,xmin,xmax,ymin,ymax,zmin,zmax,rstar,mass);
 
 
 #ifdef WMPI
@@ -537,6 +537,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 // ======================================================================================================================
 
 
+#ifdef SPLIT
 struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
   FILE *fx = NULL;
@@ -680,7 +681,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   boxz[1]=(x3o+np3*dx)/boxlen;
 
 
-  //  if(cpu->rank==0){
+    if(cpu->rank==0){
     printf("============================================\n");
     printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
     printf("om=%f ov=%f h0=%f\n",om,ov,h0);
@@ -689,7 +690,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
     printf("%f %f %f\n",x1o,x2o,x3o);
     printf("[%f,%f] [%f,%f] [%f,%f]\n",boxx[0],boxx[1],boxy[0],boxy[1],boxz[0],boxz[1]);
     printf("============================================\n");
-    //}
+   }
 
   if(level==param->lcoarse){
     if((nptot)/(cpu->nproc)*1.>param->npartmax){
@@ -746,6 +747,8 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   if(level>param->lcoarse){
     offidx=POW(2,3*(level-param->lcoarse)); // for ids of particles
   }
+#else
+  offidx=cpu->rank*(nptot)/cpu->nproc; // NOTE WE ASSUME AN EVENLY SPLITTED DISTRIBUTION
 #endif
 
   velx=(float*)malloc(sizeof(float)*np1*np2);
@@ -806,9 +809,9 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 
 	/* /\* // periodic boundary conditions *\/ */
 
-	/* x+=((x<0.)-(x>1.))*1.;  */
-	/* y+=((y<0.)-(y>1.))*1.;  */
-	/* z+=((z<0.)-(z>1.))*1.;  */
+	x+=((x<0.)-(x>1.))*1.;
+	y+=((y<0.)-(y>1.))*1.;
+	z+=((z<0.)-(z>1.))*1.;
 
 	/* // ugly fix for huge config in SINGLE FLOAT precision */
 	/* // generally affects a tiny fraction of particle (like 1 over 1e7) */
@@ -850,7 +853,8 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 	cpu->boxz[1]=boxz[1];
 
 
-	if(segment_part(xs,ys,zs,cpu,cpu->levelcoarse)){
+	//if(segment_part(xs,ys,zs,cpu,cpu->levelcoarse)){
+	if(1){
 
 	  keep=1;
 #ifdef ZOOM
@@ -895,7 +899,6 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   }
 
 
-  printf("READ DONE ON %d with npart=%d xmin=%f xmax=%f ymin=%f ymax=%f zmin=%f zmax=%f\n",cpu->rank,ip,xmin,xmax,ymin,ymax,zmin,zmax);
 
   free(velx); 
   free(vely); 
@@ -929,6 +932,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   param->cosmo->unit_l=rstar;
   *npart=ip;
 
+  printf("READ DONE ON %d with npart=%d xmin=%f xmax=%f ymin=%f ymax=%f zmin=%f zmax=%f rstar=%e mass=%e\n",cpu->rank,ip,xmin,xmax,ymin,ymax,zmin,zmax,rstar,mass);
 
 
 #ifdef WMPI
@@ -941,6 +945,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
     }
   return lastpart;
 }
+#endif
 
 #endif // GRAFIC
 
@@ -1873,7 +1878,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 // ==================================================================================================
 // ==================================================================================================
 
-
+#ifdef SPLIT
  int read_split_grafic_hydro(struct CPUINFO *cpu,  REAL *ainit, struct RUNPARAMS *param, int level){
 
   FILE *fx = NULL;
@@ -1887,6 +1892,9 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   struct Wtype W;
   size_t outf;
   char filename[256];
+
+  sprintf(filename,"./level_%03d/ic_deltab.p%05d",level,cpu->rank);
+  fdx=fopen(filename,"rb");		if(fdx == NULL) {printf("Cannot open %s\n", filename); abort();}
 
 
   sprintf(filename,"./level_%03d/ic_velbx.p%05d",level,cpu->rank);
@@ -1997,29 +2005,38 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   outf=fread(&h0,1,4,fz);
   outf=fread(&dummy,1,sizeof(dummy),fz);
 
-
-#ifdef WMPI
-  MPI_Allreduce(MPI_IN_PLACE,&np1,1,MPI_INT,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&np2,1,MPI_INT,MPI_SUM,cpu->comm);
-  MPI_Allreduce(MPI_IN_PLACE,&np3,1,MPI_INT,MPI_SUM,cpu->comm);
-#endif
-
   // setting baryon density parameter
   ob=OMEGAB;
+
+  int nptot=np1*np2*np3;
+  
+#ifdef WMPI
+  MPI_Allreduce(MPI_IN_PLACE,&nptot,1,MPI_INT,MPI_SUM,cpu->comm);
+#endif
+  
+  // NOTE WE ASSUME CUBICAL VOLUME
+  
+  int n1d=(int)(pow(nptot,1./3.))+1; // number of cells along 1 direction
+  
+  if(n1d*n1d*n1d!=nptot){
+    printf("cubic root error n1d=%d\n",n1d);
+    abort();
+  }
+
   
   if(cpu->rank==0){
     printf("============================================\n");
-    printf("nx=%d ny=%d nz=%d\n",np1,np2,np3);
+    printf("nx=%d ny=%d nz=%d\n",n1d,n1d,n1d);
     printf("om=%f ov=%f ob=%f h0=%f\n",om,ov,ob,h0);
-    printf("dx=%f np1*dx=%f\n",dx,np1*dx);
+    printf("dx=%f np1*dx=%f\n",dx,n1d*dx);
     printf("astart=%f zstart=%f\n",astart,1./astart-1.);
     printf("============================================\n");
   }
 
 
 
-  if(np1!=(int)POW(2,level)){
-    printf("ERROR !ABORT! Grafic hydro  file not compliant with parameter file : ngrafic=%d nquartz=%d\n",np1,(int)POW(2,level));
+  if(n1d!=(int)POW(2,level)){
+    printf("ERROR !ABORT! Grafic hydro  file not compliant with parameter file : ngrafic=%d nquartz=%d\n",n1d,(int)POW(2,level));
     abort();
   }
 
@@ -2087,7 +2104,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   veloff=VBC; // relative motion in km/s at z=999
 #endif
 
-  rstar= np1*dx*mpc; // box size in m
+  rstar= n1d*dx*mpc; // box size in m
   rhostar=rhoc*om;
   tstar=2./H0/sqrt(om); // sec
   tstar2=2./h0/sqrt(om); // Mpc sec / km
@@ -2119,11 +2136,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     outf=fread(&dummy,1,sizeof(dummy),fz);
 
 
-    z0=(i3*1.0)/(np3);
+    z0=(i3*1.0)/(n1d)+x3o/(n1d*dx);
     for(i2=0;i2<np2;i2++){
-      y0=(i2*1.0)/(np2);
+      y0=(i2*1.0)/(n1d)+x2o/(n1d*dx);
       for(i1=0;i1<np1;i1++){
-	x0=(i1*1.0)/(np1);
+	x0=(i1*1.0)/(n1d)+x1o/(n1d*dx);
 
 	key=pos2key(x0,y0,z0,level);
 
@@ -2237,10 +2254,13 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif
-  if(cpu->rank==RANK_DISP) printf("Grafic hydro read ok\n");
+  if(cpu->rank==RANK_DISP) printf("Grafic hydro read ok with ifound=%d on proc %d\n",ifound,cpu->rank);
+
+  
   return ifound;
  }
 
+#endif
 
 #endif // GRAFIC
 #endif // TESTCOSMO

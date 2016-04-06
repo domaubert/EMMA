@@ -1676,7 +1676,9 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
               do{
                 struct PART *curp=nexp;
                 nexp=curp->next;
+#ifdef STARS
                 if(!(curp->isStar))
+#endif
                   tmp[i_tmp++] = (float)assign_part_field(ifield,curp);
               }while(nexp!=NULL);
             }
