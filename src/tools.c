@@ -376,7 +376,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 REAL rdm(double a, double b){
 /// return a random number between a and b
-	return 	(REAL)((rand()/(double)RAND_MAX ) * (b-a) + a);
+	return  (REAL)((double)rand()/RAND_MAX * (b-a) + a) ;
 }
 
 unsigned int gpoiss(REAL lambda){
