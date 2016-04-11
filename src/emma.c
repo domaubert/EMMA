@@ -1358,8 +1358,22 @@ int main(int argc, char *argv[])
     REAL lbox;
 
 #ifdef GRAFIC // ==================== read grafic file
-    lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
-    //printf("cpu %d\tread part =%d diff p=%ld\n",cpu.rank,npart,lastpart-part+1);
+#ifdef SPLIT
+      lastpart=read_split_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
+
+#ifdef WMPI
+      long ntotsplit=npart;
+      MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm);
+
+      if(cpu.rank==RANK_DISP) printf("found %ld particles among the split ICs files\n",ntotsplit);
+      
+#endif
+#else
+      lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
+#endif
+
+
+
 #endif
 
 #ifdef ZELDOVICH // ==================== read ZELDOVICH file
@@ -1379,7 +1393,13 @@ int main(int argc, char *argv[])
     /// assigning PARTICLES TO COARSE GRID
     if(cpu.rank==RANK_DISP) printf("start populating coarse grid with particles\n");
 
+#ifdef SPLIT
+    part2gridsplit(part,&cpu,npart);
+    // part2grid(part,&cpu,npart);
+#else
     part2grid(part,&cpu,npart);
+#endif
+    
 
   // ========================  computing the memory location of the first freepart and linking the free parts
 
@@ -1391,6 +1411,7 @@ int main(int argc, char *argv[])
       curp->next=NULL;
       if(curp!=(part+npartmax-1)) curp->next=curp+1;
     }
+
 
 #endif
 
@@ -1410,9 +1431,16 @@ int main(int argc, char *argv[])
 
 #ifdef GRAFIC
     int ncellhydro;
+#ifdef SPLIT
+    ncellhydro=read_split_grafic_hydro(&cpu,&ainit, &param,param.lcoarse);
+#else
     ncellhydro=read_grafic_hydro(&cpu,&ainit, &param,param.lcoarse);
+#endif
 
     if(cpu.rank==RANK_DISP) printf("%d hydro cell found in grafic file with aexp=%e\n",ncellhydro,ainit);
+
+
+
 #else
 
 #ifdef EVRARD
@@ -1873,10 +1901,19 @@ int main(int argc, char *argv[])
 #ifdef GRAFIC
       lastpart=read_grafic_part(lpartloc, &cpu, &munit, &ainit, &npz, &param,izoom);
 #endif // GRAFIC
-      printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
+      //printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
+
+      
+      // ASSIGNING PARTICLES TO THE GRID
+
 
       part2grid(lpartloc,&cpu,npz);
       mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
+
+
+
+
+
       // ========================  computing the memory location of the first freepart and linking the free parts
 
       freepart=lastpart+1; // at this stage the memory is perfectly aligned
@@ -1920,6 +1957,57 @@ int main(int argc, char *argv[])
       supernovae(&param,&cpu, 0, 0, levelcoarse, 0);
   }
 #endif // SNTEST
+
+
+  // ===== SOME BOOKEEPING FOR SPLIT INITIAL CONDITIONS
+#ifdef SPLIT
+ #ifdef WMPI 
+  int deltan[2];
+  int ntotsplit;
+  //reset the setup in case of refinement 
+  //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank); 
+  
+
+  L_partcellreorg(param.lcoarse,firstoct); // reorganizing the particles of the level throughout the mesh 
+
+   /* ptot[0]=0; */
+   /* ptot[1]=0; */
+
+   /* for(ip=1;ip<=param.lmax;ip++) ptot[0]+=cpu.npart[ip-1]; // total of local particles *\/ */
+   
+   /* ntotsplit=ptot[0]; */
+   /* MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm); */
+      
+   /* printf("BEFORE proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,ntotsplit); */
+  
+  mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,10); 
+
+   setup_mpi(&cpu,firstoct,param.lmax,param.lcoarse,param.ngridmax,1); // out of WMPI to compute the hash table 
+   MPI_Barrier(cpu.comm); 
+   
+   cpu.firstoct = firstoct;
+   mpi_exchange_part(&cpu, cpu.psendbuffer, cpu.precvbuffer,deltan,level);
+   
+   
+   /* ptot[0]=0; */
+   /* ptot[1]=0; */
+
+   /* ptot[0]=deltan[0]; for(ip=1;ip<=param.lmax;ip++) ptot[0]+=cpu.npart[ip-1]; // total of local particles  */
+   
+   /* ntotsplit=ptot[0]; */
+   /* MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm); */
+  
+    
+    printf("proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,262144+deltan[0]);
+
+   ptot[0]=0; 
+   ptot[1]=0; 
+   mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0); 
+ #endif 
+#endif
+
+  // ===== ED BOOKEEPING FOR SPLIT INITIAL CONDITIONS
+
 
 #ifndef JUSTIC
 

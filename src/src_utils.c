@@ -220,8 +220,9 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
   struct PART *nexp=cell->phead;
   if(nexp==NULL) return 0;
   int nss=0;
+
   do{
-   	struct PART *curp=nexp;
+    struct PART *curp=nexp;
     nexp=curp->next;
 
     if ((curp->isStar>=6)){
@@ -301,6 +302,8 @@ REAL age =  param->cosmo->tphy - curp->age;
     }
 
   }while(nexp!=NULL);
+
+  
 
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];

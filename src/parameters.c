@@ -745,7 +745,7 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
         /* REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS; */
 
 	double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res));
-	REAL mass_res_star =(REAL)( mstars_level * munpercell /SOLAR_MASS);
+	REAL mass_res_star =(REAL)( mstars_level * munpercell/SOLAR_MASS);
 
 
         fprintf(fp, real_format,"mass_res_star",mass_res_star);
@@ -975,6 +975,23 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
   param->physical_state->Nsn=0;
   param->physical_state->src=0;
 
+
+#ifdef STARS
+  double mass_star;
+
+  if(param->stars->mass_res>100){
+    mass_star=param->stars->mass_res;
+  }
+  else if(param->stars->mass_res>=0){
+    double munpercell=param->cosmo->om*(3.*pow(param->cosmo->H0*1e3/PARSEC/1e6,2)/(8.*M_PI*NEWTON_G))*pow(param->unit.unit_l/pow(2.0,param->lcoarse),3);
+    double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res));
+    mass_star =(REAL)( mstars_level * munpercell /SOLAR_MASS);
+  }
+  else{
+    mass_star=1.;
+  }
+#endif
+
   double pre_mstar=(cpu->nsteps>0)? param->physical_state->mstar:0;
   param->physical_state->mstar=0;
 
@@ -1024,6 +1041,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     }
 #endif // WRAD
 
+
 #ifdef STARS
     struct PART *curp;
     struct PART *nexp=curcell->phead;
@@ -1032,7 +1050,6 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       curp=nexp;
       nexp=curp->next;
       if(curp->isStar){
-
         param->physical_state->mstar += curp->mass;
 
         if (param->cosmo->tphy - curp->age < param->sn->tlife){

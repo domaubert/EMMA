@@ -915,7 +915,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     ptot[1]=deltan[1]; for(ip=1;ip<=param->lmax;ip++) ptot[1]+=cpu->nstar[ip-1]; // total of local stars
 #endif
 
-
     mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,3);
 #endif // WMPI
 
@@ -1088,6 +1087,7 @@ double tst[10];
 
 
 
+#ifdef STARS
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tst[2]=MPI_Wtime();
@@ -1099,7 +1099,7 @@ double tst[10];
 #endif // GPUAXL
     }
 #endif
-
+#endif
 
     /* //===================================Supernovae=========================================// */
 
@@ -1120,6 +1120,7 @@ double tsn[10];
 
 
 
+#ifdef SUPERNOVAE
 #ifdef WMPI
     MPI_Barrier(cpu->comm);
     tsn[2]=MPI_Wtime();
@@ -1131,6 +1132,7 @@ double tsn[10];
 #endif // GPUAXL
     }
 #endif
+#endif // SUPERNOVAE
 
 
     // ================= V Computing the new refinement map
