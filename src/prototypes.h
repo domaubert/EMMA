@@ -69,7 +69,7 @@ typedef double REAL;
 #define NFLUX (6*NVAR)
 
 
-#define NGRP_SPACE (1)
+#define NGRP_SPACE (3)
 #define NGRP_TIME (1)
 #define NGRP (NGRP_SPACE * NGRP_TIME)
 #define NVAR_R (5)
@@ -212,6 +212,14 @@ struct ATOMIC{
   REAL *alphae;
   REAL *alphai;
   REAL *factgrp;
+
+#ifdef HESIMPLE
+  REAL *alphaeHE;
+  REAL *alphaiHE;
+  REAL *alphaeHE2;
+  REAL *alphaiHE2;
+#endif
+
 };
 
 struct SPECTRUM{

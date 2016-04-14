@@ -706,6 +706,7 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 	/* curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX/(PROTON_MASS*MOLECULAR_MU)*param->unit.unit_d; */
 	curoct->cell[icell].rfield.nhplus=curoct->cell[icell].field.dX; // [unit_N] note d in unit_d and nh in unit_N are identical
 	curoct->cell[icell].rfieldnew.nhplus=curoct->cell[icell].rfield.nhplus; // [unit_N] note d in unit_d and nh in unit_N are identical
+
 #ifdef HELIUM
 	curoct->cell[icell].rfield.nheplus=curoct->cell[icell].field.dXHE/MHE_OVER_MH; // [unit_N] note d in unit_d and nh in unit_N are identical
 	curoct->cell[icell].rfieldnew.nheplus=curoct->cell[icell].rfield.nheplus; // [unit_N] note d in unit_d and nh in unit_N are identical
@@ -766,12 +767,11 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 #ifndef TESTCLUMP
 	  for(igrp=0;igrp<NGRP;igrp++){
 	    //REAL factgrp[NGRP];
-      //memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
+	    //memcpy(&factgrp,&param->atomic.factgrp,NGRP*sizeof(REAL));
 	    curoct->cell[icell].rfield.e[igrp]=0.+EMIN;//*factgrp[igrp];
 	    curoct->cell[icell].rfield.fx[igrp]=0.;
 	    curoct->cell[icell].rfield.fy[igrp]=0.;
 	    curoct->cell[icell].rfield.fz[igrp]=0.;
-
 	    curoct->cell[icell].rfieldnew.e[igrp] =curoct->cell[icell].rfield.e[igrp];
 	    curoct->cell[icell].rfieldnew.fx[igrp]=curoct->cell[icell].rfield.fx[igrp];
 	    curoct->cell[icell].rfieldnew.fy[igrp]=curoct->cell[icell].rfield.fy[igrp];

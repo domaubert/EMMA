@@ -474,7 +474,12 @@ void readAtomic(struct RUNPARAMS *param){
   param->atomic.alphae= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.alphai= (REAL*)calloc(param->atomic.n,sizeof(REAL));
   param->atomic.factgrp= (REAL*)calloc(param->atomic.n,sizeof(REAL));
-
+#ifdef HESIMPLE
+  param->atomic.alphaeHE= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphaiHE= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphaeHE2= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+  param->atomic.alphaiHE2= (REAL*)calloc(param->atomic.n,sizeof(REAL));
+#endif
   //skip header
   int i;
   for(i=0;i<4;i++)  rstat=fscanf(buf,"%s",stream);
@@ -485,8 +490,18 @@ void readAtomic(struct RUNPARAMS *param){
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.hnu[i]=dummy*ELECTRONVOLT;
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphae[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphai[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+#ifdef HESIMPLE
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaeHE[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaiHE[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaeHE2[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaiHE2[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+#endif
     rstat=fscanf(buf,"%lf",&dummy);param->atomic.factgrp[i]=dummy;
     if(debug) printf("%e %e %e %e \n", param->atomic.hnu[i], param->atomic.alphae[i], param->atomic.alphai[i], param->atomic.factgrp[i]);
+#ifdef HESIMPLE
+    if(debug) printf("%e %e \n",param->atomic.alphaeHE[i], param->atomic.alphaiHE[i]);
+#endif
+    
   }
   fclose(buf);
   if(debug) abort();

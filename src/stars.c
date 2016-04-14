@@ -44,7 +44,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->rhocell = field->d;
 
   // set star position to cell center
-  star->x = xc + dx/2;
+	star->x = xc + dx/2;
 	star->y = yc + dx/2;
 	star->z = zc + dx/2;
 
@@ -56,9 +56,9 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 #define RDM_STARS
 #ifdef RDM_STARS
   // random position
-	star->x += rdm(-0.5,0.5);
-	star->y += rdm(-0.5,0.5);
-	star->z += rdm(-0.5,0.5);
+	star->x += rdm(-0.5,0.5)*dx;
+	star->y += rdm(-0.5,0.5)*dx;
+	star->z += rdm(-0.5,0.5)*dx;
 
   // compute random component
 	REAL r = rdm(0,1) * field->a ;

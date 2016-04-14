@@ -1511,7 +1511,10 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	memcpy(&(stencil[iread].oct[6].cell[icell].rfield),&(curoct->cell[icell].rfield),sizeof(struct Rtype)); // for calculations
 	memcpy(&(stencil[iread].New.cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
 	stencil[iread].oct[6].cell[icell].split=(curoct->cell[icell].child!=NULL);
+	
       }
+
+
 
       cell=curoct->parent;
 
@@ -1595,17 +1598,36 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
       }
 
 
-#if 0
+      /* if(Rupdate.e[1]<0){ */
+      /* 	printf("HOHO\n"); */
+      /* 	printf("nouveau %e\n",Rupdate.e[1]); */
+      /* 	printf("ancien %e \n",stencil[i].New.cell[icell].rfieldnew.e[1]); */
+      /* 	printf("Delta %e\n",R.e[1]); */
+      /* 	abort(); */
+      /* } */
+
+#if 1
 	// ================================ START MEGA DIAGNOSE =========================
-      if((Rupdate.e[1]<0||isnan(Rupdate.e[1]))){
-	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",Rupdate.e[1],stencil[i].New.cell[icell].rfieldnew.e[1],R.e[1],stencil[i].oct[6].cell[icell].rfield.src,stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,stencil[i].oct[6].cell[icell].rfield.e[1],stencil[i].oct[6].cell[icell].rfield.temp);
+      if((Rupdate.e[0]<0||isnan(Rupdate.e[0]))){
+
+	printf("temp=%e\n",stencil[i].oct[6].cell[icell].rfield.temp);
+	printf("nhplus =%e\n",stencil[i].oct[6].cell[icell].rfield.nhplus);
+	printf("nh =%e\n",stencil[i].oct[6].cell[icell].rfield.nh);
+	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",
+		 Rupdate.e[0],
+		 stencil[i].New.cell[icell].rfieldnew.e[0],
+		 R.e[0],
+		 stencil[i].oct[6].cell[icell].rfield.src,
+		 stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,
+		 stencil[i].oct[6].cell[icell].rfield.e[0],
+		 stencil[i].oct[6].cell[icell].rfield.temp);
 	  one=1.;
 	  for(flx=0;flx<6;flx++){
 	    printf("f%d %e\n",flx,F[0+0*NVAR_R+flx*NVAR_R*NGRP]*dtsurdx*one);
 	    one*=-1.;
 	  }
 
-	  printf("Flux %e %e %e delta %e %e %e rflux=%e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[1],stencil[i].New.cell[icell].rfieldnew.fy[1],stencil[i].New.cell[icell].rfieldnew.fz[1],R.fx[1],R.fy[1],R.fz[1],SQRT(POW(stencil[i].New.cell[icell].rfieldnew.fx[1],2)+POW(stencil[i].New.cell[icell].rfieldnew.fy[1],2)+POW(stencil[i].New.cell[icell].rfieldnew.fz[1],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[1],R.e[1]);
+	  printf("Flux %e %e %e delta %e %e %e rflux=%e %e\n",stencil[i].New.cell[icell].rfieldnew.fx[0],stencil[i].New.cell[icell].rfieldnew.fy[0],stencil[i].New.cell[icell].rfieldnew.fz[0],R.fx[0],R.fy[0],R.fz[0],SQRT(POW(stencil[i].New.cell[icell].rfieldnew.fx[0],2)+POW(stencil[i].New.cell[icell].rfieldnew.fy[0],2)+POW(stencil[i].New.cell[icell].rfieldnew.fz[0],2))/cloc/stencil[i].New.cell[icell].rfieldnew.e[0],R.e[0]);
 
 	  int vnei[6],vcell[6];
 	  getcellnei(icell, vnei, vcell); // we get the neighbors

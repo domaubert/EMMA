@@ -593,8 +593,10 @@ int main(int argc, char *argv[])
   FILE *foutputs;
 
   param.aexpdump=0;
+  float tempa;
   if((foutputs=fopen(outputlist,"r"))!=NULL){
-    int dump = fscanf(foutputs,"%e",&param.aexpdump);
+    int dump = fscanf(foutputs,"%e",&tempa);
+    param.aexpdump=tempa;
     if(cpu.rank==RANK_DISP){
       printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
     }
@@ -1704,9 +1706,12 @@ int main(int argc, char *argv[])
     // prepare the next in aexplist
     if(param.aexpdump){
       while(param.aexpdump<=tsim){
-	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	  if(fscanf(foutputs,"%e",&tempa)==EOF){
 	    param.aexpdump=0;
 	    break;
+	  }
+	  else{
+	    param.aexpdump=tempa;
 	  }
       }
     }
@@ -2111,10 +2116,11 @@ int main(int argc, char *argv[])
 	// dumpfile at specific outputs
 	cond4=cosmo.aexp>param.aexpdump;
 	if(cond4){
-	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	  if(fscanf(foutputs,"%e",&tempa)==EOF){
 	    param.aexpdump=0;
 	  }
 	  else{
+	    param.aexpdump=tempa;
 	    if(cpu.rank==RANK_DISP){
 	      printf("next output aexp=%e\n",param.aexpdump);
 	    }
