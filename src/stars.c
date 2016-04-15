@@ -44,9 +44,9 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->rhocell = field->d;
 
   // set star position to cell center
-  star->x = xc + dx/2;
-	star->y = yc + dx/2;
-	star->z = zc + dx/2;
+  star->x = xc;
+	star->y = yc;
+	star->z = zc;
 
   // set star velocity to fluid velocity
  	star->vx = field->u;
