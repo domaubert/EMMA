@@ -1506,6 +1506,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
 
+
       // tsim attribute
       hsize_t dims = 1;
       hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);
@@ -1515,6 +1516,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
+/*
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1561,10 +1563,10 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       dataset= H5Dcreate(group, "zmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmax);
       H5Dclose(dataset);
-
+*/
       // Close
-      H5Pclose(gcpl);
-      H5Gclose(group);
+ //     H5Pclose(gcpl);
+   //   H5Gclose(group);
       H5Pclose(plist);
       H5Fclose(file);
     }
@@ -1662,6 +1664,13 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 #endif // PHDF5
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+    double ti;
+    ti =MPI_Wtime();
+
       //reduce data
       int i_tmp=0;
       int level;
@@ -1686,14 +1695,34 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 	      }
 	    }
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+      //if(cpu->rank == RANK_DISP) printf("reduce time %e\n",MPI_Wtime() - ti);
+
       char field_name[256];
       //sprintf(field_name,"%s",param->out_part->field_name[ifield]);
       sprintf(field_name,"data");
 
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+    ti =MPI_Wtime();
+
       hid_t dataset = H5Dcreate(file, field_name , H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+//          if(cpu->rank == RANK_DISP) printf("write time %e\n",MPI_Wtime() - ti);
 
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+    ti =MPI_Wtime();
       // tsim attribute
       hsize_t dims = 1;
       hid_t dataspace_id = H5Screate_simple(1, &dims, NULL);
@@ -1702,7 +1731,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
-
+/*
       //Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1749,10 +1778,15 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       dataset= H5Dcreate(group, "zmax", H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, &zmax);
       H5Dclose(dataset);
+*/
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+//          if(cpu->rank == RANK_DISP) printf("attribute time %e\n",MPI_Wtime() - ti);
 
       // Close
-      H5Pclose(gcpl);
-      H5Gclose(group);
+//      H5Pclose(gcpl);
+//      H5Gclose(group);
 
       H5Pclose(plist);
       H5Fclose(file);
@@ -1896,7 +1930,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
-
+/*
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
       hsize_t group = H5Gcreate (file, "cpu_info", H5P_DEFAULT, gcpl, H5P_DEFAULT);
@@ -1947,6 +1981,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       // Close
       H5Pclose(gcpl);
       H5Gclose(group);
+*/
       H5Pclose(plist);
       H5Fclose(file);
     }

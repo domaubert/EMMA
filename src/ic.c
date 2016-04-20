@@ -565,7 +565,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
     printf("Cannot open %s : ", filename);
     sprintf(filename,"./level_%03d/ic_velcx.p%05d",level,cpu->rank);
     printf("trying %s\n", filename);
-    
+
     fx=fopen(filename,"rb");
     if(fx == NULL) {
       printf("Cannot open %s\n", filename);
@@ -576,11 +576,11 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   sprintf(filename,"./level_%03d/ic_velby.p%05d",level,cpu->rank);
   fy=fopen(filename,"rb");
   if(fy == NULL) {
-    
+
       printf("Cannot open %s : ", filename);
       sprintf(filename,"./level_%03d/ic_velcy.p%05d",level,cpu->rank);
       printf("trying %s\n", filename);
-      
+
       fy=fopen(filename,"rb");
       if(fy == NULL) {
         printf("Cannot open %s\n", filename);
@@ -591,11 +591,11 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
   sprintf(filename,"./level_%03d/ic_velbz.p%05d",level,cpu->rank);
   fz=fopen(filename,"rb");
   if(fz == NULL) {
-    
+
     printf("Cannot open %s : ", filename);
     sprintf(filename,"./level_%03d/ic_velcz.p%05d",level,cpu->rank);
     printf("trying %s\n", filename);
-    
+
     fz=fopen(filename,"rb");
     if(fz == NULL) {
       printf("Cannot open %s\n", filename);
@@ -757,7 +757,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 
 
   //REAL rmin=2.;
-  
+
   float xmin,xmax;
     xmin=10;
     xmax=-1.;
@@ -780,16 +780,16 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
     outf=fread(&dummy,1,sizeof(dummy),fx);
     outf=fread(velx,np1*np2,sizeof(float),fx);
     outf=fread(&dummy,1,sizeof(dummy),fx);
-    
+
     outf=fread(&dummy,1,sizeof(dummy),fy);
     outf=fread(vely,np1*np2,sizeof(float),fy);
     outf=fread(&dummy,1,sizeof(dummy),fy);
-    
+
     outf=fread(&dummy,1,sizeof(dummy),fz);
     outf=fread(velz,np1*np2,sizeof(float),fz);
     outf=fread(&dummy,1,sizeof(dummy),fz);
-    
-    
+
+
     z0=(i3-0.5)*dx;
     for(i2=1;i2<=np2;i2++){
       y0=(i2-0.5)*dx;
@@ -825,7 +825,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 	vz=(velz[(i1-1)+(i2-1)*np1])*astart/(boxlen*h0)/(sqrt(om)*0.5);
 
 	// if it belongs to the current cpu, we proceed and assign the particle to the particle array
-	
+
 	double xs,ys,zs; //temporary values for particles out of boudaries
 
 	xs=x;
@@ -900,14 +900,14 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 
 
 
-  free(velx); 
-  free(vely); 
-  free(velz); 
-  
-  
-  fclose(fx); 
+  free(velx);
+  free(vely);
+  free(velz);
+
+
+  fclose(fx);
   fclose(fy);
-  fclose(fz); 
+  fclose(fz);
 
 
   // supercomoving unit values
@@ -1904,7 +1904,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
     printf("Cannot open %s : ", filename);
     sprintf(filename,"./level_%03d/ic_velcx.p%05d",level,cpu->rank);
     printf("trying %s\n", filename);
-    
+
     fx=fopen(filename,"rb");
     if(fx == NULL) {
       printf("Cannot open %s\n", filename);
@@ -1915,11 +1915,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   sprintf(filename,"./level_%03d/ic_velby.p%05d",level,cpu->rank);
   fy=fopen(filename,"rb");
   if(fy == NULL) {
-    
+
     printf("Cannot open %s : ", filename);
     sprintf(filename,"./level_%03d/ic_velcy.p%05d",level,cpu->rank);
     printf("trying %s\n", filename);
-      
+
     fy=fopen(filename,"rb");
     if(fy == NULL) {
       printf("Cannot open %s\n", filename);
@@ -1930,11 +1930,11 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   sprintf(filename,"./level_%03d/ic_velbz.p%05d",level,cpu->rank);
   fz=fopen(filename,"rb");
   if(fz == NULL) {
-    
+
     printf("Cannot open %s : ", filename);
     sprintf(filename,"./level_%03d/ic_velcz.p%05d",level,cpu->rank);
     printf("trying %s\n", filename);
-    
+
     fz=fopen(filename,"rb");
     if(fz == NULL) {
       printf("Cannot open %s\n", filename);
@@ -2009,21 +2009,21 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
   ob=OMEGAB;
 
   int nptot=np1*np2*np3;
-  
+
 #ifdef WMPI
   MPI_Allreduce(MPI_IN_PLACE,&nptot,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
-  
+
   // NOTE WE ASSUME CUBICAL VOLUME
-  
+
   int n1d=(int)(pow(nptot,1./3.))+1; // number of cells along 1 direction
-  
+
   if(n1d*n1d*n1d!=nptot){
     printf("cubic root error n1d=%d\n",n1d);
     abort();
   }
 
-  
+
   if(cpu->rank==0){
     printf("============================================\n");
     printf("nx=%d ny=%d nz=%d\n",n1d,n1d,n1d);
@@ -2256,7 +2256,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 #endif
   if(cpu->rank==RANK_DISP) printf("Grafic hydro read ok with ifound=%d on proc %d\n",ifound,cpu->rank);
 
-  
+
   return ifound;
  }
 
@@ -2346,11 +2346,9 @@ int init_star_test(struct RUNPARAMS *param, struct OCT **firstoct){
         curcell->field.a=SQRT(GAMMA*curoct->cell[icell].field.p/curoct->cell[icell].field.d);
         getE(&(curcell->field));
 
-
-        REAL xc=curoct->x+( icell&1)*dxcur+dxcur*0.5;
+        REAL xc=curoct->x+( icell    &1)*dxcur+dxcur*0.5;
         REAL yc=curoct->y+((icell>>1)&1)*dxcur+dxcur*0.5;
-        REAL zc=curoct->z+((icell>>2))*dxcur+dxcur*0.5;
-
+        REAL zc=curoct->z+((icell>>2)  )*dxcur+dxcur*0.5;
 
         REAL r= SQRT((xc-0.5)*(xc-0.5) + (yc-0.5)*(yc-0.5) + (yc-0.5)*(yc-0.5));
         REAL dx = 1./POW2(param->lcoarse);

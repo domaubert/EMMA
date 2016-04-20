@@ -1219,8 +1219,6 @@ double tsn[10];
 
     //dispndt(param,cpu,ndt);
 
-
-
     // === Loop
   }while((dt<adt[level-2])&&(is<nsub));
 
