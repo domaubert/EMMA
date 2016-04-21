@@ -422,6 +422,12 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
 
+
+	  if(srcloc[idloc+igrp*BLOCKCOOL]>0.){
+	    alpha*=1e-5;
+	    alphab*=1e-5;
+	  }
+
 	  //== Update
 
 	  // ABSORPTION
@@ -450,10 +456,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  
 #ifdef HESIMPLE
 	    //et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc])*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
 #else
 	  
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc])*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
 
 	    //et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
 #endif
@@ -466,7 +472,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  
 	  if((et[igrp]<0)||(isnan(et[igrp]))){
 	    test=1;
-	    printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+1*BLOCKCOOL]);
+	    printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+0*BLOCKCOOL]);
 	  }
 	  
 	  //p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);

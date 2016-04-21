@@ -44,9 +44,9 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->rhocell = field->d;
 
   // set star position to cell center
-	star->x = xc + dx/2;
-	star->y = yc + dx/2;
-	star->z = zc + dx/2;
+	star->x = xc ;
+	star->y = yc ;
+	star->z = zc ;
 
   // set star velocity to fluid velocity
  	star->vx = field->u;
@@ -60,6 +60,8 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->y += rdm(-0.5,0.5)*dx;
 	star->z += rdm(-0.5,0.5)*dx;
 
+	//printf("SPOS=========== %e %e %e\n",(star->x-xc)/dx,(star->y-yc)/dx,(star->z-zc)/dx);
+
   // compute random component
 	REAL r = rdm(0,1) * field->a ;
 	REAL theta  = acos(rdm(-1,1));
@@ -69,10 +71,6 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
-
-	if(isnan(star->vx)){
-	  printf("HOHO %e %e %e %e\n",r,theta,phi,field->a);
-	}
 #endif // RDM_STARS
 
   //mass
@@ -208,7 +206,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t; //tstars in code unit
 
 
-	REAL SFR=cell->field.d / tstartilde; // NOTE the efficiency is neutralized
+	REAL SFR=cell->field.d / tstartilde*param->stars->efficiency; // NOTE the efficiency is neutralized
 
 #else
 #ifndef SIMPLESTAR
@@ -656,7 +654,7 @@ const int debug=0;
       struct CELL *curcell = &curoct->cell[icell];
 
       if( testCond(curcell, param, aexp, level) ) {
-  REAL dx = POW(2.0,-level);
+	REAL dx = POW(2.0,-level);
 	REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
