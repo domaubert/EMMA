@@ -374,12 +374,12 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 /* #endif */
 }
 
-REAL rdm(double a, double b){
+double rdm(double a, double b){
 /// return a random number between a and b
-  return 	(REAL)((double)(rand()/(double)RAND_MAX ) * (b-a) + a);
+  return 	((double)rand()/(double)RAND_MAX ) * (b-a) + a;
 }
 
-unsigned int gpoiss(REAL lambda){
+unsigned int gpoiss(double lambda){
 /// Poisson distribution
 /// TODO use a better poisson algorithme
 

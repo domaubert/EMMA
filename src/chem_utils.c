@@ -15,6 +15,20 @@
 
 #define idloc 0 // KEPT FROM CUDATON FOR SIMPLICITY
 #define FSCHAYE 1.0
+
+
+typedef float REALC;
+#define EXPC(A) exp(A)
+#define POW(A,B) pow(A,B)
+#define SQRTC(A) sqrt(A)
+#define FMIN(A,B) fmin(A,B)
+#define FMAX(A,B) fmax(A,B)
+#define FABSC(A) fabs(A)
+
+
+
+
+
 //================================================================================
 void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
@@ -87,7 +101,7 @@ REAL cucompute_beta(REAL temp, REAL unit_number, REAL aexp)
 
 //**********************************************************************************
 //**********************************************************************************
-void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL aexp,REAL CLUMPF)
+void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL aexp,REAL CLUMPF,int src)
 {
 
   REAL c1,c2,c3,c4,c5,c6;
@@ -104,13 +118,20 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 
   // Case A Recombination Cooling
 
+  c2=0.;
+#ifndef OTSA
   c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF*(1+yHE);
-
+  if(src) c2*=1e-2;
+#endif
 
   // Case B Recombination Cooling
-
-  //c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
   c6=0.;
+#ifdef OTSA
+  c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
+  if(src) c6*=1e-2;
+#endif
+
+  
 
   // Collisional excitation cooling
 
@@ -186,8 +207,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     dtcool,
     tcool1,
     currentcool_t=0.,
-    alpha,
-    alphab,
     beta,
     tloc,
     xt,
@@ -196,7 +215,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     et[NGRP],
     p[NGRP];
 
-  REAL fxt[NGRP],fyt[NGRP],fzt[NGRP];
+  REAL alpha,alphab;
+
+
 
 #ifdef HESIMPLE
   REAL hnu0HE=24.6*1.6022e-19;
@@ -244,13 +265,14 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #define BLOCKCOOL 1 // KEPT FROM CUDATON FOR SIMPLICITY
 #define idloc3 0 // KEPT FROM CUDATON FOR SIMPLICITY
 
-  REAL
-    egyloc[BLOCKCOOL*NGRP],
-    floc[3*BLOCKCOOL*NGRP],
-    srcloc[BLOCKCOOL*NGRP],
-    x0[BLOCKCOOL],
-    nH[BLOCKCOOL],
-    eint[BLOCKCOOL];
+  REAL egyloc[BLOCKCOOL*NGRP];
+  REAL  floc[3*BLOCKCOOL*NGRP];
+  REAL  srcloc[BLOCKCOOL*NGRP];
+  REAL x0[BLOCKCOOL];
+  REAL nH[BLOCKCOOL];
+  REAL eint[BLOCKCOOL];
+
+  REAL fxt[NGRP],fyt[NGRP],fzt[NGRP];
 
 
   REAL dt=dtnew*param->unit.unit_t*POW(aexporg,2);
@@ -260,11 +282,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL fudgecool=param->fudgecool;
   int ncvgcool=param->ncvgcool;
   REAL E0;
-#ifdef SCHAYE
   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*param->unit.unit_d*(1.-YHE)*(1.+yHE);
-#endif
   REAL xorg;
-
+  REAL deltaE;
+  int compcool; // do we need to compute the cooling ?
 
   for(i=0;i<nread;i++){  // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
@@ -306,27 +327,51 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  floc[2+idloc3+igrp*BLOCKCOOL*3]=R.fz[igrp]/POW(aexporg,4)*param->unit.unit_l/param->unit.unit_t*param->unit.unit_N;
 	}
 
-
       x0[idloc]=R.nhplus/R.nh;
       xorg= x0[idloc];
+
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)*param->unit.unit_N;
-      
-      
+            
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
 
       for (igrp=0;igrp<NGRP;igrp++){
 	srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
       }
-
-// R.src phot/unit_t/unit_dv (comobile)
+      
+      // R.src phot/unit_t/unit_dv (comobile)
       REAL eorg=eint[idloc];
-      REAL etorg=egyloc[idloc+1*BLOCKCOOL];
+      REAL etorg=egyloc[idloc+0*BLOCKCOOL];
+      
 
-       if(etorg<EMIN) { 
-       	printf("%e %e %e\n",R.e[1],aexporg,param->unit.unit_N); 
-       	abort();
-       } 
+
+      // ========================== POLYTROP ================================
+
+      compcool=1;
+      REAL eintschaye;
+      int onpoly=0;
+
+#ifdef POLYTROP
+      if((nH[idloc]>1e6)&&(R.nh>0)){ 
+	eintschaye=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
+	if(eint[idloc]<eintschaye){
+	  eint[idloc]=eintschaye;
+	  onpoly=1;
+	}
+      }
+      else if(srcloc[idloc]>0.){
+	eintschaye=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
+	if(eint[idloc]<eintschaye){
+	  eint[idloc]=eintschaye;
+	  onpoly=1;
+	}
+	
+      }
+#endif
+
+      // ========================== END POLYTROP ================================
+
+
 
 
       //REAL torg=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
@@ -338,6 +383,17 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       Nfree=(1.+x0[idloc])*nH[idloc];
 #endif
       REAL torg=eint[idloc]/(1.5*Nfree*KBOLTZ);
+
+       if(etorg<EMIN) { 
+       	printf("%e %e %e\n",R.e[1],aexporg,param->unit.unit_N); 
+       	abort();
+       } 
+
+
+
+      /*  if(xorg>0.01){ */
+      /* 	printf("SN HEAT xorg=%e nhp=%e nh=%e t=%e src=%e\n",xorg,R.nhplus,R.nh,torg,srcloc[idloc]); */
+      /* } */
 
       //if(srcloc[0]>0) 	printf("nh=%e %e %e %e\n",R.nh,R.e[0],eint[idloc],3[idloc]);
 
@@ -364,6 +420,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  alphaeHE2[igrp] *= CLUMPI;
 #endif
 	}
+
+
 
       // -------------------------------------------------
 
@@ -396,37 +454,35 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
       
 	  tloc=eint[idloc]/(1.5*Nfree*KBOLTZ);
-
+	  REAL tmin=emin/(1.5*Nfree*KBOLTZ);
 	  //== Getting a timestep
-	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2,(srcloc[idloc]>0.));
+	  /* if((srcloc[idloc+igrp*BLOCKCOOL]>0.)){ */
+	  /*   Cool*=1e-5; */
+	  /* } */
 
 	  if(fudgecool<1e-20){
-	    printf("eint=%e(%e<%e) nH=%e x0=%e(%e) T=%e(%e) N=%e %e %e (%e)\n",eint[idloc],eorg,emin,nH[idloc],x0[idloc],xorg,tloc,torg,et[0],et[1],et[2],etorg);
+	    printf("eint=%e(%e<%e) eint_temp=%e (delta=%e)  nH=%e x0=%e(%e) T=%e(%e<%e) N=%e %e %e (%e)\n",eint[idloc],eorg,emin,eintt,deltaE,nH[idloc],x0[idloc],xorg,tloc,torg,tmin,et[0],et[1],et[2],etorg);
 	    if(fudgecool<1e-20) abort();
 	  }
 
 	  ai_tmp1=0.;
 #ifdef HESIMPLE
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)
-	    +yHE*((alphaeHE[igrp])*hnu[igrp]-(alphaiHE[igrp])*hnu0HE))*(1.0-x0[idloc])
-	    +yHE*x0[idloc]*(alphaeHE2[igrp]*hnu[igrp]-alphaiHE2[igrp]*hnu0HE2))*egyloc[idloc+igrp*BLOCKCOOL]*nH[idloc];
+						     +yHE*((alphaeHE[igrp])*hnu[igrp]-(alphaiHE[igrp])*hnu0HE))*(1.0-x0[idloc])
+						    +yHE*x0[idloc]*(alphaeHE2[igrp]*hnu[igrp]-alphaiHE2[igrp]*hnu0HE2))*egyloc[idloc+igrp*BLOCKCOOL]*nH[idloc];
 #else
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += (alphae[igrp]*hnu[igrp]-alphai[igrp]*hnu0)*egyloc[idloc+igrp*BLOCKCOOL]*nH[idloc]*(1.0-x0[idloc]);
 #endif
 
 	  tcool=FABS(eint[idloc]/(ai_tmp1*(!chemonly)-Cool));
+	  //tcool=FABS(eint[idloc]/(Cool));
 	  ai_tmp1=0.;
 	  dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);
 
 	  alpha=cucompute_alpha_a(tloc,1.,1.)*CLUMPF2;
 	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
-
-
-	  if(srcloc[idloc+igrp*BLOCKCOOL]>0.){
-	    alpha*=1e-5;
-	    alphab*=1e-5;
-	  }
 
 	  //== Update
 
@@ -454,19 +510,36 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	}
 	  else{
 	  
+	    REAL EARG=dtcool*ai_tmp1*nH[idloc];
+	    REAL EE;
+	    REAL ONEMINUSEE;
+	    if(EARG<1e-3){
+	      REAL DL=-EARG+0.5*EARG*EARG-EARG*EARG*EARG/6.;
+	      EE=1.+DL;
+	      ONEMINUSEE=-DL;
+	    }
+	    else{
+	      EE=EXP(-EARG);
+	      ONEMINUSEE=1.-EE;
+	    }
+
 #ifdef HESIMPLE
 	    //et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
 #else
 	  
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EXP(-dtcool*ai_tmp1*nH[idloc])+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(1.-EXP(-dtcool*ai_tmp1*nH[idloc]));
+#ifndef OTSA
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+#else
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+#endif
 
 	    //et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
 #endif
 
-	    fxt[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*EXP(-dtcool*ai_tmp1*nH[idloc]);
-	    fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EXP(-dtcool*ai_tmp1*nH[idloc]);
-	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EXP(-dtcool*ai_tmp1*nH[idloc]);
+	    fxt[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*EE;
+	    fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EE;
+	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
 
 	  }
 	  
@@ -479,9 +552,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  }
 
-	  ai_tmp1=0.;
-
-
 	  if(test)
 	    {
 	      fudgecool=fudgecool/10.;
@@ -489,6 +559,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    }
 
 	  // IONISATION
+
+	  ai_tmp1=0.;
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp]*(!chemonly);}
@@ -510,8 +582,17 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL]*N2[igrp]*(!chemonly);}
 #endif
 #endif
-
-	  xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1. -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
+	  
+	  REAL RECT=alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool;
+#ifdef NORECSOURCE
+	  if(srcloc[idloc]>0.) RECT*=1e-2;
+#endif
+	  xt=1.-(RECT+(1.0 -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
+	  
+	  /* if(srcloc[idloc]>0.){ */
+	  /*   printf("xt=%e x0=%e xorg=%e RECT=%e\n",xt,x0[idloc],xorg,RECT); */
+	  /*   abort(); */
+	  /* } */
 	  ai_tmp1=0.;
 
 
@@ -523,35 +604,39 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    }
 
 #ifdef SEMI_IMPLICIT
-	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  cuCompCooling(tloc,xt,nH[idloc],&Cool,&tcool1,aexp,CLUMPF2,(srcloc[idloc]>0.));
 #else
-	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2);
+	  cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,CLUMPF2,(srcloc[idloc]>0.));
 #endif
+
+	  /* if((srcloc[idloc+igrp*BLOCKCOOL]>0.)){ */
+	  /*   Cool*=1e-5; */
+	  /* } */
+
 
 #ifdef COOLING
 	  // HEATING + COOLING
 
-	  int compcool=1; // do we need to compute the cooling ?
 
 #ifdef SCHAYE
 	  if((nH[idloc]>1e6)&&(R.nh>(param->stars->overdensity_cond*navg))){
 	    REAL tlocs;
+	    REAL eintschaye;
 	    tlocs=eintt/(1.5*nH[idloc]*KBOLTZ*(1.+xt)*(1.+yHE));
-	    if(tlocs<1e5){
-	      eintt=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
+	    eintschaye=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
+	    if(eintt<eintschaye){
+	      eintt=eintschaye;
 	      compcool=0.; // cancel cooling calculation
 	      fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
 	    }
 	  }
 #endif // SCHAYE
 
+
+
+
+
 	  if(compcool){
-	    REAL SN = 0;
-#ifdef SUPERNOVAE
-	    SN 	 = R.snfb;
-	    if (R.snfb) Cool = 0; // Stop the cooling if supernovae
-	    //if (R.snfb) printf("dE\t%e\tE0\t%e\tdtcool\t%e\t",R.snfb*dtcool,eintt, dtcool);
-#endif
 
 #ifndef S_X
 #ifdef SEMI_IMPLICIT
@@ -562,14 +647,20 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += (((alphae[igrp]*hnu[igrp]-alphai[igrp]*hnu0)+yHE*(alphaeHE[igrp]*hnu[igrp]-alphaiHE[igrp]*hnu0HE))*(1.0-xt)+yHE*(alphaeHE2[igrp]*hnu[igrp]-alphaiHE2[igrp]*hnu0HE2)*xt)*et[igrp]*nH[idloc];
 	  //for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*et*nH[idloc]*(1.0-xt);
 #else
-	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*et[igrp]*nH[idloc]*(1.0-xt);
+	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += (alphae[igrp]*hnu[igrp]-alphai[igrp]*hnu0)*et[igrp]*nH[idloc]*(1.0-xt);
 #endif
 	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
 	  //eintt=(eint[idloc]+ dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN));
-	  eintt=(eint[idloc]+ dtcool*((ai_tmp1*(!chemonly))-Cool+SN));
+
+	  /* double HminusC; */
+	  /* HminusC=(double)(ai_tmp1*(!chemonly))-(double)(Cool); */
+
+
+	  eintt=(eint[idloc]+ dtcool*((ai_tmp1*(!chemonly))-Cool));
+	  //eintt=(eint[idloc]+ dtcool*(HminusC+SN));
 #else
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += egyloc[idloc+igrp*BLOCKCOOL]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
-	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool+SN));
+	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-x0[idloc])*(ai_tmp1)-Cool));
 #endif //SEMI
 
 
@@ -594,6 +685,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    if(F2[igrp]<0.0) F2[igrp]=0.0;
 	  }
 
+	  ai_tmp1=0.;
 #ifdef SEMI_IMPLICIT
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*F2[igrp]*(!chemonly);}
 	  eintt=(eint[idloc]+dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN));
@@ -604,30 +696,33 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //================================================================================
 #endif //S_X
 
+	  if(onpoly){
+	    if(eintt<eintschaye) eintt=eintschaye;
+	  }
+
 	  if(eintt<0.)
  	    {
-	      //printf("E NEG eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
+	    //printf("E NEG eintt=%e xt=%e et=%e eorg=%e torg=%e\n",eintt,xt,et[0],eorg,torg);
 	      fudgecool=fudgecool/10.;
 	      continue;
 	    }
 
-	  if(FABS(eintt-eint[idloc])>FRAC_VAR*eint[idloc])
+	  deltaE=FABS(eintt/eint[idloc]-1.);
+	  if(deltaE>FRAC_VAR)
 	    {
-	      //	      if(srcloc[idloc]==0.){
-	      //printf("DELTA E eintt=%e xt=%e et=%e\n",eintt,xt,et[0]);
-	      fudgecool=fudgecool/10.;
-
-	      continue;
-	      //}
-	    }
+	    //printf("DELTA E eintt=%e xt=%e eint0=%e eorg=%e torg=%e delta=%e dtcool=%e ft=%e\n",eintt,xt,eint[idloc],eorg,torg,deltaE,dtcool,fudgecool*tcool);
+	    fudgecool=fudgecool/10.;
+	    continue;
+	    //}
+	  }
   	  else{
  	    fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
 	  }
 
 	  ai_tmp1=0;
 
-
 	  eintt=FMAX(emin,eintt);
+
  	  }
 
 #else
@@ -679,12 +774,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    R.fx[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
 	    R.fy[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
 	    R.fz[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*POW(aexp,4)/param->unit.unit_l*param->unit.unit_t/param->unit.unit_N;
-	    /* if(igrp==1){ */
-	    /*   if(R.e[1]<EMIN*factgrp[igrp]/param->unit.unit_N){ */
-	    /* 	printf("%d %e %e %e\n",igrp,R.e[igrp],EMIN*factgrp[igrp]/param->unit.unit_N,R.e[igrp]-EMIN*factgrp[igrp]/param->unit.unit_N); */
-	    /* 	abort(); */
-	    /*   } */
-	    /* } */
 	  }
       }
 

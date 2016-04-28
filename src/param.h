@@ -7,10 +7,10 @@
 #define FRACDX  (0.25)
 
 #define SEED (12345)
-#define PMIN (1e-12)
+#define PMIN (1e-10)
 #define NCOSMOTAB (128)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
-#define FRAC_VAR (0.1)
+#define FRAC_VAR (0.25)
 #define N_BIN_PDF (128)
 
 

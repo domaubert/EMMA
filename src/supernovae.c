@@ -404,11 +404,19 @@ void kineticFeedback_impulsion(struct RUNPARAMS *param, struct CELL *cell,struct
     REAL vyi = curcell->field.v;
     REAL vzi = curcell->field.w;
 
+
+#ifdef WRADHYD
+    REAL xion=curcell->field.dX/d_i;
+#endif
+
     curcell->field.d += d_e; //new density
     curcell->field.u = (vxi*d_i + vxe*d_e)/(d_i+d_e); //new velocity
     curcell->field.v = (vyi*d_i + vye*d_e)/(d_i+d_e);
     curcell->field.w = (vzi*d_i + vze*d_e)/(d_i+d_e);
 
+#ifdef WRADHYD
+     curcell->field.dX=curcell->field.d*xion;
+#endif
 
     //Energy conservation
 /* #ifdef DUAL_E */

@@ -68,9 +68,9 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	REAL phi = rdm(0,2*M_PI);
 
   // add random component
-	star->vx += r * sin(theta) * cos(phi);
-	star->vy += r * sin(theta) * sin(phi);
-	star->vz += r * cos(theta) ;
+	star->vx += r * sin(theta) * cos(phi); 
+	star->vy += r * sin(theta) * sin(phi); 
+	star->vz += r * cos(theta) ; 
 #endif // RDM_STARS
 
   //mass
@@ -106,7 +106,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 	REAL dx = POW(0.5,level);
 
-  REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
+	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
 
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
@@ -177,6 +177,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	if(isnan(U.du)){
 	  printf("drho=%e vx=%e\n",drho,star->vx);
 	}
+
 
 }
 
@@ -368,10 +369,10 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
   //REAL thresh_1 = k * param->stars->density_cond / param->unit.unit_d*param->unit.unit_N;
 
   // overdensity
-  REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
+   REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
 
   // final threshold
-	param->stars->thresh = FMAX(thresh_1,thresh_2);
+  param->stars->thresh = FMAX(thresh_1,thresh_2);
 #endif
 
 #endif
@@ -659,7 +660,7 @@ const int debug=0;
 	REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
 
-  percentvol += POW(dx,3);
+	percentvol += POW(dx,3);
 
 	int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 	nstarsmax_in_one_cell = FMAX(nstarsmax_in_one_cell,N);

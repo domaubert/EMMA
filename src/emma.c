@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
   gdb_debug();
 #endif
 
+
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
   int rtag=0;
@@ -652,6 +653,29 @@ int main(int argc, char *argv[])
   cpu.nstream=param.nstream;
 #endif
   //breakmpi();
+
+
+  /* // RDM TEST */
+
+  /* int ir; */
+  /* int nr=10; */
+  /* REAL *toto; */
+  /* toto=(REAL *)malloc(nr*sizeof(REAL)); */
+  /* for(ir=0;ir<nr;ir++){ */
+  /*   toto[ir]=rdm(0.,10.); */
+  /* } */
+
+  /* printf("cpu=%d ",cpu.rank); */
+  /* for(ir=0;ir<nr;ir++){ */
+  /*   printf("%e ",toto[ir]); */
+  /* } */
+  /* printf("\n"); */
+  /* MPI_Barrier(cpu.comm); */
+  /* abort(); */
+
+
+
+
   //========== allocations ===================
 
   //  if(cpu.rank==RANK_DISP) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));

@@ -731,6 +731,12 @@ int FillRad(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struct C
 
         flag=putsource(&(curoct->cell[icell]),param,level,aexp,tcur,curoct,cpu); // creating sources if required
 
+	/* if(curoct->cell[icell].rfield.src[0]>0.){ */
+	/*   printf("AHAHAHAHAH\n"); */
+	/*   printf("WSRC d=%e dX=%e xio=%e\n",curoct->cell[icell].rfield.nh,curoct->cell[icell].rfield.nhplus,curoct->cell[icell].rfield.nhplus/curoct->cell[icell].rfield.nh); */
+	/* } */
+
+
 	if(init==1){
 #ifdef WCHEM
 
