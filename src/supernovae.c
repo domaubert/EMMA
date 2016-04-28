@@ -738,13 +738,10 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 
     //    printf("%d\tActive SN on rank %d\n",Nsn,cpu->rank);
 
-
-
 #ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&Nsn,1,MPI_INT,MPI_SUM,cpu->comm);
     MPI_Allreduce(MPI_IN_PLACE,&param->sn->trig_sn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
-
 
     if(cpu->rank==RANK_DISP){
       if (Nsn){
@@ -758,6 +755,5 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 
   }
 }
-
 
 #endif // SUPERNOVAE

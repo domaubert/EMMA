@@ -350,6 +350,7 @@ struct RUNPARAMS{
   REAL denthresh; ///< density threshold to turn the sources on
   REAL tmpthresh; ///< temperature threshold to turn the sources on
   REAL srcint; ///< intensity of the sources
+  REAL fesc; ///< escape fraction
 
 #if defined(HOMOSOURCE) || defined(STARS_TO_UVBKG)
   REAL bkg; ///< the uniform background intensity

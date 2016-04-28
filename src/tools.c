@@ -375,7 +375,7 @@ void grid_census(struct RUNPARAMS *param, struct CPUINFO *cpu){
 }
 
 double rdm(double a, double b){
-/// return a random number between a and b
+  /// return a random number between a and b
   return 	((double)rand()/(double)RAND_MAX ) * (b-a) + a;
 }
 

@@ -573,7 +573,6 @@ int main(int argc, char *argv[])
 #endif // STARS
 #endif // MPIIO
 
-
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
     printf("            EMMA V1.2           \n");
@@ -584,7 +583,6 @@ int main(int argc, char *argv[])
     copy_file(param.paramrunfile, "data/param.run");
 
   }
-
 
 #ifdef TESTCOSMO
   //reading outputlist
@@ -1392,7 +1390,7 @@ int main(int argc, char *argv[])
       MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm);
 
       if(cpu.rank==RANK_DISP) printf("found %ld particles among the split ICs files\n",ntotsplit);
-      
+
 #endif
 #else
       lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param, param.lcoarse);
@@ -1425,7 +1423,7 @@ int main(int argc, char *argv[])
 #else
     part2grid(part,&cpu,npart);
 #endif
-    
+
 
   // ========================  computing the memory location of the first freepart and linking the free parts
 
@@ -1932,7 +1930,7 @@ int main(int argc, char *argv[])
 #endif // GRAFIC
       //printf("reap=%d dif p1=%ld difp2=%ld\n",npz,lastpart-lpartloc+1,lastpart-part+1);
 
-      
+
       // ASSIGNING PARTICLES TO THE GRID
 
 
@@ -1990,49 +1988,49 @@ int main(int argc, char *argv[])
 
   // ===== SOME BOOKEEPING FOR SPLIT INITIAL CONDITIONS
 #ifdef SPLIT
- #ifdef WMPI 
+ #ifdef WMPI
   int deltan[2];
   int ntotsplit;
-  //reset the setup in case of refinement 
-  //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank); 
-  
+  //reset the setup in case of refinement
+  //printf("2 next=%p on proc=%d\n",firstoct[0]->next,cpu->rank);
 
-  L_partcellreorg(param.lcoarse,firstoct); // reorganizing the particles of the level throughout the mesh 
+
+  L_partcellreorg(param.lcoarse,firstoct); // reorganizing the particles of the level throughout the mesh
 
    /* ptot[0]=0; */
    /* ptot[1]=0; */
 
    /* for(ip=1;ip<=param.lmax;ip++) ptot[0]+=cpu.npart[ip-1]; // total of local particles *\/ */
-   
+
    /* ntotsplit=ptot[0]; */
    /* MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm); */
-      
-   /* printf("BEFORE proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,ntotsplit); */
-  
-  mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,10); 
 
-   setup_mpi(&cpu,firstoct,param.lmax,param.lcoarse,param.ngridmax,1); // out of WMPI to compute the hash table 
-   MPI_Barrier(cpu.comm); 
-   
+   /* printf("BEFORE proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,ntotsplit); */
+
+  mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,10);
+
+   setup_mpi(&cpu,firstoct,param.lmax,param.lcoarse,param.ngridmax,1); // out of WMPI to compute the hash table
+   MPI_Barrier(cpu.comm);
+
    cpu.firstoct = firstoct;
    mpi_exchange_part(&cpu, cpu.psendbuffer, cpu.precvbuffer,deltan,level);
-   
-   
+
+
    /* ptot[0]=0; */
    /* ptot[1]=0; */
 
    /* ptot[0]=deltan[0]; for(ip=1;ip<=param.lmax;ip++) ptot[0]+=cpu.npart[ip-1]; // total of local particles  */
-   
+
    /* ntotsplit=ptot[0]; */
    /* MPI_Allreduce(MPI_IN_PLACE,&ntotsplit,1,MPI_LONG,MPI_SUM,cpu.comm); */
-  
-    
+
+
     printf("proc %d receives %d particles %d stars freepart=%p ntot=%d\n",cpu.rank,deltan[0],deltan[1],cpu.freepart,262144+deltan[0]);
 
-   ptot[0]=0; 
-   ptot[1]=0; 
-   mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0); 
- #endif 
+   ptot[0]=0;
+   ptot[1]=0;
+   mtot=multicheck(firstoct,ptot,param.lcoarse,param.lmax,cpu.rank,&cpu,&param,0);
+ #endif
 #endif
 
   // ===== ED BOOKEEPING FOR SPLIT INITIAL CONDITIONS

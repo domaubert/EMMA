@@ -577,6 +577,9 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->denthresh=(REAL)dummyf;  if (debug) printf("param->denthresh=%e\n", param->denthresh);
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmpthresh=(REAL)dummyf;  if (debug) printf("param->tmpthresh=%e\n", param->tmpthresh);
       rstat=fscanf(buf,RF,stream,&dummyf);param->srcint=(REAL)dummyf;     if (debug) printf("param->srcint=%e\n", param->srcint);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->fesc=(REAL)dummyf;       if (debug) printf("param->fesc=%e\n", param->fesc);
+
+      param->srcint*=param->fesc;
 
       char filename[256];
       rstat=fscanf(buf,"%s %s",stream, filename);

@@ -59,11 +59,8 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->x += rdm(-0.5,0.5)*dx;
 	star->y += rdm(-0.5,0.5)*dx;
 	star->z += rdm(-0.5,0.5)*dx;
-
-	//printf("SPOS=========== %e %e %e\n",(star->x-xc)/dx,(star->y-yc)/dx,(star->z-zc)/dx);
-
   // compute random component
-	REAL r = rdm(0,1) * field->a ;
+	REAL r = rdm(0,1) * field->a;
 	REAL theta  = acos(rdm(-1,1));
 	REAL phi = rdm(0,2*M_PI);
 

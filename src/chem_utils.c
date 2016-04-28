@@ -17,14 +17,6 @@
 #define FSCHAYE 1.0
 
 
-typedef float REALC;
-#define EXPC(A) exp(A)
-#define POW(A,B) pow(A,B)
-#define SQRTC(A) sqrt(A)
-#define FMIN(A,B) fmin(A,B)
-#define FMAX(A,B) fmax(A,B)
-#define FABSC(A) fabs(A)
-
 
 
 
@@ -121,14 +113,18 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   c2=0.;
 #ifndef OTSA
   c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF*(1+yHE);
+#ifdef NORECSOURCE
   if(src) c2*=1e-2;
+#endif
 #endif
 
   // Case B Recombination Cooling
   c6=0.;
 #ifdef OTSA
   c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
+#ifdef NORECSOURCE
   if(src) c6*=1e-2;
+#endif
 #endif
 
   

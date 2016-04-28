@@ -24,7 +24,7 @@
 #endif
 
 #ifdef HDF5
-#include "hdf5.h"
+#include <hdf5.h>
 #endif // HDF5
 
 #define AVGFACT (1.) // set to 0 to get an homogenous cosmo field 1
@@ -319,7 +319,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   }
 
   //if (debug) printf("br cpu=%d ncells=%d\n",cpu->rank, ncells);
-  if (debug) printf("br cpu=%d nparts=%d\n",cpu->rank, nparts);
+  //if (debug) printf("br cpu=%d nparts=%d\n",cpu->rank, nparts);
   //if (debug) printf("br cpu=%d nstars=%d\n",cpu->rank, nstars);
 
   // broadcast the result
@@ -337,7 +337,7 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
   MPI_Barrier(cpu->comm);
 
   //if (debug) printf("ar cpu=%d ncells=%d\n",cpu->rank, cpu->mpiio_ncells[cpu->rank]);
-  if (debug) printf("ar cpu=%d nparts=%d\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
+  //if (debug) printf("ar cpu=%d nparts=%d\n",cpu->rank, cpu->mpiio_nparts[cpu->rank]);
   //if (debug) printf("ar cpu=%d nstars=%d\n",cpu->rank, cpu->mpiio_nstars[cpu->rank]);
 
   // compute the offset
@@ -1394,7 +1394,11 @@ void makeFolders(struct CPUINFO *cpu){
 }
 
 #ifdef HDF5
+
 #define PHDF5
+#define HDF5_METHOD H5FD_MPIO_COLLECTIVE
+//#define HDF5_METHOD H5FD_MPIO_INDEPENDENT
+
 void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
 
 /**
@@ -1471,8 +1475,8 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
 
-#ifdef PHDF5
-      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
@@ -1510,7 +1514,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
-
 
       // Create group
       hid_t gcpl = H5Pcreate (H5P_GROUP_CREATE);
@@ -1564,11 +1567,9 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Gclose(group);
       H5Pclose(plist);
       H5Fclose(file);
-
     }
   }
   free(tmp);
-
 }
 
 #ifdef PIC
@@ -1622,8 +1623,6 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   for (ifield=0;ifield<param->out_part->n_field_tot-2; ifield++){ // the -2 is to exclude the age which doesnt exist for DM part and the mass which is not relevant
     if(param->out_part->field_id[ifield]){
 
-      MPI_Barrier(cpu->comm);
-
       hid_t plist;
 
       //Set up file access property list with parallel I/O access
@@ -1657,8 +1656,9 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
-#ifdef PHDF5
-      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
@@ -1756,6 +1756,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       H5Pclose(plist);
       H5Fclose(file);
+
     }
   }
   free(tmp);
@@ -1844,7 +1845,10 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
-//      H5Pset_dxpl_mpio(plist, H5FD_MPIO_COLLECTIVE);
+
+#ifdef PHDF
+      H5Pset_dxpl_mpio(plist, HDF5_METHOD);
+#endif // PHDF5
 
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
 
@@ -2082,11 +2086,18 @@ REAL tt1=MPI_Wtime();
 #endif // ALLOCT
 #endif // HDF5
 
+//#ifdef WMPI
+//  MPI_Barrier(cpu->comm);
+//  REAL tt2=MPI_Wtime();
+//#endif // WMPI
+//  printf("Total time for output writing %f \n", tt2-tt1);
+
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
-  REAL tt2=MPI_Wtime();
+  double tend=MPI_Wtime();
+  if(cpu->rank==RANK_DISP) printf("===CPU DUMP TOTAL TIME =%fs \n", tend-tstart);
 #endif // WMPI
-//  printf("Total time for output writing %f \n", tt2-tt1);
+
 
 /// backups for restart
 #ifdef BKP
@@ -2110,10 +2121,15 @@ REAL tt1=MPI_Wtime();
 
 	  }
 #endif // BKP
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+  if(cpu->rank==RANK_DISP) printf("===CPU BKP TOTAL TIME =%fs \n", MPI_Wtime() - tend);
+#endif // WMPI
+
 	}
 
-  MPI_Barrier(cpu->comm);
-  double tend=MPI_Wtime();
-//  if(cpu->rank==RANK_DISP) printf("dump IO in %fs \n", tend-tstart);
+
+
 }
 
