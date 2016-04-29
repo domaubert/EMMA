@@ -346,7 +346,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
 
-#define SRCNORECOMB
 #ifdef SRCNORECOMB
     int src_test =0;
     for (igrp=0;igrp<NGRP;igrp++){
@@ -356,7 +355,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     }
 
     if(src_test){
-      REAL fact = 1e-5;
+      REAL fact = 0.5;
       alpha *= fact;
       alphab *= fact;
     }

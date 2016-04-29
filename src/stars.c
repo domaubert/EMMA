@@ -37,7 +37,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 
   // some parameters
 	star->next = NULL;
-	star->idx = -1;
+	star->idx = -1000;
 	star->level = level;
 	star->is = is;
 	star->isStar = 6;
@@ -527,15 +527,15 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
 
 
   const int debug=0;
-
+  if (debug) printf("\n setting ID \n");
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif // WMPI
 
   //count old and new stars
-  int locNstarsOld=0;
-  int locNstarsNew=0;
+  int locNOld=0;
+  int locNNew=0;
 
   int iOct;
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
@@ -551,38 +551,36 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
           struct PART *curp=nexp;
           nexp=curp->next;
 
-          if(curp->isStar){
-             if(curp->idx==-1) locNstarsNew++;
-             else              locNstarsOld++;
-          }
+            if(curp->idx==-1000) locNNew++;
+            else                 locNOld++;
+
         }while(nexp!=NULL);
       }
     }
   }
 
+  if (debug) printf("locNNew %d\n", locNNew);
+  if (debug) printf("locNOld %d\n", locNOld);
+
+
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif // WMPI
+  int i;
 
   //reduce
-  int* NstarsOld = (int*)calloc(cpu->nproc,sizeof(int));
-  int* NstarsNew = (int*)calloc(cpu->nproc,sizeof(int));
+  int noldtot;
+  MPI_Allreduce(&locNOld,&noldtot,1,MPI_INT,MPI_SUM,cpu->comm);
 
-  MPI_Allgather(&locNstarsNew,1,MPI_INT,NstarsNew ,1,MPI_INT, cpu->comm);
-  MPI_Allgather(&locNstarsOld,1,MPI_INT,NstarsOld ,1,MPI_INT, cpu->comm);
-
-  int noldtot=0;
-  int i;
-  for (i=0;i<cpu->nproc;i++){
-    noldtot += NstarsOld[i];
-  }
+  int* NNew = (int*)calloc(cpu->nproc,sizeof(int));
+  MPI_Allgather(&locNNew,1,MPI_INT,NNew ,1,MPI_INT, cpu->comm);
 
   int cpuoffset = 0;
   for (i=0;i<cpu->rank;i++){
-    cpuoffset += NstarsNew[i];
+    cpuoffset += NNew[i];
   }
 
-  if (debug) printf("cpuoffset %d\n", cpuoffset);
+  //if (debug) printf("cpuoffset %d\n", cpuoffset);
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -598,14 +596,15 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
     for(icell=0;icell<8;icell++){
       struct CELL *curcell = &curoct->cell[icell];
 
-      struct PART * nexp=curoct->cell[icell].phead;
+      struct PART *nexp=curcell->phead;
       if(nexp!=NULL){
         do{
           struct PART *curp=nexp;
           nexp=curp->next;
 
-          if(curp->isStar && curp->idx==-1){
+          if(curp->idx==-1000){
             curp->idx = noldtot+ cpuoffset+ curID++;
+            //printf("%d \n",curp->idx);
           }
 
         }while(nexp!=NULL);
@@ -617,8 +616,7 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
   MPI_Barrier(cpu->comm);
 #endif // WMPI
 
-  free(NstarsOld);
-  free(NstarsNew);
+  free(NNew);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
