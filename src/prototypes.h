@@ -74,6 +74,7 @@ typedef double REAL;
 #define NGRP (NGRP_SPACE * NGRP_TIME)
 #define NVAR_R (5)
 #define EMIN (1e-8)
+#define TMIN (1e0) // temperature floor
 
 #ifdef WRAD
   #define NFLUX_R (6*NGRP*NVAR_R)
@@ -212,6 +213,14 @@ struct ATOMIC{
   REAL *alphae;
   REAL *alphai;
   REAL *factgrp;
+
+#ifdef HESIMPLE
+  REAL *alphaeHE;
+  REAL *alphaiHE;
+  REAL *alphaeHE2;
+  REAL *alphaiHE2;
+#endif
+
 };
 
 struct SPECTRUM{

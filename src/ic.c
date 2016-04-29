@@ -1783,7 +1783,8 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  icell=icx+icy*2+icz*4;
 
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/POW(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
+	  //pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
+	  pressure=(GAMMA-1.0)*1.5*(rhob*(1.-YHE)/PROTON_MASS*(1.+yHE))*KBOLTZ*temp; // physical pressure
 
 	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values
@@ -2168,7 +2169,8 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  icell=icx+icy*2+icz*4;
 
 	  rhob=(deltab[i1+i2*np1]+1.0)*ob*rhoc/POW(astart,3); // physical baryon density in kg/m3
-	  pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
+	  //pressure=(GAMMA-1.0)*1.5*(rhob/(PROTON_MASS*MOLECULAR_MU))*KBOLTZ*temp; // physical pressure
+	  pressure=(GAMMA-1.0)*1.5*(rhob*(1.-YHE)/PROTON_MASS*(1.+yHE))*KBOLTZ*temp; // physical pressure
 
 	  //printf("pres=%e\n",pressure);
 	  // filling the cells using supercomoving values

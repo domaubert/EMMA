@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
   gdb_debug();
 #endif
 
+
   //========== RIEMANN CHECK ====================/
 #ifdef WHYDRO2
   int rtag=0;
@@ -591,8 +592,10 @@ int main(int argc, char *argv[])
   FILE *foutputs;
 
   param.aexpdump=0;
+  float tempa;
   if((foutputs=fopen(outputlist,"r"))!=NULL){
-    int dump = fscanf(foutputs,"%e",&param.aexpdump);
+    int dump = fscanf(foutputs,"%e",&tempa);
+    param.aexpdump=tempa;
     if(cpu.rank==RANK_DISP){
       printf("Reading outputs from %s : first dump at aexp=%e\n",outputlist,param.aexpdump);
     }
@@ -648,6 +651,29 @@ int main(int argc, char *argv[])
   cpu.nstream=param.nstream;
 #endif
   //breakmpi();
+
+
+  /* // RDM TEST */
+
+  /* int ir; */
+  /* int nr=10; */
+  /* REAL *toto; */
+  /* toto=(REAL *)malloc(nr*sizeof(REAL)); */
+  /* for(ir=0;ir<nr;ir++){ */
+  /*   toto[ir]=rdm(0.,10.); */
+  /* } */
+
+  /* printf("cpu=%d ",cpu.rank); */
+  /* for(ir=0;ir<nr;ir++){ */
+  /*   printf("%e ",toto[ir]); */
+  /* } */
+  /* printf("\n"); */
+  /* MPI_Barrier(cpu.comm); */
+  /* abort(); */
+
+
+
+
   //========== allocations ===================
 
   //  if(cpu.rank==RANK_DISP) printf("Allocating %f GB cell=%f GB part=%f GB book=%f",(sizeof(struct OCT)*ngridmax+sizeof(struct PART)*npart+cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024*1024*1024.),sizeof(struct OCT)*ngridmax/(1024*1024*1024.),sizeof(struct PART)*npart/(1024*1024*1024.),(cpu.maxhash*sizeof(struct OCT*)+stride*ncomp*sizeof(REAL))/(1024.*1024.*1024.));
@@ -1702,9 +1728,12 @@ int main(int argc, char *argv[])
     // prepare the next in aexplist
     if(param.aexpdump){
       while(param.aexpdump<=tsim){
-	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	  if(fscanf(foutputs,"%e",&tempa)==EOF){
 	    param.aexpdump=0;
 	    break;
+	  }
+	  else{
+	    param.aexpdump=tempa;
 	  }
       }
     }
@@ -2109,10 +2138,11 @@ int main(int argc, char *argv[])
 	// dumpfile at specific outputs
 	cond4=cosmo.aexp>param.aexpdump;
 	if(cond4){
-	  if(fscanf(foutputs,"%e",&param.aexpdump)==EOF){
+	  if(fscanf(foutputs,"%e",&tempa)==EOF){
 	    param.aexpdump=0;
 	  }
 	  else{
+	    param.aexpdump=tempa;
 	    if(cpu.rank==RANK_DISP){
 	      printf("next output aexp=%e\n",param.aexpdump);
 	    }

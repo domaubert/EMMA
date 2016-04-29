@@ -1,8 +1,8 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -O3 -Wimplicit -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
-
+C_LIBS = -O2 -Wimplicit -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+HDF5_LIBS = -L/usr/lib/x86_64-linux-gnu/ -I/usr/include/x86_64-linux-gnu/
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \

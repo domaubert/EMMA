@@ -7,15 +7,17 @@
 #define FRACDX  (0.25)
 
 #define SEED (12345)
-#define PMIN (1e-12)
+#define PMIN (1e-10)
 #define NCOSMOTAB (128)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
-#define FRAC_VAR (0.1)
+#define FRAC_VAR (0.25)
 #define N_BIN_PDF (128)
 
-#define NGRP_SPACE (1)
-#define NGRP_TIME (1)
-#define NGRP (NGRP_SPACE * NGRP_TIME)
+
+// BELOW ALREADY DEFINED IN PROTOTYPES.H
+/* #define NGRP_SPACE (3) */
+/* #define NGRP_TIME (1) */
+/* #define NGRP (NGRP_SPACE * NGRP_TIME) */
 
 #define THRESH_Z_XION_MAP (0.5)
 
@@ -43,7 +45,11 @@
 #ifdef HELIUM
 #define YHE (0.24) // Helium Mass fraction
 #else
+#ifdef HESIMPLE
+#define YHE (0.24) // Helium Mass fraction
+#else
 #define YHE (0.) // Helium Mass fraction
+#endif
 #endif
 
 #define yHE (YHE/(1.-YHE)/4.002) // Helium number fraction

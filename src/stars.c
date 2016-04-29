@@ -44,9 +44,9 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->rhocell = field->d;
 
   // set star position to cell center
-  star->x = xc;
-	star->y = yc;
-	star->z = zc;
+	star->x = xc ;
+	star->y = yc ;
+	star->z = zc ;
 
   // set star velocity to fluid velocity
  	star->vx = field->u;
@@ -69,10 +69,6 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->vx += r * sin(theta) * cos(phi);
 	star->vy += r * sin(theta) * sin(phi);
 	star->vz += r * cos(theta) ;
-
-	if(isnan(star->vx)){
-	  printf("HOHO %e %e %e %e\n",r,theta,phi,field->a);
-	}
 #endif // RDM_STARS
 
   //mass
@@ -108,7 +104,7 @@ int testCond(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 	REAL dx = POW(0.5,level);
 
-  REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
+	REAL rho_m = (cell->gdata.d+1.) / param->stars->thresh;
 
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
@@ -180,6 +176,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	  printf("drho=%e vx=%e\n",drho,star->vx);
 	}
 
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +205,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t; //tstars in code unit
 
 
-	REAL SFR=cell->field.d / tstartilde; // NOTE the efficiency is neutralized
+	REAL SFR=cell->field.d / tstartilde*param->stars->efficiency; // NOTE the efficiency is neutralized
 
 #else
 #ifndef SIMPLESTAR
@@ -370,10 +367,10 @@ void initThresh(struct RUNPARAMS *param,  REAL aexp){
   //REAL thresh_1 = k * param->stars->density_cond / param->unit.unit_d*param->unit.unit_N;
 
   // overdensity
-  REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
+   REAL thresh_2 = param->stars->overdensity_cond * (param->cosmo->ob/param->cosmo->om);
 
   // final threshold
-	param->stars->thresh = FMAX(thresh_1,thresh_2);
+  param->stars->thresh = FMAX(thresh_1,thresh_2);
 #endif
 
 #endif
@@ -671,12 +668,12 @@ const int debug=0;
       struct CELL *curcell = &curoct->cell[icell];
 
       if( testCond(curcell, param, aexp, level) ) {
-  REAL dx = POW(2.0,-level);
+	REAL dx = POW(2.0,-level);
 	REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
 
-  percentvol += POW(dx,3);
+	percentvol += POW(dx,3);
 
 	int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
 	nstarsmax_in_one_cell = FMAX(nstarsmax_in_one_cell,N);
