@@ -99,21 +99,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
       }
     }
 
-    sprintf(filename,"./level_%03d/ic_poscz",level);
-    fpz=fopen(filename,"rb");
-    if(fpz == NULL) {
-
-      printf("Cannot open %s : ", filename);
-      sprintf(filename,"./level_%03d/ic_poscz",level);
-      printf("trying %s\n", filename);
-
-      fpz=fopen(filename,"rb");
-      if(fpz == NULL) {
-        printf("Cannot open %s\n", filename);
-        abort();
-      }
-    }
-
     sprintf(filename,"./level_%03d/ic_poscy",level);
     fpy=fopen(filename,"rb");
     if(fpy == NULL) {
@@ -460,8 +445,6 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	    if(x>xmax) xmax=x;
 	    if(y>ymax) ymax=y;
 	    if(z>zmax) zmax=z;
-
-
 
  	    //rmin=(rloc<rmin?rloc:rmin);
 

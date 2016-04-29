@@ -1134,7 +1134,6 @@ double tsn[10];
 #endif
 #endif // SUPERNOVAE
 
-
     // ================= V Computing the new refinement map
 #ifdef WMPI
     double tmk[10];

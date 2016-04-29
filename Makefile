@@ -1,8 +1,8 @@
 ##########################################
 ARCH = CPU
 
-C_LIBS = -O2 -Wimplicit -lm   # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
-HDF5_LIBS = -L/usr/lib/x86_64-linux-gnu/ -I/usr/include/x86_64-linux-gnu/
+C_LIBS = -O3 -Wimplicit -lm -g # -fopenmp #-O3 -ftree-vectorize -ffast-math -fno-cx-limited-range  #-fopenmp # -lstdc++ -g -std=c11
+
 C_FLAGS =
 C_OBJS= emma.o \
 				hilbert.o \
@@ -30,8 +30,8 @@ C_OBJS= emma.o \
 				restart.o \
 				ic.o\
 
-# HDF5_CFLAGS=-I/usr/local/hdf5/include
-# HDF5_LDFLAGS=-L/usr/local/hdf5/lib
+# HDF5_CFLAGS=-I/usr/local/hdf5/include # -I/usr/include/x86_64-linux-gnu/
+# HDF5_LDFLAGS=-L/usr/local/hdf5/lib # -L/usr/lib/x86_64-linux-gnu/
 
 DEFINES =
 OBJDIR = obj
