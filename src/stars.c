@@ -37,7 +37,7 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 
   // some parameters
 	star->next = NULL;
-	star->idx = idx;
+	star->idx = -1000;
 	star->level = level;
 	star->is = is;
 	star->isStar = 6;
@@ -59,15 +59,16 @@ void initStar(struct Wtype *field, struct PART *star, struct RUNPARAMS *param, i
 	star->x += rdm(-0.5,0.5)*dx;
 	star->y += rdm(-0.5,0.5)*dx;
 	star->z += rdm(-0.5,0.5)*dx;
-  // compute random component
+
+  // compute random velocity component
 	REAL r = rdm(0,1) * field->a;
 	REAL theta  = acos(rdm(-1,1));
 	REAL phi = rdm(0,2*M_PI);
 
-  // add random component
-	star->vx += r * sin(theta) * cos(phi); 
-	star->vy += r * sin(theta) * sin(phi); 
-	star->vz += r * cos(theta) ; 
+  // add random velocity component
+	star->vx += r * sin(theta) * cos(phi);
+	star->vy += r * sin(theta) * sin(phi);
+	star->vz += r * cos(theta) ;
 #endif // RDM_STARS
 
   //mass
@@ -166,7 +167,7 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	U2W(&U, &W);
 
 //	total energy
-	getE(&(W));
+	getE(&W);
 	W.a=SQRT(GAMMA*W.p/W.d);
 	W.p=FMAX(W.p,PMIN);
 	memcpy(field,&W,sizeof(struct Wtype));
@@ -523,11 +524,15 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
 
 
   const int debug=0;
+  if (debug) printf("\n setting ID \n");
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
 
   //count old and new stars
-  int locNstarsOld=0;
-  int locNstarsNew=0;
+  int locNOld=0;
+  int locNNew=0;
 
   int iOct;
   for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
@@ -542,36 +547,41 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
         do{
           struct PART *curp=nexp;
           nexp=curp->next;
-          if(curp->isStar){
-             if(curp->idx==-1) locNstarsNew++;
-             else              locNstarsOld++;
-          }
+
+            if(curp->idx==-1000) locNNew++;
+            else                 locNOld++;
+
         }while(nexp!=NULL);
       }
     }
   }
 
-  //reduce
-  int*NstarsOld = (int*)calloc(cpu->nproc,sizeof(int));
-  int*NstarsNew = (int*)calloc(cpu->nproc,sizeof(int));
-
-  MPI_Allgather(&locNstarsNew,1,MPI_INT,NstarsNew ,1,MPI_INT, cpu->comm);
-  MPI_Allgather(&locNstarsOld,1,MPI_INT,NstarsOld ,1,MPI_INT, cpu->comm);
+  if (debug) printf("locNNew %d\n", locNNew);
+  if (debug) printf("locNOld %d\n", locNOld);
 
 
-  int ntot=0;
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
   int i;
-  for (i=0;i<cpu->nproc;i++){
-    ntot += NstarsOld[i];
-  }
 
-  int offset = 0;
+  //reduce
+  int noldtot;
+  MPI_Allreduce(&locNOld,&noldtot,1,MPI_INT,MPI_SUM,cpu->comm);
+
+  int* NNew = (int*)calloc(cpu->nproc,sizeof(int));
+  MPI_Allgather(&locNNew,1,MPI_INT,NNew ,1,MPI_INT, cpu->comm);
+
+  int cpuoffset = 0;
   for (i=0;i<cpu->rank;i++){
-    offset += NstarsNew[i];
+    cpuoffset += NNew[i];
   }
 
-  if (debug) printf("offset %d\n", offset);
+  //if (debug) printf("cpuoffset %d\n", cpuoffset);
 
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
 
   // setting ID
   int curID=0;
@@ -580,26 +590,30 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
     struct OCT *curoct=cpu->octList[level-1][iOct];
 
     int icell;
-    for(icell=0;icell<8;icell++) {
+    for(icell=0;icell<8;icell++){
       struct CELL *curcell = &curoct->cell[icell];
 
-      struct PART * nexp=curoct->cell[icell].phead;
+      struct PART *nexp=curcell->phead;
       if(nexp!=NULL){
         do{
           struct PART *curp=nexp;
           nexp=curp->next;
-          if(curp->isStar && curp->idx==-1 ){
 
-            curp->idx = ntot+ offset + curID++;
-
+          if(curp->idx==-1000){
+            curp->idx = noldtot+ cpuoffset+ curID++;
+            //printf("%d \n",curp->idx);
           }
+
         }while(nexp!=NULL);
       }
     }
   }
 
-  free(NstarsOld);
-  free(NstarsNew);
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+
+  free(NNew);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -713,8 +727,6 @@ printWtype(&curcell->field);
 
 
 #ifdef WMPI
-
-
   MPI_Allreduce(MPI_IN_PLACE,&n_unit_stars,1,MPI_INT,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&n_part_stars,1,MPI_INT,MPI_SUM,cpu->comm);
   MPI_Allreduce(MPI_IN_PLACE,&mmax,1,MPI_REEL,MPI_MAX,cpu->comm);

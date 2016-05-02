@@ -309,8 +309,9 @@ int main(int argc, char *argv[])
   readOutputParam_part(partoutput, &param);
 #endif // ALLOCT
 
-
-
+//test rdm()
+//for (i=0;i<10;i++) printf("%le\n",(REAL)rdm(0,1));
+//abort();
 
 #ifdef ZOOM
   // some parameters for ZOOM DEBUG
@@ -319,7 +320,6 @@ int main(int argc, char *argv[])
   //param.lmaxzoom=param.lcoarse+4;
   param.lmaxzoom=param.lmax;
 #endif
-
 
 #ifdef MOVIE
 	init_movie(&param);

@@ -1134,7 +1134,6 @@ double tsn[10];
 #endif
 #endif // SUPERNOVAE
 
-
     // ================= V Computing the new refinement map
 #ifdef WMPI
     double tmk[10];
@@ -1218,8 +1217,6 @@ double tsn[10];
     // Some Eye candy for timesteps display
 
     //dispndt(param,cpu,ndt);
-
-
 
     // === Loop
   }while((dt<adt[level-2])&&(is<nsub));
