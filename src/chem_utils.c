@@ -17,10 +17,6 @@
 #define FSCHAYE 1.0
 
 
-
-
-
-
 //================================================================================
 void E2T(struct Rtype *R, REAL aexp,struct RUNPARAMS *param){
 
@@ -114,7 +110,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 #ifndef OTSA
   c2=1.778e-29*temp*POW(2e0*157807e0/temp,1.965e0)/POW(1.+POW(2e0*157807e0/temp/0.541e0,0.502e0),2.697e0)*x*x*nh2*nh2*CLUMPF*(1+yHE);
 #ifdef NORECSOURCE
-  if(src) c2*=1e-2;
+  if(src) c2*=NORECSOURCE_FACT;
 #endif
 #endif
 
@@ -123,7 +119,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 #ifdef OTSA
   c6=3.435e-30*temp*POW(2e0*157807e0/temp,1.970e0)/POW(1.+(POW(2e0*157807e0/temp/2.250e0,0.376e0)),3.720e0)*x*x*nh2*nh2*CLUMPF;
 #ifdef NORECSOURCE
-  if(src) c6*=1e-2;
+  if(src) c6*=NORECSOURCE_FACT;
 #endif
 #endif
 
@@ -581,7 +577,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 	  REAL RECT=alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool;
 #ifdef NORECSOURCE
-	  if(srcloc[idloc]>0.) RECT*=1e-2;
+	  if(srcloc[idloc]>0.) RECT*=NORECSOURCE_FACT;
 #endif
 	  xt=1.-(RECT+(1.0 -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
 

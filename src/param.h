@@ -12,7 +12,7 @@
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
 #define FRAC_VAR (0.25)
 #define N_BIN_PDF (128)
-
+#define NORECSOURCE_FACT (1e-2)
 
 // BELOW ALREADY DEFINED IN PROTOTYPES.H
 /* #define NGRP_SPACE (3) */
