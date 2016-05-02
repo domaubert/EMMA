@@ -127,7 +127,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
 #endif
 #endif
 
-  
+
 
   // Collisional excitation cooling
 
@@ -154,7 +154,7 @@ void cuCompCooling(REAL temp, REAL x, REAL nH, REAL *lambda, REAL *tcool, REAL a
   REAL c7,c8,c9,c10;
   //Ionisation Cooling
   c7=1.88e-21*SQRT(temp)*EXP(-285335.4/temp)/(1.+SQRT(temp/1e5))*nh2*x*(1.+yHE)*nh2*(1.-x)*yHE*CLUMPF;
-  
+
   //Recombination Cooling
   c8=1.55e-26*POW(temp,0.3647)*nh2*x*(1.+yHE)*nh2*x*yHE*CLUMPF;
 
@@ -327,18 +327,18 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       xorg= x0[idloc];
 
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)*param->unit.unit_N;
-            
+
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
 
       for (igrp=0;igrp<NGRP;igrp++){
 	srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
       }
-      
+
       // R.src phot/unit_t/unit_dv (comobile)
       REAL eorg=eint[idloc];
       REAL etorg=egyloc[idloc+0*BLOCKCOOL];
-      
+
 
 
       // ========================== POLYTROP ================================
@@ -348,7 +348,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       int onpoly=0;
 
 #ifdef POLYTROP
-      if((nH[idloc]>1e6)&&(R.nh>0)){ 
+      if((nH[idloc]>1e6)&&(R.nh>0)){
 	eintschaye=(1.08e9*KBOLTZ)*POW(nH[idloc]/1e5,4./3.)/(GAMMA-1)/FSCHAYE; // polytropic EOS
 	if(eint[idloc]<eintschaye){
 	  eint[idloc]=eintschaye;
@@ -361,7 +361,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  eint[idloc]=eintschaye;
 	  onpoly=1;
 	}
-	
+
       }
 #endif
 
@@ -380,10 +380,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif
       REAL torg=eint[idloc]/(1.5*Nfree*KBOLTZ);
 
-       if(etorg<EMIN) { 
-       	printf("%e %e %e\n",R.e[1],aexporg,param->unit.unit_N); 
+       if(etorg<EMIN) {
+       	printf("%e %e %e\n",R.e[1],aexporg,param->unit.unit_N);
        	abort();
-       } 
+       }
 
 
 
@@ -448,7 +448,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #else
 	  Nfree=(1.+x0[idloc])*nH[idloc];
 #endif
-      
+
 	  tloc=eint[idloc]/(1.5*Nfree*KBOLTZ);
 	  REAL tmin=emin/(1.5*Nfree*KBOLTZ);
 	  //== Getting a timestep
@@ -480,52 +480,32 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  alphab=cucompute_alpha_b(tloc,1.,1.)*CLUMPF2;
 	  beta=cucompute_beta(tloc,1.,1.)*CLUMPF2;
 
-#ifdef SRCNORECOMB
-    int src_test =0;
-    for (igrp=0;igrp<NGRP;igrp++){
-      if (srcloc[idloc+igrp*BLOCKCOOL]>0){
-        src_test=1;
-      }
-    }
-
-    if(src_test){
-      REAL fact = 0.5;
-      alpha *= fact;
-      alphab *= fact;
-    }
-
-//  printf("src_test=%d\n",src_test);
-//    abort();
-#endif // SRCNORECOMB
-
-
-
 	  //== Update
 
 	  // ABSORPTION
 	  int test = 0;
 	  REAL factotsa[NGRP];
 	  for(igrp=0;igrp<NGRP;igrp++){
-	  
+
 #ifdef OTSA
 	  factotsa[igrp]=0;
 	  alpha=alphab; // recombination is limited to non ground state levels
 #else
 	  factotsa[igrp]=(igrp==0);
 #endif
-	  
+
 #ifdef HESIMPLE
 	  ai_tmp1 = (alphai[igrp]+yHE*alphaiHE[igrp])*(1.-x0[idloc])+(alphaiHE2[igrp])*(x0[idloc])*yHE;
 #else
 	  ai_tmp1 = alphai[igrp]*(1.-x0[idloc]);
-	  
+
 #endif
 
 	  if(chemonly){
 	  et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 	}
 	  else{
-	  
+
 	    REAL EARG=dtcool*ai_tmp1*nH[idloc];
 	    REAL EE;
 	    REAL ONEMINUSEE;
@@ -543,7 +523,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    //et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
 	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
 #else
-	  
+
 #ifndef OTSA
 	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
 #else
@@ -558,12 +538,12 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
 
 	  }
-	  
+
 	  if((et[igrp]<0)||(isnan(et[igrp]))){
 	    test=1;
 	    printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+0*BLOCKCOOL]);
 	  }
-	  
+
 	  //p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);
 
 	  }
@@ -598,13 +578,13 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*egyloc[idloc+igrp*BLOCKCOOL]*N2[igrp]*(!chemonly);}
 #endif
 #endif
-	  
+
 	  REAL RECT=alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool;
 #ifdef NORECSOURCE
 	  if(srcloc[idloc]>0.) RECT*=1e-2;
 #endif
 	  xt=1.-(RECT+(1.0 -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
-	  
+
 	  /* if(srcloc[idloc]>0.){ */
 	  /*   printf("xt=%e x0=%e xorg=%e RECT=%e\n",xt,x0[idloc],xorg,RECT); */
 	  /*   abort(); */
@@ -793,7 +773,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  }
       }
 
-      
+
 
 
       R.nhplus=x0[idloc]*R.nh;

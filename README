@@ -1,17 +1,17 @@
 How to get:
 	git clone https://github.com/domaubert/EMMA.git
-	decompress the archive in directory EMMADIR	
+	decompress the archive in directory EMMADIR
 
 how to build:
-       
+
 	cd EMMADIR
-	
+
 	# mv the default configuration/compilation files in init to the root
 	# of EMMADIR
 
 	cp init/param_init.mk param.mk
 	cp init/param_init.h src/param.h
-	
+
 	# in EMMADIR, build the binary
 	make
 
@@ -21,9 +21,10 @@ at this stage go to your working directory WORKDIR and create the dependencies
        cd WORKDIR
 
        ln -s EMMADIR/emmacpu ./ #create a local symbolic link to the binary
+       mkdir obj 
        mkdir data # will store the results (or create a symoblic link)
        ln -s EMMADIR ./SRC    #create a symlink to the EMMA directory
-       
+
 
 how to launch
       cd WORKDIR
@@ -31,4 +32,3 @@ how to launch
       cp EMMADIR/init/param_init.run.grid_output ./param.run.grid_output
       cp EMMADIR/init/param_init.run.part_output param.run.part_output
       mpirun -np N ./emmacpu param.run
-

@@ -74,10 +74,10 @@ def genGraphic(L,size, output):
 
 	os.system("make -C " +folder+ " clean")
 	os.system("make -C " +folder)
- 	os.system("./" +folder+ "grafic1 <" +folder+ "Input.planck")
- 	os.system("mkdir ../%s"%output)
- 	os.system("mkdir ../%s/level_%03d"%(output,L) )
- 	os.system("mv ic_* ../%s/level_%03d"%(output,L) )
+	os.system("./" +folder+ "grafic1 <" +folder+ "Input.planck")
+	os.system("mkdir ../%s"%output)
+	os.system("mkdir ../%s/level_%03d"%(output,L) )
+	os.system("mv ic_* ../%s/level_%03d"%(output,L) )
 
 #########################################################################################
 #########################################################################################
@@ -133,8 +133,8 @@ def genMusic(L,size, output, seed):
 	write_conf(folder, L,size, output, seed)
 
 	os.system("./%sMUSIC %sic.conf"%(folder,folder))
- 	os.system("mkdir ../%s "%output )		
- 	os.system("cp -rf  %s/* ../%s"%(output,output) )
+	os.system("mkdir ../%s "%output )
+	os.system("cp -rf  %s/* ../%s"%(output,output) )
 	os.system("rm -rf  %s"%output)
 
 #########################################################################################
@@ -146,14 +146,14 @@ if __name__ == "__main__":
 
 
 	if len(sys.argv)<=1:
-		print "usage : ./genIC level size_in_(Mpc/h)^3"
+		print("usage : ./genIC level size_in_(Mpc/h)^3")
 		exit(1)
 
 	L = int(sys.argv[1])
 	size = int(sys.argv[2])
 
-	N = pow(2,L)	
-	print "generating a (%d Mpc/h)^3 in %d^3"%(size,N)
+	N = pow(2,L)
+	print("generating a (%d Mpc/h)^3 in %d^3"%(size,N))
 
 
 	#generator = "graphic"
@@ -169,5 +169,3 @@ if __name__ == "__main__":
 		genGraphic(L,size, output)
 	if generator == "music":
 		genMusic(L,size, output,seed)
-
-
