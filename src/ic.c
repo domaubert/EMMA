@@ -1799,7 +1799,7 @@ int read_evrard_hydro(struct CPUINFO *cpu,struct OCT **firstoct, struct RUNPARAM
 	  W.a=sqrt(GAMMA*W.p/W.d);
 	  getE(&W);
 
-	  if(W.p<PMIN) {printf(" YOU SHOULD RECONSIDER PMIN %e %e %e %e\n",W.p,pressure,pstar,PMIN);abort();}
+	  if(W.p<PMIN) {printf(" YOU SHOULD RECONSIDER PMIN %e %e %e %e temp=%e rhob=%e\n",W.p,pressure,pstar,PMIN,temp,rhob);abort();}
 
 #ifdef WRADHYD
 	  // Testing ADVECTION
