@@ -515,7 +515,9 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 #endif
 	//printf("nstar=%d\n",nstar);
   param->stars->n=nstar;
+#ifdef AGN
   param->stars->nagn=nagn;
+#endif
 #endif
 
   return freepart;

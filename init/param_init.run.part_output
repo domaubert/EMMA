@@ -13,8 +13,8 @@ fx		0
 fy		0
 fz		0
 idx		1
-mass	1
 epot	1
 ekin	1
 etot	1
+mass	1
 age		1

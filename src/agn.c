@@ -147,9 +147,10 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
   //Computing the Emissivity of the BH in photons/s
   REAL E_FEEDBACK=epsilonr*epsilonf/(1-epsilonf*epsilonr)*MBHdot*pow(LIGHT_SPEED_IN_M_PER_S,2); // J/sec
   REAL Ngammadot=epsilonr*epsilonf/(1-epsilonf*epsilonr)*MBHdot*pow(LIGHT_SPEED_IN_M_PER_S,2)/(curp->mass*param->unit.unit_mass);
-  Ngammadot/=(20.26*ELECTRONVOLT); //In photons/s
+  Ngammadot/=(20.26*ELECTRONVOLT); //In photons/s/kg
   printf("Number of photons emited per second per kg :%0.6E Efeedback=%e\n",Ngammadot,E_FEEDBACK);
 	    //Print BH Mass in a file
+  curp->ekin=E_FEEDBACK;
 
   
   BH->mass=curp->mass*param->unit.unit_mass/SOLAR_MASS; //After modification at t+1

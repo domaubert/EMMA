@@ -256,9 +256,28 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 
 #endif
 
+      if(curp->isStar==100){
+	// AGN CASE
+#ifdef AGN
+        REAL t = (param->cosmo->tphy - curp->age) / param->stars->tlife;
+        int igrp;
+	REAL Ngammadot=curp->ekin/(curp->mass*param->unit.unit_mass); // here ekin contains the AGN luminosity
+	Ngammadot/=(20.26*ELECTRONVOLT); //In photons/s/kg
+
+        for(igrp=0;igrp<NGRP_SPACE;igrp++){
+          cell->rfield.src[curp->radiative_state*NGRP_SPACE+igrp] +=  (curp->mass*param->unit.unit_d)*Ngammadot/POW(dxcur,3)*param->unit.unit_t/param->unit.unit_N*POW(aexp,2)*(t>0?1.:0.); // switch to code units
+        }
+
+        //printf("SRC= %e\n",cell->rfield.src);
+        //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
+        flag=1;
+	
+#endif
+      }
+      else{
 
 #ifdef DECREASE_EMMISIVITY_AFTER_TLIFE
-REAL age =  param->cosmo->tphy - curp->age;
+      REAL age =  param->cosmo->tphy - curp->age;
       if (age<param->stars->tlife){
 #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
 
@@ -299,6 +318,7 @@ REAL age =  param->cosmo->tphy - curp->age;
         flag=1;
       }
 #endif // DECREASE_EMMISIVITY_AFTER_TLIFE
+      }
     }
 
   }while(nexp!=NULL);

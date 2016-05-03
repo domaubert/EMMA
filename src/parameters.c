@@ -270,7 +270,7 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     "fy",
     "fz",
     "idx",
-    "epot",
+    "isStar",
     "ekin",
     "etot",
     "mass",
@@ -1067,7 +1067,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       if(nexp==NULL) continue;
       curp=nexp;
       nexp=curp->next;
-      if(curp->isStar){
+      if((curp->isStar)&&(curp->isStar!=100)){
         param->physical_state->mstar += curp->mass;
 
         if (param->cosmo->tphy - curp->age < param->sn->tlife){
