@@ -414,6 +414,9 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
 #ifdef STARS
   int nstar=0;
+#ifdef AGN
+  int nagn=0;
+#endif
 #endif
 
   rootpart_mem=proot; // the root cell of the grid in memory
@@ -454,6 +457,9 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 
 #ifdef STARS
     if(curp->isStar)  nstar++;
+#ifdef AGN
+    if(curp->isStar==100)  nagn++;
+#endif
 #endif
 
  //   printf("memcpy OK \n");
@@ -509,6 +515,7 @@ struct PART * restore_part(char filename[], struct OCT **firstoct, REAL *tsim, s
 #endif
 	//printf("nstar=%d\n",nstar);
   param->stars->n=nstar;
+  param->stars->nagn=nagn;
 #endif
 
   return freepart;

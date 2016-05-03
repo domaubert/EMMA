@@ -439,20 +439,26 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 
 //	      printf("age=%e  tsn=%e\n",age,tlife_sn);
 
-
-	      if(SNdead){
-		if(isRAD){
-		  curp->isStar=8;
+	      int isAGN=0;
+#ifdef AGN
+	      if(curp->isStar==100) isAGN=1;
+#endif
+	      
+	      if(!isAGN){
+		if(SNdead){
+		  if(isRAD){
+		    curp->isStar=8;
+		  }
+		  else{
+		    curp->isStar=4;
+		  }
 		}
 		else{
-		  curp->isStar=4;
+		  if( (isRAD==0) && (isSN==0)) curp->isStar=4;
+		  if( (isRAD==0) && (isSN==1)) curp->isStar=5;
+		  if( (isRAD==1) && (isSN==0)) curp->isStar=6;
+		  if( (isRAD==1) && (isSN==1)) curp->isStar=7;
 		}
-	      }
-	      else{
-		if( (isRAD==0) && (isSN==0)) curp->isStar=4;
-		if( (isRAD==0) && (isSN==1)) curp->isStar=5;
-		if( (isRAD==1) && (isSN==0)) curp->isStar=6;
-		if( (isRAD==1) && (isSN==1)) curp->isStar=7;
 	      }
 
 //------------------------------------------------------------------------------------------------//
@@ -692,8 +698,8 @@ const int debug=0;
   struct Wtype init_state=curcell->field;
 	int ipart;
 	for (ipart=0;ipart< N; ipart++){
-    addStar(curcell, &init_state, level, xc, yc, zc, cpu, dt, param, aexp, is,n_part_stars++, mstars_level);
-    n_unit_stars++;
+	  addStar(curcell, &init_state, level, xc, yc, zc, cpu, dt, param, aexp, is,n_part_stars++, mstars_level);
+	  n_unit_stars++;
   }
 #else
 #ifdef CONTINUOUSSTARS
@@ -742,7 +748,13 @@ printWtype(&curcell->field);
       printf("%d stars added in %d particles on level %d --> min=%d max=%d \n", n_unit_stars, n_part_stars, level,nstarsmin_in_one_cell,nstarsmax_in_one_cell);
       printf("%d stars particles in total\n",param->stars->n);
     }
-    if(cpu->trigstar==0 && param->stars->n>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
+    int nsta;
+#ifndef AGN
+    nsta=param->stars->n;
+#else
+    nsta=param->stars->n-param->stars->nagn;
+#endif
+    if(cpu->trigstar==0 && nsta>0) printf("FIRST_STARS at z=%e\n",1./aexp-1.);
     if(param->stars->n>0) cpu->trigstar=1;
   }
 

@@ -117,6 +117,10 @@ struct STARSPARAM{
   gsl_rng *rpoiss;
 #endif
 
+#ifdef AGN
+  int nagn;
+#endif
+
 };
 #endif
 

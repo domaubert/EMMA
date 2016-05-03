@@ -229,6 +229,10 @@ int main(int argc, char *argv[])
 
 #ifdef STARS
   struct STARSPARAM stars;
+  stars.n=0;
+#ifdef AGN
+  
+#endif
   param.stars=&stars;
 #endif
 
