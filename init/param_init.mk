@@ -7,10 +7,11 @@ DEFINES  +=  -DWRADHYD
 DEFINES  +=  -DTESTCOSMO
 DEFINES  +=  -DSTARS
 DEFINES  +=  -DSUPERNOVAE
+DEFINES  +=  -DAGN
 #DEFINES  +=  -DZOOM
 
 #------------ PRECISION OPTIONS ---------------------
-#DEFINES  +=  -DSINGLEPRECISION
+DEFINES  +=  -DSINGLEPRECISION
 
 #------------ MPI OPTIONS ---------------------
 DEFINES  +=  -DWMPI
