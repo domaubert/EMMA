@@ -1,3 +1,13 @@
 *.o
 *~
 Emma
+level_*
+data
+.exclude
+Emma.cbp
+SRC
+emmacpu
+emmagpu
+param*
+scripts/*
+sync
