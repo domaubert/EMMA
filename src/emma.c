@@ -230,11 +230,16 @@ int main(int argc, char *argv[])
 #ifdef STARS
   struct STARSPARAM stars;
   stars.n=0;
-#ifdef AGN
-  
-#endif
   param.stars=&stars;
 #endif
+
+
+#ifdef AGN
+  struct AGNPARAM agn;
+  agn.feedback_frac=0.01;
+  param.agn=&agn;
+#endif
+
 
 #if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST unitary_stars_test;

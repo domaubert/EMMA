@@ -522,8 +522,8 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
    curp->vx+=-accel[0]*dt;
    curp->vy+=-accel[1]*dt;
    curp->vz+=-accel[2]*dt;
-   curp->epot=pot;
-   curp->ekin=0.5*(POW(curp->vx,2)+POW(curp->vy,2)+POW(curp->vz,2));
+   /* curp->epot=pot; */
+   /* curp->ekin=0.5*(POW(curp->vx,2)+POW(curp->vy,2)+POW(curp->vz,2)); */
 
    //if(curp->idx==54944) printf("pos= %e %e %e vel = %e %e %e accel =%e %e %e dt=%e lp=%d\n",curp->x,curp->y,curp->z,curp->vx,curp->vy,curp->vz,accel[0],accel[1],accel[2],dt,curp->level);
    //printf("idx=%d fx=%e/%e fy=%e/%e fz=%e/%e\n",curp->idx,accel[ic]2,accel[ic],accely2,accely,accelz2,accelz);

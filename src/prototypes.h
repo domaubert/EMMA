@@ -124,6 +124,12 @@ struct STARSPARAM{
 };
 #endif
 
+#ifdef AGN
+struct AGNPARAM{
+  REAL feedback_frac; // fraction of Energy produced in mechanical feedback
+};
+#endif
+
 #ifdef SUPERNOVAE
 struct SNPARAM{
   REAL feedback_eff;///< feedback efficiency
@@ -337,6 +343,11 @@ struct RUNPARAMS{
 #ifdef SUPERNOVAE
   struct SNPARAM *sn; ///< the supernovae parameters
 #endif // SUPERNOVAE
+
+#ifdef AGN
+  struct AGNPARAM *agn;
+#endif
+
 
   int nthread; ///< number of GPU threads
   int nstream; ///< number of GPU streams

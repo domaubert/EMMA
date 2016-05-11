@@ -17,7 +17,7 @@
 #include "stars.h"
 #include "tools.h"
 #include "particle.h" //findlastpart
-
+#include "supernovae.h"
 
 
 // Added by Bacher MOKHTARI
@@ -144,15 +144,33 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
     conservation(&(cell->field),param,curp,level,aexp,MBHdot*(pow(aexp,2)*param->unit.unit_t/param->unit.unit_mass)*dt/pow(0.5,3*level));
     curp->mass+=MBHdot*(pow(aexp,2)*param->unit.unit_t/param->unit.unit_mass)*dt;
   }
+
+  /* REAL egy = param->sn->sn_egy; // j/kg */
+  /* egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit */
+
   //Computing the Emissivity of the BH in photons/s
   REAL E_FEEDBACK=epsilonr*epsilonf/(1-epsilonf*epsilonr)*MBHdot*pow(LIGHT_SPEED_IN_M_PER_S,2); // J/sec
   REAL Ngammadot=epsilonr*epsilonf/(1-epsilonf*epsilonr)*MBHdot*pow(LIGHT_SPEED_IN_M_PER_S,2)/(curp->mass*param->unit.unit_mass);
   Ngammadot/=(20.26*ELECTRONVOLT); //In photons/s/kg
-  printf("Number of photons emited per second per kg :%0.6E Efeedback=%e\n",Ngammadot,E_FEEDBACK);
+  Ngammadot*=(1.-param->agn->feedback_frac);
 	    //Print BH Mass in a file
-  curp->ekin=E_FEEDBACK;
 
+  curp->ekin=E_FEEDBACK*(1.-param->agn->feedback_frac); // energy converted into luminosity
+
+  /* REAL E_MECHA; */
+  /* E_MECHA=E_FEEDBACK*(param->agn->feedback_frac)*(pow(aexp,2)*param->unit.unit_t)*dt; // */
+  /* E_MECHA*= 1.0/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // mechanical energy in code units */
   
+  REAL E_MECHA;
+  E_MECHA=E_FEEDBACK*(param->agn->feedback_frac)*POW(aexp,4.)*dt;//(curp->mass*param->unit.unit_mass);// J/sec/kg
+  REAL unit=param->unit.unit_t/param->unit.unit_mass;
+  unit/=POW(param->unit.unit_v,2.);
+  E_MECHA=E_MECHA*unit/POW(0.5,3*level);
+
+  printf("Number of photons emited per second per kg :%0.6E [phots/s/kg] Efeedback=%e[J/sec] E_MECA=%e [Code Unit]\n",Ngammadot,E_FEEDBACK,E_MECHA);
+  //  abort();
+
+
   BH->mass=curp->mass*param->unit.unit_mass/SOLAR_MASS; //After modification at t+1
   BH->lumi=Ngammadot;
   BH->aexp=aexp;
@@ -164,7 +182,7 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
   BH->y=curp->y;
   BH->z=curp->z;
 
-  return E_FEEDBACK;
+  return E_MECHA;
 
 }
 
@@ -193,22 +211,20 @@ int agn_grow(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
       REAL E= computeAGNfeedback(cell,curp,param,aexp,level,dt, BH);
       
       
-#ifdef AGN_MECH_FEEDBACK
       // TO be implemented later, by inspiration from supernovae
       if(param->agn->feedback_frac){
          /* oct feedback
           * if kinetic feedback
           * the energy is injected in a oct
           */
-        thermalFeedbackOct(param,cell,curp,level, E*(1.-param->agn->feedback_frac));
+        thermalFeedbackOct(param,cell,curp,level, E);
 
-        if (param->agn->ejecta_proportion){
-          kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
-        }else{
-          kineticFeedback_simple(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
-        }
+        /* if (param->agn->ejecta_proportion){ */
+        /*   kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac); */
+        /* }else{ */
+        /*   kineticFeedback_simple(param, cell,curp,aexp,level, E*param->sn->feedback_frac); */
+        /* } */
       }
-#endif
       
       Nsn++;
     }
@@ -264,7 +280,7 @@ void initagn(struct Wtype *field, struct PART *agn, struct RUNPARAMS *param, int
 
   //energy
 	agn->epot = 0.0;
-	agn->ekin = 0.5 * agn->mass * (POW(agn->vx,2) + POW(agn->vy,2) + POW(agn->vz,2));
+	agn->ekin = 0.0; // NOTE is used for feedback energy
 
   // age
 #ifdef TESTCOSMO
