@@ -271,8 +271,8 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     "fz",
     "idx",
     "isStar",
+    "epot",
     "ekin",
-    "etot",
     "mass",
     "age"
   };

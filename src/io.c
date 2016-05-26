@@ -241,10 +241,10 @@ float assign_part_field(int field,struct PART *curp){
 		  res=(float)(curp->isStar);
 		  break;
     case 11:
-		  res=(float)(curp->ekin);
+		  res=(float)(curp->epot);
 		  break;
     case 12:
-		  res=(float)(curp->ekin+curp->epot);
+		  res=(float)(curp->ekin);
 		  break;
 
 #ifdef STARS
