@@ -127,6 +127,10 @@ struct STARSPARAM{
 #ifdef AGN
 struct AGNPARAM{
   REAL feedback_frac; // fraction of Energy produced in mechanical feedback
+  REAL *x;
+  REAL *y;
+  REAL *z;
+  int nagn;
 };
 #endif
 
@@ -1185,3 +1189,4 @@ struct MULTIVECT{
   int *vecicoarse_d;
 #endif
 };
+

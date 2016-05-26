@@ -234,11 +234,6 @@ int main(int argc, char *argv[])
 #endif
 
 
-#ifdef AGN
-  struct AGNPARAM agn;
-  agn.feedback_frac=0.01;
-  param.agn=&agn;
-#endif
 
 
 #if defined(WRADTEST) || defined(SNTEST)
@@ -886,6 +881,17 @@ int main(int argc, char *argv[])
     cpu.allkmax[0]=cpu.kmax;
 #endif
 
+
+    // =================== AGN ALLOCATIONS
+#ifdef AGN
+  struct AGNPARAM agn;
+  agn.feedback_frac=0.01;
+  agn.x=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  agn.y=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  agn.z=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  //if(cpu.rank==0) printf("%d %d %p %p %p\n",cpu.rank,param.npartmax,agn.x,agn.y,agn.z);
+  param.agn=&agn;
+#endif
 
 
   //========== building the initial meshes ===

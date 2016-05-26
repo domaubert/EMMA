@@ -288,6 +288,20 @@ void initagn(struct Wtype *field, struct PART *agn, struct RUNPARAMS *param, int
 #else
 /// TODO fix age of star ifndef TESTCOSMO
 #endif
+
+	// update local agn list
+	if(param->agn->nagn<param->npartmax){
+	  int iloc=param->agn->nagn;
+	  param->agn->x[iloc]=agn->x;
+	  param->agn->y[iloc]=agn->y;
+	  param->agn->z[iloc]=agn->z;
+	  param->agn->nagn+=1;
+	}
+	else{
+	  printf("Error too many AGNs\n");
+	  abort();
+	}
+
 }
 
 // ============================================================================
@@ -342,6 +356,39 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 }
 
 
+//========================================================================= 
+int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
+
+  int i=0;
+  REAL dist;
+  int result=1;
+  REAL ragn2=ragn*ragn;
+
+  while((i<param->agn->nagn)&&(result)){
+    REAL X=x-param->agn->x[i];
+    X=(X>0.5?X-1.:X);
+    X=(X<-0.5?X+1.:X);
+
+    REAL Y=y-param->agn->y[i];
+    Y=(Y>0.5?Y-1.:Y);
+    Y=(Y<-0.5?Y+1.:Y);
+
+    REAL Z=z-param->agn->z[i];
+    Z=(Z>0.5?Z-1.:Z);
+    Z=(Z<-0.5?Z+1.:Z);
+
+    if((X*X+Y*Y+Z*Z)<ragn2){
+      result=0;
+    }
+    i++;
+  }
+
+  return result;
+}
+
+//=============================================================================================
+
+
  void agn(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp, int level,int is){
   // ------------------------------------------------------- //
 // Call the agn function for all cells of the grid  //
@@ -366,7 +413,10 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 	int n_part_agn = 0;
 	int n_unit_agn = 0;
 	REAL mass_agn=1E5*SOLAR_MASS/param->unit.unit_mass;
+	REAL ragn=20e3*PARSEC/aexp/param->unit.unit_l; // physical distance -> comoving distance
 
+	/* printf("ragn=%e\n",ragn);  */
+	/* abort(); */
 	int iOct;
 	for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
 	  struct OCT *curoct=cpu->octList[level-1][iOct];
@@ -376,15 +426,21 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 	    // if conditions are satisfied we create an agn
 	    // we use the same fonction as the one in stars.c
 
-	    if((testCond(curcell, param, aexp, level))&&(param->stars->nagn==0)) {
+	    if((testCond(curcell, param, aexp, level))&&(param->stars->nagn<=10)) {
 
 	      REAL dx = POW(2.0,-level);
 	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
 	      REAL yc=curoct->y+((icell>>1)& 1)*dx+dx*0.5;
 	      REAL zc=curoct->z+( icell>>2    )*dx+dx*0.5;
 
-	      addagn(curcell, &curcell->field, level, xc, yc, zc, cpu, dt, param, aexp, is,n_part_agn++, mass_agn);
-	      n_unit_agn++;
+	      if(testdist(xc,yc,zc,param,ragn)){
+		printf("NEW AGN in %e %e %e!\n",xc,yc,zc);
+		addagn(curcell, &curcell->field, level, xc, yc, zc, cpu, dt, param, aexp, is,n_part_agn++, mass_agn);
+		n_unit_agn++;
+	      }
+	      else{
+		//printf("Blocked because of distance\n");
+	      }
 	    }
 
 	    // otherwise we check if an agn exists and make it grow if necessary
@@ -399,12 +455,13 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 	MPI_Allreduce(MPI_IN_PLACE,&n_part_agn,1,MPI_INT,MPI_SUM,cpu->comm);
 #endif
 
+
 	param->stars->n += n_part_agn; // NOTE AGNs are counted as stars
 	param->stars->nagn += n_part_agn; // NOTE AGNs are counted as stars
 
 	if(cpu->rank==RANK_DISP) {
 	  if (n_unit_agn){
-	    printf("%d AGN added on level %d\n",n_unit_agn,level);
+	    printf("%d AGN added on level %d/ tot number=%d \n",n_unit_agn,level,param->stars->nagn);
 	  }
 	}
 
