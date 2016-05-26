@@ -426,7 +426,7 @@ int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 	    // if conditions are satisfied we create an agn
 	    // we use the same fonction as the one in stars.c
 
-	    if((testCond(curcell, param, aexp, level))&&(param->stars->nagn<=10)) {
+	    if(testCond(curcell, param, aexp, level)) {
 
 	      REAL dx = POW(2.0,-level);
 	      REAL xc=curoct->x+( icell    & 1)*dx+dx*0.5;
@@ -437,6 +437,7 @@ int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 		printf("NEW AGN in %e %e %e!\n",xc,yc,zc);
 		addagn(curcell, &curcell->field, level, xc, yc, zc, cpu, dt, param, aexp, is,n_part_agn++, mass_agn);
 		n_unit_agn++;
+		param->stars->nagn++;
 	      }
 	      else{
 		//printf("Blocked because of distance\n");
