@@ -66,7 +66,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 endif
 
 all:$(OBJ) $(CUDA_OBJ)
-	$(CC) $(OBJ)  $(CUDA_OBJ) $(HDF5_LDFLAGS) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE) -lgsl -lgslcblas -lhdf5 -lz
+	$(CC) $(OBJ)  $(CUDA_OBJ) $(HDF5_LDFLAGS) $(C_LIBS) $(CUDA_LIBS) -I$(SRCDIR) -o $(EXECUTABLE) -lhdf5 -lz
 
 oct2grid:
 	$(CC) $(DEFINESGLOB) $(C_LIBS) $(C_FLAGS) utils/oct2grid.c -o utils/oct2grid -lm

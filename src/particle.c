@@ -36,7 +36,7 @@ void printPart(struct PART* part){
 int checkPartNan(struct PART* part){
 
   int getNan=0;
-
+/*
   if(isnan(part->x)){
     getNan ++;
     printf("part x is NAN\n");
@@ -137,7 +137,9 @@ int checkPartNan(struct PART* part){
   }
 
 #endif
+  */
   return getNan;
+
 };
 
 //------------------------------------------------------------------------

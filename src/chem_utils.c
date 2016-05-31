@@ -377,7 +377,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       REAL torg=eint[idloc]/(1.5*Nfree*KBOLTZ);
 
        if(etorg<EMIN) {
-       	printf("%e %e %e\n",R.e[1],aexporg,param->unit.unit_N);
+       	printf("ERROR : %e %e %e\n",R.e[1],aexporg,param->unit.unit_N);
        	abort();
        }
 
@@ -454,7 +454,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  /* } */
 
 	  if(fudgecool<1e-20){
-	    printf("eint=%e(%e<%e) eint_temp=%e (delta=%e)  nH=%e x0=%e(%e) T=%e(%e<%e) N=%e %e %e (%e)\n",eint[idloc],eorg,emin,eintt,deltaE,nH[idloc],x0[idloc],xorg,tloc,torg,tmin,et[0],et[1],et[2],etorg);
+	    printf("ERROR : eint=%e(%e<%e) eint_temp=%e (delta=%e)  nH=%e x0=%e(%e) T=%e(%e<%e) N=%e %e %e (%e)\n",eint[idloc],eorg,emin,eintt,deltaE,nH[idloc],x0[idloc],xorg,tloc,torg,tmin,et[0],et[1],et[2],etorg);
 	    if(fudgecool<1e-20) abort();
 	  }
 
