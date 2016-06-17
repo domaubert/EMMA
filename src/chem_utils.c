@@ -454,8 +454,18 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  /* } */
 
 	  if(fudgecool<1e-20){
-	    printf("ERROR : eint=%e(%e<%e) eint_temp=%e (delta=%e)  nH=%e x0=%e(%e) T=%e(%e<%e) N=%e %e %e (%e)\n",eint[idloc],eorg,emin,eintt,deltaE,nH[idloc],x0[idloc],xorg,tloc,torg,tmin,et[0],et[1],et[2],etorg);
-	    if(fudgecool<1e-20) abort();
+	    printf("ERROR : chemrad can't converge (fudgecool<1e-20)\n");
+	    printf("eint=%e(%e<%e) \n",eint[idloc],eorg,emin);
+	    printf("eint_temp=%e (delta=%e) \n",eint[idloc],eorg);
+	    printf("nH=%e \n",nH[idloc]);
+	    printf("x0=%e(%e) \n",x0[idloc],xorg);
+	    printf("T=%e(%e<%e) \n",tloc,torg,tmin);
+	    printf("N=%e %e %e (%e)\n",et[0],et[1],et[2],etorg);
+	    printf("aexporg=%e \n",aexporg);
+	    printf("dt=%e \n",dt);
+	    printf("srcloc[idloc]=%e \n",srcloc[idloc]);
+
+	    abort();
 	  }
 
 	  ai_tmp1=0.;

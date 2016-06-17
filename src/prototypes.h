@@ -142,7 +142,7 @@ struct SNPARAM{
 
 #ifdef MOVIE
 struct MOVIEPARAM{
-	char* folder;
+  char* folder;
 	int lmap;
 	char mode_str[3];
 	double xmin;

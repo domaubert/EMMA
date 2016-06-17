@@ -45,14 +45,12 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
   const int debug = 0;
   //static int MOVIE_SNAP_NUMBER;
-  int MOVIE_SNAP_NUMBER = cpu->nsteps;
-	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d",MOVIE_SNAP_NUMBER);
+  const int MOVIE_SNAP_NUMBER = cpu->nsteps;
+	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d\n",MOVIE_SNAP_NUMBER);
 
-  int n_field=param->out_grid->n_field_movie;
-
+  const int n_field=param->out_grid->n_field_movie;
 
   if (debug) printf("n_field=%d\n",n_field);
-
 
 // Param------------------------
 	const char ffolder[128] = "data/movie/" ;
@@ -78,7 +76,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
   const int i0		 = xmin/dxmap;
   const int j0 		 = ymin/dxmap;
   const int k0		 = zmin/dxmap;
-
 
   int mode;
   if(strcmp(param->movie->mode_str, "max") ==0){mode=0;}
@@ -134,13 +131,14 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
 //============================================================================================================
 
+        // getting the n_field values
         float field[n_field];
-
-        int i,ii=0;
-        for (i=0;i<n_field; i++){
-          if (param->out_grid->field_state_movie[i]){            field[ii]=assign_grid_field(i,cell);
-            ii++;          }
+        int i,ii2=0;
+        for (i=0;i<param->out_grid->n_field_tot; i++){
+          if (param->out_grid->field_state_movie[i]){            field[ii2]=assign_grid_field(i,cell);
+            ii2++;          }
         }
+
 
         switch(mode){
           case 0:
@@ -156,7 +154,7 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             break;
 
           default:
-            printf("Couldn't determine movie mode, check movie parameters in param.h\n");
+            printf("Couldn't determine movie mode, check movie parameters in param.run\n");
             abort();
         }
 
@@ -168,6 +166,7 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 			}
     }
 	}
+
 
   //=======================================
   //============= dump ====================
@@ -185,6 +184,7 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
       break;
 	}
 #endif // WMPI
+
 
 	if(cpu->rank==RANK_DISP){
 
@@ -215,7 +215,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
         ii++;      }
     }
 	}
-
 
   if(cpu->rank==RANK_DISP) printf(" done\n");
   if(debug) abort();

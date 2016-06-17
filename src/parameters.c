@@ -501,7 +501,7 @@ void readAtomic(struct RUNPARAMS *param){
 #ifdef HESIMPLE
     if(debug) printf("%e %e \n",param->atomic.alphaeHE[i], param->atomic.alphaiHE[i]);
 #endif
-    
+
   }
   fclose(buf);
   if(debug) abort();
