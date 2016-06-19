@@ -139,7 +139,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             ii2++;          }
         }
 
-
         switch(mode){
           case 0:
             for(i=0;i<n_field;i++){
@@ -154,7 +153,7 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
             break;
 
           default:
-            printf("Couldn't determine movie mode, check movie parameters in param.run\n");
+            printf("ERROR : Couldn't determine movie mode, check movie parameters in param.run, mode could be 'max' or 'avg' \n");
             abort();
         }
 
