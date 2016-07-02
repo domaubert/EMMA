@@ -19,7 +19,7 @@ endif
 
 # main compiler
 CC= mpicc
-C_FLAGS= #-O3 -Wimplicit -g #-ftree-vectorize -ffast-math -fno-cx-limited-range -std=c11
+C_FLAGS= -O3 -Wimplicit -g #-ftree-vectorize -ffast-math -fno-cx-limited-range -std=c11
 C_LIBS= -lm #-fopenmp -lstdc++
 
 #GPU compiler
