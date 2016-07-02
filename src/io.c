@@ -1536,6 +1536,20 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "z", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= 1./(float)tsim -1;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "t", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= (float)param->cosmo->tphy;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
       dims = cpu->nproc;
       dataspace_id = H5Screate_simple(1, &dims, NULL);
       attribute_id = H5Acreate2 (file, "xmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
@@ -1774,6 +1788,21 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "z", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= 1./(float)tsim -1;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "t", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= (float)param->cosmo->tphy;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
+
       dims = cpu->nproc;
       dataspace_id = H5Screate_simple(1, &dims, NULL);
       attribute_id = H5Acreate2 (file, "xmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
@@ -1990,6 +2019,19 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "z", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= 1./(float)tsim -1;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
+
+      dataspace_id = H5Screate_simple(1, &dims, NULL);
+      attribute_id = H5Acreate2 (file, "t", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
+      attr_data= (float)param->cosmo->tphy;
+      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, &attr_data);
+      H5Aclose(attribute_id);
+      H5Sclose(dataspace_id);
 
       dims = cpu->nproc;
       dataspace_id = H5Screate_simple(1, &dims, NULL);
