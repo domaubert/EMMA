@@ -716,6 +716,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
     dtnew=(dtff<dtnew?dtff:dtnew);
     if(cpu->rank==RANK_DISP) printf("dtff= %e ",dtff);
+    param->physical_state->dt_ff = dtff;
 #endif
 
     // Cosmo Expansion
@@ -724,6 +725,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtcosmo=-0.5*SQRT(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
     dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
     if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",dtcosmo);
+    param->physical_state->dt_cosmo = dtcosmo;
 #endif
 
     // Courant Condition Hydro
@@ -732,6 +734,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
     if(cpu->rank==RANK_DISP) printf("dthydro= %e ",dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
+    param->physical_state->dt_hydro = dthydro;
 #endif
 
     // Courant Condition Particle
@@ -740,6 +743,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
     if(cpu->rank==RANK_DISP) printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
+    param->physical_state->dt_pic = dtpic;
 #endif
 
     // Courant Condition Radiation
@@ -758,7 +762,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #endif
 #endif
 #endif
-
+    param->physical_state->dt_rad = dtrad;
 #endif
 
 #ifdef FLOORDT

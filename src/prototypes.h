@@ -290,6 +290,12 @@ struct PHYSICAL_STATE{
 
   int max_level;
   int Nsn;
+
+  double dt_ff;
+  double dt_hydro;
+  double dt_cosmo;
+  double dt_pic;
+  double dt_rad;
 };
 
 

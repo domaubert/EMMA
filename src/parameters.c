@@ -1186,9 +1186,14 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"src\t\t");
       fprintf(fp,"xion\t\t");
       fprintf(fp,"temp\t\t");
-      fprintf(fp,"densb**2\t\t");
+      fprintf(fp,"densb**2\t");
       fprintf(fp,"pressb\t\t");
       fprintf(fp,"Nagn\t\t");
+      fprintf(fp,"dtff\t\t");
+      fprintf(fp,"dthydro\t\t");
+      fprintf(fp,"dtcosmo\t\t");
+      fprintf(fp,"dtpic\t\t");
+      fprintf(fp,"dtrad\t\t");
 
       fprintf(fp,"\n");
     }
@@ -1235,7 +1240,15 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
 #ifdef AGN
     fprintf(fp, real_format ,(float)param->stars->nagn);
+#else
+    fprintf(fp, real_format ,(float)0);
 #endif
+
+    fprintf(fp, real_format ,(float)param->physical_state->dt_ff);
+    fprintf(fp, real_format ,(float)param->physical_state->dt_hydro);
+    fprintf(fp, real_format ,(float)param->physical_state->dt_cosmo);
+    fprintf(fp, real_format ,(float)param->physical_state->dt_pic);
+    fprintf(fp, real_format ,(float)param->physical_state->dt_rad);
 
 
     fprintf(fp,"\n");
