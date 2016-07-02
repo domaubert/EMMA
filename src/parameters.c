@@ -270,9 +270,9 @@ void readOutputParam_part(char *fparam, struct RUNPARAMS *param){
     "fy",
     "fz",
     "idx",
+    "isStar",
     "epot",
     "ekin",
-    "etot",
     "mass",
     "age"
   };
@@ -656,6 +656,9 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 
 #ifdef STARS
     param->stars->n		= 0;
+#ifdef AGN
+    param->stars->nagn		= 0;
+#endif
 #endif
 
 #ifdef SRCINT
@@ -1064,7 +1067,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       if(nexp==NULL) continue;
       curp=nexp;
       nexp=curp->next;
-      if(curp->isStar){
+      if((curp->isStar)&&(curp->isStar!=100)){
         param->physical_state->mstar += curp->mass;
 
         if (param->cosmo->tphy - curp->age < param->sn->tlife){
@@ -1185,6 +1188,7 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
       fprintf(fp,"temp\t\t");
       fprintf(fp,"densb**2\t\t");
       fprintf(fp,"pressb\t\t");
+      fprintf(fp,"Nagn\t\t");
 
       fprintf(fp,"\n");
     }
@@ -1204,7 +1208,14 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
     fprintf(fp, real_format ,(float)param->physical_state->max_level);
 
 #ifdef STARS
-    fprintf(fp, real_format ,(float)param->stars->n);
+
+    int nstar;
+#ifndef AGN
+    nstar=param->stars->n;
+#else
+    nstar=param->stars->n-param->stars->nagn;
+#endif
+    fprintf(fp, real_format ,(float)nstar);
     fprintf(fp, real_format ,(float)param->physical_state->mstar);
     fprintf(fp, real_format ,(float)param->physical_state->sfr);
 #else
@@ -1221,6 +1232,10 @@ void dumpStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO
 
     fprintf(fp, real_format ,(float)param->physical_state->field[13].sigma); // density
     fprintf(fp, real_format ,(float)param->physical_state->field[17].mean); // pressure
+
+#ifdef AGN
+    fprintf(fp, real_format ,(float)param->stars->nagn);
+#endif
 
 
     fprintf(fp,"\n");

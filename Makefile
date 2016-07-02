@@ -31,10 +31,6 @@ NVCC_LIBS=
 # External libs
 #===============================================================================
 
-I_DIR=
-LD_DIR=
-LD_FLAGS=
-
 # HDF5
 I_DIR += -I/usr/include/hdf5/mpich
 LD_DIR += -L/usr/lib/x86_64-linux-gnu/hdf5/mpich

@@ -117,6 +117,20 @@ struct STARSPARAM{
   gsl_rng *rpoiss;
 #endif
 
+#ifdef AGN
+  int nagn;
+#endif
+
+};
+#endif
+
+#ifdef AGN
+struct AGNPARAM{
+  REAL feedback_frac; // fraction of Energy produced in mechanical feedback
+  REAL *x;
+  REAL *y;
+  REAL *z;
+  int nagn;
 };
 #endif
 
@@ -333,6 +347,11 @@ struct RUNPARAMS{
 #ifdef SUPERNOVAE
   struct SNPARAM *sn; ///< the supernovae parameters
 #endif // SUPERNOVAE
+
+#ifdef AGN
+  struct AGNPARAM *agn;
+#endif
+
 
   int nthread; ///< number of GPU threads
   int nstream; ///< number of GPU streams
@@ -1170,3 +1189,4 @@ struct MULTIVECT{
   int *vecicoarse_d;
 #endif
 };
+

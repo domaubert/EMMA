@@ -580,10 +580,11 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     REAL age = param->cosmo->tphy - curp->age;
     if (curp->isStar && age>0 && age<5e7){ // if curp is in SN state
       REAL E= get_egy(param,curp,aexp,dt,level);
-
+      
 #else
-    if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
-   REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
+      if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
+	REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
+	printf("mass =%e %d\n",curp->mass,curp->isStar);
 #endif // CONTINUOUS_SN
 
       total_sn_egy+=E;

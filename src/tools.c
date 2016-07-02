@@ -50,6 +50,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   REAL Etotnew=0;
   REAL ptot=0;
 
+  int debug=0;
 
   REAL xc,yc,zc;
   int *vnoct=cpu->noct;
@@ -64,6 +65,14 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
   int slev=0;
   int stot=0;
   int *vnstar=cpu->nstar;
+#ifdef AGN
+  int alev=0;
+  int atot=0;
+  //if(rank==0) printf("%d %d %p %p %p\n",rank,param->npartmax,param->agn->x,param->agn->y,param->agn->z);
+  memset(param->agn->x,0,param->npartmax*sizeof(REAL));
+  memset(param->agn->y,0,param->npartmax*sizeof(REAL));
+  memset(param->agn->z,0,param->npartmax*sizeof(REAL));
+#endif
 #endif
 
   for(level=1;level<=levelmax;level++)
@@ -76,6 +85,9 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
       noct=0;
 #ifdef STARS
       slev=0;
+#ifdef AGN
+      alev=0;
+#endif
 #endif
 
       if(nextoct==NULL){
@@ -157,12 +169,27 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		    if (curp->isStar){
 			slev++;
 		 	stot++;
+			
+			if(curp->mass==0){
+			  printf("star mass == 0\n");
+			  abort();
+			};
+			Mtot+=curp->mass;
 
-      if(curp->mass==0){
-        printf("star mass == 0\n");
-        abort();
-      };
-      Mtot+=curp->mass;
+#ifdef AGN
+			if(curp->isStar==100){
+/* printf("AGN !!!!\n"); */
+/* debug=1; */
+			  // we found an AGN
+			  param->agn->x[atot]=curp->x;
+			  param->agn->y[atot]=curp->y;
+			  param->agn->z[atot]=curp->z;
+//printf("rank %d x=%e %e %e\n",cpu->rank,param->agn->x[atot],param->agn->y[atot],param->agn->z[atot]);
+			  atot++;
+			  alev++;
+			}
+#endif
+
 		    }
 #endif // STARS
 
@@ -202,6 +229,92 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 
   }
 #endif
+
+#ifdef AGN
+  // dealing with AGN positions
+  if(cpu->rank==RANK_DISP){
+    printf("Dealing with AGNs\n");
+  }
+  int *recvcounts;
+  int *displ;
+  int icpu;
+  recvcounts=(int*)calloc(cpu->nproc,sizeof(int));
+  displ=(int*)calloc(cpu->nproc,sizeof(int));
+//printf("atot=%d on rank %d\n",atot,cpu->rank);
+  MPI_Allgather(&atot,1,MPI_INT,recvcounts,1,MPI_INT,cpu->comm); // all processes know the number of AGNs in all processes
+
+
+
+
+  displ[0]=0;
+  for(icpu=0;icpu<cpu->nproc;icpu++){
+  displ[icpu]=displ[icpu-1]+recvcounts[icpu-1]; // computing displacements
+}
+
+
+ /* if(cpu->rank==RANK_DISP){ */
+ /*    int ia; */
+ /*    for(ia=0;ia<cpu->nproc;ia++){ */
+ /*      printf("R%d ",recvcounts[ia]); */
+ /*    } */
+ /*    printf("\n"); */
+ /*  } */
+
+ /* if(cpu->rank==RANK_DISP){ */
+ /*    int ia; */
+ /*    for(ia=0;ia<cpu->nproc;ia++){ */
+ /*      printf("D%d ",displ[ia]); */
+ /*    } */
+ /*    printf("\n"); */
+ /*  } */
+
+
+ REAL *coord;
+ coord=(REAL *)calloc(param->npartmax,sizeof(REAL));
+ memcpy(coord,param->agn->x,sizeof(REAL)*param->npartmax);
+ MPI_Allgatherv(coord,atot,MPI_REEL,param->agn->x,recvcounts,displ,MPI_REEL,cpu->comm);
+ memcpy(coord,param->agn->y,sizeof(REAL)*param->npartmax);
+ MPI_Allgatherv(coord,atot,MPI_REEL,param->agn->y,recvcounts,displ,MPI_REEL,cpu->comm);
+ memcpy(coord,param->agn->z,sizeof(REAL)*param->npartmax);
+ MPI_Allgatherv(coord,atot,MPI_REEL,param->agn->z,recvcounts,displ,MPI_REEL,cpu->comm);
+ 
+
+
+ //   MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->x,recvcounts,displ,MPI_REEL,cpu->comm);
+ //MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->y,recvcounts,displ,MPI_REEL,cpu->comm);
+ //MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->z,recvcounts,displ,MPI_REEL,cpu->comm);
+  
+  free(recvcounts);
+  free(displ);
+  free(coord);
+
+  MPI_Allreduce(&atot,&(param->agn->nagn),1,MPI_INT,MPI_SUM,cpu->comm);
+  if(cpu->rank==RANK_DISP){
+    printf("%d agn found in multicheck debug=%d\n",param->agn->nagn,debug);
+    /* int ia; */
+    /* for(ia=0;ia<(param->agn->nagn);ia++){ */
+    /*   printf("%e %e %e\n",param->agn->x[ia],param->agn->y[ia],param->agn->z[ia]); */
+    /* } */
+
+    /* REAL rmin=1e8; */
+    /* REAL r; */
+    /* int ib; */
+    /* for(ia=0;ia<(param->agn->nagn);ia++){ */
+    /*   for(ib=0;ib<(param->agn->nagn);ib++){ */
+    /* 	if(ia==ib) continue; */
+    /* 	r=SQRT((param->agn->x[ia]-param->agn->x[ib])*(param->agn->x[ia]-param->agn->x[ib])+(param->agn->y[ia]-param->agn->y[ib])*(param->agn->y[ia]-param->agn->y[ib])+(param->agn->z[ia]-param->agn->z[ib])*(param->agn->z[ia]-param->agn->z[ib])); */
+    /* 	rmin=(r<rmin?r:rmin); */
+    /*   } */
+    /* } */
+
+    /* printf("rmin=%e\n",rmin); */
+
+  }
+  
+
+  //if(param->agn->nagn>1) abort();
+ #endif 
+
 
 
   /* REAL tmw = param->cosmo->ob/param->cosmo->om ; */

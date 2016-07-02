@@ -238,13 +238,13 @@ float assign_part_field(int field,struct PART *curp){
 		  res=(float)(curp->idx);
 		  break;
     case 10:
-		  res=(float)(curp->epot);
+		  res=(float)(curp->isStar);
 		  break;
     case 11:
-		  res=(float)(curp->ekin);
+		  res=(float)(curp->epot);
 		  break;
     case 12:
-		  res=(float)(curp->ekin+curp->epot);
+		  res=(float)(curp->ekin);
 		  break;
 
 #ifdef STARS
@@ -253,7 +253,7 @@ float assign_part_field(int field,struct PART *curp){
 		  break;
 
     case 14:
-		  if(curp->isStar) {
+      if(curp->isStar) {
 		    res=(float)(curp->age);
 		  }
     break;
@@ -2042,6 +2042,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   free(tmp);
 }
 #endif // STARS
+
 #endif // PIC
 #endif // HDF5
 
@@ -2116,7 +2117,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 #ifndef MPIIO
     dumppart_serial(param,firstoct,filename,param->lcoarse,param->lmax,adump,cpu);
 #else
-	  dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
+    dumppart_MPI(firstoct,filename,param->lcoarse,param->lmax,adump,cpu, param);
 #endif // MPIIO
 #endif // HDF5
 

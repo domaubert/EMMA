@@ -229,8 +229,12 @@ int main(int argc, char *argv[])
 
 #ifdef STARS
   struct STARSPARAM stars;
+  stars.n=0;
   param.stars=&stars;
 #endif
+
+
+
 
 #if defined(WRADTEST) || defined(SNTEST)
   struct UNITARY_STARS_TEST unitary_stars_test;
@@ -877,6 +881,17 @@ int main(int argc, char *argv[])
     cpu.allkmax[0]=cpu.kmax;
 #endif
 
+
+    // =================== AGN ALLOCATIONS
+#ifdef AGN
+  struct AGNPARAM agn;
+  agn.feedback_frac=0.01;
+  agn.x=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  agn.y=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  agn.z=(REAL*)calloc(param.npartmax,sizeof(REAL));
+  //if(cpu.rank==0) printf("%d %d %p %p %p\n",cpu.rank,param.npartmax,agn.x,agn.y,agn.z);
+  param.agn=&agn;
+#endif
 
 
   //========== building the initial meshes ===

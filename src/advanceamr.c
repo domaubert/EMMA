@@ -24,6 +24,10 @@
 #include "stars.h"
 #endif
 
+#ifdef AGN
+#include "agn.h"
+#endif
+
 #ifdef SUPERNOVAE
 #include "supernovae.h"
 #endif
@@ -1101,6 +1105,41 @@ double tst[10];
 #endif
 #endif
 
+    /* //===================================creating AGNs=================================// */
+
+
+double tagn[10];
+#ifdef AGN
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+  tagn[0]=MPI_Wtime();
+#endif // WMPI
+#ifdef ZOOM
+    if(level>=param->lmaxzoom)
+#endif //ZOOM
+      {
+	agn(param,cpu, adt[level-1], aexp, level, is);
+      }
+#endif // STARS
+
+    //mtot=multicheck(firstoct,ptot,param->lcoarse,param->lmax,cpu->rank,cpu,param,7);
+
+
+
+#ifdef AGN
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+    tagn[2]=MPI_Wtime();
+    if(cpu->rank==RANK_DISP){
+#ifndef GPUAXL
+      printf("==== CPU AGN TOTAL TIME =%e\n",tst[2]-tst[0]);
+#else
+      printf("==== GPU AGN TOTAL TIME =%e\n",tst[2]-tst[0]);
+#endif // GPUAXL
+    }
+#endif
+#endif
+
     /* //===================================Supernovae=========================================// */
 
 double tsn[10];
@@ -1111,12 +1150,15 @@ double tsn[10];
 #endif // WMPI
 #ifndef SNTEST
     supernovae(param,cpu, adt[level-1], aexp, level, is);
+
 #else //ifdef SNTEST
 //    setOctList(firstoct[level-1], cpu, param,level);
 //   supernovae(param,cpu, adt[level-1], tloc, level, is);
 
 #endif // SNTEST
 #endif // SUPERNOVAE
+
+
 
 
 
