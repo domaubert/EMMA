@@ -4,7 +4,7 @@
 #include <string.h>
 #include "prototypes.h"
 #include <mpi.h>
-#include <cudpp.h>
+//#include <cudpp.h>
 #include "gpu_type.h"
 
 #ifdef WGRAV
@@ -74,7 +74,7 @@ void destroy_gravstencil_GPU(struct CPUINFO *cpu, int stride){
   cudaFree(cpu->res);
   cudaFree(cpu->pnew);
   cudaFree(cpu->resLR);
-  
+
 }
 
 // =======================================================
@@ -168,7 +168,7 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
   struct Gtype *curcell;
   unsigned int bx=blockIdx.x;
   unsigned int tx=threadIdx.x;
-  
+
   i=bx*blockDim.x+tx;
 
 
@@ -176,21 +176,21 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
 
   for(icell=0;icell<8;icell++){ // we scan the cells
     getcellnei_gpu(icell, vnei, vcell); // we get the neighbors
-      
+
     temp=0.;
     res=0.;
-      
+
     curcell=&(stencil[i].oct[ioct[6]].cell[icell].gdata);
-      
+
     // Computing the laplacian ===========================
-    
+
     for(inei=0;inei<6;inei++){
       temp+=stencil[i].oct[ioct[vnei[inei]]].cell[vcell[inei]].gdata.p;
     }
- 
+
     // setting up the residual
     res=temp;
-      
+
     // we finish the laplacian
     stockpnew[icell+i*8]=(temp-dx*dx*curcell->d*factdens)/6.0;
 
@@ -202,11 +202,11 @@ __global__ void dev_PoissonJacobi_single(struct GGRID *stencil, int level, int c
 
     // we store the local residual
     if(flag) {
-      vres[icell+i*8]=factdens*curcell->d*factdens*curcell->d; 
+      vres[icell+i*8]=factdens*curcell->d*factdens*curcell->d;
       stockres[icell+i*8]=factdens*curcell->d;
     }
     else{
-      vres[icell+i*8]=res*res; 
+      vres[icell+i*8]=res*res;
       stockres[icell+i*8]=res;
     }
 
@@ -242,7 +242,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
   CUDA_CHECK_ERROR("Poisson Start");
   // ======================= some stuf for CUDPP =======================/
-  
+
   resA= cpu->gresA;
   resB= cpu->gresB;
 
@@ -253,11 +253,11 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   /* printf("POINT IN GPU=%p\n",resA); */
   /* printf("POINT IN GPU=%p\n",resB); */
 
-  
+
   /* struct CUPARAM cuparam; */
-  
+
   /* cudppCreate(&(cuparam.theCudpp)); */
-    
+
   /* cuparam.config.algorithm = CUDPP_SCAN; */
   /* cuparam.config.datatype = CUDPP_DOUBLE; */
   /* cuparam.config.options=CUDPP_OPTION_BACKWARD | CUDPP_OPTION_INCLUSIVE; */
@@ -283,7 +283,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   int *vnread;
 
   /* if(cpu->nthread*cpu->nstream>stride){ */
-    
+
   /* } */
 
   cudaMallocHost((void**)&stream,sizeof(cudaStream_t)*nstream);
@@ -322,7 +322,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
   // Scanning the Octs
-  
+
   fnorm=0.;
   for(iter=0;iter<nitmax;iter++){
     // --------------- some inits for iterative solver
@@ -335,20 +335,20 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
       do {
 	curoct0=nextoct;
 	curoct=curoct0;
-	
-		     
+
+
 	// streaming data
 	offset=0;
 	for(is=0;is<nstream;is++){
-	  
+
 	  // ------------ gathering the stencil value values
-	  
+
 	  curoct=nextoct;
 	  if(curoct!=NULL){
 	    nextoct=gatherstencilgrav(curoct,stencil->stencil+offset,stride/nstream,cpu, vnread+is);
 	    if(vnread[is]!=0){
 	      ng=((vnread[is]-1)/cpu->nthread)+1; // +1 is for leftovers
-	
+
 	    if(ng==1){
 	      nt=vnread[is];
 	    }
@@ -365,21 +365,21 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	    // ------------ computing the residuals
 
 	    cudaStreamSynchronize(stream[is]);
-	    cudppScan(cuparam->scanplan, resB+offset*8, resA+offset*8, vnread[is]*8);
+	    //cudppScan(cuparam->scanplan, resB+offset*8, resA+offset*8, vnread[is]*8);
 #endif
 
 	    cudaMemcpyAsync(rloc+is,resB+offset*8,sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);
 
-	    cudaMemcpyAsync(stencil->res+offset*8,cpu->res+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
-	    cudaMemcpyAsync(stencil->pnew+offset*8,cpu->pnew+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);   
-	    cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(vnread[is])*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);   
+	    cudaMemcpyAsync(stencil->res+offset*8,cpu->res+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);
+	    cudaMemcpyAsync(stencil->pnew+offset*8,cpu->pnew+offset*8,(vnread[is])*sizeof(REAL)*8,cudaMemcpyDeviceToHost,stream[is]);
+	    cudaMemcpyAsync(stencil->resLR+offset,cpu->resLR+offset,(vnread[is])*sizeof(REAL),cudaMemcpyDeviceToHost,stream[is]);
 
 	    offset+=vnread[is];
 	    //residual=(residual>rloc[is]?residual:rloc[is])*(iter!=0);
  	    }
 	  }
 	}
-	
+
 
 
 	// ------------ scatter back the data
@@ -398,11 +398,11 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	nextoct=scatterstencilgrav(curoct0,stencil, nread, stride,cpu);
 
 	nreadtot+=nread;
-	
+
       }while(nextoct!=NULL);
     }
-    
-    
+
+
     // at this stage an iteration has been completed : let's update the potential and compute the residual
 
     if(nreadtot>0){
@@ -427,7 +427,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 
 
     if((iter==1)&&(level>=param->lcoarse)) res0=residual;
-    
+
     if(iter>0){
 
       // here we test the convergence of the temporary solution
@@ -449,7 +449,7 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
 	if(level>=param->lcoarse) break;
       }
     }
-    
+
   }
 
 
@@ -474,8 +474,8 @@ REAL PoissonJacobiGPU(int level,struct RUNPARAMS *param, struct OCT ** firstoct,
   for(is=0;is<nstream;is++){
     cudaStreamDestroy(stream[is]);
   }
-  
-  
+
+
 
   cudaFreeHost(stream);
   cudaFreeHost(vnread);

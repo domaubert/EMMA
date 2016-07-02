@@ -1511,7 +1511,7 @@ struct OCT *gatherstencilrad(struct OCT *octstart, struct RGRID *stencil, int st
 	memcpy(&(stencil[iread].oct[6].cell[icell].rfield),&(curoct->cell[icell].rfield),sizeof(struct Rtype)); // for calculations
 	memcpy(&(stencil[iread].New.cell[icell].rfieldnew),&(curoct->cell[icell].rfieldnew),sizeof(struct Rtype)); // for calculations
 	stencil[iread].oct[6].cell[icell].split=(curoct->cell[icell].child!=NULL);
-	
+
       }
 
 
@@ -1613,11 +1613,11 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 	printf("temp=%e\n",stencil[i].oct[6].cell[icell].rfield.temp);
 	printf("nhplus =%e\n",stencil[i].oct[6].cell[icell].rfield.nhplus);
 	printf("nh =%e\n",stencil[i].oct[6].cell[icell].rfield.nh);
-	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc=%e xion=%e eini=%e temp=%e\n",
+	  printf("ERROR Neg rad energy New=%e org=%e delta=%e srcloc[0]=%e xion=%e eini=%e temp=%e\n",
 		 Rupdate.e[0],
 		 stencil[i].New.cell[icell].rfieldnew.e[0],
 		 R.e[0],
-		 stencil[i].oct[6].cell[icell].rfield.src,
+		 stencil[i].oct[6].cell[icell].rfield.src[0],
 		 stencil[i].oct[6].cell[icell].rfield.nhplus/stencil[i].oct[6].cell[icell].rfield.nh,
 		 stencil[i].oct[6].cell[icell].rfield.e[0],
 		 stencil[i].oct[6].cell[icell].rfield.temp);
@@ -1634,7 +1634,7 @@ void updatefieldrad(struct OCT *octstart, struct RGRID *stencil, int nread, int 
 
 	  for(flx=0;flx<6;flx++){
 
-	    printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[1],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nhplus/stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nh,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
+	    printf("Nei #%d e=%e src=%e xion=%e temp=%e split=%d\n",flx,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.e[1],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.src[0],stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nhplus/stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.nh,stencil[i].oct[vnei[flx]].cell[vcell[flx]].rfield.temp,stencil[i].oct[vnei[flx]].cell[vcell[flx]].split);
 	  }
 
 	  abort();
