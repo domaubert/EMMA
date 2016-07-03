@@ -18,9 +18,9 @@ endif
 #===============================================================================
 
 # main compiler
-CC= mpicc
-C_FLAGS= -O3 -Wimplicit -g #-ftree-vectorize -ffast-math -fno-cx-limited-range -std=c11
-C_LIBS= -lm #-fopenmp -lstdc++
+CC= gcc
+C_FLAGS=  -pg -O2 #-ftree-vectorize -ffast-math -fno-cx-limited-range -O3 -Wimplicit -g
+C_LIBS= -lm -pg #-fopenmp -lstdc++
 
 #GPU compiler
 NVCC= nvcc
@@ -95,8 +95,10 @@ CUDA_OBJS= \
 
 OBJDIR = obj
 SRCDIR = src
+
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(C_FLAGS) $(DEFINES) $(I_DIR) -c $< -o $@
+
 ifeq ($(ARCH),GPU)
 $(OBJDIR)/%.o: $(SRCDIR)/%.cu
 	$(NVCC) $(NVCC_FLAGS) $(DEFINES) $(I_DIR) -c $< -o $@

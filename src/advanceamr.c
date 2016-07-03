@@ -397,6 +397,8 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     setup_mpi(cpu,firstoct,param->lmax,param->lcoarse,param->ngridmax,1); // out of WMPI to compute the hash table
     MPI_Barrier(cpu->comm);
 #endif
+
+    setOctList(firstoct[level-1], cpu, param,level);
   }
 
 
@@ -480,7 +482,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     /* //====================================  Poisson Solver ========================== */
-    setOctList(firstoct[level-1], cpu, param,level);
+
 
 
 #ifdef WMPI
@@ -714,43 +716,45 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #else
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
+    MPI_Allreduce(&dtff,&param->physical_state->dt_ff,1,MPI_REEL,MPI_MIN,cpu->comm);
+    if(cpu->rank==RANK_DISP) printf("dtff= %e ",param->physical_state->dt_ff);
     dtnew=(dtff<dtnew?dtff:dtnew);
-    if(cpu->rank==RANK_DISP) printf("dtff= %e ",dtff);
-    param->physical_state->dt_ff = dtff;
 #endif
 
     // Cosmo Expansion
 #ifdef TESTCOSMO
     REAL dtcosmo;
     dtcosmo=-0.5*SQRT(cosmo->om)*integ_da_dt_tilde(aexp*1.02,aexp,cosmo->om,cosmo->ov,1e-8);
-    dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
-    if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",dtcosmo);
     param->physical_state->dt_cosmo = dtcosmo;
+    if(cpu->rank==RANK_DISP) printf("dtcosmo= %e ",param->physical_state->dt_cosmo);
+    dtnew=(dtcosmo<dtnew?dtcosmo:dtnew);
 #endif
 
     // Courant Condition Hydro
 #ifdef WHYDRO2
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
-    if(cpu->rank==RANK_DISP) printf("dthydro= %e ",dthydro);
+    MPI_Allreduce(&dthydro,&param->physical_state->dt_hydro,1,MPI_REEL,MPI_MIN,cpu->comm);
+    if(cpu->rank==RANK_DISP) printf("dthydro= %e ",param->physical_state->dt_hydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
-    param->physical_state->dt_hydro = dthydro;
 #endif
 
     // Courant Condition Particle
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
-    if(cpu->rank==RANK_DISP) printf("dtpic= %e ",dtpic);
+    MPI_Allreduce(&dtpic,&param->physical_state->dt_pic,1,MPI_REEL,MPI_MIN,cpu->comm);
+    if(cpu->rank==RANK_DISP) printf("dtpic= %e ",param->physical_state->dt_pic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
-    param->physical_state->dt_pic = dtpic;
 #endif
 
     // Courant Condition Radiation
 #ifdef WRAD
     REAL dtrad;
     dtrad=L_comptstep_rad(level,param,firstoct,aexp,cpu,1e9);
-    if(cpu->rank==RANK_DISP) printf("dtnew=%e dtrad= %e\n",dtnew,dtrad);
+    MPI_Allreduce(&dtrad,&param->physical_state->dt_rad,1,MPI_REEL,MPI_MIN,cpu->comm);
+    if(cpu->rank==RANK_DISP) printf("dtnew=%e dtrad= %e\n",dtnew,param->physical_state->dt_rad);
+
 #ifdef RADSTEP
     dtnew=(dtrad<dtnew?dtrad:dtnew);
 #endif
@@ -759,11 +763,11 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifndef TESTCLUMP
 #ifndef WRADHYD
     dtnew=(dtrad<dtnew?dtrad:dtnew);
-#endif
-#endif
-#endif
-    param->physical_state->dt_rad = dtrad;
-#endif
+#endif // WRADHYD
+#endif // TESTCLUMP
+#endif // WRADTEST
+
+#endif // WRAD
 
 #ifdef FLOORDT
     // REALLY WEIRD ===

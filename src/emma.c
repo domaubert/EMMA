@@ -952,7 +952,7 @@ int main(int argc, char *argv[])
 	curoct=nextoct;
 	nextoct=curoct->next;
 
-    cpu.octList[level-1][noct3++] = curoct;
+    //cpu.octList[level-1][noct3++] = curoct;
 
 	for(icell=0;icell<8;icell++){ // sweeping the cells
 
@@ -1033,9 +1033,10 @@ int main(int argc, char *argv[])
  	}
       }while(nextoct!=NULL);
     if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
+  }
 
- //   setOctList(firstoct[level-1], &cpu, &param,level);
-
+  for(level=1;level<=levelmax;level++){
+    setOctList(firstoct[level-1], &cpu, &param,level);
   }
 
   if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
@@ -1994,7 +1995,7 @@ int main(int argc, char *argv[])
   cpu->trigstar=1;
   if(param.nrestart==0){
       for(level=1;level<=levelmax;level++){
-        setOctList(firstoct[level-1], &cpu, &param,level);
+//        setOctList(firstoct[level-1], &cpu, &param,level);
       }
       supernovae(&param,&cpu, 0, 0, levelcoarse, 0);
   }
@@ -2209,7 +2210,7 @@ int main(int argc, char *argv[])
 	else{
  #ifdef WRADTEST
     for(level=1;level<=levelmax;level++){
-      setOctList(firstoct[level-1], &cpu, &param,level);
+//      setOctList(firstoct[level-1], &cpu, &param,level);
     }
 #endif // WRADTEST
 	  dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
@@ -2271,9 +2272,11 @@ int main(int argc, char *argv[])
       dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1],(float)tsim);
 
 #ifdef MOVIE
-  for(level=1;level<=levelmax;level++){
-    setOctList(firstoct[level-1], &cpu, &param,level);
-  }
+
+//  for(level=1;level<=levelmax;level++){
+//    setOctList(firstoct[level-1], &cpu, &param,level);
+//  }
+
   dumpMovie(&param, &cpu, (float)tsim);
 #endif // MOVIE
 
@@ -2302,14 +2305,24 @@ int main(int argc, char *argv[])
 
 #endif
 
+
 //printf("begin freeing\n");
 ///////////////////////////////////////////
 // we are done let's free the ressources
 ///////////////////////////////////////////
 
+
+  int debug_free = 0;
+  if(cpu.rank==RANK_DISP) printf("FREE\n");
+
+  if(debug_free) printf("grid\n");
   free(grid);
+  if(debug_free) printf("firstoct\n");
   free(firstoct);
+  if(debug_free) printf("lastoct\n");
   free(lastoct);
+
+  if(debug_free) printf("octlist\n");
 
   for(iLev = 0; iLev<levelcoarse; iLev++){
     free(cpu.octList[iLev]);
@@ -2318,10 +2331,15 @@ int main(int argc, char *argv[])
     free(cpu.octList[iLev]);
   }
 
+  free(cpu.locNoct);
+  free(cpu.octList);
+
+  if(debug_free ) printf("part\n");
 #ifdef PIC
   free(part);
 #endif // PIC
 
+  if(debug_free) printf("stencil\n");
 #ifndef GPUAXL
   free(stencil);
 #ifdef WRAD
@@ -2332,6 +2350,8 @@ int main(int argc, char *argv[])
   free(gstencil.pnew);
   free(gstencil.resLR);
 #endif // GPUAXL
+
+  if(debug_free) printf("dt\n");
 
 #ifdef COARSERAD
   free(adt_rad);
@@ -2345,8 +2365,7 @@ int main(int argc, char *argv[])
 // free cpu
 ///////////////////////////////////////////
 
-  free(cpu.locNoct);
-  free(cpu.octList);
+if(debug_free) printf("cpu\n");
 
 #if defined(MPIIO) || defined(HDF5)
   free(cpu.mpiio_ncells );
@@ -2416,7 +2435,7 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////
 // free param
 ///////////////////////////////////////////
-  if(cpu.rank==RANK_DISP) printf("FREE\n");
+if(debug_free) printf("param\n");
 
   free(param.atomic.space_bound);
   free(param.atomic.time_bound);
@@ -2446,6 +2465,7 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////
 // free GPU
 ///////////////////////////////////////////
+if(debug_free) printf("gpu\n");
 
 #ifdef GPUAXL
 

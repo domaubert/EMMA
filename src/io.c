@@ -1522,7 +1522,6 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       char field_name[256];
       //sprintf(field_name,"%s",param->out_grid->field_name[ifield]);
       sprintf(field_name,"data");
-
       hid_t  dataset = H5Dcreate(file, field_name, H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       H5Dwrite(dataset, H5T_NATIVE_FLOAT, memspace, dataspace, plist, tmp);
       H5Dclose(dataset);
@@ -2102,7 +2101,7 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   int level;
   for(level=param->lcoarse;level<=param->lmax;level++){
-    setOctList(firstoct[level-1], cpu, param,level);
+//    setOctList(firstoct[level-1], cpu, param,level);
   }
 
 #if defined(MPIIO) || defined(HDF5)
@@ -2251,12 +2250,13 @@ REAL tt1=MPI_Wtime();
 #endif // PIC
 
 	  }
-#endif // BKP
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
   if(cpu->rank==RANK_DISP) printf("===CPU BKP TOTAL TIME =%fs \n", MPI_Wtime() - tend);
 #endif // WMPI
+
+#endif // BKP
 
 	}
 

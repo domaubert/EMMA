@@ -215,7 +215,6 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
     }
 	}
 
-  if(cpu->rank==RANK_DISP) printf(" done\n");
   if(debug) abort();
 }
 #endif//MOVIE

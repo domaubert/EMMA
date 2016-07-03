@@ -728,6 +728,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   ndes=ndestot;
 #endif
 
+  setOctList(firstoct[level-1], cpu, param,level);
+
   if(cpu->rank==RANK_DISP){
     printf("octs created   = %d ",nref);
     printf("octs destroyed = %d freeoctorg=%ld freeoct=%ld\n",ndes,dorg,freeoct-firstoct[0]);
