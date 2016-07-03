@@ -1237,6 +1237,8 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
 			    refarea=(curoct->level>=param->lmaxzoom);
 #endif // ZOOM
 
+#ifndef AMR_HALFLAGRANGE
+
 #ifndef AMRPART
 			    mcell=den*(curoct->level>=param->lcoarse)*dx*dx*dx*refarea;
 #else // #ifdef AMRPART
@@ -1259,6 +1261,53 @@ void L_mark_cells(int level,struct RUNPARAMS *param, struct OCT **firstoct, int 
   			      curoct->cell[icell].marked=marker;
 			      nmark++;stati[2]++;
 			    }
+#else
+
+			    int npart=0;
+			    if(curoct->level>=param->lcoarse){
+			      countpartDM(&curoct->cell[icell],&npart);
+			    }
+
+			    int n_baryon=0;
+
+			    if(curoct->level>=param->lcoarse){
+            const REAL rhoc = 3.*param->cosmo->H0*param->cosmo->H0/(8.*M_PI*NEWTON_G);
+            const REAL dvcoarse= 1./POW2(3*param->lcoarse);
+            const REAL mcoarse = rhoc*dvcoarse;
+
+            const REAL rho = curoct->cell[icell].field.d;
+            const REAL dv = 1./POW2(3*level);
+
+            const REAL m_gas = dv*rho;
+
+
+            REAL m_star = 0;
+#ifdef STARS
+            struct PART* nexp=curoct->cell[icell].phead;
+            if(nexp!=NULL){
+              do{
+                struct PART* curp=nexp;
+                nexp=curp->next;
+                if (curp->isStar)
+                  m_star+= curp->mass;
+              }while(nexp!=NULL);
+            }
+#endif // STARS
+
+            n_baryon = (m_gas + m_star)/mcoarse;
+			    }
+
+			    if(( (npart>param->amrthresh0) || (n_baryon>param->amrthresh0) )&&(curoct->cell[icell].marked==0)) {
+  			      curoct->cell[icell].marked=marker;
+			      nmark++;stati[2]++;
+			    }
+
+			    mcell=fmax(npart,n_baryon);
+			    threshold=param->amrthresh0;
+
+
+#endif // AMR_HALFLAGRANGE
+
 
 			    // --------------- MAIN AMR COSMO
 #endif // ZELDOVICH

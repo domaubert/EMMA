@@ -212,7 +212,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 	REAL dx = POW(0.5,level);
 	REAL dv = POW(0.5,3*level);
 
-//	REAL rho_m = (cell->gdata.d+1.) + cell->field.d;
+//	REAL rho_m = cell->gdata.d+1.;
 	REAL rho_m = cell->field.d;
 	REAL rho_b =  cell->field.d;
 
@@ -443,7 +443,7 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
 #ifdef AGN
 	      if(curp->isStar==100) isAGN=1;
 #endif
-	      
+
 	      if(!isAGN){
 		if(SNdead){
 		  if(isRAD){
