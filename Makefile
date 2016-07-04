@@ -18,7 +18,7 @@ endif
 #===============================================================================
 
 # main compiler
-CC= gcc
+CC= mpicc
 C_FLAGS=  -pg -O2 #-ftree-vectorize -ffast-math -fno-cx-limited-range -O3 -Wimplicit -g
 C_LIBS= -lm -pg #-fopenmp -lstdc++
 

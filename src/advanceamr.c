@@ -1213,7 +1213,6 @@ double tsn[10];
 	if((ndt[level-1]%2==1)||(level>=param->lmaxzoom))
 #endif // ZOOM
 	  {
-
 	    L_clean_marks(level,firstoct);
           // marking the cells of the current level
 
