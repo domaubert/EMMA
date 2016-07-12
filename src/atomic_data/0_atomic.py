@@ -13,7 +13,7 @@ SPACE_BOUND = [13.6, np.inf];
 TIME_BOUND=[0,np.inf]
 #TIME_BOUND=[0,10,100,np.inf]
 
-class Constantes : 
+class Constantes :
     """
     some physical constants
     """
@@ -28,7 +28,7 @@ def lambda2E(l):
     """
     convert wavelenght[m] to energy [J]
     """
-    cst=Constantes() 
+    cst=Constantes()
     c=cst.c
     h=cst.planck
     return h*c/l
@@ -49,11 +49,11 @@ def cross_section(egy):
     """
     P=2.963
     x=egy/4.298e-1
-  
+
     a=(x-1.)**2
     b=np.power(x,P/2.-5.5)
     c=np.power(1+np.sqrt(x/3.288e1),-P)
-    
+
     return 5.475e4*a*b*c*1e-22*(egy >= 13.6) # m2
 
 
@@ -81,22 +81,22 @@ NGRP_SPACE=len(SPACE_BOUND)-1
 NGRP_TIME=len(TIME_BOUND)-1
 NGRP = NGRP_SPACE*NGRP_TIME
 
-print "NGRP_SPACE\t%d"%NGRP_SPACE
+print("NGRP_SPACE\t%d"%NGRP_SPACE)
 
-print "SPACE_BOUND(eV)  ",
+print("SPACE_BOUND(eV)  ")
 for time in range(NGRP_TIME):
-    print "%f  "%(SPACE_BOUND[time]),
-print ""
+    print( "%f  "%(SPACE_BOUND[time])),
+print ("")
 
-print "NGRP_TIME\t%d"%NGRP_TIME
+print ("NGRP_TIME\t%d"%NGRP_TIME)
 
-print "TIME_BOUND(MYR)  ",
+print( "TIME_BOUND(MYR)  "),
 for time in range(NGRP_TIME):
-    print "%f  "%(TIME_BOUND[time]),
-print ""
-print ""
+    print( "%f  "%(TIME_BOUND[time])),
+print ("")
+print ("")
 
-print "hnu            alphae             alphai             factgrp"
+print( "hnu            alphae             alphai             factgrp")
 
 for time in range(NGRP_TIME):
     Epho = np.zeros( (NGRP, len(name)) )
@@ -106,7 +106,7 @@ for time in range(NGRP_TIME):
 
     b1= TIME_BOUND[time]
     b2= TIME_BOUND[time+1]
-    print ""
+    print ("")
 
     for num in range(1,len(name)+1):
         if( (age[num-1]>b1) & (age[num-1]<=b2)):
@@ -147,8 +147,7 @@ for time in range(NGRP_TIME):
         Nphot=integrate.trapz(nphot[igrp],age)
         E_tot = integrate.trapz(Epho[igrp]*nphot[igrp],age)/ Nphot
         s_N_tot = integrate.trapz(s_N[igrp]*nphot[igrp],age)/ Nphot
-        s_E_tot = integrate.trapz(s_E[igrp]*nphot[igrp],age)/ Nphot	
+        s_E_tot = integrate.trapz(s_E[igrp]*nphot[igrp],age)/ Nphot
         factgrp = np.sum(nphot[igrp])/np.sum(nphot)
 
-        print "%s  %s  %s  %s"%(E_tot/c.eV,s_N_tot,s_E_tot, factgrp)
-
+        print ("%s  %s  %s  %s"%(E_tot/c.eV,s_N_tot,s_E_tot, factgrp))

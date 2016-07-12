@@ -336,8 +336,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
   // ================= I we refine the current level
 
     double tref[10];
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tref[0]=MPI_Wtime();
+#endif // WMPI
 
   if((param->lmax!=param->lcoarse)&&(level<param->lmax)){
 
@@ -438,9 +440,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
     if(cpu->rank==RANK_DISP) printf("ndt=%d nsteps=%d\n",ndt[param->lcoarse-1],nsteps);
     double tcic[10];
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcic[0]=MPI_Wtime();
-
+#endif // WMPI
 
 #ifdef PIC
     // ==================================== performing the CIC assignement

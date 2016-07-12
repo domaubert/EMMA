@@ -418,7 +418,7 @@ void readAtomic(struct RUNPARAMS *param){
 /**
   * Read the atomic data from file defined in param.run
   */
-  int debug =0; //print what was readed and abort if !=0
+  int debug=0; //print what was readed and abort if !=0
 
 #ifdef SINGLEPRECISION
     char* type= "%e\n";

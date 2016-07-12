@@ -237,9 +237,12 @@ float assign_part_field(int field,struct PART *curp){
     case 9:
 		  res=(float)(curp->idx);
 		  break;
+#ifdef STARS
     case 10:
 		  res=(float)(curp->isStar);
 		  break;
+#endif // STARS
+
     case 11:
 		  res=(float)(curp->epot);
 		  break;
@@ -2091,8 +2094,10 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
 void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT **firstoct, REAL *adt, int pdump){
 
   const int debug=0;
+#ifdef WMPI
   MPI_Barrier(cpu->comm);
   double  tstart=MPI_Wtime();
+#endif // WMPI
 
   REAL tdump,adump;
   char filename[128];

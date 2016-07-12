@@ -4,13 +4,14 @@
 #include "prototypes.h"
 #include "oct.h"
 #include <string.h>
-#include <mpi.h>
+
 
 #ifdef GPUAXL
 //#include "poisson_utils_gpu.h"
 #endif
 
 #ifdef WMPI
+#include <mpi.h>
 #include "communication.h"
 #endif
 
