@@ -257,7 +257,7 @@ void setOctList(struct OCT *firstoct, struct CPUINFO *cpu, struct RUNPARAMS *par
 
   int nOct = 0;
   do{ if(nextoct==NULL) 		continue;
-        struct OCT  *curoct=nextoct;
+      struct OCT  *curoct=nextoct;
       nextoct=curoct->next;
       if(curoct->cpu!=cpu->rank) continue;
 

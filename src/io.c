@@ -479,7 +479,7 @@ void dumppart_serial(struct RUNPARAMS *param, struct OCT **firstoct,char filenam
       mkdir(folder_field_part, 0755);
       sprintf(filenamepart,"%s%s.%05d.p%05d",folder_field_part,param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
 #else
-      sprintf(filenamepart,"data/part.%s.%05d.p%05d",*(cpu->ndumps),cpu->rank);
+      sprintf(filenamepart,"data/part.%s.%05d.p%05d",param->out_part->field_name[i],*(cpu->ndumps),cpu->rank);
 #endif // MUTLTIFOLDER
 
       if(debug) printf("openning %s at %p\n",filenamepart,f_part[n_field]);
@@ -2145,8 +2145,8 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
 	  if(cpu->rank==RANK_DISP){
 	    printf("Dumping .......");
-	 //   printf("%s %p\n",filename,cpu->part);
-	    printf("%spart.%05d\n",folder_field,*(cpu->ndumps));
+	    printf("%s %p\n",filename,cpu->part);
+	 //   printf("%spart.%05d\n",folder_field,*(cpu->ndumps));
 	  }
 
 #ifdef WMPI

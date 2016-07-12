@@ -505,8 +505,10 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
 
     /* //====================================  Force Field ========================== */
+#ifdef WMPI
     MPI_Barrier(cpu->comm);
     tcic[4]=MPI_Wtime();
+#endif // WMPI
 
 #ifdef WMPI
     mpi_exchange(cpu,cpu->sendbuffer, cpu->recvbuffer,2,1);
@@ -719,7 +721,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #else
     dtff=L_comptstep_ff(level,param,firstoct,1.0,cpu,1e9);
 #endif
+#ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&dtff,1,MPI_REEL,MPI_MIN,cpu->comm);
+#endif // WMPI
     if(cpu->rank==RANK_DISP) printf("dtff= %e ",dtff);
     dtnew=(dtff<dtnew?dtff:dtnew);
     if(level==param->lcoarse) param->physical_state->dt_ff = dtff;
@@ -738,7 +742,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef WHYDRO2
     REAL dthydro;
     dthydro=L_comptstep_hydro(level,param,firstoct,1.0,1.0,cpu,1e9);
+#ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&dthydro,1,MPI_REEL,MPI_MIN,cpu->comm);
+#endif // WMPI
     if(cpu->rank==RANK_DISP) printf("dthydro= %e ",dthydro);
     dtnew=(dthydro<dtnew?dthydro:dtnew);
     if(level==param->lcoarse) param->physical_state->dt_hydro = dthydro;
@@ -748,7 +754,9 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef PIC
     REAL dtpic;
     dtpic=L_comptstep(level,param,firstoct,1.0,1.0,cpu,1e9);
+#ifdef WMPI
     MPI_Allreduce(MPI_IN_PLACE,&dtpic,1,MPI_REEL,MPI_MIN,cpu->comm);
+#endif // WMPI
     if(cpu->rank==RANK_DISP) printf("dtpic= %e ",dtpic);
     dtnew=(dtpic<dtnew?dtpic:dtnew);
     if(level==param->lcoarse) param->physical_state->dt_pic = dtpic;

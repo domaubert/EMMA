@@ -19,8 +19,8 @@ endif
 
 # main compiler
 CC= mpicc
-C_FLAGS=  -pg -O2 #-ftree-vectorize -ffast-math -fno-cx-limited-range -O3 -Wimplicit -g
-C_LIBS= -lm -pg #-fopenmp -lstdc++
+C_FLAGS=  -g -O2 #-ftree-vectorize -ffast-math -fno-cx-limited-range -O3 -Wimplicit -g
+C_LIBS= -lm #-fopenmp -lstdc++
 
 #GPU compiler
 NVCC= nvcc

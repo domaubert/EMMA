@@ -1014,7 +1014,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
 
   for(iter=0;iter<nitmax;iter++){
+#ifdef WMPI
     tstart=MPI_Wtime();
+#endif // WMPI
     // --------------- setting the first oct of the level
     nextoct=firstoct[level-1];
     nreadtot=0;
@@ -1076,8 +1078,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 
     //printf("iter=%d nreadtot=%d\n",iter,nreadtot);
 
-
+#ifdef WMPI
     tt=MPI_Wtime();
+#endif // WMPI
     // at this stage an iteration has been completed : let's update the potential in the tree
       dist=0;
       normp=0.;
@@ -1105,8 +1108,9 @@ REAL PoissonJacobi(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  s
 #endif
 
     if((iter==1)&&(level>=param->lcoarse)) res0=residual;
-
+#ifdef WMPI
     tstop=MPI_Wtime();
+#endif // WMPI
     tup+=(tstop-tt);
     tglob+=(tstop-tstart);
 

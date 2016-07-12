@@ -14,6 +14,9 @@
 //==================================================================================
 struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
+
+  const int debug=1;
+
   FILE *fx = NULL;
   FILE *fy = NULL;
   FILE *fz = NULL;
@@ -80,6 +83,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     }
 
 
+
 #ifndef EMMAZELDO
 
     printf("ICS: READING DISPLACEMENTS FROM FILE\n");
@@ -132,6 +136,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
     printf("ICS: APPLYING ZELDOVICH DISPLACEMENT\n");
 #endif
 
+if (debug) printf("file open\n");
 
     // reading the headers
     size_t outf;
@@ -228,6 +233,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
   }
 
+
 #ifdef WMPI
   // Massive broadcast of grafic header
   MPI_Bcast(&np1,1,MPI_INT,0,cpu->comm);
@@ -243,6 +249,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   MPI_Bcast(&h0,1,MPI_FLOAT,0,cpu->comm);
   MPI_Barrier(cpu->comm);
 #endif
+
+if (debug) printf("header read ok\n");
+
 
   if(cpu->rank==0){
     printf("============================================\n");
@@ -279,8 +288,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   float *dispx;
   float *dispy;
   float *dispz;
-
-#endif
+#endif // EMMAZELDO
 
   double x;
   double y;
@@ -320,6 +328,9 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   dispz=(float*)malloc(sizeof(float)*np1*np2);
 #endif
 
+
+if (debug) printf("flag\n");
+
   //REAL rmin=2.;
 
   float xmin,xmax;
@@ -337,6 +348,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
   ip=0;
   size_t outf;
   for(i3=1;i3<=np3;i3++){
+
 
     if(cpu->rank==0){
       printf("\r %f percent done",(i3*1.0)/np3*100.);
@@ -368,6 +380,8 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 
 
     }
+
+#if 0
 
 
 #ifdef WMPI
@@ -461,6 +475,7 @@ struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *mun
 	}
       }
     }
+#endif // 0
   }
 
   free(velx);
