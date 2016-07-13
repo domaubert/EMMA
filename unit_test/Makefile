@@ -1,19 +1,22 @@
 CC= gcc -g3
 C_LIBS= -lm
 
+EXECUTABLE= test
 
 
 
 # UNIT_C_OBJS= test_grid.o
-# EXECUTABLE= test_grid
 
-UNIT_C_OBJS= test_grafic_ic.o
-EXECUTABLE= test_grafic_ic
-DEFINES = -DPIC -DGRAFIC -DTESTCOSMO -DWGRAV
+# UNIT_C_OBJS= test_grafic_ic.o
+# DEFINES = -DPIC -DGRAFIC -DTESTCOSMO -DWGRAV
+
+UNIT_C_OBJS= test_uniform_grid.o
+DEFINES = -DPIC -DWGRAV
+
+
 OBJDIR= obj
 UNIT_SRCDIR= src
 I_DIR= -I../src
-
 
 $(OBJDIR)/%.o: $(UNIT_SRCDIR)/%.c
 	$(CC) $(C_FLAGS) $(DEFINES) $(I_DIR) -c $< -o $@

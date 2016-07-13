@@ -344,7 +344,6 @@ if (debug) printf("flag\n");
   float zmin,zmax;
     zmin=10;
     zmax=-1.;
-
   ip=0;
   size_t outf;
   for(i3=1;i3<=np3;i3++){
@@ -381,7 +380,7 @@ if (debug) printf("flag\n");
 
     }
 
-#if 0
+
 
 
 #ifdef WMPI
@@ -475,7 +474,6 @@ if (debug) printf("flag\n");
 	}
       }
     }
-#endif // 0
   }
 
   free(velx);
@@ -851,8 +849,7 @@ struct PART * read_split_grafic_part(struct PART *part, struct CPUINFO *cpu, REA
 	cpu->boxz[1]=boxz[1];
 
 
-	//if(segment_part(xs,ys,zs,cpu,cpu->levelcoarse)){
-	if(1){
+if(segment_part(xs,ys,zs,cpu,cpu->levelcoarse)){
 
 	  keep=1;
 #ifdef ZOOM

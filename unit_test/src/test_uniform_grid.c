@@ -1,13 +1,10 @@
 /*
- * Create a grid, read graphic IC and assign part to grid
- * test if the number of read part is equal to 2^(3*Lcoarse)
- * test if all part are in (0,1,0,1,0,1) cube
- * test if the number of part on the grid is the same as the number of read part
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 
 #include "prototypes.h"
 #include "segment.h"
@@ -21,15 +18,13 @@ int main(int argc, char *argv[]){
 
         const int levelcoarse=6;
         const int levelmax=levelcoarse;
-        const int ngridmax=POW(2,3*levelcoarse);
-        const int npartmax=POW(2,3*levelcoarse)*2;
+        const int ngridmax=POW2(3*levelcoarse);
+        const int npartmax=POW2(3*levelcoarse)*2;
+        const int nside = POW2(levelcoarse);
 
         struct RUNPARAMS param;
         param.lcoarse=levelcoarse;
         param.lmax=levelcoarse;
-
-        struct COSMOPARAM cosmo;
-        param.cosmo=&cosmo;
 
         struct CPUINFO cpu;
         cpu.rank=0;
@@ -37,33 +32,48 @@ int main(int argc, char *argv[]){
         load_balance(levelcoarse,&cpu);
         cpu.levelcoarse=levelcoarse;
 
-
 //        init
 
         struct OCT *grid=(struct OCT*)calloc(ngridmax,sizeof(struct OCT));
         struct OCT **firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
         struct OCT **lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
-
-        struct PART *part=(struct PART*)calloc(npartmax,sizeof(struct PART));
-
         struct CELL root;
         root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
-        REAL munit;
-        REAL ainit;
-        int npart;
-        struct PART *lastpart=read_grafic_part(part, &cpu, &munit, &ainit, &npart, &param,levelcoarse);
 
         int val=(POW(2,param.lmax-1)<=512?POW(2,param.lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells
         cpu.maxhash=POW(val,3);
         cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));
         setup_mpi(&cpu, firstoct, levelmax, levelcoarse, ngridmax, 1);
 
+
+        struct PART *part=(struct PART*)calloc(npartmax,sizeof(struct PART));
+
+        printf("Build uniform particle grid\n");
+        int npart = POW2(3*levelcoarse);
+        REAL dx = 1./nside;
+
+        int k;
+        for(k=0;k<nside;k++){
+                int j;
+                for(j=0;j<nside;j++){
+                        int i;
+                        for(i=0;i<nside;i++){
+                                const int idx = i+j*nside+k*nside*nside;
+                                part[idx].x = i*dx +dx/2;
+                                part[idx].y = j*dx +dx/2;
+                                part[idx].z = k*dx +dx/2;
+                                part[idx].level = levelcoarse;
+                        }
+                }
+        }
+
+        printf("part2grid\n");
         part2grid(part,&cpu,npart);
 
 //      test
 
-        assert( npart == POW2(3*(levelcoarse)));
+        assert( npart == POW2(3*levelcoarse) );
 
         int i;
         for(i=0;i<npart;i++){
@@ -76,7 +86,10 @@ int main(int argc, char *argv[]){
                 assert(part[i].level == levelcoarse );
         }
 
+
+
         int count_part=0;
+        int part_in_cell_max=0;
 
         int level;
         for(level=1;level<=levelmax;level++){
@@ -89,6 +102,8 @@ int main(int argc, char *argv[]){
 
                         int icell;
                         for(icell=0;icell<8;icell++) {
+                                int count_part_cell=0;
+
                                 struct CELL *curcell = &curoct->cell[icell];
                                 struct PART *nexp=curcell->phead;
                                 if(nexp!=NULL){
@@ -96,15 +111,21 @@ int main(int argc, char *argv[]){
                                                 struct PART *curp=nexp;
                                                 nexp=curp->next;
                                                 count_part++;
-
+                                                count_part_cell++;
                                         }while(nexp!=NULL);
                                 }
+                                part_in_cell_max=fmax(part_in_cell_max,count_part_cell);
                         }
                 }while(nextoct!=NULL);
         }
 
+
+
         // printf("count_part %d\n", count_part);
         assert( count_part == POW2(3*(levelcoarse)));
+
+        printf("part_in_cell_max %d\n", part_in_cell_max);
+        assert( part_in_cell_max == 1 );
 
 //      free
 

@@ -9,6 +9,8 @@
 #include "prototypes.h"
 #include "segment.h"
 #include "amr.h"
+#include "oct.h"
+
 
 int main(int argc, char *argv[]){
 
@@ -59,10 +61,19 @@ int main(int argc, char *argv[]){
                 assert( noct == POW2(3*(level-1)));
         }
 
+        for(level=1;level<=param.lmax;level++){
+                setOctList(firstoct[level-1], &cpu, &param,level);
+        }
 
         for(level=1;level<levelmax;level++){
-                //printf("%d\t%d\t%d\n",level,cpu.locNoct[level],POW2(3*level) );
-                assert(cpu.locNoct[level] == POW2(3*level) );
+                FILE *fp;
+                fp = fopen ("filename.txt","r");
+                if (fp!=NULL)
+                {
+                        fscanf(fp,"Some String\n", &var);
+                        fclose (fp);
+                }printf("%d\t%d\t%d\n",level,cpu.locNoct[level-1],POW2(3*level) );
+                assert(cpu.locNoct[level-1] == POW2(3*level) );
         }
 
 //      free

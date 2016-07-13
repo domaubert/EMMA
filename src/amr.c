@@ -1650,8 +1650,6 @@ struct CELL build_initial_grid(struct OCT *grid, struct OCT **firstoct,  struct 
       }while(nextoct!=NULL);
     if(cpu->rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
 
-    setOctList(firstoct[level],cpu,param,level+1);
-
   }
 
 

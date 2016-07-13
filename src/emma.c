@@ -899,6 +899,10 @@ int main(int argc, char *argv[])
     struct CELL root;
     root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
+    for (level=1; level<=param.lmax; level++){
+      setOctList(firstoct[level],&cpu,&param,level);
+    }
+
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
 
 #ifdef WMPI
@@ -1186,7 +1190,7 @@ int main(int argc, char *argv[])
 
     npart=ip; // we compute the localnumber of particle
 
-#endif
+#endif // PARTN
 
 #ifdef TESTPLUM
     int dummy;
@@ -2179,8 +2183,7 @@ int main(int argc, char *argv[])
   if(debug_free) printf("lastoct\n");
   free(lastoct);
 
-  if(debug_free) printf("octlist\n");
-
+  if(debug_free) printf("octlist level\n");
   for(iLev = 0; iLev<levelcoarse; iLev++){
     free(cpu.octList[iLev]);
   }
@@ -2188,8 +2191,11 @@ int main(int argc, char *argv[])
     free(cpu.octList[iLev]);
   }
 
-  free(cpu.locNoct);
+  if(debug_free) printf("octlist main\n");
   free(cpu.octList);
+
+  if(debug_free) printf("locNoct\n");
+  free(cpu.locNoct);
 
   if(debug_free ) printf("part\n");
 #ifdef PIC
