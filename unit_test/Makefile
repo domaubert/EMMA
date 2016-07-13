@@ -1,17 +1,27 @@
-CC= gcc -g3
+CC= mpicc -g3
 C_LIBS= -lm
 
 EXECUTABLE= test
 
 
-
+#------------------------------------------------------------------------------
 # UNIT_C_OBJS= test_grid.o
 
+#------------------------------------------------------------------------------
+UNIT_C_OBJS= test_mpi.o
+DEFINES = -DWMPI
+
+#------------------------------------------------------------------------------
 # UNIT_C_OBJS= test_grafic_ic.o
 # DEFINES = -DPIC -DGRAFIC -DTESTCOSMO -DWGRAV
 
-UNIT_C_OBJS= test_uniform_grid.o
-DEFINES = -DPIC -DWGRAV
+#------------------------------------------------------------------------------
+# UNIT_C_OBJS= test_uniform_grid.o
+# DEFINES = -DPIC -DWGRAV
+
+#------------------------------------------------------------------------------
+# UNIT_C_OBJS= test_star_formation.o
+# DEFINES = -DPIC -DWGRAV
 
 
 OBJDIR= obj

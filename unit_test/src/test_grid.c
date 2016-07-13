@@ -51,14 +51,15 @@ int main(int argc, char *argv[]){
                 int noct=0;
 
                 struct OCT  *nextoct = firstoct[level-1];
-                 do{
+                do{
                         if(nextoct==NULL) 		continue;
                         struct OCT  *curoct=nextoct;
                         nextoct=curoct->next;
                         noct++;
                  }while(nextoct!=NULL);
 
-                assert( noct == POW2(3*(level-1)));
+                //printf("%d %d\n", noct, POW2(3*(level-1) ) );
+                assert( noct == POW2(3*(level-1)) );
         }
 
         for(level=1;level<=param.lmax;level++){
@@ -66,13 +67,7 @@ int main(int argc, char *argv[]){
         }
 
         for(level=1;level<levelmax;level++){
-                FILE *fp;
-                fp = fopen ("filename.txt","r");
-                if (fp!=NULL)
-                {
-                        fscanf(fp,"Some String\n", &var);
-                        fclose (fp);
-                }printf("%d\t%d\t%d\n",level,cpu.locNoct[level-1],POW2(3*level) );
+                // printf("%d\t%d\t%d\n",level,cpu.locNoct[level-1],POW2(3*level) );
                 assert(cpu.locNoct[level-1] == POW2(3*level) );
         }
 
@@ -82,6 +77,6 @@ int main(int argc, char *argv[]){
         free(firstoct);
         free(lastoct);
 
-        printf("Test grid creation passed\n");
+        printf("Test passed\n");
         return 0;
 }

@@ -1,4 +1,6 @@
 /*
+ * create a grid, create a uniform particle distribution of particle
+ * test if each cells get one and only one particle
  */
 
 #include <stdio.h>
@@ -73,8 +75,6 @@ int main(int argc, char *argv[]){
 
 //      test
 
-        assert( npart == POW2(3*levelcoarse) );
-
         int i;
         for(i=0;i<npart;i++){
                 assert(part[i].x>=0);
@@ -85,7 +85,6 @@ int main(int argc, char *argv[]){
                 assert(part[i].z <1);
                 assert(part[i].level == levelcoarse );
         }
-
 
 
         int count_part=0;
@@ -124,7 +123,7 @@ int main(int argc, char *argv[]){
         // printf("count_part %d\n", count_part);
         assert( count_part == POW2(3*(levelcoarse)));
 
-        printf("part_in_cell_max %d\n", part_in_cell_max);
+        // printf("part_in_cell_max %d\n", part_in_cell_max);
         assert( part_in_cell_max == 1 );
 
 //      free
