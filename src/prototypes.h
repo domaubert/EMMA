@@ -4,6 +4,9 @@
   *
   */
 
+#ifndef prototypes
+#define prototypes
+
 #include <stdio.h>
 #include <math.h>
 
@@ -1196,3 +1199,4 @@ struct MULTIVECT{
 #endif
 };
 
+#endif

@@ -29,6 +29,8 @@ int main(int argc, char *argv[]){
 
         printf("proc %d/%d\n", cpu.rank, cpu.nproc);
 
+        // TODO add some message passing test
+
         printf("Test passed\n");
         return 0;
 }

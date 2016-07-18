@@ -16,6 +16,8 @@
 
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
+  const int debug=1;
+
   int nnei=0;
   int *neicpu; // the reduced list of neighbors CPU (not redundant);
   unsigned long long hidx;
@@ -44,13 +46,14 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif
 
 
-  // we clean the hash table
+  if (debug) printf("Cleaning the hash table\n");
+
   memset(cpu->htable,0,cpu->maxhash*sizeof(struct OCT*));
   memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==RANK_DISP) printf("Clenaing MPI Buffers\n");
+  if (debug) if(cpu->rank==RANK_DISP) printf("Cleaning MPI Buffers\n");
 
   // we clean the comm buffers
 
@@ -119,7 +122,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif // WMPI
 
   // looking for neighbors
-  //if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
+  if (debug) if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
 
   for(level=1;level<=levelmax;level++)
     {
@@ -186,7 +189,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 		printf("ERROR on nbufforg being too small for particles on level =%d!\n",level);
 		abort();
 	      }
-#endif
+#endif // PIC
 
 	    }
 	  }while(nextoct!=NULL);

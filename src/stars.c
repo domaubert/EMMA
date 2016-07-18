@@ -175,8 +175,6 @@ void conserveField(struct Wtype *field, struct RUNPARAMS *param, struct PART *st
 	if(isnan(U.du)){
 	  printf("drho=%e vx=%e\n",drho,star->vx);
 	}
-
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,6 +237,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 #endif // SIMPLESTAR
 #endif // SCHAYE
 
+  //printf("SFR=%f\n",SFR);
 	return SFR; // kg.yr-1.m-3 in code unit
 }
 
@@ -269,6 +268,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   const REAL SFR=getSFR(cell,param,aexp,level);
   // Average number of stars created
 	const REAL lambda =  SFR  / mstar * dt * dv;
+  //printf("lambda = %f\n",lambda );
 
 //#define NOPOISS
 #ifndef NOPOISS
@@ -414,7 +414,12 @@ int setStarsState(struct RUNPARAMS *param, struct CPUINFO *cpu, int level){
           struct PART *curp=nexp;
           nexp=curp->next;
 
+#ifdef TESTCOSMO
           const REAL age =  param->cosmo->tphy - curp->age;
+#else
+          // TODO considere non socmo case
+          const REAL age =0;
+#endif // TESTCOSMO
 
 
           if( curp->isStar && !(curp->isStar==4) ){ // isStar and not dead
@@ -494,7 +499,7 @@ REAL setmStar(struct RUNPARAMS *param,int level){
 /// Compute the stellar particle mass
 // ----------------------------------------------------------//
   REAL mstars_level=0; // mass of stars at level
-#ifdef TESTCOSMO
+
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*level)*param->stars->overdensity_cond; // variable mass
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*param->lcoarse)*param->stars->overdensity_cond; // coarse mass+ overdensity
 	//mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse)); // coarse mass
@@ -512,11 +517,12 @@ REAL setmStar(struct RUNPARAMS *param,int level){
       mlevel=level-1; //Adaptative mass
       res*=-1;
     }
+#ifdef TESTCOSMO
     mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+res));
-
-  }
 #endif // TESTCOSMO
 // TODO considere ifndef TESTCOSMO
+  }
+
   return mstars_level;
 }
 
@@ -530,7 +536,7 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
 
 
   const int debug=0;
-  if (debug) printf("\n setting ID \n");
+  if (debug) printf("setting ID \n");
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -569,21 +575,30 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif // WMPI
-  int i;
 
   //reduce
   int noldtot;
+#ifdef WMPI
   MPI_Allreduce(&locNOld,&noldtot,1,MPI_INT,MPI_SUM,cpu->comm);
+#else
+  noldtot = locNOld;
+#endif // WMPI
+
 
   int* NNew = (int*)calloc(cpu->nproc,sizeof(int));
+#ifdef WMPI
   MPI_Allgather(&locNNew,1,MPI_INT,NNew ,1,MPI_INT, cpu->comm);
+#else
+  NNew[0]=locNNew;
+#endif // WMPI
 
   int cpuoffset = 0;
+  int i;
   for (i=0;i<cpu->rank;i++){
     cpuoffset += NNew[i];
   }
 
-  //if (debug) printf("cpuoffset %d\n", cpuoffset);
+  if (debug) printf("cpuoffset %d\n", cpuoffset);
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
@@ -606,6 +621,7 @@ void setID(struct RUNPARAMS *param, struct CPUINFO *cpu,int level){
           nexp=curp->next;
 
           if(curp->idx==-1000){
+            //if (debug) printf("%d %d %d\n",noldtot, cpuoffset, curID);
             curp->idx = noldtot+ cpuoffset+ curID++;
             //printf("%d \n",curp->idx);
           }
@@ -647,6 +663,7 @@ const int debug=0;
 
   if(debug) printf("setting star states\n");
   setStarsState(param, cpu, level);
+  if(debug) printf("setting star states ok\n");
 
   REAL mmax = 0;
   REAL percentvol =0;
@@ -661,6 +678,7 @@ const int debug=0;
 
   if(debug) printf("init mstar\n");
   REAL mstars_level = setmStar(param,level);
+  if(debug) printf("mstars_level = %f\n",mstars_level );
 
   if(debug) printf("main loop\n");
   int iOct;
@@ -680,6 +698,8 @@ const int debug=0;
 	percentvol += POW(dx,3);
 
 	int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
+  //if(N && debug) printf("N stars = %d\n",N);
+
 	nstarsmax_in_one_cell = FMAX(nstarsmax_in_one_cell,N);
 	nstarsmin_in_one_cell = FMIN(nstarsmin_in_one_cell,N);
 

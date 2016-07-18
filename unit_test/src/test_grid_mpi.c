@@ -43,6 +43,16 @@ int main(int argc, char *argv[]){
         struct OCT **firstoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
         struct OCT **lastoct=(struct OCT **)calloc(levelmax,sizeof(struct OCT *));
 
+        cpu.locNoct=(int *)calloc(levelmax,sizeof(int));
+        cpu.octList=(struct OCT***)calloc(levelmax,sizeof(struct OCT**));
+
+        int iLev;
+        for(iLev = 0; iLev<levelcoarse; iLev++){
+          cpu.locNoct[iLev] = (pow(2,3*(iLev+1))<ngridmax? pow(2,3*(iLev+1)):ngridmax) ;
+          cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*));
+        }
+
+
         struct CELL root;
         root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
@@ -93,6 +103,18 @@ int main(int argc, char *argv[]){
                 MPI_Allreduce(MPI_IN_PLACE,&noct,1,MPI_INT,MPI_SUM,cpu.comm);
                 // printf("%d %d\n", noct, POW2(3*(level-1) ) );
                 assert( noct == POW2(3*(level-1)) );
+        }
+
+
+        for(level=1;level<=param.lmax;level++){
+                setOctList(firstoct[level-1], &cpu, &param,level);
+        }
+
+        for(level=1;level<levelmax;level++){
+                int noclist;
+                MPI_Allreduce(&cpu.locNoct[level-1],&noclist,1,MPI_INT,MPI_SUM,cpu.comm);
+                // printf("%d\t%d\t%d\n",level,noclist,POW2(3*(level-1) ) );
+                assert( noclist == POW2(3*(level-1)) );
         }
 
 //      free
