@@ -33,6 +33,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int *flagcpu;
   int *nfromcpu;
 
+
   flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
   nfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
   neicpu=(int*) calloc(cpu->nproc,sizeof(int));
@@ -115,7 +116,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif
 
   MPI_Barrier(cpu->comm);
-#endif
+#endif // WMPI
 
   // looking for neighbors
   //if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
@@ -219,6 +220,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     }
   }
 
+
   free(flagcpu);
   free(nfromcpu);
 #ifdef PIC
@@ -230,18 +232,16 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   nbnd=nnei;
   nnei=j;
 
-
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;
   if(cpu->mpinei!=NULL){
     free(cpu->mpinei);
     cpu->mpinei=NULL;
   }
+
   cpu->mpinei=(int*)calloc(nnei,sizeof(int)); // we reallocate the array to free some memory
   for(i=0;i<cpu->nnei;i++) cpu->mpinei[i]=neicpu[i];
   free(neicpu);
-
-
 
   // AT THIS STAGE:
   // nbnd contains the number of boundary octs
@@ -285,7 +285,6 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     *(cpu->recvbuffer+i)=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
   }
 
-
 #ifdef PIC
   cpu->psendbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   cpu->precvbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
@@ -317,6 +316,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif // 1
 
 #endif // WMPI
+
 
   // creating a cpu dictionnary to translate from cpu number to inei
 

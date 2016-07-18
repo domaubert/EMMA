@@ -1,6 +1,4 @@
-/*
- * create a grid, create a uniform particle distribution of particle
- * test if each cells get one and only one particle
+/* 
  */
 
 #include <stdio.h>
@@ -43,7 +41,7 @@ int main(int argc, char *argv[]){
         root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
 
-        const int val=(POW(2,param.lmax-1)<=512?POW(2,param.lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells
+        int val=(POW(2,param.lmax-1)<=512?POW(2,param.lmax-1):512); // limit to 2097152 octs in hash table i.e. 16e6 cells
         cpu.maxhash=POW(val,3);
         cpu.htable =	(struct OCT**) calloc(cpu.maxhash,sizeof(struct OCT *));
         setup_mpi(&cpu, firstoct, levelmax, levelcoarse, ngridmax, 1);

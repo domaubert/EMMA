@@ -1,38 +1,22 @@
-CC= mpicc -g3
+CC= mpicc
 C_LIBS= -lm
+C_FLAGS= -g3
 
 EXECUTABLE= test
-
-
-#------------------------------------------------------------------------------
-# UNIT_C_OBJS= test_grid.o
-
-#------------------------------------------------------------------------------
-UNIT_C_OBJS= test_mpi.o
-DEFINES = -DWMPI
-
-#------------------------------------------------------------------------------
-# UNIT_C_OBJS= test_grafic_ic.o
-# DEFINES = -DPIC -DGRAFIC -DTESTCOSMO -DWGRAV
-
-#------------------------------------------------------------------------------
-# UNIT_C_OBJS= test_uniform_grid.o
-# DEFINES = -DPIC -DWGRAV
-
-#------------------------------------------------------------------------------
-# UNIT_C_OBJS= test_star_formation.o
-# DEFINES = -DPIC -DWGRAV
-
-
 OBJDIR= obj
 UNIT_SRCDIR= src
-I_DIR= -I../src
+SRCDIR = ../src
+
+# include test.mk
+# include mk/test_grid.mk
+# include mk/test_grafic_ic.mk
+include mk/test_grid_mpi.mk
+# include mk/test_mpi.mk
+# include mk/test_star_formation
 
 $(OBJDIR)/%.o: $(UNIT_SRCDIR)/%.c
-	$(CC) $(C_FLAGS) $(DEFINES) $(I_DIR) -c $< -o $@
-
+	$(CC) $(C_FLAGS) $(DEFINES) -I$(SRCDIR) -c $< -o $@
 UNIT_OBJ=$(patsubst %,$(OBJDIR)/%,$(UNIT_C_OBJS))
-
 
 C_OBJS= \
 	hilbert.o \
@@ -60,16 +44,13 @@ C_OBJS= \
 	restart.o \
 	ic.o\
 
-SRCDIR = ../src
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(C_FLAGS) $(DEFINES) $(I_DIR) -c $< -o $@
-
+	$(CC) $(C_FLAGS) $(DEFINES) -I$(SRCDIR) -c $< -o $@
 MAIN_OBJ=$(patsubst %,$(OBJDIR)/%,$(C_OBJS))
 
-OBJ= $(MAIN_OBJ) $(UNIT_OBJ)
+all: $(MAIN_OBJ) $(UNIT_OBJ)
+	$(CC) $(MAIN_OBJ) $(UNIT_OBJ) $(LD_DIR) $(C_LIBS) -o $(EXECUTABLE) $(LD_FLAGS)
 
-all:$(OBJ)
-	$(CC) $(OBJ) $(LD_DIR) $(C_LIBS) -o $(EXECUTABLE) $(LD_FLAGS)
 
 clean:
 	rm -f $(OBJDIR)/*.o $(EXECUTABLE) *~
