@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
 
         printf("setting uniform density\n");
 
-        REAL mean_dens= SQRT(3.*M_PI/(32.*NEWTON_G)) * 8;
+        REAL mean_dens= SQRT(3.*M_PI/(32.*NEWTON_G)) * 128;
 
         int iOct;
         for(iOct=0; iOct<cpu.locNoct[levelcoarse-1]; iOct++){
