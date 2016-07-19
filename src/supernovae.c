@@ -43,7 +43,13 @@ REAL interp_egy(struct RUNPARAMS *param,REAL t){
 }
 
 REAL get_egy(struct RUNPARAMS *param, struct PART *curp, REAL aexp, REAL dt,int level){
+#ifdef TESTCOSMO
   REAL cur_t = param->cosmo->tphy;
+#else
+  // TODO consider non cosmological case
+  REAL cur_t = 0.;
+#endif // TESTCOSMO
+
   REAL age =  cur_t - curp->age;
   REAL dt_in_yr = dt * aexp*aexp * param->unit.unit_t /(365*24*3600);
 
@@ -70,7 +76,13 @@ REAL interp_mass(struct RUNPARAMS *param,REAL t){
 }
 
 REAL get_mass(struct RUNPARAMS *param, struct PART *curp, REAL aexp, REAL dt){
+#ifdef TESTCOSMO
   REAL age =  param->cosmo->tphy - curp->age;
+#else
+  // TODO consider non cosmological case
+  REAL age = 0.;
+#endif // TESTCOSMO
+
   REAL dt_in_yr = dt * aexp*aexp * param->unit.unit_t /(365*24*3600);
 
   REAL cur_mass  = interp_mass(param,age);
@@ -580,7 +592,7 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     REAL age = param->cosmo->tphy - curp->age;
     if (curp->isStar && age>0 && age<5e7){ // if curp is in SN state
       REAL E= get_egy(param,curp,aexp,dt,level);
-      
+
 #else
       if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
 	REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
@@ -745,7 +757,7 @@ void supernovae(struct RUNPARAMS *param, struct CPUINFO *cpu, REAL dt, REAL aexp
 #endif
 
     if(cpu->rank==RANK_DISP){
-      if (Nsn){
+      if(Nsn){
         if(!(param->sn->trig_sn)){
           printf("FIRST_SN at z=%e\n",1./aexp-1.);
           param->sn->trig_sn=1;

@@ -102,13 +102,12 @@ int main(int argc, char *argv[]){
 
 
 
-        REAL dv = POW(2.,-3*levelcoarse);
+
         REAL m_star = 200;
-
-
-        REAL k = SQRT( (3.*M_PI) / (32.*NEWTON_G));
         REAL dt = 1.;
 
+        REAL dv = POW(2.,-3*levelcoarse);
+        REAL k = SQRT( (3.*M_PI) / (32.*NEWTON_G));
         REAL mean_dens= POW(k*m_star/(dv*dt),2./3.);
 
         printf("setting uniform density rho=%e\n",mean_dens);

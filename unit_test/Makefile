@@ -7,13 +7,14 @@ OBJDIR= obj
 UNIT_SRCDIR= src
 SRCDIR = ../src
 
-# include test.mk
+include test.mk
 # include mk/test_grid.mk
 # include mk/test_uniform_grid.mk
 # include mk/test_grid_mpi.mk
 # include mk/test_grafic_ic.mk
 # include mk/test_mpi.mk
-include mk/test_star_formation.mk
+# include mk/test_star_formation.mk
+# include mk/test_sedov_mpi.mk
 
 $(OBJDIR)/%.o: $(UNIT_SRCDIR)/%.c
 	$(CC) $(C_FLAGS) $(DEFINES) -I$(SRCDIR) -c $< -o $@

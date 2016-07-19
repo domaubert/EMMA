@@ -297,8 +297,9 @@ REAL comptstep(int levelcoarse,int levelmax,struct OCT** firstoct, REAL fa, REAL
 	      nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	      if(nexp!=NULL){
 
+#ifdef WGRAV
 		aa=SQRT(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
-
+#endif // WGRAV
 		do{
 		  curp=nexp;
 		  nexp=curp->next;
@@ -396,8 +397,9 @@ REAL L_comptstep(int level,struct RUNPARAMS *param,struct OCT** firstoct, REAL f
 #ifdef PIC
 	    nexp=oct.cell[icell].phead; //sweeping the particles of the current cell
 	    if(nexp!=NULL){
-
+#ifdef WGRAV
 	      aa=SQRT(oct.cell[icell].f[0]*oct.cell[icell].f[0]+oct.cell[icell].f[1]*oct.cell[icell].f[1]+oct.cell[icell].f[2]*oct.cell[icell].f[2])*fa2;
+#endif // WGRAV
 	      do{
 		curp=nexp;
 		nexp=curp->next;
