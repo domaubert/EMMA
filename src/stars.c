@@ -237,7 +237,7 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 #endif // SIMPLESTAR
 #endif // SCHAYE
 
-  //printf("SFR=%f\n",SFR);
+  //printf("SFR=%e\n",SFR);
 	return SFR; // kg.yr-1.m-3 in code unit
 }
 
@@ -268,7 +268,6 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
   const REAL SFR=getSFR(cell,param,aexp,level);
   // Average number of stars created
 	const REAL lambda =  SFR  / mstar * dt * dv;
-  //printf("lambda = %f\n",lambda );
 
 //#define NOPOISS
 #ifndef NOPOISS
@@ -698,7 +697,7 @@ const int debug=0;
 	percentvol += POW(dx,3);
 
 	int N = getNstars2create(curcell, param, dt, aexp, level,mstars_level);
-  //if(N && debug) printf("N stars = %d\n",N);
+  if(N && debug) printf("N stars = %d\n",N);
 
 	nstarsmax_in_one_cell = FMAX(nstarsmax_in_one_cell,N);
 	nstarsmin_in_one_cell = FMIN(nstarsmin_in_one_cell,N);
@@ -711,7 +710,7 @@ const int debug=0;
     }
   }
 
-	//	if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
+  //if(N) printf("N_Rho_Temp_Seuil_z\t%d\t%e\t%e\t%e\t%e\n", N, curcell->field.d, curcell->rfield.temp, param->stars->thresh,1.0/aexp - 1.0  );
 
 
 #ifdef MULTIPLESTARS

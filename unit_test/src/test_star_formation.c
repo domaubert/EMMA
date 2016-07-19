@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
         const int levelcoarse=2;
         const int levelmax=levelcoarse;
         const int ngridmax=POW2(3*levelcoarse);
-        const int npartmax=POW2(3*(levelcoarse+1));
+        const int npartmax=POW2(3*(levelcoarse+5));
         const int nside = POW2(levelcoarse);
 
         srand(0000);
@@ -100,9 +100,18 @@ int main(int argc, char *argv[]){
         }
 
 
-        printf("setting uniform density\n");
 
-        REAL mean_dens= SQRT(3.*M_PI/(32.*NEWTON_G)) * 128;
+
+        REAL dv = POW(2.,-3*levelcoarse);
+        REAL m_star = 200;
+
+
+        REAL k = SQRT( (3.*M_PI) / (32.*NEWTON_G));
+        REAL dt = 1.;
+
+        REAL mean_dens= POW(k*m_star/(dv*dt),2./3.);
+
+        printf("setting uniform density rho=%e\n",mean_dens);
 
         int iOct;
         for(iOct=0; iOct<cpu.locNoct[levelcoarse-1]; iOct++){
@@ -119,19 +128,21 @@ int main(int argc, char *argv[]){
         stars.n=0;
         param.stars=&stars;
         param.stars->thresh = 0;
-        param.stars->mass_res = 150;
+        param.stars->mass_res = m_star;
         param.stars->efficiency=1.;
 
-        REAL dt = 1.;
+
         REAL aexp = 1.;
         int is = 0;
         Stars(&param, &cpu, dt, aexp, levelcoarse, is);
+
 
 //      test
 
         int count_part=0;
         int part_in_cell_max=0;
-        REAL tot_mass = 0;
+        REAL tot_mass=0;
+        REAL star_mass=0;
 
         for(level=1;level<=levelmax;level++){
 
@@ -144,7 +155,7 @@ int main(int argc, char *argv[]){
                         int icell;
                         for(icell=0;icell<8;icell++) {
                                 int count_part_cell=0;
-                                struct CELL *curcell = &curoct->cell[icell];
+                                struct CELL *curcell=&curoct->cell[icell];
                                 struct PART *nexp=curcell->phead;
 
                                 REAL dv = 1./POW2(3*level);
@@ -167,8 +178,9 @@ int main(int argc, char *argv[]){
                                                 assert(curp->z <1);
                                                 assert(curp->level == levelcoarse );
 
-                                                assert( curp->mass == 150 );
+                                                assert( curp->mass == m_star);
                                                 cell_mass+=curp->mass;
+                                                star_mass+=curp->mass;
 
                                         }while(nexp!=NULL);
                                 }
