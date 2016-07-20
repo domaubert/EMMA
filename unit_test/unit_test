@@ -2,12 +2,8 @@
 import os, sys
 from shutil import copyfile
 
-MKFOLDER="./mk/"
+MKPROC=4
 
-def launch():
-	os.chdir(FOLDER)
-	script_type = get_script_type()
-	os.system("%s%s"%(script_type, RUN_NAME))
 
 def head(name):
 	print()
@@ -27,13 +23,19 @@ if __name__ == "__main__":
 		"test_star_formation",
 		]
 
+	mpi_tests=[
+		["test_mpi",4],
+		["test_grid_mpi",4],
+		["test_sedov_mpi",4],
+		]
+
 	for test in tests:
 
 		head(test)
 
 		copyfile("mk/%s.mk"%(test), "test.mk")
 
-		status = os.system("make clean && make")
+		status = os.system("make clean && make -j %d"%MKPROC)
 		if status != 0 :
 			sys.exit()
 
@@ -43,18 +45,12 @@ if __name__ == "__main__":
 
 
 
-	mpi_tests=[
-		["test_mpi",4],
-		["test_grid_mpi",4],
-		["test_sedov_mpi",4],
-		]
-
 	for test in mpi_tests:
 		head(test[0])
 
 		copyfile("mk/%s.mk"%(test[0]), "test.mk")
 
-		status = os.system("make clean && make -j %d"%(test[1]))
+		status = os.system("make clean && make -j %d"%MKPROC)
 		if status != 0 :
 			sys.exit()
 

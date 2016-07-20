@@ -53,6 +53,5 @@ MAIN_OBJ=$(patsubst %,$(OBJDIR)/%,$(C_OBJS))
 all: $(MAIN_OBJ) $(UNIT_OBJ)
 	$(CC) $(MAIN_OBJ) $(UNIT_OBJ) $(LD_DIR) $(C_LIBS) -o $(EXECUTABLE) $(LD_FLAGS)
 
-
 clean:
 	rm -f $(OBJDIR)/*.o $(EXECUTABLE) *~

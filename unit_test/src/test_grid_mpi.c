@@ -52,7 +52,6 @@ int main(int argc, char *argv[]){
           cpu.octList[iLev] = (struct OCT**)calloc(cpu.locNoct[iLev],sizeof(struct OCT*));
         }
 
-
         struct CELL root;
         root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
@@ -104,7 +103,6 @@ int main(int argc, char *argv[]){
                 // printf("%d %d\n", noct, POW2(3*(level-1) ) );
                 assert( noct == POW2(3*(level-1)) );
         }
-
 
         for(level=1;level<=param.lmax;level++){
                 setOctList(firstoct[level-1], &cpu, &param,level);

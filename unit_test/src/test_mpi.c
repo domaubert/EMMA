@@ -27,9 +27,17 @@ int main(int argc, char *argv[]){
 
         init_MPI(&cpu, &MPI_PACKET,&MPI_PART,&MPI_WTYPE,&MPI_HYDRO,&MPI_RTYPE,&MPI_RAD);
 
-        printf("proc %d/%d\n", cpu.rank, cpu.nproc);
 
-        // TODO add some message passing test
+        printf("proc %d/%d\n", cpu.rank, cpu.nproc);
+        assert(cpu.rank < cpu.nproc);
+
+        int loc_int = 1;
+        MPI_Allreduce(MPI_IN_PLACE,&loc_int,1,MPI_INT,MPI_SUM,cpu.comm);
+        assert(loc_int == cpu.nproc);
+
+        // TODO add some message passing test to test MPI_Datatypes
+
+        MPI_Barrier(cpu.comm);
 
         printf("Test passed\n");
         return 0;
