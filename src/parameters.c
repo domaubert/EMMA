@@ -1071,11 +1071,19 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
       if((curp->isStar)&&(curp->isStar!=100)){
         param->physical_state->mstar += curp->mass;
 
-        if (param->cosmo->tphy - curp->age < param->sn->tlife){
-          param->physical_state->mstar_sfr += curp->mass;
+#ifdef SUPERNOVAE
+        if (param->sn->feedback_eff){
+          if (param->cosmo->tphy - curp->age < param->sn->tlife){
+            param->physical_state->mstar_sfr += curp->mass;
+          }else{
+            param->physical_state->mstar_sfr += curp->mass/(1.-param->sn->ejecta_proportion);
+          }
         }else{
-          param->physical_state->mstar_sfr += curp->mass/(1.-param->sn->ejecta_proportion);
+          param->physical_state->mstar_sfr += curp->mass;
         }
+#else
+          param->physical_state->mstar_sfr += curp->mass;
+#endif // SUPERNOVAE
 
         if(curp->isStar==5||(curp->isStar==7||curp->isStar==8)){
           param->physical_state->Nsn++;
