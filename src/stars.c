@@ -204,17 +204,13 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 	REAL tstartilde = tstars / POW(aexp,2)/param->unit.unit_t; //tstars in code unit
 
-
 	REAL SFR=cell->field.d / tstartilde*param->stars->efficiency; // NOTE the efficiency is neutralized
 
 #else
 #ifndef SIMPLESTAR
-	REAL dx = POW(0.5,level);
-	REAL dv = POW(0.5,3*level);
 
 //	REAL rho_m = cell->gdata.d+1.;
 	REAL rho_m = cell->field.d;
-	REAL rho_b =  cell->field.d;
 
 	REAL fact_rho = POW(aexp,3)/param->unit.unit_d;
 	REAL fact_t = POW(aexp,2) * param->unit.unit_t;
@@ -246,7 +242,8 @@ REAL getSFR(struct CELL *cell, struct RUNPARAMS *param, REAL aexp, int level){
 
 REAL getMstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL aexp, int level){
 
-  REAL dv=pow(0.5,3*level);
+  REAL dx = POW(0.5,level);
+  REAL dv = POW(dx,3);
   REAL SFR=getSFR(cell,param,aexp,level);
 
 //average mass to create in cell
@@ -265,7 +262,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 /// And do a random draw in a Poisson law
 // ----------------------------------------------------------//
 
-  const REAL dv=pow(0.5,3*level);
+  REAL dv = POW(0.5,3*level);
   const REAL SFR=getSFR(cell,param,aexp,level);
   // Average number of stars created
 	const REAL lambda =  SFR  / mstar * dt * dv;
@@ -286,7 +283,7 @@ int getNstars2create(struct CELL *cell, struct RUNPARAMS *param, REAL dt, REAL a
 	  //printf("AVG star creation =%e /eff %d  SFR=%e\n",lambda,N,SFR);
 	}
 
-	REAL M_in_cell = cell->field.d * POW(2.0,-3.0*level); // mass of the curent cell in code unit
+	REAL M_in_cell = cell->field.d * dv; // mass of the curent cell in code unit
 	if(N * mstar >= M_in_cell) N = 0.9*M_in_cell / mstar ; // 0.9 to prevent void cells
 
 #ifdef CONTINUOUSSTARS

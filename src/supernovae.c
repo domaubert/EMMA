@@ -83,83 +83,72 @@ REAL get_mass(struct RUNPARAMS *param, struct PART *curp, REAL aexp, REAL dt){
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void thermalFeedbackCell(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, int level, REAL E){
-// ----------------------------------------------------------
-/// Inject an energy "E" in the cell "cell" on thermal form.
-//----------------------------------------------------------
-#ifdef SNTEST
-#endif // SNTEST
+void mass_feedback_cell(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL mtot_feedback){
+  /**
+    * Return a part of the particle mass into the parent cell
+    */
 
-  printf("injecting Energy in thermal form within a cell\n");
+  curp->mass -= mtot_feedback;
 
-  //REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
-  //REAL dv = POW(0.5,3.*level);
-  //REAL d_e = mtot_feedback/dv ;
-
-  //curp->mass -= mtot_feedback;
-  //cell->field.d += d_e;
-
-
-  cell->field.E += E;
-  cell->field.p += E*(GAMMA-1.);
-
-  //Energy conservation
-#ifdef DUAL_E
-//    struct Utype U; // conservative field structure
-//    W2U(&cell->field, &U); // primitive to conservative
-//    U.eint*=1.+d_e/cell->field.d; // compute new internal energy
-//    U2W(&U, &cell->field); // back to primitive
-#else
-//    cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy
+#ifdef WRADHYD
+  REAL xion=cell->field.dX/cell->field.d;
 #endif
 
-    getE(&cell->field); //compute new total energy
-    cell->field.p=FMAX(cell->field.p,PMIN);
-    cell->field.a=SQRT(GAMMA*cell->field.p/cell->field.d); // compute new sound speed
+  REAL dv = POW(0.5,3*level);
+  REAL m_e = mtot_feedback;
+  REAL d_e = mtot_feedback/dv;
+
+  cell->field.d += d_e;
+
+/* #ifdef DUAL_E */
+/*     struct Utype U; // conservative field structure */
+/*     W2U(&cell->field, &U); // primitive to conservative */
+/*     U.eint*=1.+d_e/cell->field.d; // compute new internal energy */
+/*     U2W(&U, &cell->field); // back to primitive */
+/* #else */
+/*     cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy */
+/* #endif */
+
+#ifdef WRADHYD
+     cell->field.dX=cell->field.d*xion;
+#endif
+
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void thermalFeedbackOct(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, int level, REAL E){
-// ----------------------------------------------------------
-/// Inject an energy "E" in all cells of the oct contening
-/// the cell "cell" uniformly on thermal form.
-// ----------------------------------------------------------
-#ifdef SNTEST
-  printf("injecting Energy in thermal form within a oct\n");
-#endif // SNTEST
-
-  //REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
-  //REAL dv = POW(0.5,3.*level);
-  //REAL d_e = mtot_feedback/dv ;
-
-  //curp->mass -= mtot_feedback;
+void mass_feedback_oct(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL mtot_feedback){
+  /**
+    * Return a part of the particle mass into the parent oct
+    */
 
   struct OCT* oct = cell2oct(cell);
   int i;
   for(i=0;i<8;i++){
-      struct CELL* curcell = &oct->cell[i];
+    struct CELL* curcell = &oct->cell[i];
+    mass_feedback_cell(param, curcell, curp, aexp, level, mtot_feedback/8);
+  }
+}
 
-      //cell->field.d += d_e/8.;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      REAL e = E/8.;
-      curcell->field.E += e;
-      curcell->field.p += e*(GAMMA-1.);
+void thermalFeedback_cell(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, int level, REAL E){
+  /**
+    * Inject an energy "E" in the cell "cell" in thermal form.
+    */
 
-      //Energy conservation
-#ifdef DUAL_E
-//    struct Utype U; // conservative field structure
-//    W2U(&cell->field, &U); // primitive to conservative
-//    U.eint*=1.+d_e/cell->field.d; // compute new internal energy
-//    U2W(&U, &cell->field); // back to primitive
-#else
-//    cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy
-#endif
+  cell->field.E += E;
+  cell->field.p += E*(GAMMA-1.);
+}
 
-    getE(&cell->field); //compute new total energy
-    cell->field.p=FMAX(cell->field.p,PMIN);
-    cell->field.a=SQRT(GAMMA*cell->field.p/cell->field.d); // compute new sound speed
+void thermalFeedback_oct(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, int level, REAL E){
+  /**
+    * Inject an energy "E" in all cells of the oct contening
+    * the cell "cell" uniformly in thermal form.
+    */
 
+  struct OCT* oct = cell2oct(cell);
+  int i;
+  for(i=0;i<8;i++){
+      thermalFeedback_cell(param, &oct->cell[i], curp, level, E/8);
   }
 }
 
@@ -305,135 +294,6 @@ void kineticFeedback_test(struct RUNPARAMS *param, struct CELL *cell,struct PART
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void kineticFeedback_simple(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
-
-  REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
-  curp->mass -= mtot_feedback;
-
-  struct OCT* oct = cell2oct(cell);
-  int i;
-  for(i=0;i<8;i++){
-    struct CELL* curcell = &oct->cell[i];
-    REAL dv = POW(0.5,3*level);// curent volume
-
-    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
-    REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-    REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
-
-    REAL E_e = E/8.;
-    REAL m_e = mtot_feedback/8.;
-    REAL d_e = m_e/dv; // ejecta density
-
-    REAL v_e = SQRT(2.*E_e/curcell->field.d);
-
-    curcell->field.d += m_e/dv;
-    curcell->field.u += v_e*dir_x[i]/SQRT(3.);
-    curcell->field.v += v_e*dir_y[i]/SQRT(3.);
-    curcell->field.w += v_e*dir_z[i]/SQRT(3.);
-
-    //Energy conservation
-/* #ifdef DUAL_E */
-/*     struct Utype U; // conservative field structure */
-/*     W2U(&cell->field, &U); // primitive to conservative */
-/*     U.eint*=1.+d_e/cell->field.d; // compute new internal energy */
-/*     U2W(&U, &cell->field); // back to primitive */
-/* #else */
-/*     cell->field.p*=1.+d_e/cell->field.d; // compute new internal energy */
-/* #endif */
-
-    getE(&curcell->field); //compute new total energy
-    curcell->field.p=FMAX(curcell->field.p,PMIN);
-    curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-  }
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void kineticFeedback_impulsion(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
-// ----------------------------------------------------------//
-/// Inject an energy "E" in all cells of the oct contening
-/// the cell "cell" on kinetic form, radially to the center
-/// of the oct and uniformly in all cells
-// ----------------------------------------------------------//
-
-  REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
-  curp->mass -= mtot_feedback;
-  struct OCT* oct = cell2oct(cell);
-
-  int i;
-//#define LOAD_FACTOR
-#ifdef LOAD_FACTOR
-
-  REAL load_factor=10;
-
-  REAL local_rho_min=FLT_MAX;
-
-  for(i=0;i<8;i++){
-    struct CELL* curcell = &oct->cell[i];
-    local_rho_min = FMIN(curcell->field.d,local_rho_min);
-  }
-
-  REAL lf = FMIN(load_factor*curp->mass,local_rho_min);
-
-  mtot_feedback += lf;
-  for(i=0;i<8;i++){
-    struct CELL* curcell = &oct->cell[i];
-    curcell->field.d -= lf/8.;
-  }
-#endif // LOAD_FACTOR
-
-  for(i=0;i<8;i++){
-    struct CELL* curcell = &oct->cell[i];
-    REAL dv = POW(0.5,3*level);// curent volume
-
-    REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
-    REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
-    REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
-
-    REAL E_e = E/8.; // uniform distribution
-    REAL m_e = mtot_feedback/8.;
-
-    REAL d_e = m_e/dv; // ejecta density
-    REAL v_e = SQRT(2.*E_e/d_e);// ejecta velocity / particle
-    REAL vxe = curp->vx + v_e*dir_x[i]/SQRT(3.); // ejecta velocity /grid
-    REAL vye = curp->vy + v_e*dir_y[i]/SQRT(3.);
-    REAL vze = curp->vz + v_e*dir_z[i]/SQRT(3.);
-
-    REAL d_i = curcell->field.d; // initial density
-    REAL vxi = curcell->field.u; // initial velocity
-    REAL vyi = curcell->field.v;
-    REAL vzi = curcell->field.w;
-
-
-#ifdef WRADHYD
-    REAL xion=curcell->field.dX/d_i;
-#endif
-
-    curcell->field.d += d_e; //new density
-    curcell->field.u = (vxi*d_i + vxe*d_e)/(d_i+d_e); //new velocity
-    curcell->field.v = (vyi*d_i + vye*d_e)/(d_i+d_e);
-    curcell->field.w = (vzi*d_i + vze*d_e)/(d_i+d_e);
-
-#ifdef WRADHYD
-     curcell->field.dX=curcell->field.d*xion;
-#endif
-
-    //Energy conservation
-/* #ifdef DUAL_E */
-/*     struct Utype U; // conservative field structure */
-/*     W2U(&curcell->field, &U); // primitive to conservative */
-/*     U.eint*=1.+d_e/curcell->field.d; // compute new internal energy */
-/*     U2W(&U, &curcell->field); // back to primitive */
-/* #else */
-/*     curcell->field.p*=1.+d_e/curcell->field.d; // compute new internal energy */
-/* #endif */
-
-    getE(&curcell->field); //compute new total energy
-    curcell->field.p=FMAX(curcell->field.p,PMIN);
-    curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
-  }
-}
-
 int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E, REAL dt){
 // ----------------------------------------------------------//
 /// Inject an energy "E" in all cells of the oct contening
@@ -455,14 +315,14 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
 
   int i;
 {
-//#define LOAD_FACTOR
+#define LOAD_FACTOR
 #ifdef LOAD_FACTOR
 
   REAL load_factor=10;
   REAL local_rho_min=FLT_MAX;
 
+  struct OCT* oct = cell2oct(cell);
   for(i=0;i<8;i++){
-    struct OCT* oct = cell2oct(cell);
     struct CELL* curcell = &oct->cell[i];
     local_rho_min = FMIN(curcell->field.d,local_rho_min);
   }
@@ -471,7 +331,6 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
   mtot_feedback += lf;
 
   for(i=0;i<8;i++){
-    struct OCT* oct = cell2oct(cell);
     struct CELL* curcell = &oct->cell[i];
     curcell->field.d -= lf/8.;
   }
@@ -503,7 +362,7 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
     curcell->field.v += v_e*dir_y[i]/sqrt3;
     curcell->field.w += v_e*dir_z[i]/sqrt3;
 //--------------------------------------------------------------------------//
-/*
+
     // momentum injection
     E_e = E/8. *(1.-fact) ; // uniform distribution
     v_e = SQRT(2.*E_e/d_e);// ejecta velocity / particle
@@ -520,7 +379,7 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
     curcell->field.u = (vxi*d_i + vxe*d_e)/(d_i+d_e); //new velocity
     curcell->field.v = (vyi*d_i + vye*d_e)/(d_i+d_e);
     curcell->field.w = (vzi*d_i + vze*d_e)/(d_i+d_e);
-*/
+
 //--------------------------------------------------------------------------//
 
     // mass conservation
@@ -542,6 +401,109 @@ int kineticFeedback_mixt(struct RUNPARAMS *param, struct CELL *cell,struct PART 
     curcell->field.a=SQRT(GAMMA*curcell->field.p/curcell->field.d); // compute new sound speed
   }
   return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void kineticFeedback_wind(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
+  /**
+    * Inject directly the energy into the oct in form of wind
+    */
+
+  struct OCT* oct = cell2oct(cell);
+  int i;
+  for(i=0;i<8;i++){
+    struct CELL* curcell = &oct->cell[i];
+
+    const REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
+    const REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    const REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+
+    REAL E_e = E/8.;
+    REAL v_e = SQRT(2.*E_e/curcell->field.d);
+
+    curcell->field.u += v_e*dir_x[i]/SQRT(3.);
+    curcell->field.v += v_e*dir_y[i]/SQRT(3.);
+    curcell->field.w += v_e*dir_z[i]/SQRT(3.);
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void kineticFeedback_impulsion(struct RUNPARAMS *param, struct CELL *cell,struct PART *curp, REAL aexp, int level, REAL E){
+// ----------------------------------------------------------//
+/// Inject an energy "E" in all cells of the oct contening
+/// the cell "cell" on kinetic form, radially to the center
+/// of the oct and uniformly in all cells
+// ----------------------------------------------------------//
+
+  REAL mtot_feedback = curp->mass* param->sn->ejecta_proportion;
+  curp->mass -= mtot_feedback;
+  struct OCT* oct = cell2oct(cell);
+
+  int i;
+  for(i=0;i<8;i++){
+    struct CELL* curcell = &oct->cell[i];
+
+    REAL dv = POW(0.5,3*level);
+
+    const REAL dir_x[]={-1., 1.,-1., 1.,-1., 1.,-1., 1.};// diagonal projection
+    const REAL dir_y[]={-1.,-1., 1., 1.,-1.,-1., 1., 1.};
+    const REAL dir_z[]={-1.,-1.,-1.,-1., 1., 1., 1., 1.};
+
+    REAL E_e = E/8.; // uniform distribution
+    REAL m_e = mtot_feedback/8.;
+
+    REAL d_e = m_e/dv; // ejecta density
+    REAL v_e = SQRT(2.*E_e/d_e);// ejecta velocity / particle
+    REAL vxe = curp->vx + v_e*dir_x[i]/SQRT(3.); // ejecta velocity /grid
+    REAL vye = curp->vy + v_e*dir_y[i]/SQRT(3.);
+    REAL vze = curp->vz + v_e*dir_z[i]/SQRT(3.);
+
+    REAL d_i = curcell->field.d; // initial density
+    REAL vxi = curcell->field.u; // initial velocity
+    REAL vyi = curcell->field.v;
+    REAL vzi = curcell->field.w;
+
+
+#ifdef WRADHYD
+    REAL xion=curcell->field.dX/d_i;
+#endif
+
+    curcell->field.d += d_e; //new density
+    curcell->field.u = (vxi*d_i + vxe*d_e)/(d_i+d_e); //new velocity
+    curcell->field.v = (vyi*d_i + vye*d_e)/(d_i+d_e);
+    curcell->field.w = (vzi*d_i + vze*d_e)/(d_i+d_e);
+
+#ifdef WRADHYD
+     curcell->field.dX=curcell->field.d*xion;
+#endif
+
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void get_egy_cell(struct CELL *cell){
+  /**
+    * recompute the energy balance in a cell
+    */
+
+  getE(&cell->field); //compute new total energy
+  cell->field.p=FMAX(cell->field.p,PMIN);
+  cell->field.a=SQRT(GAMMA*cell->field.p/cell->field.d); // compute new sound speed
+}
+
+void get_egy_oct(struct CELL *cell){
+/**
+    * recompute the energy balance in an oct
+    */
+
+  struct OCT* oct = cell2oct(cell);
+  int i;
+  for(i=0;i<8;i++){
+    get_egy_cell(&oct->cell[i]);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -579,12 +541,12 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 #ifdef CONTINUOUS_SN
     REAL age = param->cosmo->tphy - curp->age;
     if (curp->isStar && age>0 && age<5e7){ // if curp is in SN state
-      REAL E= get_egy(param,curp,aexp,dt,level);
-      
+    REAL E= get_egy(param,curp,aexp,dt,level);
+
 #else
-      if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
-	REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
-	printf("mass =%e %d\n",curp->mass,curp->isStar);
+    if (curp->isStar==5 || curp->isStar==7){ // if curp is in SN state
+    REAL E = computeFeedbackEnergy(param, aexp, level, curp->mass);
+    //printf("mass =%e %d\n",curp->mass,curp->isStar);
 #endif // CONTINUOUS_SN
 
       total_sn_egy+=E;
@@ -593,29 +555,38 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       if(param->sn->feedback_frac){
          /* oct feedback
-          * if kinetic feedback
-          * the energy is injected in a oct
+          * if there is kinetic feedback
+          * mass and energy are injected in a oct
           */
 
-        thermalFeedbackOct(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
-        //kineticFeedback_simple(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
-        //kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
+        thermalFeedback_oct(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
 
         if (param->sn->ejecta_proportion){
-          kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
-          //kineticFeedback_mixt(param, cell,curp,aexp,level, E*param->sn->feedback_frac, dt);
+         /* If there is ejecta,
+          * we can compute the impulsion balance sheet
+          * and inject wind
+          * there is no need for mass feedback has it's include in kineticFeedback_impulsion
+          */
+          kineticFeedback_wind(param, cell,curp,aexp,level, E*param->sn->feedback_frac*param->sn->load_factor);
+          kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac*(1.- param->sn->load_factor));
         }else{
-          kineticFeedback_simple(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
+         /* If there is no ejecta,
+          * we can only inject wind
+          * and there is no need for mass feedback
+          */
+          kineticFeedback_wind(param, cell,curp,aexp,level, E*param->sn->feedback_frac);
         }
+
+        get_egy_oct(cell);
 
       }else{
          /* cell feedback
           * if thermal feedback only
-          * the energy can be injected in just a cell
+          * mass and energy can be injected in just a cell
           */
-
-        thermalFeedbackCell(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
-
+        thermalFeedback_cell(param,cell,curp,level, E*(1.-param->sn->feedback_frac));
+        mass_feedback_cell(param,cell,curp,aexp,level, curp->mass*param->sn->ejecta_proportion);
+        get_egy_cell(cell);
       }
 
       Nsn++;
@@ -695,8 +666,8 @@ int feedback(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
 
       printf("cell egy t0=%e\n",  cell->field.E);
 
-      //thermalFeedbackCell(cell, E);
-      thermalFeedbackOct(cell, E *0.3);
+      //thermalFeedback_cell(cell, E);
+      thermalFeedback_oct(cell, E *0.3);
       kineticFeedback_test(param, cell,NULL,aexp,level, E *0.7);
 
       printf("cell egy t1=%e\n",  cell->field.E);

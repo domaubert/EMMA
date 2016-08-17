@@ -169,7 +169,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 		    if (curp->isStar){
 			slev++;
 		 	stot++;
-			
+
 			if(curp->mass==0){
 			  printf("star mass == 0\n");
 			  abort();
@@ -224,7 +224,7 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
 #endif
 
   if(cpu->rank==RANK_DISP){
-    printf("Total Baryon mass=%e (new=%e) deviation=%e \n",Mtot,Mtotnew, Mtotnew-Mtot);
+    printf("Total Baryon mass=%e (new=%e) deviation=%e theoretical=%e\n",Mtot,Mtotnew, Mtotnew-Mtot,param->cosmo->ob/param->cosmo->om);
     printf("Total Baryon Egy=%e (new=%e) deviation=%e\n",Etot,Etotnew, Etotnew-Etot);
 
   }
@@ -277,13 +277,13 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
  MPI_Allgatherv(coord,atot,MPI_REEL,param->agn->y,recvcounts,displ,MPI_REEL,cpu->comm);
  memcpy(coord,param->agn->z,sizeof(REAL)*param->npartmax);
  MPI_Allgatherv(coord,atot,MPI_REEL,param->agn->z,recvcounts,displ,MPI_REEL,cpu->comm);
- 
+
 
 
  //   MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->x,recvcounts,displ,MPI_REEL,cpu->comm);
  //MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->y,recvcounts,displ,MPI_REEL,cpu->comm);
  //MPI_Allgatherv(MPI_IN_PLACE,atot,MPI_REEL,param->agn->z,recvcounts,displ,MPI_REEL,cpu->comm);
-  
+
   free(recvcounts);
   free(displ);
   free(coord);
@@ -310,10 +310,10 @@ REAL multicheck(struct OCT **firstoct,int *npart,int levelcoarse, int levelmax, 
     /* printf("rmin=%e\n",rmin); */
 
   }
-  
+
 
   //if(param->agn->nagn>1) abort();
- #endif 
+ #endif
 
 
 

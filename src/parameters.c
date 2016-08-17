@@ -611,6 +611,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->ejecta_proportion	=(REAL)dummyf;  if (debug) printf("param->sn->ejecta_proportion=%e\n",param->sn->ejecta_proportion);
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->sn_egy	=(REAL)dummyf;              if (debug) printf("param->sn->sn_egy=%e\n", param->sn->sn_egy);
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->tlife	=(REAL)dummyf;              if (debug) printf("param->sn->tlife=%e\n", param->sn->tlife);
+      rstat=fscanf(buf,RF,stream,&dummyf);param->sn->load_factor =(REAL)dummyf;         if (debug) printf("param->sn->load_factor=%e\n", param->sn->load_factor);
 
 #else
 	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);

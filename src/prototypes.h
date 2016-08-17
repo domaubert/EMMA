@@ -139,10 +139,11 @@ struct SNPARAM{
   REAL feedback_eff;///< feedback efficiency
   REAL feedback_frac;///< fraction of kinetic feedback over thermal feedback
   REAL Esnfb;///<  total Energy of a SN
-  REAL ejecta_proportion;
-  REAL sn_egy;
+  REAL ejecta_proportion; ///< proportion os initial particle mass returning to the medium
+  REAL sn_egy; ///< Energy of SN in J.kg-1
   REAL trig_sn; ///< trigger for first SN
   REAL tlife; ///< time for SN explosion in year
+  REAL load_factor;
 
   REAL *egy_loss_t;
   REAL *egy_loss_egy;
