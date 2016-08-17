@@ -91,11 +91,6 @@ void gdb_debug()
 // ===============================================================================
 
 
-
-void init_MPI(struct CPUINFO *cpu, int argc, char **argv){
-
-}
-
 //------------------------------------------------------------------------
  // the MAIN CODE
  //------------------------------------------------------------------------
@@ -341,241 +336,19 @@ int main(int argc, char *argv[])
   amax=param.tmax;
 #endif
 
-
-  init_MPI(&cpu,argc,argv);
-
 #ifdef WMPI
-  MPI_Status stat;
-
-  MPI_Comm_size(MPI_COMM_WORLD,&(cpu.nproc));
-  MPI_Comm_rank(MPI_COMM_WORLD,&(cpu.rank));
-
-#ifdef WDBG
-  //if(cpu.rank==4) gdb_debug();
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
- //========= creating a PACKET MPI type =======
-  MPI_Datatype MPI_PACKET,oldtypes[16];
-  int          blockcounts[16];
-
-  /* MPI_Aint type used to be consistent with syntax of */
-  /* MPI_Type_extent routine */
-  MPI_Aint    offsets[5], extent;
-  MPI_Aint base;
-  struct PACKET _info_pack;
-
-  MPI_Address(&_info_pack.data,offsets);
-  base=offsets[0];
-  MPI_Address(&_info_pack.key,offsets+1);
-  MPI_Address(&_info_pack.level,offsets+2);
-
-  offsets[0]=offsets[0]-base;
-  offsets[1]=offsets[1]-base;
-  offsets[2]=offsets[2]-base;
-
-  oldtypes[0]=MPI_REEL;
-  oldtypes[1]=MPI_DOUBLE;
-  oldtypes[2]=MPI_INT;
-
-  blockcounts[0]=8;
-  blockcounts[1]=1;
-  blockcounts[2]=1;
-
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PACKET); // MODKEY WARNING TO 2 AND 3
-  MPI_Type_commit(&MPI_PACKET);
-
-
-#ifdef PIC
-  //========= creating a PART MPI type =======
+  MPI_Datatype MPI_PACKET;
   MPI_Datatype MPI_PART;
-  struct PART_MPI _info;
-
-  MPI_Address(&_info.x,offsets);
-  base=offsets[0];
-  MPI_Address(&_info.key,offsets+1);
-  MPI_Address(&_info.idx,offsets+2);
-
-  offsets[0]=offsets[0]-base;
-  offsets[1]=offsets[1]-base;
-  offsets[2]=offsets[2]-base;
-
-  oldtypes[0]=MPI_REEL;
-  oldtypes[1]=MPI_DOUBLE;
-  oldtypes[2]=MPI_INT;
-
-#ifdef STARS
-  blockcounts[0]=9;
-#else
-  blockcounts[0]=7;
-#endif
-  blockcounts[1]=1;
-
-#ifdef STARS
-  blockcounts[2]=6;
-#else
-  blockcounts[2]=4;
-#endif
-
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_PART); // MODKEY WARNING TO 2 AND 3
-  MPI_Type_commit(&MPI_PART);
-#endif // PIC
-
-#ifdef WHYDRO2
-  //========= creating a WTYPE MPI type =======
-
   MPI_Datatype MPI_WTYPE;
-  struct Wtype _info_hyd;
-
-  MPI_Address(&_info_hyd.d,offsets);
-  base=offsets[0];
-
-  offsets[0]=offsets[0]-base;
-
-  oldtypes[0]=MPI_REEL;
-
-#ifdef WRADHYD
-#ifdef HELIUM
-  blockcounts[0]=10;
-#else
-  blockcounts[0]=8;
-#endif // HELIUM
-#else
-  blockcounts[0]=7;
-#endif // WRADHYD
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(1, blockcounts, offsets, oldtypes, &MPI_WTYPE);
-  MPI_Type_commit(&MPI_WTYPE);
-
-
-  //========= creating a HYDRO MPI type =======
   MPI_Datatype MPI_HYDRO;
-  struct HYDRO_MPI _info_hydmpi;
-
-  MPI_Address(&_info_hydmpi.data[0],offsets);
-  base=offsets[0];
-  MPI_Address(&_info_hydmpi.key,offsets+1);
-  MPI_Address(&_info_hydmpi.level,offsets+2);
-
-  offsets[0]=offsets[0]-base;
-  offsets[1]=offsets[1]-base;
-  offsets[2]=offsets[2]-base;
-
-  oldtypes[0]=MPI_WTYPE;
-  oldtypes[1]=MPI_DOUBLE;
-  oldtypes[2]=MPI_INT;
-
-  blockcounts[0]=8;
-  blockcounts[1]=1;
-  blockcounts[2]=1;
-
-/* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_HYDRO);
-  MPI_Type_commit(&MPI_HYDRO);
-#endif // WHYDRO2
-
-#ifdef WRAD
-  //========= creating a RTYPE MPI type =======
   MPI_Datatype MPI_RTYPE;
-  struct Rtype _info_r;
-
-
-  MPI_Address(&_info_r.e[0],offsets);
-  base=offsets[0];
-  MPI_Address(&_info_r.fx[0],offsets+1);
-  MPI_Address(&_info_r.fy[0],offsets+2);
-  MPI_Address(&_info_r.fz[0],offsets+3);
-  MPI_Address(&_info_r.src,offsets+4);
-
-  offsets[0]=offsets[0]-base;
-  offsets[1]=offsets[1]-base;
-  offsets[2]=offsets[2]-base;
-  offsets[3]=offsets[3]-base;
-  offsets[4]=offsets[4]-base;
-
-  oldtypes[0]=MPI_REEL;
-  oldtypes[1]=MPI_REEL;
-  oldtypes[2]=MPI_REEL;
-  oldtypes[3]=MPI_REEL;
-  oldtypes[4]=MPI_REEL;
-
-
-  blockcounts[0]=NGRP;
-  blockcounts[1]=NGRP;
-  blockcounts[2]=NGRP;
-  blockcounts[3]=NGRP;
-#ifdef WCHEM
-  blockcounts[4]=5;
-#else
-  blockcounts[4]=1;
-#endif
-
-#ifdef STARS
-  blockcounts[4]++;
-#endif
-
-#ifdef HELIUM
-  blockcounts[4]+=2;
-#endif
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(5, blockcounts, offsets, oldtypes, &MPI_RTYPE);
-  MPI_Type_commit(&MPI_RTYPE);
-
-  //========= creating a RAD MPI type =======
   MPI_Datatype MPI_RAD;
-  struct RAD_MPI _info_radmpi;
 
-  MPI_Address(&_info_radmpi.data[0],offsets);
-  base=offsets[0];
-  MPI_Address(&_info_radmpi.key,offsets+1);
-  MPI_Address(&_info_radmpi.level,offsets+2);
-
-  offsets[0]=offsets[0]-base;
-  offsets[1]=offsets[1]-base;
-  offsets[2]=offsets[2]-base;
-
-  oldtypes[0]=MPI_RTYPE;
-  oldtypes[1]=MPI_DOUBLE;
-  oldtypes[2]=MPI_INT;
-
-  blockcounts[0]=8;
-  blockcounts[1]=1;
-  blockcounts[2]=1;
-
-  /* Now define structured type and commit it */
-  MPI_Type_struct(3, blockcounts, offsets, oldtypes, &MPI_RAD);
-  MPI_Type_commit(&MPI_RAD);
-#endif // WRAD
-
-  cpu.MPI_PACKET=&MPI_PACKET;
-#ifdef PIC
-  cpu.MPI_PART=&MPI_PART;
-#endif
-
-#ifdef WHYDRO2
-  cpu.MPI_HYDRO=&MPI_HYDRO;
-#endif
-
-#ifdef WRAD
-  cpu.MPI_RAD=&MPI_RAD;
-#endif
-
-  cpu.comm=MPI_COMM_WORLD;
+  init_MPI(&cpu, &MPI_PACKET,&MPI_PART,&MPI_WTYPE,&MPI_HYDRO,&MPI_RTYPE,&MPI_RAD);
 #else
-  cpu.rank=0;
-  cpu.nproc=1;
+  cpu->rank=0;
+  cpu->nproc=1;
 #endif // WMPI
-
-
-#if defined(MPIIO) || defined(HDF5)
-  cpu.mpiio_ncells = (int*)calloc(cpu.nproc,sizeof(int));
-  cpu.mpiio_nparts = (int*)calloc(cpu.nproc,sizeof(int));
-#ifdef STARS
-  cpu.mpiio_nstars = (int*)calloc(cpu.nproc,sizeof(int));
-#endif // STARS
-#endif // MPIIO
 
   if(cpu.rank==RANK_DISP){
     printf("================================\n");
@@ -896,151 +669,12 @@ int main(int argc, char *argv[])
 
   //========== building the initial meshes ===
 
-  if(cpu.rank==RANK_DISP) printf("building initial mesh\n");
+    struct CELL root;
+    root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
-  //breakmpi();
-  // ZERO WE CREATE A ROOT CELL
-
-  struct CELL root;
-  root.child=grid;
-
-
-  // FIRST WE POPULATE THE ROOT OCT
-  grid->x=0.;
-  grid->y=0.;
-  grid->z=0.;
-
-  grid->parent=NULL;
-  grid->level=1;
-  for(i=0;i<6;i++) grid->nei[i]=&root; //periodic boundary conditions
-  grid->prev=NULL;
-  grid->next=NULL;
-
-  // setting the densities in the cells and the index
-  for(icell=0;icell<8;icell++){
-    /* grid->cell[icell].density=0.; */
-    /* grid->cell[icell].pot=0.; */
-    /* grid->cell[icell].temp=0.; */
-    grid->cell[icell].idx=icell;
-
-
-#ifdef WHYDRO2
-    memset(&(grid->cell[icell].field),0,sizeof(struct Wtype));
-#endif
-
-  }
-
-  grid->cpu=-1;
-  /* grid->vecpos=-1; */
-  /* grid->border=0; */
-
-  // start the creation of the initial amr grid from level 1
-  firstoct[0]=grid;
-  lastoct[0]=grid;
-  int noct2;
-  int segok;
-
-  newoct=grid+1;
-  for(level=1;level<levelcoarse;level++){ // sweeping the levels from l=1 to l=levelcoarse
-    dxcur=1./POW(2,level);
-    nextoct=firstoct[level-1];
-    noct2=0;
-    int noct3 =0;
-    if(nextoct==NULL) continue;
-    do // sweeping level
-      {
-	curoct=nextoct;
-	nextoct=curoct->next;
-
-    //cpu.octList[level-1][noct3++] = curoct;
-
-	for(icell=0;icell<8;icell++){ // sweeping the cells
-
-	  segok=segment_cell(curoct,icell,&cpu,levelcoarse);// the current cell will be splitted according to a segmentation condition
-	  if(segok==1){
-	    //if(level==levelcoarse-1) printf(" segok=%d\n",segok);
-
-	    noct2++;
-
-	    // the newoct is connected to its mother cell
-	    curoct->cell[icell].child=newoct;
-
-	    // a newoct is created
-	    newoct->parent=&(curoct->cell[icell]);
-	    newoct->level=curoct->level+1;
-	    newoct->x=curoct->x+( icell   %2)*dxcur;
-	    newoct->y=curoct->y+((icell/2)%2)*dxcur;
-	    newoct->z=curoct->z+( icell   /4)*dxcur;
-
-	    // filling the cells
-	    for(ii=0;ii<8;ii++){
-	      newoct->cell[ii].marked=0;
-	      newoct->cell[ii].child=NULL;
-	      /* newoct->cell[ii].density=0.; */
-	      newoct->cell[ii].idx=ii;
-#ifdef PIC
-	      newoct->cell[ii].phead=NULL;
-#endif
-
-#ifdef WHYDRO2
-	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
-#endif
-
-#ifdef WGRAV
-	      memset(&(newoct->cell[icell].gdata),0,sizeof(struct Gtype));
-	      memset(newoct->cell[icell].f,0,sizeof(REAL)*3);
-#endif
-
-#ifdef WRAD
-        newoct->cell[ii].z_first_xion=-1.;
-        newoct->cell[ii].z_last_xion=0;
-#endif // WRAD
-	    }
-
-
-
-	    //the neighbours
-	    getcellnei(icell, vnei, vcell);
-	    for(ii=0;ii<6;ii++){
-	      if((vnei[ii]!=6)){
-		newoct->nei[ii]=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
-	      }else{
-		newoct->nei[ii]=&(curoct->cell[vcell[ii]]);
-	      }
-	    }
-
-	    // vector data
-	    /* newoct->vecpos=-1; */
-	    /* newoct->border=0; */
-
-	    // preparing the next creations on level+1
-	    newoct->next=NULL;
-
-	    if(firstoct[level]==NULL){
-	      firstoct[level]=newoct;
-	      newoct->prev=NULL;
-	    }
-	    else{
-	      newoct->prev=lastoct[level];
-	      lastoct[level]->next=newoct;
-	    }
-	    lastoct[level]=newoct;
-	    // next oct ready
-	    newoct++;
-
-	  }
-
- 	}
-      }while(nextoct!=NULL);
-    if(cpu.rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
-  }
-
-  for(level=1;level<=levelmax;level++){
-    setOctList(firstoct[level-1], &cpu, &param,level);
-  }
-
-  if(cpu.rank==RANK_DISP) printf("Initial Mesh done \n");
-
+    for (level=1; level<=param.lmax; level++){
+      setOctList(firstoct[level],&cpu,&param,level);
+    }
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
 
@@ -1329,7 +963,7 @@ int main(int argc, char *argv[])
 
     npart=ip; // we compute the localnumber of particle
 
-#endif
+#endif // PARTN
 
 #ifdef TESTPLUM
     int dummy;
@@ -1453,7 +1087,7 @@ int main(int argc, char *argv[])
     }
 
 
-#endif
+#endif // PIC
 
     //===================================================================================================================================
     //===================================================================================================================================
@@ -2322,8 +1956,7 @@ int main(int argc, char *argv[])
   if(debug_free) printf("lastoct\n");
   free(lastoct);
 
-  if(debug_free) printf("octlist\n");
-
+  if(debug_free) printf("octlist level\n");
   for(iLev = 0; iLev<levelcoarse; iLev++){
     free(cpu.octList[iLev]);
   }
@@ -2331,8 +1964,11 @@ int main(int argc, char *argv[])
     free(cpu.octList[iLev]);
   }
 
-  free(cpu.locNoct);
+  if(debug_free) printf("octlist main\n");
   free(cpu.octList);
+
+  if(debug_free) printf("locNoct\n");
+  free(cpu.locNoct);
 
   if(debug_free ) printf("part\n");
 #ifdef PIC

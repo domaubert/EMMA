@@ -258,8 +258,10 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
+#ifdef WGRAV
       for(ic=0;ic<3;ic++) accel[ic]+=curoct->cell[icell].f[ic]*contrib;
       pot+=curoct->cell[icell].gdata.p*contrib;
+#endif // WGRAV
     }
     visit[0]=1;
 
@@ -270,18 +272,20 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
+#ifdef WGRAV
 	for(ic=0;ic<3;ic++) accel[ic]+=curoct->cell[vcell[neip[i1]]].f[ic]*contrib;
 	pot+=curoct->cell[vcell[neip[i1]]].gdata.p*contrib;
-
+#endif // WGRAV
 	newcell=&(curoct->cell[vcell[neip[i1]]]);
 	visit[idx1]=1;
 	//vf[idx1]=curoct->cell[vcell[neip[i1]]].gdata.p;
       }
       else{
 	if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
+#ifdef WGRAV
 	  for(ic=0;ic<3;ic++) accel[ic]+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].f[ic]*contrib;
 	  pot+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
-
+#endif // WGRAV
 	  newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	  visit[idx1]=1;
 	  //vf[idx1]=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p;
@@ -309,18 +313,20 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
-	    for(ic=0;ic<3;ic++) accel[ic]+=newoct->cell[vcell2[neip[i2]]].f[ic]*contrib;
+#ifdef WGRAV
+      for(ic=0;ic<3;ic++) accel[ic]+=newoct->cell[vcell2[neip[i2]]].f[ic]*contrib;
 	    pot+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
-
+#endif // WGRAV
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    //vf[idx2]=newoct->cell[vcell2[neip[i2]]].gdata.p;
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifdef WGRAV
 	      for(ic=0;ic<3;ic++) accel[ic]+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].f[ic]*contrib;
 	      pot+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
-
+#endif // WGRAV
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
 	      //vf[idx2]=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p;
@@ -344,17 +350,19 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
+#ifdef WGRAV
 	      for(ic=0;ic<3;ic++) accel[ic]+=newoct2->cell[vcell3[neip[i3]]].f[ic]*contrib;
 	      pot+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
-
+#endif // WGRAV
 	      visit[7]=1;
 	      //vf[7]=newoct2->cell[vcell3[neip[i3]]].gdata.p;
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifdef WGRAV
 		for(ic=0;ic<3;ic++) accel[ic]+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].f[ic]*contrib;
 		pot+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
-
+#endif // WGRAV
 		visit[7]=1;
 		//vf[7]=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p;
 	      }
@@ -420,10 +428,10 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
     /* int ntot=0; */
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
-
+#ifdef WGRAV
       for(ic=0;ic<3;ic++) accel[ic]=curoctlr->cell[icell].f[ic]*contrib;
       pot=curoct->cell[icell].gdata.p*contrib;
-
+#endif // WGRAV
     }
 
 
@@ -434,16 +442,18 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
       idx1=(1<<i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
+#ifdef WGRAV
 	for(ic=0;ic<3;ic++) accel[ic]+=curoctlr->cell[vcell[neip[i1]]].f[ic]*contrib;
 	pot+=curoctlr->cell[vcell[neip[i1]]].gdata.p*contrib;
-
+#endif // WGRAV
 	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
       }
       else{
 	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
+#ifdef WGRAV
 	  for(ic=0;ic<3;ic++) accel[ic]+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].f[ic]*contrib;
 	  pot+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
-
+#endif // WGRAV
 	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	}
       }
@@ -460,17 +470,19 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
+#ifdef WGRAV
 	    for(ic=0;ic<3;ic++) accel[ic]+=newoct->cell[vcell2[neip[i2]]].f[ic]*contrib;
 	    pot+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
-
+#endif // WGRAV
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifdef WGRAV
 	      for(ic=0;ic<3;ic++) accel[ic]+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].f[ic]*contrib;
 	      pot+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
-
+#endif // WGRAV
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
 	    }
@@ -486,15 +498,18 @@ void cell2part_cic(struct PART *curp, struct OCT *curoct, int icell, REAL dt)
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
+#ifdef WGRAV
 	      for(ic=0;ic<3;ic++) accel[ic]+=newoct2->cell[vcell3[neip[i3]]].f[ic]*contrib;
 	      pot+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
-
+#endif // WGRAV
 	      visit[7]=1;
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifdef WGRAV
 		for(ic=0;ic<3;ic++) accel[ic]+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].f[ic]*contrib;
 		pot+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
+#endif // WGRAV
 		visit[7]=1;
 	      }
 	    }
@@ -619,7 +634,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 
   contrib=vcont[0];
   if((contrib<=1.)&&(contrib>=0.)){
+#ifdef WGRAV
     accel+=curoct->cell[icell].gdata.p*contrib;
+#endif // WGRAV
   }
 
 
@@ -629,14 +646,18 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     idx1=POW(2,i1);
     contrib=vcont[idx1];
     if(vnei[neip[i1]]==6){
+#ifdef WGRAV
       accel+=curoct->cell[vcell[neip[i1]]].gdata.p*contrib;
+#endif // WGRAV
       newcell=&(curoct->cell[vcell[neip[i1]]]);
       tot+=contrib;
       ntot++;
     }
     else{
       if(curoct->nei[vnei[neip[i1]]]->child!=NULL){
+#ifdef WGRAV
 	accel+=curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
+#endif // WGRAV
 	newcell=&(curoct->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	tot+=contrib;
 	ntot++;
@@ -662,7 +683,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	getcellnei(newcell->idx, vnei2, vcell2);
 	newoct=cell2oct(newcell);
 	if(vnei2[neip[i2]]==6){
+#ifdef WGRAV
 	  accel+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
+#endif // WGRAV
 	  newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	  visit[idx2]=1;
 	  tot+=contrib;
@@ -670,7 +693,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	}
 	else{
 	  if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifdef WGRAV
 	    accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
+#endif // WGRAV
 	    newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    tot+=contrib;
@@ -694,7 +719,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  getcellnei(newcell2->idx, vnei3, vcell3);
 	  newoct2=cell2oct(newcell2);
 	  if(vnei3[neip[i3]]==6){
+#ifdef WGRAV
 	    accel+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
+#endif // WGRAV
 	    visit[7]=1;
 	    tot+=contrib;
 	    ntot++;
@@ -702,7 +729,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  }
 	  else{
 	    if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifdef WGRAV
 	      accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
+#endif // WGRAV
 	      visit[7]=1;
 	      tot+=contrib;
 	      ntot++;
@@ -760,7 +789,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
     int ntot=0;
     contrib=vcont[0];
     if((contrib<=1.)&&(contrib>=0.)){
+#ifdef WGRAV
       accel+=curoctlr->cell[icell].gdata.p*contrib;
+#endif // WGRAV
     }
 
 
@@ -770,14 +801,18 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
       idx1=POW(2,i1);
       contrib=vcont[idx1];
       if(vnei[neip[i1]]==6){
+#ifdef WGRAV
 	accel+=curoctlr->cell[vcell[neip[i1]]].gdata.p*contrib;
+#endif // WGRAV
 	newcell=&(curoctlr->cell[vcell[neip[i1]]]);
 	tot+=contrib;
 	ntot++;
       }
       else{
 	if(curoctlr->nei[vnei[neip[i1]]]->child!=NULL){
+#ifdef WGRAV
 	  accel+=curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]].gdata.p*contrib;
+#endif // WGRAV
 	  newcell=&(curoctlr->nei[vnei[neip[i1]]]->child->cell[vcell[neip[i1]]]);
 	  tot+=contrib;
 	  ntot++;
@@ -796,7 +831,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  getcellnei(newcell->idx, vnei2, vcell2);
 	  newoct=cell2oct(newcell);
 	  if(vnei2[neip[i2]]==6){
+#ifdef WGRAV
 	    accel+=newoct->cell[vcell2[neip[i2]]].gdata.p*contrib;
+#endif // WGRAV
 	    newcell2=&(newoct->cell[vcell2[neip[i2]]]);
 	    visit[idx2]=1;
 	    tot+=contrib;
@@ -804,7 +841,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	  }
 	  else{
 	    if(newoct->nei[vnei2[neip[i2]]]->child!=NULL){
+#ifdef WGRAV
 	      accel+=newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]].gdata.p*contrib;
+#endif // WGRAV
 	      newcell2=&(newoct->nei[vnei2[neip[i2]]]->child->cell[vcell2[neip[i2]]]);
 	      visit[idx2]=1;
 	      tot+=contrib;
@@ -822,7 +861,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	    getcellnei(newcell2->idx, vnei3, vcell3);
 	    newoct2=cell2oct(newcell2);
 	    if(vnei3[neip[i3]]==6){
+#ifdef WGRAV
 	      accel+=newoct2->cell[vcell3[neip[i3]]].gdata.p*contrib;
+#endif // WGRAV
 	      visit[7]=1;
 	      tot+=contrib;
 	      ntot++;
@@ -830,7 +871,9 @@ REAL cell2part_cic_egy(struct PART *curp, struct OCT *curoct, int icell)
 	    }
 	    else{
 	      if(newoct2->nei[vnei3[neip[i3]]]->child!=NULL){
+#ifdef WGRAV
 		accel+=newoct2->nei[vnei3[neip[i3]]]->child->cell[vcell3[neip[i3]]].gdata.p*contrib;
+#endif // WGRAV
 		visit[7]=1;
 		tot+=contrib;
 		ntot++;
@@ -1264,3 +1307,4 @@ void L_clean_dens(int level,struct RUNPARAMS *param, struct OCT **firstoct, stru
 
 
 #endif
+

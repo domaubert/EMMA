@@ -19,7 +19,7 @@
 
 int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelcoarse)
 {
-  
+
   int res=-1;
   REAL xc,yc,zc;
   REAL xc0,yc0,zc0;
@@ -35,10 +35,10 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 
   // First we compute the current cell position (lower left corner)
   // Note : this is equivalenet to the position of the next level oct
-  dxcur=POW(0.5,curoct->level); 
-  xc0=curoct->x+( icell   %2)*dxcur; 
+  dxcur=POW(0.5,curoct->level);
+  xc0=curoct->x+( icell   %2)*dxcur;
   yc0=curoct->y+((icell/2)%2)*dxcur;
-  zc0=curoct->z+( icell/4   )*dxcur; 
+  zc0=curoct->z+( icell/4   )*dxcur;
 
   //if(curoct->level==1) printf("--\n");
 
@@ -47,13 +47,13 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
     for(jj=-1;jj<=1;jj++){
       for(kk=-1;kk<=1;kk++){
 	// offset the current cell (for neighbor search)
-	
+
 	xc=xc0+ii*dxcur;
 	yc=yc0+jj*dxcur;
 	zc=zc0+kk*dxcur;
 
 	// Periodic boundary conditions
-	
+
 	if(xc<0.){
 	  xc+=1.;
 	}
@@ -74,21 +74,21 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	else if(zc>=1.){
 	  zc-=1.;
 	}
-	
-	
+
+
 	// we convert it in dxcoarse unit
-	
+
 	ix=(int)(xc/POW(0.5,levelcoarse-1));
 	iy=(int)(yc/POW(0.5,levelcoarse-1));
 	iz=(int)(zc/POW(0.5,levelcoarse-1));
-	
+
 	//if((curoct->level==1)) printf("--------------- %d %d %d\n",ix,iy,iz);
 	// we compute the keys of the 8 corners and extract the min/max key
 	first=1;
 	for(i=0;i<2;i++){
 	  for(j=0;j<2;j++){
 	    for(k=0;k<2;k++){
-	      
+
 	      c[0]=ix+(int)(i*POW(0.5,curoct->level-levelcoarse+1))-(i==1);
 	      c[1]=iy+(int)(j*POW(0.5,curoct->level-levelcoarse+1))-(j==1);
 	      c[2]=iz+(int)(k*POW(0.5,curoct->level-levelcoarse+1))-(k==1);
@@ -100,7 +100,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 #else
 	      keyloc=(unsigned long long)(c[0]+c[1]*POW(2,levelcoarse-1)+c[2]*POW(2,levelcoarse-1)*POW(2,levelcoarse-1));
 #endif
-#endif	      
+#endif
 	      //if((curoct->level==1)) printf("i=%d j=%d k=%d|| %d %d %d || %d || %d %d\n",i,j,k,(int)(c[0]),(int)(c[1]),(int)(c[2]),keyloc,cpu->kmin,cpu->kmax);
 	      if(first){
 		min=keyloc;
@@ -114,7 +114,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 	    }
 	  }
 	}
-	
+
 	// we check if these keys intersect the cpu domain
 	if((max<cpu->kmin)||(min>cpu->kmax)){
 	  res=0;
@@ -139,7 +139,7 @@ int segment_cell(struct OCT *curoct, int icell, struct CPUINFO *cpu, int levelco
 //------------------------------------------------------------------------
 
 unsigned long long oct2key(struct OCT *curoct,int level){
-  
+
   REAL xc,yc,zc;
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
@@ -148,14 +148,14 @@ unsigned long long oct2key(struct OCT *curoct,int level){
   xc=curoct->x;
   yc=curoct->y;
   zc=curoct->z;
-	
+
   // we convert it in dxcoarse octs unit
-  
+
   ix=(int)(xc/POW(0.5,level-1));
   iy=(int)(yc/POW(0.5,level-1));
   iz=(int)(zc/POW(0.5,level-1));
-	
-  // we compute the keys of the lowest corners 
+
+  // we compute the keys of the lowest corners
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
@@ -176,19 +176,19 @@ unsigned long long oct2key(struct OCT *curoct,int level){
 
 //------------------------------------------------------------------------
 unsigned long long pos2key(REAL xc, REAL yc, REAL zc,int level){
-  
+
   int ix,iy,iz;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   unsigned long long keyloc;
 
-	
+
   // we convert it in dxcoarse octs unit
-  
+
   ix=(int)(xc/POW(0.5,level-1));
   iy=(int)(yc/POW(0.5,level-1));
   iz=(int)(zc/POW(0.5,level-1));
-	
-  // we compute the keys of the lowest corners 
+
+  // we compute the keys of the lowest corners
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
@@ -226,14 +226,14 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
     xc=curoct->x;
     yc=curoct->y;
     zc=curoct->z;
-	
+
     // we convert it in dxcoarse octs unit
-  
+
     ix=(int)(xc/POW(0.5,levelcoarse-1));
     iy=(int)(yc/POW(0.5,levelcoarse-1));
     iz=(int)(zc/POW(0.5,levelcoarse-1));
-	
-    // we compute the keys of the lowest corners 
+
+    // we compute the keys of the lowest corners
     c[0]=ix;
     c[1]=iy;
     c[2]=iz;
@@ -255,20 +255,20 @@ void assigncpu2coarseoct(struct OCT *curoct, struct CPUINFO *cpu, int levelcoars
 
 int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
 {
-  
+
   int ix,iy,iz;
   REAL dxcur;
   bitmask_t c[8*sizeof(bitmask_t)]; // integer coordinates of the oct
   unsigned long long keyloc;
   int cpuloc;
-	
+
   // we convert it in dxcoarse octs unit
-  
+
   ix=(int)(xc/POW(0.5,levelcoarse-1));
   iy=(int)(yc/POW(0.5,levelcoarse-1));
   iz=(int)(zc/POW(0.5,levelcoarse-1));
-	
-  // we compute the keys of the lowest corners 
+
+  // we compute the keys of the lowest corners
   c[0]=ix;
   c[1]=iy;
   c[2]=iz;
@@ -287,7 +287,7 @@ int segment_part(REAL xc,REAL yc,REAL zc, struct CPUINFO *cpu, int levelcoarse)
   else{
     return 0;
   }
-  
+
 }
 
  //------------------------------------------------------------------------
@@ -316,7 +316,7 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
   for(i=0;i<npart;i++){
     unsigned long long key;
     unsigned long long hidx;
-    
+
     int found=0;
 
     key=pos2key(part[i].x,part[i].y,part[i].z,part[i].level);
@@ -326,21 +326,21 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
       do{ // resolving collisions
 	curoct=nextoct;
 	nextoct=curoct->nexthash;
-	found=((oct2key(curoct,curoct->level)==key)&&(part[i].level==curoct->level));
+  found=((oct2key(curoct,curoct->level)==key)&&(part[i].level==curoct->level));
       }while((nextoct!=NULL)&&(!found));
     }
-    
+
     if(found){ // the reception oct has been found
-      
+
       REAL dxcur=POW(0.5,part[i].level);
-      
+
       int xp=(int)((part[i].x-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
       int yp=(int)((part[i].y-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
       int zp=(int)((part[i].z-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
       int ip=xp+yp*2+zp*4;
-      
-      
-      // the reception cell 
+
+
+      // the reception cell
       struct CELL *newcell=&(curoct->cell[ip]);
       struct OCT *newoct;
       REAL dxcur2;
@@ -358,7 +358,7 @@ void part2grid(struct PART *part, struct CPUINFO *cpu,int npart){
 	yp=(int)(DFACT*(part[i].y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 	zp=(int)(DFACT*(part[i].z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 	ip=xp+yp*2+zp*4;
-	
+
 	newcell=&(newoct->cell[ip]);
 
       }
@@ -400,7 +400,7 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
   for(i=0;i<npart;i++){
     unsigned long long key;
     unsigned long long hidx;
-    
+
     int found=0;
 
     REAL xs,ys,zs;
@@ -409,16 +409,16 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
     ys=part[i].y;
     zs=part[i].z;
 
-    if(xs<0) xs+=(REAL)1.;  
-    if(ys<0) ys+=(REAL)1.;  
-    if(zs<0) zs+=(REAL)1.;  
-    
-    
+    if(xs<0) xs+=(REAL)1.;
+    if(ys<0) ys+=(REAL)1.;
+    if(zs<0) zs+=(REAL)1.;
+
+
     if(xs>1.) xs=xs-(REAL)1.;
     if(ys>1.) ys=ys-(REAL)1.;
     if(zs>1.) zs=zs-(REAL)1.;
-    
-     
+
+
     key=pos2key(xs,ys,zs,part[i].level);
     hidx=hfun(key,cpu->maxhash);
     nextoct=cpu->htable[hidx];
@@ -429,19 +429,19 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
 	found=((oct2key(curoct,curoct->level)==key)&&(part[i].level==curoct->level));
       }while((nextoct!=NULL)&&(!found));
     }
-    
+
     if(found){ // the reception oct has been found
 
       local++;
       REAL dxcur=POW(0.5,part[i].level);
-      
+
       int xp=(int)((xs-curoct->x)/dxcur);//xp=(xp>1?1:xp);xp=(xp<0?0:xp);
       int yp=(int)((ys-curoct->y)/dxcur);//yp=(yp>1?1:yp);yp=(yp<0?0:yp);
       int zp=(int)((zs-curoct->z)/dxcur);//zp=(zp>1?1:zp);zp=(zp<0?0:zp);
       int ip=xp+yp*2+zp*4;
-      
-      
-      // the reception cell 
+
+
+      // the reception cell
       struct CELL *newcell=&(curoct->cell[ip]);
       struct OCT *newoct;
       REAL dxcur2;
@@ -459,7 +459,7 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
 	yp=(int)(DFACT*(part[i].y-newoct->y)/dxcur2);yp=(yp>1?1:yp);yp=(yp<0?0:yp);
 	zp=(int)(DFACT*(part[i].z-newoct->z)/dxcur2);zp=(zp>1?1:zp);zp=(zp<0?0:zp);
 	ip=xp+yp*2+zp*4;
-	
+
 	newcell=&(newoct->cell[ip]);
 
       }
@@ -493,7 +493,7 @@ void part2gridsplit(struct PART *part, struct CPUINFO *cpu,int npart){
 void load_balance(int levelcoarse,struct CPUINFO *cpu){
 
   unsigned long long keymax=POW(2,3*(levelcoarse-1))-1; // the maximal key along the Hilbert curve
-  
+
   cpu->kmin=((keymax+1)/cpu->nproc)*cpu->rank; // the min key of the current cpu
   cpu->nkeys=((keymax+1)/cpu->nproc); // the number of keys per cpu
 
@@ -503,6 +503,6 @@ void load_balance(int levelcoarse,struct CPUINFO *cpu){
   else{
     cpu->kmax=keymax; // the last proc should go until the end of the chain
   }
-    
+
   //printf("proc %d cpu min=%d cpu max=%d delta=%d\n",cpu->rank,cpu->kmin,cpu->kmax,(keymax+1)/cpu->nproc);
 }

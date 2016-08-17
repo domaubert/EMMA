@@ -1,0 +1,2 @@
+UNIT_C_OBJS= test_mpi.o
+DEFINES = -DWMPI

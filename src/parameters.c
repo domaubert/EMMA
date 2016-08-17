@@ -763,9 +763,14 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
         /* REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->lcoarse+param->stars->mass_res)); */
         /* REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS; */
 
+#ifdef TESTCOSMO
 	double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res));
 	REAL mass_res_star =(REAL)( mstars_level * munpercell/SOLAR_MASS);
-
+#else
+  //TODO considere non cosmo case
+  double mstars_level=0;
+  REAL mass_res_star=0;
+#endif // TESTCOSMO
 
         fprintf(fp, real_format,"mass_res_star",mass_res_star);
       }else{
@@ -773,8 +778,14 @@ void dumpInfo(char *filename_info, struct RUNPARAMS *param, struct CPUINFO *cpu)
         for(level=param->lcoarse;level<=param->lmax;level++){
           REAL mlevel=level-1;
           REAL restmp=-param->stars->mass_res;
+#ifdef TESTCOSMO
           REAL mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(mlevel+restmp));
           REAL mass_res_star = mstars_level * param->unit.unit_mass /SOLAR_MASS;
+#else
+  //TODO considere non cosmo case
+  double mstars_level=0;
+  REAL mass_res_star=0;
+#endif // TESTCOSMO
           char mlev[128];
           sprintf(mlev,"mass_star_L%d",level);
           fprintf(fp, real_format,mlev,mass_res_star );
@@ -1003,9 +1014,15 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
     mass_star=param->stars->mass_res;
   }
   else if(param->stars->mass_res>=0){
+  #ifdef TESTCOSMO
     double munpercell=param->cosmo->om*(3.*pow(param->cosmo->H0*1e3/PARSEC/1e6,2)/(8.*M_PI*NEWTON_G))*pow(param->unit.unit_l/pow(2.0,param->lcoarse),3);
     double mstars_level=(param->cosmo->ob/param->cosmo->om) * POW(2.0,-3.0*(param->stars->mass_res));
     mass_star =(REAL)( mstars_level * munpercell /SOLAR_MASS);
+#else
+  //TODO considere non cosmo case
+  double mstars_level=0;
+  mass_star =0;
+#endif // TESTCOSMO
   }
   else{
     mass_star=1.;
@@ -1079,6 +1096,7 @@ void getStepInfo(struct OCT **firstoct, struct RUNPARAMS *param, struct CPUINFO 
           }else{
             param->physical_state->mstar_sfr += curp->mass/(1.-param->sn->ejecta_proportion);
           }
+
         }else{
           param->physical_state->mstar_sfr += curp->mass;
         }

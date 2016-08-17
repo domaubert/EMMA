@@ -23,5 +23,6 @@ void mpi_rad_correct(struct CPUINFO *cpu, struct RAD_MPI **sendbuffer, struct RA
 void mpi_mark_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer,int level);
 void mpi_dens_correct(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer,int level);
 void mpi_cic_correct_level(struct CPUINFO *cpu, struct PACKET **sendbuffer, struct PACKET **recvbuffer, int field, int level);
+void init_MPI(struct CPUINFO *cpu,MPI_Datatype *MPI_PACKET,MPI_Datatype *MPI_PART,MPI_Datatype *MPI_WTYPE,MPI_Datatype *MPI_HYDRO,MPI_Datatype *MPI_RTYPE,MPI_Datatype *MPI_RAD);
 #endif
 

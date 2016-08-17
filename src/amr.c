@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "prototypes.h"
-#include "oct.h"
-#include "cic.h"
 
 #ifdef WMPI
 #include <mpi.h>
 #endif
+
+#include "prototypes.h"
+#include "oct.h"
+#include "cic.h"
 #include "segment.h"
 #include "communication.h"
 #include "particle.h"
-
 #include "hydro_utils.h"
 #include "poisson_utils.h"
 
@@ -1494,4 +1494,166 @@ void L_clean_marks(int level,struct OCT **firstoct){
 	  }
       }while(nextoct!=NULL);
   }
+}
+
+
+
+
+//=============================================================================
+//=============================================================================
+
+
+struct CELL build_initial_grid(struct OCT *grid, struct OCT **firstoct,  struct OCT **lastoct, struct CPUINFO *cpu, struct RUNPARAMS *param){
+
+
+  if(cpu->rank==RANK_DISP) printf("building initial mesh\n");
+
+  //breakmpi();
+  // ZERO WE CREATE A ROOT CELL
+
+
+  struct CELL root;
+  root.child=grid;
+
+
+  // FIRST WE POPULATE THE ROOT OCT
+  grid->x=0.;
+  grid->y=0.;
+  grid->z=0.;
+
+  grid->parent=NULL;
+  grid->level=1;
+
+  int i;
+  for(i=0;i<6;i++) grid->nei[i]=&root; //periodic boundary conditions
+
+  grid->prev=NULL;
+  grid->next=NULL;
+
+  // setting the densities in the cells and the index
+  int icell;
+  for(icell=0;icell<8;icell++){
+    /* grid->cell[icell].density=0.; */
+    /* grid->cell[icell].pot=0.; */
+    /* grid->cell[icell].temp=0.; */
+    grid->cell[icell].idx=icell;
+
+
+#ifdef WHYDRO2
+    memset(&(grid->cell[icell].field),0,sizeof(struct Wtype));
+#endif
+
+  }
+
+  grid->cpu=-1;
+  /* grid->vecpos=-1; */
+  /* grid->border=0; */
+
+  // start the creation of the initial amr grid from level 1
+  firstoct[0]=grid;
+  lastoct[0]=grid;
+  int noct2;
+  int segok;
+
+  struct OCT* newoct=grid+1;
+  int level;
+  for(level=1;level<param->lcoarse;level++){ // sweeping the levels from l=1 to l=levelcoarse
+    const REAL dxcur=1./POW(2,level);
+    struct OCT* nextoct=firstoct[level-1];
+    noct2=0;
+    int noct3 =0;
+    if(nextoct==NULL) continue;
+    do // sweeping level
+      {
+	struct OCT* curoct=nextoct;
+	nextoct=curoct->next;
+
+    //cpu.octList[level-1][noct3++] = curoct;
+
+	for(icell=0;icell<8;icell++){ // sweeping the cells
+
+	  segok=segment_cell(curoct,icell,cpu,param->lcoarse);// the current cell will be splitted according to a segmentation condition
+	  if(segok==1){
+	    //if(level==levelcoarse-1) printf(" segok=%d\n",segok);
+
+	    noct2++;
+
+	    // the newoct is connected to its mother cell
+	    curoct->cell[icell].child=newoct;
+
+	    // a newoct is created
+	    newoct->parent=&(curoct->cell[icell]);
+	    newoct->level=curoct->level+1;
+	    newoct->x=curoct->x+( icell   %2)*dxcur;
+	    newoct->y=curoct->y+((icell/2)%2)*dxcur;
+	    newoct->z=curoct->z+( icell   /4)*dxcur;
+
+	    // filling the cells
+	    int ii;
+	    for(ii=0;ii<8;ii++){
+	      newoct->cell[ii].marked=0;
+	      newoct->cell[ii].child=NULL;
+	      /* newoct->cell[ii].density=0.; */
+	      newoct->cell[ii].idx=ii;
+#ifdef PIC
+	      newoct->cell[ii].phead=NULL;
+#endif
+
+#ifdef WHYDRO2
+	      memset(&(newoct->cell[icell].field),0,sizeof(struct Wtype));
+#endif
+
+#ifdef WGRAV
+	      memset(&(newoct->cell[icell].gdata),0,sizeof(struct Gtype));
+	      memset(newoct->cell[icell].f,0,sizeof(REAL)*3);
+#endif
+
+#ifdef WRAD
+        newoct->cell[ii].z_first_xion=-1.;
+        newoct->cell[ii].z_last_xion=0;
+#endif // WRAD
+	    }
+
+      //the neighbours
+      int vnei[6],vcell[6];
+	    getcellnei(icell, vnei, vcell);
+	    for(ii=0;ii<6;ii++){
+	      if((vnei[ii]!=6)){
+		newoct->nei[ii]=&(curoct->nei[vnei[ii]]->child->cell[vcell[ii]]);
+	      }else{
+		newoct->nei[ii]=&(curoct->cell[vcell[ii]]);
+	      }
+	    }
+
+	    // vector data
+	    /* newoct->vecpos=-1; */
+	    /* newoct->border=0; */
+
+	    // preparing the next creations on level+1
+	    newoct->next=NULL;
+
+	    if(firstoct[level]==NULL){
+	      firstoct[level]=newoct;
+	      newoct->prev=NULL;
+	    }
+	    else{
+	      newoct->prev=lastoct[level];
+	      lastoct[level]->next=newoct;
+	    }
+	    lastoct[level]=newoct;
+	    // next oct ready
+	    newoct++;
+
+	  }
+
+ 	}
+      }while(nextoct!=NULL);
+    if(cpu->rank==RANK_DISP) printf("level=%d noct=%d\n",level,noct2);
+
+  }
+
+
+  if(cpu->rank==RANK_DISP) printf("Initial Mesh done \n");
+
+  return root;
 }

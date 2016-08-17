@@ -16,6 +16,8 @@
 
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
+  const int debug=1;
+
   int nnei=0;
   int *neicpu; // the reduced list of neighbors CPU (not redundant);
   unsigned long long hidx;
@@ -33,6 +35,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   int *flagcpu;
   int *nfromcpu;
 
+
   flagcpu=(int*) calloc(cpu->nproc,sizeof(int));
   nfromcpu=(int*) calloc(cpu->nproc,sizeof(int));
   neicpu=(int*) calloc(cpu->nproc,sizeof(int));
@@ -43,13 +46,14 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif
 
 
-  // we clean the hash table
+  if (debug) printf("Cleaning the hash table\n");
+
   memset(cpu->htable,0,cpu->maxhash*sizeof(struct OCT*));
   memset(cpu->bndoct,0,cpu->nbufforg*sizeof(struct OCT*));
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
-  //if(cpu->rank==RANK_DISP) printf("Clenaing MPI Buffers\n");
+  if (debug) if(cpu->rank==RANK_DISP) printf("Cleaning MPI Buffers\n");
 
   // we clean the comm buffers
 
@@ -115,10 +119,10 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif
 
   MPI_Barrier(cpu->comm);
-#endif
+#endif // WMPI
 
   // looking for neighbors
-  //if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
+  if (debug) if(cpu->rank==RANK_DISP) printf("Getting MPI Neigbourhs\n");
 
   for(level=1;level<=levelmax;level++)
     {
@@ -185,7 +189,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 		printf("ERROR on nbufforg being too small for particles on level =%d!\n",level);
 		abort();
 	      }
-#endif
+#endif // PIC
 
 	    }
 	  }while(nextoct!=NULL);
@@ -219,6 +223,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     }
   }
 
+
   free(flagcpu);
   free(nfromcpu);
 #ifdef PIC
@@ -230,18 +235,16 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
   nbnd=nnei;
   nnei=j;
 
-
   cpu->nebnd=nbnd;
   cpu->nnei=nnei;
   if(cpu->mpinei!=NULL){
     free(cpu->mpinei);
     cpu->mpinei=NULL;
   }
+
   cpu->mpinei=(int*)calloc(nnei,sizeof(int)); // we reallocate the array to free some memory
   for(i=0;i<cpu->nnei;i++) cpu->mpinei[i]=neicpu[i];
   free(neicpu);
-
-
 
   // AT THIS STAGE:
   // nbnd contains the number of boundary octs
@@ -285,7 +288,6 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
     *(cpu->recvbuffer+i)=(struct PACKET *) (calloc(cpu->nbuff,sizeof(struct PACKET)));
   }
 
-
 #ifdef PIC
   cpu->psendbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
   cpu->precvbuffer=(struct PART_MPI **)(calloc(cpu->nnei,sizeof(struct PART_MPI*)));
@@ -317,6 +319,7 @@ void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int lev
 #endif // 1
 
 #endif // WMPI
+
 
   // creating a cpu dictionnary to translate from cpu number to inei
 
@@ -3104,7 +3107,247 @@ void mpi_exchange_part(struct CPUINFO *cpu, struct PART_MPI **psendbuffer, struc
 
   //return delta;		// Return delta part
 }
+#endif // PIC
+
+#endif // WMPI
+
+
+void init_MPI(struct CPUINFO *cpu,
+              MPI_Datatype *MPI_PACKET,
+              MPI_Datatype *MPI_PART,
+              MPI_Datatype *MPI_WTYPE,
+              MPI_Datatype *MPI_HYDRO,
+              MPI_Datatype *MPI_RTYPE,
+              MPI_Datatype *MPI_RAD ){
+
+  MPI_Status stat;
+
+  MPI_Comm_size(MPI_COMM_WORLD,&(cpu->nproc));
+  MPI_Comm_rank(MPI_COMM_WORLD,&(cpu->rank));
+
+#ifdef WDBG
+  //if(cpu.rank==4) gdb_debug();
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+ //========= creating a PACKET MPI type =======
+  MPI_Datatype oldtypes[16];
+  int          blockcounts[16];
+  struct PACKET _info_pack;
+
+
+  /* MPI_Aint type used to be consistent with syntax of */
+  /* MPI_Type_extent routine */
+  MPI_Aint    offsets[5], extent;
+  MPI_Aint base;
+
+
+  MPI_Address(&_info_pack.data,offsets);
+  base=offsets[0];
+  MPI_Address(&_info_pack.key,offsets+1);
+  MPI_Address(&_info_pack.level,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, MPI_PACKET); // MODKEY WARNING TO 2 AND 3
+  MPI_Type_commit(MPI_PACKET);
+
+
+#ifdef PIC
+  //========= creating a PART MPI type =======
+  struct PART_MPI _info;
+
+
+  MPI_Address(&_info.x,offsets);
+  base=offsets[0];
+  MPI_Address(&_info.key,offsets+1);
+  MPI_Address(&_info.idx,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+#ifdef STARS
+  blockcounts[0]=9;
+#else
+  blockcounts[0]=7;
 #endif
+  blockcounts[1]=1;
+
+#ifdef STARS
+  blockcounts[2]=6;
+#else
+  blockcounts[2]=4;
 #endif
+
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, MPI_PART); // MODKEY WARNING TO 2 AND 3
+  MPI_Type_commit(MPI_PART);
+#endif // PIC
+
+#ifdef WHYDRO2
+  //========= creating a WTYPE MPI type =======
+
+  struct Wtype _info_hyd;
+
+  MPI_Address(&_info_hyd.d,offsets);
+  base=offsets[0];
+
+  offsets[0]=offsets[0]-base;
+
+  oldtypes[0]=MPI_REEL;
+
+#ifdef WRADHYD
+#ifdef HELIUM
+  blockcounts[0]=10;
+#else
+  blockcounts[0]=8;
+#endif // HELIUM
+#else
+  blockcounts[0]=7;
+#endif // WRADHYD
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(1, blockcounts, offsets, oldtypes, MPI_WTYPE);
+  MPI_Type_commit(MPI_WTYPE);
+
+
+  //========= creating a HYDRO MPI type =======
+  struct HYDRO_MPI _info_hydmpi;
+
+  MPI_Address(&_info_hydmpi.data[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_hydmpi.key,offsets+1);
+  MPI_Address(&_info_hydmpi.level,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=*MPI_WTYPE;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+
+/* Now define structured type and commit it */
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, MPI_HYDRO);
+  MPI_Type_commit(MPI_HYDRO);
+#endif // WHYDRO2
+
+#ifdef WRAD
+  //========= creating a RTYPE MPI type =======
+
+  struct Rtype _info_r;
+
+
+  MPI_Address(&_info_r.e[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_r.fx[0],offsets+1);
+  MPI_Address(&_info_r.fy[0],offsets+2);
+  MPI_Address(&_info_r.fz[0],offsets+3);
+  MPI_Address(&_info_r.src,offsets+4);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+  offsets[3]=offsets[3]-base;
+  offsets[4]=offsets[4]-base;
+
+  oldtypes[0]=MPI_REEL;
+  oldtypes[1]=MPI_REEL;
+  oldtypes[2]=MPI_REEL;
+  oldtypes[3]=MPI_REEL;
+  oldtypes[4]=MPI_REEL;
+
+
+  blockcounts[0]=NGRP;
+  blockcounts[1]=NGRP;
+  blockcounts[2]=NGRP;
+  blockcounts[3]=NGRP;
+#ifdef WCHEM
+  blockcounts[4]=5;
+#else
+  blockcounts[4]=1;
+#endif
+
+#ifdef STARS
+  blockcounts[4]++;
+#endif
+
+#ifdef HELIUM
+  blockcounts[4]+=2;
+#endif
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(5, blockcounts, offsets, oldtypes, MPI_RTYPE);
+  MPI_Type_commit(MPI_RTYPE);
+
+  //========= creating a RAD MPI type =======
+
+  struct RAD_MPI _info_radmpi;
+
+  MPI_Address(&_info_radmpi.data[0],offsets);
+  base=offsets[0];
+  MPI_Address(&_info_radmpi.key,offsets+1);
+  MPI_Address(&_info_radmpi.level,offsets+2);
+
+  offsets[0]=offsets[0]-base;
+  offsets[1]=offsets[1]-base;
+  offsets[2]=offsets[2]-base;
+
+  oldtypes[0]=*MPI_RTYPE;
+  oldtypes[1]=MPI_DOUBLE;
+  oldtypes[2]=MPI_INT;
+
+  blockcounts[0]=8;
+  blockcounts[1]=1;
+  blockcounts[2]=1;
+
+  /* Now define structured type and commit it */
+  MPI_Type_struct(3, blockcounts, offsets, oldtypes, MPI_RAD);
+  MPI_Type_commit(MPI_RAD);
+#endif // WRAD
+
+  cpu->MPI_PACKET=MPI_PACKET;
+#ifdef PIC
+  cpu->MPI_PART=MPI_PART;
+#endif
+
+#ifdef WHYDRO2
+  cpu->MPI_HYDRO=MPI_HYDRO;
+#endif
+
+#ifdef WRAD
+  cpu->MPI_RAD=MPI_RAD;
+#endif
+
+  cpu->comm=MPI_COMM_WORLD;
+
+
+#if defined(MPIIO) || defined(HDF5)
+  cpu->mpiio_ncells = (int*)calloc(cpu->nproc,sizeof(int));
+  cpu->mpiio_nparts = (int*)calloc(cpu->nproc,sizeof(int));
+#ifdef STARS
+  cpu->mpiio_nstars = (int*)calloc(cpu->nproc,sizeof(int));
+#endif // STARS
+#endif // MPIIO
+
+
+}
+#endif // WMPI
