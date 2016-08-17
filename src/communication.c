@@ -16,7 +16,7 @@
 
 void setup_mpi(struct CPUINFO *cpu, struct OCT **firstoct, int levelmax, int levelcoarse, int ngridmax,int loadb){
 
-  const int debug=1;
+  const int debug=0;
 
   int nnei=0;
   int *neicpu; // the reduced list of neighbors CPU (not redundant);
