@@ -42,14 +42,15 @@ atomic_file SB99_equiv_mono_TH.dat
 overdensity_cond 50
 density_cond 500
 efficiency 0.004
-tlife 3e6
+tlife_rad 3e6
 mass_res 1
 ##==SuperNovae===============
 feedback_eff 1.
-feedback_frac 0.
-feedback_load 0.
+feedback_kin_frac 1.
+feedback_mass_return 0.526
 feddback_egy 9.736e11
-feedback_tlife 3e6
+feedback_tlife 1.766e7
+feedback_wind 0.05
 ##==Movie====================
 lmap 9
 mode avg
