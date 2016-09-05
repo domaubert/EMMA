@@ -509,7 +509,7 @@ void readAtomic(struct RUNPARAMS *param){
 #endif // WRAD
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
-  int debug=0;
+  int debug=1;
   int i;
   FILE *buf=NULL;
   char stream[256];
@@ -588,7 +588,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       param->ncvgcool=0;
 #else
       int i;
-	for (i=0; i<4; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
                       rstat=fscanf(buf,"%s %s",stream, stream);
 #endif
 
