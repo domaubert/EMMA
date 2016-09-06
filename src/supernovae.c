@@ -526,6 +526,7 @@ REAL computeFeedbackEnergy(struct RUNPARAMS *param, REAL aexp, int level, REAL m
 // ----------------------------------------------------------//
   REAL egy = param->sn->sn_egy; // j/kg
   egy *= mstar/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // j/m3 in code unit
+  egy *= param->sn->feedback_eff;
   return egy;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
