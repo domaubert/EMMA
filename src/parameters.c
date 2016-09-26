@@ -509,7 +509,7 @@ void readAtomic(struct RUNPARAMS *param){
 #endif // WRAD
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
-  int debug=1;
+  int debug=0;
   int i;
   FILE *buf=NULL;
   char stream[256];
