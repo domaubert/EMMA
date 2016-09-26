@@ -17,7 +17,7 @@ n_smooth 2
 dm_res 0
 dx_res 500.
 ##==PoissonSolver============
-max_number_of_relaxation_poisson 100
+max_number_of_relaxation_poisson 1000
 poisson_accuracy 1e-5
 mgrid_lmin 4
 mgrid_nvcycles 3

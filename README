@@ -13,7 +13,11 @@ how to build:
 	cp init/param_init.h src/param.h
 
 	# in EMMADIR, build the binary
+  mkdir obj 
 	make
+
+if you want to use HDF5:
+  apt-get install libhdf5-mpich-dev # on ubuntu
 
 
 at this stage go to your working directory WORKDIR and create the dependencies
@@ -21,7 +25,7 @@ at this stage go to your working directory WORKDIR and create the dependencies
        cd WORKDIR
 
        ln -s EMMADIR/emmacpu ./ #create a local symbolic link to the binary
-       mkdir obj 
+
        mkdir data # will store the results (or create a symoblic link)
        ln -s EMMADIR ./SRC    #create a symlink to the EMMA directory
 

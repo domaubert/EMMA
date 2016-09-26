@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include <string.h> 
+#include <string.h>
 
 #ifdef WMPI
 #include <mpi.h>
@@ -102,10 +102,10 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
   REAL sigmaT=6.6524E-29; //Thomson cross-section
   REAL alpha;
   REAL threshold=(0.1*PROTON_MASS/1E-6);  //Threshold density in Dubois & al. 2011 in SI (kg/m³)
-  
+
   //Print quantities depending of the density
   BH->gasdens=cell->field.d*param->unit.unit_d/pow(aexp,3);//The ratio is the gas density absorbed / the gas density in the cell BEFORE absorption
-  //Computing the Boost factor						
+  //Computing the Boost factor
   if((cell->field.d)*param->unit.unit_d/pow(aexp,3)>threshold){
     alpha=pow(cell->field.d*param->unit.unit_d/pow(aexp,3)/threshold,2);
   }
@@ -128,12 +128,12 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
     /pow(VRelgaz2+Cs2,1.5); //in kg/s
   //Computing Eddington ratio
   BH->MEddot=(4*M_PI*NEWTON_G*curp->mass*param->unit.unit_mass*PROTON_MASS)/(epsilonr*sigmaT*LIGHT_SPEED_IN_M_PER_S); //In kg/s
-  //The accretion ratio must'nt be over the Eddington limit			
+  //The accretion ratio must'nt be over the Eddington limit
   if(MBHdot>BH->MEddot){
     MBHdot=BH->MEddot;
   }
   printf("Accretion ratio in solar mass per yr : %0.9E\n",MBHdot/SOLAR_MASS*3.154E7);
-  //The gas accreted mustnt be over 90% of the gas density in the cell			
+  //The gas accreted mustnt be over 90% of the gas density in the cell
   if(MBHdot*(pow(aexp,2)*param->unit.unit_t/param->unit.unit_mass)*dt/pow(0.5,3*level)>=0.9*cell->field.d){
     BH->Gaindens=0.9*cell->field.d*param->unit.unit_d/pow(aexp,3); //At time t
     conservation(&(cell->field),param,curp,level,aexp,0.9*cell->field.d);
@@ -160,7 +160,7 @@ REAL computeAGNfeedback(struct CELL *cell,struct PART *curp,struct RUNPARAMS *pa
   /* REAL E_MECHA; */
   /* E_MECHA=E_FEEDBACK*(param->agn->feedback_frac)*(pow(aexp,2)*param->unit.unit_t)*dt; // */
   /* E_MECHA*= 1.0/POW(0.5,3*level) * POW(aexp,2.)/POW(param->unit.unit_v,2.); // mechanical energy in code units */
-  
+
   REAL E_MECHA;
   E_MECHA=E_FEEDBACK*(param->agn->feedback_frac)*POW(aexp,4.)*dt;//(curp->mass*param->unit.unit_mass);// J/sec/kg
   REAL unit=param->unit.unit_t/param->unit.unit_mass;
@@ -207,17 +207,17 @@ int agn_grow(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
     nexp=curp->next;
 
     if (curp->isStar==100){ // if curp is an AGN
-      
+
       REAL E= computeAGNfeedback(cell,curp,param,aexp,level,dt, BH);
-      
-      
+
+
       // TO be implemented later, by inspiration from supernovae
       if(param->agn->feedback_frac){
          /* oct feedback
           * if kinetic feedback
           * the energy is injected in a oct
           */
-        thermalFeedbackOct(param,cell,curp,level, E);
+        thermalFeedback_oct(param,cell,curp,level, E);
 
         /* if (param->agn->ejecta_proportion){ */
         /*   kineticFeedback_impulsion(param, cell,curp,aexp,level, E*param->sn->feedback_frac); */
@@ -225,7 +225,7 @@ int agn_grow(struct CELL *cell, struct RUNPARAMS *param, struct CPUINFO *cpu, RE
         /*   kineticFeedback_simple(param, cell,curp,aexp,level, E*param->sn->feedback_frac); */
         /* } */
       }
-      
+
       Nsn++;
     }
   }while(nexp!=NULL);
@@ -314,7 +314,7 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 
 #ifdef PIC
   struct PART *agn = cpu->freepart;
-  
+
   if (agn==NULL){
     printf("\n");
     printf("----------------------------\n");
@@ -322,10 +322,10 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
     printf("----------------------------\n");
     //	exit(0);
   }else{
-    
+
     cpu->freepart = cpu->freepart->next;
     cpu->freepart->prev = NULL;
-    
+
     if (cell->phead==NULL){
       cell->phead = agn;
       agn->prev = NULL;
@@ -341,7 +341,7 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
     cpu->nstar[level-1]++; // agn counted as star
 
     REAL dx = POW(2.0,-level);
-    
+
     initagn(init_field, agn, param, level, xc, yc, zc, -1, aexp, is, dttilde, dx,magn);
 
     // for conserveField we use the same function as stars.c
@@ -356,7 +356,7 @@ void addagn(struct CELL *cell, struct Wtype *init_field, int level, REAL xc, REA
 }
 
 
-//========================================================================= 
+//=========================================================================
 int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 
   int i=0;
@@ -505,7 +505,7 @@ int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 	dummy=BH.level;
 	MPI_Allreduce(MPI_IN_PLACE,&dummy,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
 	BH.level=dummy;
-	
+
 	dummy=BH.x;
 	MPI_Allreduce(MPI_IN_PLACE,&dummy,1,MPI_DOUBLE,MPI_MAX,cpu->comm);
 	BH.x=dummy;
@@ -526,7 +526,7 @@ int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 		if(BH.aexp>0){
 			FILE *fp;
 			fp=fopen("BH_mass_1E5_Vlim_10_NotEdd.txt","a+");
-			//printf("%0.10E %0.6E %0.6E\n",1./BH.aexp-1,BH.mass,BH.lumi); 
+			//printf("%0.10E %0.6E %0.6E\n",1./BH.aexp-1,BH.mass,BH.lumi);
 			fprintf(fp,
 				"%0.10E %0.6E %0.6E %0.6E %0.6E %0.6E %0.6E %0.6E %0.6E %i %0.6E %0.6E %0.6E\n",
 				1./BH.aexp-1,
@@ -551,7 +551,7 @@ int testdist(REAL x, REAL y, REAL z, struct RUNPARAMS *param, REAL ragn){
 	/////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////// .__ .  . .__  /////////////////////////////////////
 	///////////////////////////////////// |__ |\ | |  \ /////////////////////////////////////
-	///////////////////////////////////// |__ | \| |__/ ///////////////////////////////////// 
+	///////////////////////////////////// |__ | \| |__/ /////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
 
 #endif // AGN

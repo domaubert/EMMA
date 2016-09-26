@@ -80,6 +80,7 @@ C_OBJS= \
 	parameters.o \
 	restart.o \
 	ic.o\
+	agn.o
 
 CUDA_OBJS= \
 	interface.o \
