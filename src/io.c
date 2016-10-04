@@ -1499,7 +1499,7 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
 
-#ifdef PHDF
+#ifdef PHDF5
       H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
 
@@ -1717,7 +1717,7 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
 
-#ifdef PHDF
+#ifdef PHDF5
       H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
       hid_t	memspace = H5Screate_simple (1, &n_loc, NULL);
@@ -1971,7 +1971,7 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       // Create property list
       plist = H5Pcreate(H5P_DATASET_XFER);
 
-#ifdef PHDF
+#ifdef PHDF5
       H5Pset_dxpl_mpio(plist, HDF5_METHOD);
 #endif // PHDF5
 
