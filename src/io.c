@@ -1863,6 +1863,12 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
     }
   }
 
+  free(Xmin);
+  free(Xmax);
+  free(Ymin);
+  free(Ymax);
+  free(Zmin);
+  free(Zmax);
   free(tmp);
 }
 
@@ -2083,6 +2089,13 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Fclose(file);
     }
   }
+
+  free(Xmin);
+  free(Xmax);
+  free(Ymin);
+  free(Ymax);
+  free(Zmin);
+  free(Zmax);
   free(tmp);
 }
 #endif // STARS
