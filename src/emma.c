@@ -672,9 +672,6 @@ int main(int argc, char *argv[])
     struct CELL root;
     root = build_initial_grid(grid, firstoct, lastoct, &cpu, &param);
 
-    for (level=1; level<=param.lmax; level++){
-      setOctList(firstoct[level-1],&cpu,&param,level);
-    }
 
  // ==================================== assigning CPU number to levelcoarse OCTS // filling the hash table // Setting up the MPI COMMS
 
@@ -696,6 +693,9 @@ int main(int argc, char *argv[])
   newloadb=0;
 
 
+  for (level=1; level<=param.lmax; level++){
+    setOctList(firstoct[level-1],&cpu,&param,level);
+  }
 
 #if 0
 #ifdef WMPI
