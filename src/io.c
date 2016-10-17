@@ -353,13 +353,13 @@ void set_offset(struct RUNPARAMS *param, struct CPUINFO *cpu){
 #endif // STARS
 
   int i;
-  for (i=1;i<=cpu->rank;i++){
-    cpu->mpiio_grid_offsets += cpu->mpiio_ncells[i-1];
+  for (i=0;i<cpu->rank;i++){
+    cpu->mpiio_grid_offsets += cpu->mpiio_ncells[i];
 #ifdef PIC
-    cpu->mpiio_part_offsets += cpu->mpiio_nparts[i-1];
+    cpu->mpiio_part_offsets += cpu->mpiio_nparts[i];
 #endif // PIC
 #ifdef STARS
-    cpu->mpiio_star_offsets += cpu->mpiio_nstars[i-1];
+    cpu->mpiio_star_offsets += cpu->mpiio_nstars[i];
 #endif // STARS
   }
 

@@ -253,7 +253,9 @@ void setOctList(struct OCT *firstoct, struct CPUINFO *cpu, struct RUNPARAMS *par
 
   struct OCT  *nextoct = firstoct;
 
-//  cleanOctList(cpu,param,level);
+//  if (level>param->lcoarse){
+//    cleanOctList(cpu,param,level);
+//  }
 
   int nOct = 0;
   do{ if(nextoct==NULL) 		continue;

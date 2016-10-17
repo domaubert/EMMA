@@ -728,7 +728,7 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
   ndes=ndestot;
 #endif
 
-  setOctList(firstoct[level-1], cpu, param,level);
+  setOctList(firstoct[level], cpu, param,level+1);
 
   if(cpu->rank==RANK_DISP){
     printf("octs created   = %d ",nref);
