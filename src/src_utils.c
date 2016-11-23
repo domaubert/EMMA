@@ -192,6 +192,9 @@ void uvbkg_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
   int igrp;
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfield.src[igrp] = param->uv.value[igrp]/param->unit.unit_N * param->unit.unit_t*POW(aexp,2);
+    // printf("uvbkg_src=%e\n",cell->rfield.src[igrp]);
+
+
 #ifdef STARS_TO_UVBKG
     cell->rfield.src[igrp]*=param->uv.efficiency;
 #endif // STARS_TO_UVBKG
@@ -271,7 +274,7 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
         //printf("SRC= %e\n",cell->rfield.src);
         //printf("SRC= %e t=%e tphy=%e age=%e tlife=%e\n",cell->rfield.src,t,param->cosmo->tphy,curp->age,param->stars->tlife);
         flag=1;
-	
+
 #endif
       }
       else{
@@ -323,7 +326,7 @@ int stars_sources(struct CELL *cell,struct RUNPARAMS *param, REAL aexp){
 
   }while(nexp!=NULL);
 
-  
+
 
   for(igrp=0;igrp<NGRP;igrp++){
     cell->rfieldnew.src[igrp]=cell->rfield.src[igrp];
@@ -496,13 +499,17 @@ int putsource(struct CELL *cell,struct RUNPARAMS *param,int level,REAL aexp, REA
 
   #ifdef UVBKG
     uvbkg_sources(cell,param,aexp);
-  #endif // UVBKG
+
+  #else
 
   #ifdef STARS
     stars_sources(cell,param,aexp);
   #elif WHYDRO2
     flag=hydro_sources(cell,param,aexp);
   #endif
+
+
+#endif // UVBKG
 
 #endif // STARS_TO_UVBKG
 
@@ -609,6 +616,14 @@ void setUVBKG(struct RUNPARAMS *param, char *fname){
   //TODO consider NGRP>1
   //printf("Reading UVBKG from file :%s\n",fname);
 
+#ifdef SINGLEPRECISION
+    char* type= "%f \t %f";
+#else
+    char* type= "%lf \t %lf";
+#endif // SINGLEPRECISION
+
+
+
   FILE *buf;
   buf=fopen(fname,"r");
   if(buf==NULL){
@@ -624,9 +639,11 @@ void setUVBKG(struct RUNPARAMS *param, char *fname){
 
     int i;
     for(i=0; i<param->uv.N; i++){
-      rstat=fscanf(buf,"%lf %lf",&param->uv.redshift[i],&param->uv.Nphot[i]);
+      rstat=fscanf(buf,type,&param->uv.redshift[i],&param->uv.Nphot[i]);
+      //printf("%e, %e\n",param->uv.redshift[i], param->uv.Nphot[i]);
     }
   }
+
 }
 
 void setUVvalue(struct RUNPARAMS *param, REAL aexp){
@@ -640,7 +657,8 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
   if(NGRP>1) printf("WARNING BAD BEHAVIOR FOR BKG with NGRP>1 !\n");
 
   REAL z = 1./aexp - 1.;
-  if (z > param->uv.redshift[0]){
+
+  if (z < param->uv.redshift[param->uv.N-1]){
     int igrp;
     for(igrp=0;igrp<NGRP;igrp++){
       int iredshift;
@@ -653,6 +671,7 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
           REAL x2 = param->uv.redshift[iredshift-1];
 
           param->uv.value[igrp] = (z-x1) * (y2-y1)/(x2-x1) + y1;
+          //printf("interp uvbkg = %e phot/s/m3 at z=%f\n", param->uv.value[igrp], z);
           break;
         }
       }
@@ -661,6 +680,10 @@ void setUVvalue(struct RUNPARAMS *param, REAL aexp){
     int igrp;
     for(igrp=0;igrp<NGRP;igrp++) param->uv.value[igrp]=0.;
   }
+
+  int igrp;
+   //for(igrp=0;igrp<NGRP;igrp++)    printf("cell->rfield.src[igrp] = %f \n", param->uv.value[igrp]);
+
 }
 #endif // defined
 

@@ -1906,12 +1906,7 @@ int main(int argc, char *argv[])
       dumpStepInfo(firstoct, &param, &cpu,nsteps,adt[levelcoarse-1],(float)tsim);
 
 #ifdef MOVIE
-
-//  for(level=1;level<=levelmax;level++){
-//    setOctList(firstoct[level-1], &cpu, &param,level);
-//  }
-
-  dumpMovie(&param, &cpu, (float)tsim);
+  dumpMovie(&param, &cpu, (float)tdump);
 #endif // MOVIE
 
       //==================================== timestep completed, looping

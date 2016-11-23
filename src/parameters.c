@@ -667,7 +667,7 @@ void GetParameters(char *fparam, struct RUNPARAMS *param){
 #endif
 
 #if defined(UVBKG) || defined(STARS_TO_UVBKG)
-  setUVBKG(param, "src/phys_data/uvbkg.dat");
+  setUVBKG(param, "SRC/src/phys_data/uvbkg.dat");
 #endif // UVBKG
 
 
