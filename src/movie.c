@@ -43,6 +43,14 @@ void init_movie(struct RUNPARAMS *param){
 
 void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
+#ifdef WMPI
+      MPI_Barrier(cpu->comm);
+#endif
+  double t_movie_start=MPI_Wtime();
+
+
+
+
   const int debug = 0;
   //static int MOVIE_SNAP_NUMBER;
   const int MOVIE_SNAP_NUMBER = cpu->nsteps;
@@ -176,10 +184,10 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 #ifdef WMPI
 	switch(mode){
     case 0:
-      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_MAX, 0, cpu->comm);
+      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_MAX, RANK_DISP, cpu->comm);
       break;
     case 1:
-      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, 0, cpu->comm);
+      MPI_Reduce(param->movie->map, mapred, param->out_grid->n_field_movie*ntot, MPI_FLOAT, MPI_SUM, RANK_DISP, cpu->comm);
       break;
 	}
 #endif // WMPI
@@ -216,5 +224,13 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 	}
 
   if(debug) abort();
+
+
+#ifdef WMPI
+    MPI_Barrier(cpu->comm);
+#endif
+
+  	if(cpu->rank==RANK_DISP) printf("==== CPU Movie TOTAL TIME =%e\n",MPI_Wtime()-t_movie_start);
+
 }
 #endif//MOVIE

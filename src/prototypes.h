@@ -89,7 +89,7 @@ typedef double REAL;
 #define RADSTEP
 #endif // COARSERAD
 
-#define POW2(x) (1<<x)
+#define POW2(x) (1ULL<<x)
 
 
 #ifdef TESTCOSMO

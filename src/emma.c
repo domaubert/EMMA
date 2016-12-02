@@ -247,6 +247,8 @@ int main(int argc, char *argv[])
 	param.movie=&movie;
 #endif
 
+
+
   struct PHYSICAL_STATE physical_state;
   param.physical_state = &physical_state;
 
