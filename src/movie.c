@@ -50,13 +50,21 @@ void dumpMovie(struct RUNPARAMS *param, struct CPUINFO *cpu, float aexp){
 
 
 
+  const int n=POW2(param->movie->lmap);
+  const int n_field=param->out_grid->n_field_movie;
+
+  // RAZ
+  int i;
+  for (i=0; i<n_field*n*n; i++){
+    param->movie->map[i]=0;
+    param->movie->map_reduce[i]=0;
+  }
+
 
   const int debug = 0;
   //static int MOVIE_SNAP_NUMBER;
   const int MOVIE_SNAP_NUMBER = cpu->nsteps;
 	if(cpu->rank==RANK_DISP)  printf("Dumping movie file #%d\n",MOVIE_SNAP_NUMBER);
-
-  const int n_field=param->out_grid->n_field_movie;
 
   if (debug) printf("n_field=%d\n",n_field);
 
