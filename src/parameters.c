@@ -614,7 +614,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
       rstat=fscanf(buf,RF,stream,&dummyf);param->sn->load_factor =(REAL)dummyf;         if (debug) printf("param->sn->load_factor=%e\n", param->sn->load_factor);
 
 #else
-	for (i=0; i<5; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
+	for (i=0; i<6; i++)	rstat=fscanf(buf,RF,stream,&dummyf);
 #endif
 
 #ifdef MOVIE
