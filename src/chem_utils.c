@@ -220,7 +220,10 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   REAL ebkg[NGRP];
   REAL z=1./aexporg-1.;
 
-  REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+  //REAL c=param->clightorg*LIGHT_SPEED_IN_M_PER_S; 			// switch back to physical velocity m/s
+
+  // alpha cross section are allready weighted by the reduced speed of light
+  // multiplications are made in parameters.c in readAtomic()
 
   REAL hnu[NGRP];
   REAL alphae[NGRP];
