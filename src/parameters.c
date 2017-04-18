@@ -923,7 +923,7 @@ void getFieldInfo(struct FIELD_INFO *field, double value, double vweight){
   field->mean+=value*vweight;
   field->sigma+=value*value*vweight;
   field->min=fmin(field->min, value);
-  field->max=fmin(field->max, value);
+  field->max=fmax(field->max, value);
 /*
   int i;
   for(i=0;i<N_BIN_PDF;i++){
