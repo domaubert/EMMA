@@ -1844,11 +1844,6 @@ int main(int argc, char *argv[])
 	  }
 	}
 	else{
- #ifdef WRADTEST
-    for(level=1;level<=levelmax;level++){
-//      setOctList(firstoct[level-1], &cpu, &param,level);
-    }
-#endif // WRADTEST
 	  dumpIO(tsim+adt[levelcoarse-1],&param,&cpu,firstoct,adt,0);
 	}
 #else
