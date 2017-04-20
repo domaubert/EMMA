@@ -509,7 +509,7 @@ void readAtomic(struct RUNPARAMS *param){
 #endif // WRAD
 
 void ReadParameters(char *fparam, struct RUNPARAMS *param){
-  int debug=0;
+  int debug=1;
   int i;
   FILE *buf=NULL;
   char stream[256];
@@ -533,7 +533,7 @@ void ReadParameters(char *fparam, struct RUNPARAMS *param){
 
       rstat=fscanf(buf,"%s",stream);
       rstat=fscanf(buf,"%s %d",stream,&param->ndumps);    if (debug) printf("param->ndumps=%d\n", param->ndumps);
-      rstat=fscanf(buf,RF,stream,&param->dt_dump);        if (debug) printf("param->dt_dump=%e\n", param->dt_dump);
+      rstat=fscanf(buf,RF,stream,&dummyf); param->dt_dump=(REAL)dummyf;        if (debug) printf("param->dt_dump=%e\n", param->dt_dump);
       rstat=fscanf(buf,"%s %d",stream,&param->nsteps);    if (debug) printf("param->nsteps=%d\n", param->nsteps);
       rstat=fscanf(buf,RF,stream,&dummyf);param->dt=(REAL)dummyf;   if (debug) printf("param->dt=%e\n", param->dt);
       rstat=fscanf(buf,RF,stream,&dummyf);param->tmax=(REAL)dummyf; if (debug) printf("param->tmax=%e\n", param->tmax);

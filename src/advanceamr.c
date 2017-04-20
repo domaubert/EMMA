@@ -557,8 +557,14 @@ if(level==param->lcoarse){
       if(param->aexpdump) cond4=aexp>param->aexpdump;
 #endif
 
+
+printf("%e",param->dt_dump);
+abort();
       if(param->dt_dump){
         //cond1=0;
+
+  printf("test");
+  abort();
         int offset=0;
 
 #ifdef TESTCOSMO
@@ -566,7 +572,7 @@ if(level==param->lcoarse){
         REAL a=param->cosmo->tphy;
         REAL b=(int)(*(cpu->ndumps)+offset)*param->dt_dump;
         cond2=a>b;
-        if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next dump at %.2e yrs\n",a,b+(a>b)*param->dt_dump);
+        if(cpu->rank==RANK_DISP)printf("t=%.2e yrs next part dump at %.2e yrs\n",a,b+(a>b)*param->dt_dump);
 #endif // TESTCOSMO
 
 
