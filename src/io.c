@@ -2117,10 +2117,6 @@ void dumpIO(REAL tsim, struct RUNPARAMS *param,struct CPUINFO *cpu, struct OCT *
 
   int idir=cpu->rank%8;
 
-  int level;
-  for(level=param->lcoarse;level<=param->lmax;level++){
-//    setOctList(firstoct[level-1], cpu, param,level);
-  }
 
 #if defined(MPIIO) || defined(HDF5)
   set_offset(param,cpu);
