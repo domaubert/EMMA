@@ -546,11 +546,13 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     // (note fields are dumped in quartz.c
 
 #ifndef EDBERT
+if(level==param->lcoarse){
 
       int cond1 = nsteps%param->ndumps==0;
       int cond2 = 0;
       int cond3 = tloc>=param->time_max;
       int cond4 = 0;
+
 #ifdef TESTCOSMO
       if(param->aexpdump) cond4=aexp>param->aexpdump;
 #endif
@@ -579,7 +581,6 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 
   }
 
-    if(level==param->lcoarse){
       if(cond1||cond2||cond3||cond4){
 
 	if(cpu->rank==RANK_DISP) printf(" tsim=%e adt=%e\n",tloc,adt[level-1]);

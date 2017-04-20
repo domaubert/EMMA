@@ -1785,7 +1785,6 @@ int main(int argc, char *argv[])
       cond3 = tsim+adt[levelcoarse-1]>=tmax; // dump if simulation end
       cond4 = 0;                      // dump if aexp is in list_aexp
 
-
 #ifdef TESTCOSMO
       if(param.aexpdump){
 	// dumpfile at specific outputs
