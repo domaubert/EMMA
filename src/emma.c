@@ -1780,10 +1780,11 @@ int main(int argc, char *argv[])
 #endif
 
       // ==================================== dump
-      cond1 = nsteps%param.ndumps==0;
-      cond2 = 0;
-      cond3 = tsim+adt[levelcoarse-1]>=tmax;
-      cond4 = 0;
+      cond1 = nsteps%param.ndumps==0; // dump every ndump timestep
+      cond2 = 0;                      // dump every dt_dump years
+      cond3 = tsim+adt[levelcoarse-1]>=tmax; // dump if simulation end
+      cond4 = 0;                      // dump if aexp is in list_aexp
+
 
 #ifdef TESTCOSMO
       if(param.aexpdump){
