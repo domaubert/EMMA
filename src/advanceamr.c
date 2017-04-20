@@ -558,7 +558,7 @@ if(level==param->lcoarse){
 #endif
 
       if(param->dt_dump){
-        cond1=0;
+        //cond1=0;
         int offset=0;
 
 #ifdef TESTCOSMO

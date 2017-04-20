@@ -1806,7 +1806,7 @@ int main(int argc, char *argv[])
 
 
       if (param.dt_dump){
-	cond1=0;
+	//cond1=0;
 	int offset=0;
 
 #ifdef TESTCOSMO
