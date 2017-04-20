@@ -543,7 +543,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
     /* //====================================  I/O======= ========================== */
     // at this stage particles are synchronized at aexp
     // ready to dump particles
-    // (note fields are dumped in quartz.c
+    // (note fields are dumped in Emma.c
 
 #ifndef EDBERT
 if(level==param->lcoarse){
