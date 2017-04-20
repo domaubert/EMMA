@@ -558,13 +558,9 @@ if(level==param->lcoarse){
 #endif
 
 
-printf("%e",param->dt_dump);
-abort();
+
       if(param->dt_dump){
         //cond1=0;
-
-  printf("test");
-  abort();
         int offset=0;
 
 #ifdef TESTCOSMO
