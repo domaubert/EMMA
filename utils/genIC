@@ -151,6 +151,11 @@ if __name__ == "__main__":
 
 	L = int(sys.argv[1])
 	size = int(sys.argv[2])
+	seed = int(sys.argv[3])
+
+	# seed=12345
+
+
 
 	N = pow(2,L)
 	print("generating a (%d Mpc/h)^3 in %d^3"%(size,N))
@@ -163,7 +168,6 @@ if __name__ == "__main__":
 
 
 	output = "IC"
-	seed=12345
 
 	if generator == "graphic":
 		genGraphic(L,size, output)
