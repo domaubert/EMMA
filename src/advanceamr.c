@@ -328,6 +328,7 @@ REAL Advance_level(int level,REAL *adt, struct CPUINFO *cpu, struct RUNPARAMS *p
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,(double *)cosmo->tab_aexp,(double *)cosmo->tab_ttilde);
     //aexp=cosmo->aexp;
+    cosmo->aexp_hydro=aexp;
 #endif
 
 
@@ -1335,6 +1336,8 @@ double tsn[10];
   REAL drift_e;
   REAL htilde;
 
+
+  param->cosmo->dtcool_tmp=0;
   is=0;
 
   do{
@@ -1346,8 +1349,10 @@ double tsn[10];
 
 #ifdef TESTCOSMO
     aexp=interp_aexp(tloc,(double *)cosmo->tab_aexp,(double *)cosmo->tab_ttilde);
-    //aexp=cosmo->aexp;
-    param->cosmo->tphy=a2t(param,aexp);
+    //param->cosmo->tphy=a2t(param,aexp);
+
+//    aexp=param->cosmo->aexp_hydro;
+
 #else
     aexp=1.0;
 #endif
@@ -1525,6 +1530,9 @@ error = ccc_tremain(&time_remain)
 
 
   }while((dt<adt[level-2])&&(is<nsub));
+
+
+ // 	printf("dtcool_tmp=%e, dt=%e\n",param->cosmo->dtcool_tmp,dt*param->unit.unit_t*POW(aexp,2));
 
 
   /* if(cpu->rank==RANK_DISP){ */

@@ -484,12 +484,23 @@ void readAtomic(struct RUNPARAMS *param){
   int i;
   for(i=0;i<4;i++)  rstat=fscanf(buf,"%s",stream);
 
+
+
   //read grp
   double dummy; // to read recombination coeff
   for(i=0;i<param->atomic.n;i++){
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.hnu[i]=dummy*ELECTRONVOLT;
-    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphae[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
-    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphai[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
+
+
+#define WEIGHTCHEM
+#ifdef WEIGHTCHEM
+REAL k=param->clightorg;
+#else
+REAL k=1./param->clightorg;
+#endif // WEIGHTCHEM
+
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphae[i]=k*(dummy*LIGHT_SPEED_IN_M_PER_S);
+    rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphai[i]=k*(dummy*LIGHT_SPEED_IN_M_PER_S);
 #ifdef HESIMPLE
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaeHE[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);
     rstat=fscanf(buf,"%lf",&dummy); param->atomic.alphaiHE[i]=param->clightorg*(dummy*LIGHT_SPEED_IN_M_PER_S);

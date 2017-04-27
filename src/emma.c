@@ -214,6 +214,7 @@ int main(int argc, char *argv[])
   REAL amax;
   struct COSMOPARAM cosmo;
   param.cosmo=&cosmo;
+  cosmo.srcloc_tmp=0;
 #endif
 
   struct OUTPUTPARAM out_grid;
@@ -1722,6 +1723,9 @@ int main(int argc, char *argv[])
 
       Advance_level(levelcoarse,adt,&cpu,&param,firstoct,lastoct,stencil,&gstencil,rstencil,ndt,nsteps,tsim);
 
+      REAL src_print;
+      MPI_Allreduce(&cosmo.srcloc_tmp,&src_print,1,MPI_REEL,MPI_SUM,cpu.comm);
+      if(cpu.rank==RANK_DISP) printf("step %d SUM SRCLOC = %e\n",nsteps, src_print);
 
 #ifdef WMPI
       MPI_Barrier(cpu.comm);

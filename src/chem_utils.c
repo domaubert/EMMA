@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>
+#include <assert.h>
 
 #include "prototypes.h"
 #include "oct.h"
@@ -211,6 +212,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 
 
+  //aexporg=param->cosmo->aexp_hydro;
+
 #ifdef HESIMPLE
   REAL hnu0HE=24.6*1.6022e-19;
   REAL hnu0HE2=54.4*1.6022e-19;
@@ -331,7 +334,12 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
 
       for (igrp=0;igrp<NGRP;igrp++){
-	srcloc[idloc+igrp*BLOCKCOOL]=(R.src[igrp]*param->unit.unit_N/param->unit.unit_t/(aexporg*aexporg))/POW(aexporg,3); //phot/s/dv (physique)
+
+      REAL aexp= aexporg;
+      //REAL aexp= param->cosmo->aexp_hydro;
+
+	srcloc[idloc+igrp*BLOCKCOOL]=R.src[igrp]*param->unit.unit_N/param->unit.unit_t/POW(aexp,5); //phot/s/dv (physique)
+
       }
 
       // R.src phot/unit_t/unit_dv (comobile)
@@ -418,6 +426,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
 
 
+for(igrp=0;igrp<NGRP;igrp++){
+    egyloc[idloc+igrp*BLOCKCOOL]+=srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]*dt*(!chemonly);
+    param->cosmo->srcloc_tmp+=srcloc[idloc+igrp*BLOCKCOOL]*dt*(!chemonly);
+}
+
       // -------------------------------------------------
 
       /// local cooling loop -------------------------------
@@ -428,17 +441,14 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       REAL da;
       //printf("cpu=%d fudge=%e ncv=%d currentcool_t=%e dt=%e\n",cpu->rank,param->fudgecool,ncvgcool,currentcool_t,dt);
 
+
+      REAL dtcool_tmp=0;
       // local cooling loop -------------------------------
       while(currentcool_t<dt)
 	{
 
 
-	  /// Cosmological Adiabatic expansion effects ==============
-#ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
-#else
-	  REAL hubblet=0.;
-#endif
+
 
 
 	  //tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
@@ -528,6 +538,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	      ONEMINUSEE=1.-EE;
 	    }
 
+
 #ifdef HESIMPLE
 	    //et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
 	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
@@ -537,7 +548,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #ifndef OTSA
 	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
 #else
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE;
 #endif
 
 	    //et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
@@ -547,6 +558,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EE;
 	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
 
+
+	    //param->cosmo->srcloc_tmp+=srcloc[idloc+igrp*BLOCKCOOL]*dtcool;
 	  }
 
 	  if((et[igrp]<0)||(isnan(et[igrp]))){
@@ -654,7 +667,8 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  //for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += ((alphae[igrp])*hnu[igrp]-(alphai[igrp])*hnu0)*et*nH[idloc]*(1.0-xt);
 #else
 	  for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += (alphae[igrp]*hnu[igrp]-alphai[igrp]*hnu0)*et[igrp]*nH[idloc]*(1.0-xt);
-#endif
+#endif // HESIMPLE
+
 	  //for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += et[igrp]*(alphae[igrp]*hnu[igrp]-(alphai[igrp]*hnu0))*(!chemonly);}
 	  //eintt=(eint[idloc]+ dtcool*(nH[idloc]*(1.-xt)*(ai_tmp1)-Cool+SN));
 
@@ -670,7 +684,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 #endif //SEMI
 
 
-#else
+#else //S_X
 	  //===================================== X RAYS ==============================
 	  REAL pp2;
 	  F2[0]=1.0;
@@ -735,11 +749,18 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  eintt=eint[idloc];
 #endif
 
+
+	  /// Cosmological Adiabatic expansion effects ==============
+#ifdef TESTCOSMO
+	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
+#else
+	  REAL hubblet=0.;
+#endif
 	  // inner update
 	  REAL aold=aexp;
 #ifdef TESTCOSMO
-	  da=hubblet*dtcool*aexp;
-	  aexp+=da;
+//	  da=hubblet*dtcool*aexp;
+//	  aexp+=da;
 #endif
 
 	  for(igrp =0;igrp<NGRP;igrp++)
@@ -762,11 +783,26 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  eint[idloc]=eintt*POW(aold/aexp,5);
 #endif
 
+
+//  param->cosmo->dtcool_tmp+=dtcool;
+
+
+
+dtcool_tmp+=dtcool;
+
 	  currentcool_t+=dtcool;
 	  fudgecool=param->fudgecool;
 	  nitcool++;
 	  if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
 	}
+param->cosmo->dtcool_tmp+=dt;
+
+//assert(dtcool_tmp==dt);
+//if (dtcool_tmp != dt){
+//  printf("WARNING dtcool_tmp=%e dt=%e\n",dtcool_tmp,dt);
+//}
+
+//assert(currentcool_t==dt);
 
       /// ====================== End of the cooling loop
 

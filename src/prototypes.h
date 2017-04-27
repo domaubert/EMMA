@@ -76,7 +76,7 @@ typedef double REAL;
 #define NGRP_TIME (1)
 #define NGRP (NGRP_SPACE * NGRP_TIME)
 #define NVAR_R (5)
-#define EMIN (1e-8)
+#define EMIN (1e-11)
 #define TMIN (1e0) // temperature floor
 
 #ifdef WRAD
@@ -104,6 +104,10 @@ struct COSMOPARAM{
   REAL tsim;
   REAL unit_l;
   REAL tphy;
+  REAL aexp_hydro;
+
+  REAL srcloc_tmp;
+  REAL dtcool_tmp;
 };
 #endif
 
