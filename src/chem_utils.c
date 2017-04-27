@@ -433,12 +433,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	{
 
 
-	  /// Cosmological Adiabatic expansion effects ==============
-#ifdef TESTCOSMO
-	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
-#else
-	  REAL hubblet=0.;
-#endif
 
 
 	  //tloc=eint[idloc]/(1.5*nH[idloc]*KBOLTZ*(1.+x0[idloc]));
@@ -735,12 +729,17 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  eintt=eint[idloc];
 #endif
 
+
+	  /// Cosmological Adiabatic expansion effects ==============
+
 	  // inner update
 	  REAL aold=aexp;
 #ifdef TESTCOSMO
+	  REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
 	  da=hubblet*dtcool*aexp;
 	  aexp+=da;
 #endif
+
 
 	  for(igrp =0;igrp<NGRP;igrp++)
 	    {
