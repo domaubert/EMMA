@@ -294,7 +294,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       fudgecool=param->fudgecool;
       currentcool_t=0.;
       nitcool=0.;
-      REAL da;
       REAL dtcool_tmp=0;
 
       while(currentcool_t<dt){
@@ -312,38 +311,25 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
         tcool=FABS(eint[idloc]/(ai_tmp1*(!chemonly)-Cool));
         dtcool=FMIN(fudgecool*tcool,dt-currentcool_t);
 
+        alpha=cucompute_alpha_a(tloc,1.,1.);
+        alphab=cucompute_alpha_b(tloc,1.,1.);
+        beta=cucompute_beta(tloc,1.,1.);
+
+
         // ABSORPTION
         int test = 0;
         for(igrp=0;igrp<NGRP;igrp++){
 
           ai_tmp1 = alphai[igrp]*(1.-x0[idloc]);
+          et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
+          if(chemonly) et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 
-          if(chemonly){
-            et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
-          }else{
-
-            REAL EARG=dtcool*ai_tmp1*nH[idloc];
-            REAL EE;
-            REAL ONEMINUSEE;
-            if(EARG<1e-3){
-              REAL DL=-EARG+0.5*EARG*EARG-EARG*EARG*EARG/6.;
-              EE=1.+DL;
-              ONEMINUSEE=-DL;
-            }else{
-              EE=EXP(-EARG);
-              ONEMINUSEE=1.-EE;
-            }
-
-            et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE;
-            fxt[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*EE;
-            fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EE;
-            fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
-          }
 
           if((et[igrp]<0)||(isnan(et[igrp]))){
             test=1;
             printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+0*BLOCKCOOL]);
           }
+          p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);
         }
 
         if(test){
@@ -351,9 +337,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
           continue;
         }
 
-        alpha=cucompute_alpha_a(tloc,1.,1.);
-        alphab=cucompute_alpha_b(tloc,1.,1.);
-        beta=cucompute_beta(tloc,1.,1.);
 
         // IONISATION
         ai_tmp1=0.;
@@ -384,25 +367,26 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
           fudgecool=FMIN(fudgecool*1.5,param->fudgecool);
         }
 
-        eintt=FMAX(emin,eintt);
+
 
         /// Cosmological Adiabatic expansion effects ==============
         REAL aold=aexp;
         REAL hubblet=param->cosmo->H0*SQRT(param->cosmo->om/aexp+param->cosmo->ov*(aexp*aexp))/aexp*(1e3/(1e6*PARSEC)); // s-1 // SOMETHING TO CHECK HERE
-        da=hubblet*dtcool*aexp;
+        REAL da=hubblet*dtcool*aexp;
         aexp+=da;
 
         for(igrp =0;igrp<NGRP;igrp++){
           egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3);
           if(!chemonly){
-            floc[0+idloc3+igrp*BLOCKCOOL*3]=fxt[igrp]*POW(aold/aexp,4);
-            floc[1+idloc3+igrp*BLOCKCOOL*3]=fyt[igrp]*POW(aold/aexp,4);
-            floc[2+idloc3+igrp*BLOCKCOOL*3]=fzt[igrp]*POW(aold/aexp,4);
+            floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+            floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+            floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
           }
         }
 
         x0[idloc]=xt;
 
+        eintt=FMAX(emin,eintt);
         eint[idloc]=eintt*POW(aold/aexp,5);
 
         currentcool_t+=dtcool;
