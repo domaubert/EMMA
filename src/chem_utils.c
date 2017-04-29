@@ -210,7 +210,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
     REAL alpha,alphab;
 
     REAL aexp;
-    REAL ebkg[NGRP];
     REAL z=1./aexporg-1.;
 
 
@@ -246,17 +245,14 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
   int ncvgcool=param->ncvgcool;
   REAL E0;
   REAL navg=(param->cosmo->ob/param->cosmo->om)/(PROTON_MASS)*param->unit.unit_d*(1.-YHE)*(1.+yHE);
-  REAL xorg;
   REAL deltaE;
   int compcool; // do we need to compute the cooling ?
 
   for(i=0;i<nread;i++){  // we scan the octs
     for(icell=0;icell<8;icell++){ // we scan the cells
-
       if(stencil[i].oct[6].cell[icell].split) continue; // we dont treat split cells
 
       memcpy(&R,&stencil[i].New.cell[icell].rfieldnew,sizeof(struct Rtype));// We get the local physical quantities after transport update
-      for(igrp=0;igrp<NGRP;igrp++) ebkg[igrp]=0.;
 
       for (igrp=0;igrp<NGRP;igrp++)
       {
@@ -267,16 +263,13 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       }
 
       x0[idloc]=R.nhplus/R.nh;
-      xorg= x0[idloc];
-
       nH[idloc]=R.nh/(aexporg*aexporg*aexporg)*param->unit.unit_N;
-
       eint[idloc]=R.eint/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2);
       emin=PMIN/(GAMMA-1.)/POW(aexporg,5)*param->unit.unit_n*param->unit.unit_d*POW(param->unit.unit_v,2); // physical minimal pressure
 
       for (igrp=0;igrp<NGRP;igrp++){
         srcloc[idloc+igrp*BLOCKCOOL]=R.src[igrp]*param->unit.unit_N/param->unit.unit_t/POW(aexporg,5); //phot/s/dv (physique)
-        egyloc[idloc+igrp*BLOCKCOOL]+=srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]*dt*(!chemonly);
+        egyloc[idloc+igrp*BLOCKCOOL]+=srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]*dt*(!chemonly); // sources injection
       }
 
       REAL eorg=eint[idloc];
@@ -297,6 +290,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
       REAL dtcool_tmp=0;
 
       while(currentcool_t<dt){
+        if(fudgecool<1e-20) abort();
 
         Nfree=(1.+x0[idloc])*nH[idloc];
         tloc=eint[idloc]/(1.5*Nfree*KBOLTZ);
@@ -304,7 +298,6 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 
         cuCompCooling(tloc,x0[idloc],nH[idloc],&Cool,&tcool1,aexp,1,(srcloc[idloc]>0.));
 
-        if(fudgecool<1e-20) abort();
 
         ai_tmp1=0.;
         for (igrp=0;igrp<NGRP;igrp++) ai_tmp1 += (alphae[igrp]*hnu[igrp]-alphai[igrp]*hnu0)*egyloc[idloc+igrp*BLOCKCOOL]*nH[idloc]*(1.0-x0[idloc]);
@@ -320,16 +313,23 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
         int test = 0;
         for(igrp=0;igrp<NGRP;igrp++){
 
-          ai_tmp1 = alphai[igrp]*(1.-x0[idloc]);
-          et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
-          if(chemonly) et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
+          if(chemonly){
+            et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
+          }else{
 
+            REAL EE=EXP(-dtcool*alphai[igrp]*(1.-x0[idloc])*nH[idloc]);
+            if(EE-1>FRAC_VAR) test=1;
+
+            et[igrp]=egyloc[igrp]*EE;
+            fxt[igrp]=floc[0+igrp*3]*EE;
+            fyt[igrp]=floc[1+igrp*3]*EE;
+            fzt[igrp]=floc[2+igrp*3]*EE;
+          }
 
           if((et[igrp]<0)||(isnan(et[igrp]))){
             test=1;
             printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+0*BLOCKCOOL]);
           }
-          p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);
         }
 
         if(test){
@@ -337,13 +337,16 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
           continue;
         }
 
-
         // IONISATION
         ai_tmp1=0.;
-        for(igrp=0;igrp<NGRP;igrp++) {ai_tmp1 += alphai[igrp]*et[igrp]*(!chemonly);}
-        xt=1.-(alpha*x0[idloc]*x0[idloc]*nH[idloc]*dtcool+(1.0 -x0[idloc]))/(1.+dtcool*(beta*x0[idloc]*nH[idloc]+ai_tmp1));
+        for(igrp=0;igrp<NGRP;igrp++) ai_tmp1 += alphai[igrp]*egyloc[igrp];
 
-        if(((xt>1.)||(xt<0.))||(isnan(xt))){
+        REAL EE = EXP(-dtcool*ai_tmp1*(!chemonly));
+        xt=1.-(1.0 -x0[idloc])*EE;
+
+        REAL deltaX=FABS(xt/x0[idloc]-1.);
+
+        if(((xt>1.)||(xt<0.))||(isnan(xt))||(deltaX>FRAC_VAR)){
           fudgecool/=10.;
           continue;
         }
@@ -376,11 +379,11 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
         aexp+=da;
 
         for(igrp =0;igrp<NGRP;igrp++){
-          egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3);
+          egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3); // pourquoi egy tout le temps et les flux seulement si pas chemonly
           if(!chemonly){
-            floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
-            floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
-            floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+            floc[0+idloc3+igrp*BLOCKCOOL*3]=fxt[igrp]*POW(aold/aexp,4);
+            floc[1+idloc3+igrp*BLOCKCOOL*3]=fyt[igrp]*POW(aold/aexp,4);
+            floc[2+idloc3+igrp*BLOCKCOOL*3]=fzt[igrp]*POW(aold/aexp,4);
           }
         }
 
@@ -393,9 +396,9 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
         fudgecool=param->fudgecool;
         nitcool++;
         if((nitcool==ncvgcool)&&(ncvgcool!=0)) break;
-      }
 
-      /// ====================== End of the cooling loop
+      }/// ====================== End of the cooling loop
+
 
       if(!chemonly){
         for(igrp=0;igrp<NGRP;igrp++){
