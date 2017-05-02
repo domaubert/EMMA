@@ -10,7 +10,7 @@
 #define PMIN (1e-10)
 #define NCOSMOTAB (8192)
 #define VBC (30.); // relative DM velocity ala Tseliakovich & Hirata
-#define FRAC_VAR (0.1)
+#define FRAC_VAR (0.10)
 #define N_BIN_PDF (128)
 #define NORECSOURCE_FACT (1e-2)
 
