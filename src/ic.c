@@ -513,6 +513,8 @@ if (debug) printf("flag\n");
   param->cosmo->ob=ob;
   param->cosmo->H0=h0;
   param->cosmo->unit_l=rstar;
+  param->unit.unit_l=rstar;
+
   *npart=ip;
 
   printf("READ DONE ON %d with npart=%d xmin=%f xmax=%f ymin=%f ymax=%f zmin=%f zmax=%f rstar=%e mass=%e\n",cpu->rank,ip,xmin,xmax,ymin,ymax,zmin,zmax,rstar,mass);
