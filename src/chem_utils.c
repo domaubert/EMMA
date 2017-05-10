@@ -508,19 +508,19 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	  et[igrp]=egyloc[idloc+igrp*BLOCKCOOL];
 	}
 	  else{
-
-	    REAL EARG=dtcool*ai_tmp1*nH[idloc];
-	    REAL EE;
-	    REAL ONEMINUSEE;
-	    if(EARG<1e-3){
-	      REAL DL=-EARG+0.5*EARG*EARG-EARG*EARG*EARG/6.;
-	      EE=1.+DL;
-	      ONEMINUSEE=-DL;
-	    }
-	    else{
-	      EE=EXP(-EARG);
-	      ONEMINUSEE=1.-EE;
-	    }
+//
+//	    REAL EARG=dtcool*ai_tmp1*nH[idloc];
+//	    REAL EE;
+//	    REAL ONEMINUSEE;
+//	    if(EARG<1e-3){
+//	      REAL DL=-EARG+0.5*EARG*EARG-EARG*EARG*EARG/6.;
+//	      EE=1.+DL;
+//	      ONEMINUSEE=-DL;
+//	    }
+//	    else{
+//	      EE=EXP(-EARG);
+//	      ONEMINUSEE=1.-EE;
+//	    }
 
 #ifdef HESIMPLE
 	    //et[igrp]=(egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
@@ -528,18 +528,18 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	// Je pense que EE a sauter ici          ^
 #else
 
-#ifndef OTSA
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
-#else
-	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+//#ifndef OTSA
+//	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp]+(alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*factotsa[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+//#else
+//	    et[igrp]=egyloc[idloc+igrp*BLOCKCOOL]*EE+(srcloc[idloc+igrp*BLOCKCOOL]*factgrp[igrp])/(ai_tmp1*nH[idloc]+(ai_tmp1==0.))*(ONEMINUSEE);
+//#endif
+
+	    et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
 #endif
 
-	    //et[igrp]=((alpha-alphab)*x0[idloc]*x0[idloc]*nH[idloc]*nH[idloc]*dtcool*factotsa[igrp]+egyloc[idloc+igrp*BLOCKCOOL]+srcloc[idloc+igrp*BLOCKCOOL]*dtcool*factgrp[igrp])/(1.+dtcool*(ai_tmp1*nH[idloc]));
-#endif
-
-	    fxt[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*EE;
-	    fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EE;
-	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
+//	    fxt[igrp]=floc[0+idloc3+igrp*BLOCKCOOL*3]*EE;
+//	    fyt[igrp]=floc[1+idloc3+igrp*BLOCKCOOL*3]*EE;
+//	    fzt[igrp]=floc[2+idloc3+igrp*BLOCKCOOL*3]*EE;
 
 	  }
 
@@ -548,7 +548,7 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    printf("eint=%e nH=%e x0=%e T=%e N=%e %e %e %e (%e)\n",eint[idloc],nH[idloc],x0[idloc],tloc,et[0],et[1],et[2],etorg,egyloc[idloc+0*BLOCKCOOL]);
 	  }
 
-	  //p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);
+	  p[igrp]=(1.+(ai_tmp1*nH[idloc])*dtcool);
 
 	  }
 
@@ -745,13 +745,13 @@ void chemrad(struct RGRID *stencil, int nread, int stride, struct CPUINFO *cpu, 
 	    {
 	      egyloc[idloc+igrp*BLOCKCOOL]=et[igrp]*POW(aold/aexp,3);
 	      if(!chemonly){
-		/* floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4); */
-		/* floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4); */
-		/* floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4); */
+		floc[0+idloc3+igrp*BLOCKCOOL*3]=floc[0+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+		floc[1+idloc3+igrp*BLOCKCOOL*3]=floc[1+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
+		floc[2+idloc3+igrp*BLOCKCOOL*3]=floc[2+idloc3+igrp*BLOCKCOOL*3]/p[igrp]*POW(aold/aexp,4);
 
-		floc[0+idloc3+igrp*BLOCKCOOL*3]=fxt[igrp]*POW(aold/aexp,4);
-		floc[1+idloc3+igrp*BLOCKCOOL*3]=fyt[igrp]*POW(aold/aexp,4);
-		floc[2+idloc3+igrp*BLOCKCOOL*3]=fzt[igrp]*POW(aold/aexp,4);
+//		floc[0+idloc3+igrp*BLOCKCOOL*3]=fxt[igrp]*POW(aold/aexp,4);
+//		floc[1+idloc3+igrp*BLOCKCOOL*3]=fyt[igrp]*POW(aold/aexp,4);
+//		floc[2+idloc3+igrp*BLOCKCOOL*3]=fzt[igrp]*POW(aold/aexp,4);
 	      }
 	    }
 
