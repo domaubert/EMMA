@@ -695,9 +695,15 @@ int main(int argc, char *argv[])
   newloadb=0;
 
 
+
   for (level=1; level<=param.lmax; level++){
     setOctList(firstoct[level-1],&cpu,&param,level);
   }
+
+#if defined(MPIIO) || defined(HDF5)
+  set_offset(&param, &cpu);
+  dump_domain(&param, &cpu);
+#endif // defined
 
 #if 0
 #ifdef WMPI
@@ -1666,6 +1672,7 @@ int main(int argc, char *argv[])
 
    cpu.firstoct = firstoct;
    mpi_exchange_part(&cpu, cpu.psendbuffer, cpu.precvbuffer,deltan,level);
+
 
 
    /* ptot[0]=0; */

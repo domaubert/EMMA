@@ -1396,24 +1396,14 @@ void makeFolders(struct CPUINFO *cpu){
 #endif // MPIIO
 }
 
-#ifdef HDF5
+void dump_domain(struct RUNPARAMS *param, struct CPUINFO *cpu){
+  /**
+    * Dump the processor domain limit information
+    * Create the ascii file data/domain.dat
+    * called once at the start as domains do not change during runtime
+    * this function should be revised when implementing load balancing
+    */
 
-#define PHDF5
-#define HDF5_METHOD H5FD_MPIO_COLLECTIVE
-//#define HDF5_METHOD H5FD_MPIO_INDEPENDENT
-
-void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
-
-/**
-  * This function dump the output data with HDF5
-  */
-
-  const int debug=0;
-
-  // Create step folder
-  char folder_step[128];
-  sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
-  mkdir(folder_step, 0755);
 
   // Reduce domains
   float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
@@ -1433,27 +1423,84 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
     }
   }
 
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
-
-    float* Xmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Xmax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmax= (float*)calloc(cpu->nproc,sizeof(float));
-
-    MPI_Allgather(&xmin,1,MPI_FLOAT,Xmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&xmax,1,MPI_FLOAT,Xmax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymin,1,MPI_FLOAT,Ymin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymax,1,MPI_FLOAT,Ymax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmin,1,MPI_FLOAT,Zmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmax,1,MPI_FLOAT,Zmax,1,MPI_FLOAT, cpu->comm);
+  float* Xmin= (float*)calloc(cpu->nproc,sizeof(float));
+  float* Xmax= (float*)calloc(cpu->nproc,sizeof(float));
+  float* Ymin= (float*)calloc(cpu->nproc,sizeof(float));
+  float* Ymax= (float*)calloc(cpu->nproc,sizeof(float));
+  float* Zmin= (float*)calloc(cpu->nproc,sizeof(float));
+  float* Zmax= (float*)calloc(cpu->nproc,sizeof(float));
 
 #ifdef WMPI
   MPI_Barrier(cpu->comm);
 #endif // WMPI
+
+  MPI_Allgather(&xmin,1,MPI_FLOAT,Xmin,1,MPI_FLOAT, cpu->comm);
+  MPI_Allgather(&xmax,1,MPI_FLOAT,Xmax,1,MPI_FLOAT, cpu->comm);
+  MPI_Allgather(&ymin,1,MPI_FLOAT,Ymin,1,MPI_FLOAT, cpu->comm);
+  MPI_Allgather(&ymax,1,MPI_FLOAT,Ymax,1,MPI_FLOAT, cpu->comm);
+  MPI_Allgather(&zmin,1,MPI_FLOAT,Zmin,1,MPI_FLOAT, cpu->comm);
+  MPI_Allgather(&zmax,1,MPI_FLOAT,Zmax,1,MPI_FLOAT, cpu->comm);
+
+#ifdef WMPI
+  MPI_Barrier(cpu->comm);
+#endif // WMPI
+
+  if(cpu->rank == RANK_DISP){
+    char filename[256];
+    sprintf(filename,"data/domains.dat");
+    FILE *fp=fopen(filename,"wb");
+    if(fp == NULL) printf("Cannot open %s\n", filename);
+
+    fprintf(fp,"ncells       \t");
+    fprintf(fp,"xmin         \t");
+    fprintf(fp,"xmax         \t");
+    fprintf(fp,"ymin         \t");
+    fprintf(fp,"ymax         \t");
+    fprintf(fp,"zmin         \t");
+    fprintf(fp,"zmax         \t");
+    fprintf(fp,"\n");
+
+    int i_proc;
+    for (i_proc=0; i_proc<cpu->nproc; i_proc++){
+      fprintf(fp,"%d\t\t",cpu->mpiio_ncells[i_proc]);
+      fprintf(fp,"%f\t",Xmin[i_proc]);
+      fprintf(fp,"%f\t",Xmax[i_proc]);
+      fprintf(fp,"%f\t",Ymin[i_proc]);
+      fprintf(fp,"%f\t",Ymax[i_proc]);
+      fprintf(fp,"%f\t",Zmin[i_proc]);
+      fprintf(fp,"%f\t",Zmax[i_proc]);
+      fprintf(fp,"\n");
+    }
+    fclose(fp);
+  }
+
+  free(Xmin);
+  free(Xmax);
+  free(Ymin);
+  free(Ymax);
+  free(Zmin);
+  free(Zmax);
+}
+
+
+#ifdef HDF5
+
+#define PHDF5
+#define HDF5_METHOD H5FD_MPIO_COLLECTIVE
+//#define HDF5_METHOD H5FD_MPIO_INDEPENDENT
+
+void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPUINFO *cpu){
+
+/**
+  * This function dump the output data with HDF5
+  */
+
+  const int debug=0;
+
+  // Create step folder
+  char folder_step[128];
+  sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
+  mkdir(folder_step, 0755);
 
   float *tmp = (float*)calloc(cpu->mpiio_ncells[cpu->rank],sizeof(float));
   if (tmp == NULL){
@@ -1552,60 +1599,10 @@ void dump_HDF5_grid(char folder[],REAL tsim, struct RUNPARAMS *param, struct CPU
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
-      dims = cpu->nproc;
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ncells", H5T_NATIVE_INT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_INT, cpu->mpiio_ncells);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
       H5Pclose(plist);
       H5Fclose(file);
     }
   }
-
-  free(Xmin);
-  free(Xmax);
-  free(Ymin);
-  free(Ymax);
-  free(Zmin);
-  free(Zmax);
   free(tmp);
 }
 
@@ -1618,58 +1615,6 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   char folder_step[128];
   sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
   mkdir(folder_step, 0755);
-
-  // reduce domains
-  float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
-  int i_tmp=0;
-  int level;
-  for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,level-1);
-    int iOct;
-    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-      struct OCT *oct=cpu->octList[level-1][iOct];
-      int icell;
-      for(icell=0;icell<8;icell++){ // looping over cells in oct
-        struct PART * nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
-        if(nexp!=NULL){
-          do{
-            struct PART *curp=nexp;
-            nexp=curp->next;
-
-              if(curp->x<xmin) xmin=curp->x;
-              if(curp->y<ymin) ymin=curp->y;
-              if(curp->z<zmin) zmin=curp->z;
-              if(curp->x+dx>xmax) xmax=curp->x+dx;
-              if(curp->y+dx>ymax) ymax=curp->y+dx;
-              if(curp->z+dx>zmax) zmax=curp->z+dx;
-          }while(nexp!=NULL);
-        }
-      }
-    }
-  }
-
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
-
-    float* Xmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Xmax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmax= (float*)calloc(cpu->nproc,sizeof(float));
-
-    MPI_Allgather(&xmin,1,MPI_FLOAT,Xmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&xmax,1,MPI_FLOAT,Xmax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymin,1,MPI_FLOAT,Ymin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymax,1,MPI_FLOAT,Ymax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmin,1,MPI_FLOAT,Zmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmax,1,MPI_FLOAT,Zmax,1,MPI_FLOAT, cpu->comm);
-
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
-
 
   if (debug) printf("allocating %d float\n",cpu->mpiio_nparts[cpu->rank]);
 
@@ -1804,71 +1749,11 @@ void dump_HDF5_part(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
-
-      dims = cpu->nproc;
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ncells", H5T_NATIVE_INT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_INT, cpu->mpiio_ncells);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
-//          if(cpu->rank == RANK_DISP) printf("attribute time %e\n",MPI_Wtime() - ti);
-
-      // Close
-//      H5Pclose(gcpl);
-//      H5Gclose(group);
-
       H5Pclose(plist);
       H5Fclose(file);
-
     }
   }
 
-  free(Xmin);
-  free(Xmax);
-  free(Ymin);
-  free(Ymax);
-  free(Zmin);
-  free(Zmax);
   free(tmp);
 }
 
@@ -1882,57 +1767,6 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
   sprintf(folder_step,"data/%05d/",*(cpu->ndumps));
   mkdir(folder_step, 0755);
 
-  // reduce domains
-  float xmin=2,xmax=-1,ymin=2,ymax=-1,zmin=2,zmax=-1;
-  int i_tmp=0;
-  int level;
-  for(level=param->lcoarse;level<=param->lmax;level++){
-    REAL dx = POW(0.5,level-1);
-    int iOct;
-    for(iOct=0; iOct<cpu->locNoct[level-1]; iOct++){
-      struct OCT *oct=cpu->octList[level-1][iOct];
-      int icell;
-      for(icell=0;icell<8;icell++){ // looping over cells in oct
-        struct PART * nexp=oct->cell[icell].phead; //sweeping the particles of the current cell
-        if(nexp!=NULL){
-          do{
-            struct PART *curp=nexp;
-            nexp=curp->next;
-            if(curp->isStar){
-              if(curp->x<xmin) xmin=curp->x;
-              if(curp->y<ymin) ymin=curp->y;
-              if(curp->z<zmin) zmin=curp->z;
-              if(curp->x+dx>xmax) xmax=curp->x+dx;
-              if(curp->y+dx>ymax) ymax=curp->y+dx;
-              if(curp->z+dx>zmax) zmax=curp->z+dx;
-            }
-          }while(nexp!=NULL);
-        }
-      }
-    }
-  }
-
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
-
-    float* Xmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Xmax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Ymax= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmin= (float*)calloc(cpu->nproc,sizeof(float));
-    float* Zmax= (float*)calloc(cpu->nproc,sizeof(float));
-
-    MPI_Allgather(&xmin,1,MPI_FLOAT,Xmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&xmax,1,MPI_FLOAT,Xmax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymin,1,MPI_FLOAT,Ymin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&ymax,1,MPI_FLOAT,Ymax,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmin,1,MPI_FLOAT,Zmin,1,MPI_FLOAT, cpu->comm);
-    MPI_Allgather(&zmax,1,MPI_FLOAT,Zmax,1,MPI_FLOAT, cpu->comm);
-
-#ifdef WMPI
-  MPI_Barrier(cpu->comm);
-#endif // WMPI
   float *tmp = (float*)calloc(cpu->mpiio_nstars[cpu->rank],sizeof(float));
   if (tmp == NULL){
     printf("can't allocate tmp vector in dump_HDF5_star\n");
@@ -2041,61 +1875,11 @@ void dump_HDF5_star(char filename[],REAL tsim,  struct RUNPARAMS *param, struct 
       H5Aclose(attribute_id);
       H5Sclose(dataspace_id);
 
-      dims = cpu->nproc;
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "xmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Xmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ymax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Ymax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmin", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmin);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "zmax", H5T_NATIVE_FLOAT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_FLOAT, Zmax);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-      dataspace_id = H5Screate_simple(1, &dims, NULL);
-      attribute_id = H5Acreate2 (file, "ncells", H5T_NATIVE_INT, dataspace_id,H5P_DEFAULT, H5P_DEFAULT);
-      H5Awrite(attribute_id, H5T_NATIVE_INT, cpu->mpiio_ncells);
-      H5Aclose(attribute_id);
-      H5Sclose(dataspace_id);
-
-
       H5Pclose(plist);
       H5Fclose(file);
     }
   }
 
-  free(Xmin);
-  free(Xmax);
-  free(Ymin);
-  free(Ymax);
-  free(Zmin);
-  free(Zmax);
   free(tmp);
 }
 #endif // STARS
