@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+import os
+
+def mkdir(path):
+	""""
+	Create the directory "path"
+	"""
+	try :
+		print("Create folder : %s"%path)
+		os.mkdir(path)
+	except OSError:
+		pass
+
+def ln(target, dest):
+	"""
+	create the symlink "target" into "dest"
+	"""
+	print("Linking %s to %s"%(target, dest))
+	os.system("ln -fs %s %s "%(target, dest))
+
+def check_exe(name):
+	"""
+	check if the program "name" exist on the system
+	"""
+	from distutils.spawn import find_executable
+	exe = find_executable(name)
+	if exe == None:
+		print("=== could not find %s ==="%name)
+	else:
+		print("%s OK"%name)
+
+
+
+if __name__ == '__main__':
+	print("Creating directories:")
+	mkdir("obj/")
+	ln(".", "SRC")
+
+	data_dir = input("Location of data directory (press ENTER to set it to \"./data\") ")
+	if(data_dir==""):
+		mkdir("data/")
+	else:
+		ln(data_dir, "data")
+
+	print("Check dependencies")
+	check_exe("mpicc")
+	check_exe("nvcc")
+	# /check_exe("hdf5")
+
+	print("Copy initial parameters")
+	os.system("cp init/param_init.mk param.mk")
+	os.system("cp init/param_init.h src/param.h")
+	os.system("cp init/param_init.run ./param.run")
+	os.system("cp init/param_init.run.grid_output ./param.run.grid_output")
+	os.system("cp init/param_init.run.part_output param.run.part_output")
+	os.system("cp init/param_init.run.list_aexp param.run.list_aexp")
+
+	print("make")
+	os.system("make -j 4")
