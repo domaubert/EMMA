@@ -21,7 +21,7 @@
 #define EMIN (1e-8)
 #define TMIN (1e0) // temperature floor
 
-#define THRESH_Z_XION_MAP (0.5)
+#define THRESH_XION_MAP (0.5)
 
 // ================= PHYSICAL CONSTANTS ===================
 #define LIGHT_SPEED_IN_M_PER_S (299792458.) // m.s-1

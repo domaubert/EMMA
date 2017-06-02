@@ -70,9 +70,7 @@ typedef double REAL;
 #endif
 
 #define NFLUX (6*NVAR)
-
 #define NVAR_R (5)
-
 
 #ifdef WRAD
   #define NFLUX_R (6*NGRP*NVAR_R)
@@ -849,8 +847,8 @@ struct CELL
 #ifdef WRAD
   struct Rtype rfield; ///< photons/s/m3
   struct Rtype rfieldnew; ///< photons/s/m3
-  REAL z_first_xion; ///< redshift of first reionisation
-  REAL z_last_xion; ///< redshift of last reionisation
+  REAL t_first_xion; ///< redshift of first reionisation
+  REAL t_last_xion; ///< redshift of last reionisation
 #endif
 };
 

@@ -1,48 +1,50 @@
 #	columns description
 #
 #	field name (shouldn't be moved for consistency)
-#	dump standard output in "data/OUT_NUMBER/" folder 
+#	dump standard output in "data/OUT_NUMBER/" folder
 #	dump movie output in "data/movie/FIELD_NAME/" folder
 #	dump avg output in "data/avg/" folder
 #	lower boundary limit of pdf
 #	uper boundary limit of pdf
 
 x				1	0	0	1e-9	1e0
-y				1	0	0	1e-9	1e0	
-z				1	0	0	1e-9	1e0	
+y				1	0	0	1e-9	1e0
+z				1	0	0	1e-9	1e0
 l				1	0	1	1		15
 cpu				0	0	0	1e-9	1e9
-gdata.d			0	0	0	1e-9	1e9	
-density			0	0	0	1e-9	1e9	
-gdata.p			0	0	0	1e-9	1e9	
-res				0	0	0	1e-9	1e9	
-f[0]			0	0	0	1e-9	1e9	
-f[1]			0	0	0	1e-9	1e9	
-f[2]			0	0	0	1e-9	1e9	
-marked			0	0	0	1e-9	1e9	
-field.d			1	1	1	1e-9	1e9	
-field.u			1	0	0	1e-9	1e9	
-field.v			1	0	0	1e-9	1e9	
-field.w 		1	0	0	1e-9	1e9	
-field.p			1	1	1	1e-9	1e9	
-rfield.e[0]		0	0	0	1e-9	1e9	
-rfield.fx[0]	0	0	0	1e-9	1e9	
-rfield.fy[0]	0	0	0	1e-9	1e9	
-rfield.fz[0]	0	0	0	1e-9	1e9	
-rfield.e[1]		0	0	0	1e-9	1e9	
-rfield.fx[1]	0	0	0	1e-9	1e9	
-rfield.fy[1]	0	0	0	1e-9	1e9	
-rfield.fz[1]	0	0	0	1e-9	1e9	
-rfield.snfb		0	0	0	1e-9	1e9	
-rfield.e[2]		0	0	0	1e-9	1e9	
-rfield.fx[2]	0	0	0	1e-9	1e9	
-rfield.fy[2]	0	0	0	1e-9	1e9	
-rfield.fz[2]	0	0	0	1e-9	1e9	
-rfield.src		0	0	0	1e-9	1e9	
-xion			1	2	1	1e-9	1e0	
-field.dX		0	0	0	1e-9	1e9	
-field.dXHE		0	0	0	1e-9	1e9	
-field.dXXHE		0	0	0	1e-9	1e9	
-field.xHE		0	0	0	1e-9	1e9	
-field.xxHE		0	0	0	1e-9	1e9	
-rfield.temp		1	1	1	1e-9	1e9	
+gdata.d			0	0	0	1e-9	1e9
+density			0	0	0	1e-9	1e9
+gdata.p			0	0	0	1e-9	1e9
+res				0	0	0	1e-9	1e9
+f[0]			0	0	0	1e-9	1e9
+f[1]			0	0	0	1e-9	1e9
+f[2]			0	0	0	1e-9	1e9
+marked			0	0	0	1e-9	1e9
+field.d			1	1	1	1e-9	1e9
+field.u			1	0	0	1e-9	1e9
+field.v			1	0	0	1e-9	1e9
+field.w 		1	0	0	1e-9	1e9
+field.p			1	1	1	1e-9	1e9
+rfield.e[0]		0	0	0	1e-9	1e9
+rfield.fx[0]	0	0	0	1e-9	1e9
+rfield.fy[0]	0	0	0	1e-9	1e9
+rfield.fz[0]	0	0	0	1e-9	1e9
+rfield.e[1]		0	0	0	1e-9	1e9
+rfield.fx[1]	0	0	0	1e-9	1e9
+rfield.fy[1]	0	0	0	1e-9	1e9
+rfield.fz[1]	0	0	0	1e-9	1e9
+rfield.snfb		0	0	0	1e-9	1e9
+rfield.e[2]		0	0	0	1e-9	1e9
+rfield.fx[2]	0	0	0	1e-9	1e9
+rfield.fy[2]	0	0	0	1e-9	1e9
+rfield.fz[2]	0	0	0	1e-9	1e9
+rfield.src		0	0	0	1e-9	1e9
+xion			1	2	1	1e-9	1e0
+field.dX		0	0	0	1e-9	1e9
+field.dXHE		0	0	0	1e-9	1e9
+field.dXXHE		0	0	0	1e-9	1e9
+field.xHE		0	0	0	1e-9	1e9
+field.xxHE		0	0	0	1e-9	1e9
+rfield.temp		1	1	1	1e-9	1e9
+t_first_xion    0	1	1	1e0	1e9
+t_last_xion     0	1	1	1e0	1e9

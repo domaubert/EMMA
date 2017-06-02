@@ -603,8 +603,8 @@ struct OCT * L_refine_cells(int level, struct RUNPARAMS *param, struct OCT **fir
 
 #ifdef WRAD
 		  if(cpu->rank==curoct->cpu){
-        newoct->cell[ii].z_first_xion=curoct->cell[icell].z_first_xion;
-        newoct->cell[ii].z_last_xion=curoct->cell[icell].z_last_xion;
+        newoct->cell[ii].t_first_xion=curoct->cell[icell].t_first_xion;
+        newoct->cell[ii].t_last_xion=curoct->cell[icell].t_last_xion;
 
 		    memcpy(&(newoct->cell[ii].rfield),Ri+ii,sizeof(struct Rtype));
 		    memcpy(&(newoct->cell[ii].rfieldnew),Ri+ii,sizeof(struct Rtype));
@@ -1609,8 +1609,8 @@ struct CELL build_initial_grid(struct OCT *grid, struct OCT **firstoct,  struct 
 #endif
 
 #ifdef WRAD
-        newoct->cell[ii].z_first_xion=-1.;
-        newoct->cell[ii].z_last_xion=0;
+        newoct->cell[ii].t_first_xion=-1.;
+        newoct->cell[ii].t_last_xion=0;
 #endif // WRAD
 	    }
 

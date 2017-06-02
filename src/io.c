@@ -183,10 +183,10 @@ float assign_grid_field(int field,struct CELL *cell){
     break;
 #endif // WCHEM
   case 39:
-    res=cell->z_first_xion;
+    res=cell->t_first_xion;
     break;
   case 40:
-    res=cell->z_last_xion;
+    res=cell->t_last_xion;
     break;
 #endif // WRAD
   }
