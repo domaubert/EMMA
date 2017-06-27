@@ -188,6 +188,9 @@ float assign_grid_field(int field,struct CELL *cell){
   case 40:
     res=cell->t_last_xion;
     break;
+  case 41:
+    res=cell->rho_first_xion;
+    break;
 #endif // WRAD
   }
 

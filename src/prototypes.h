@@ -754,6 +754,8 @@ struct PART
   REAL age;
 #endif
 
+  REAL t_reio;
+
 };
 
 struct PART_MPI // For mpi communications
@@ -847,8 +849,10 @@ struct CELL
 #ifdef WRAD
   struct Rtype rfield; ///< photons/s/m3
   struct Rtype rfieldnew; ///< photons/s/m3
-  REAL t_first_xion; ///< redshift of first reionisation
-  REAL t_last_xion; ///< redshift of last reionisation
+  REAL t_first_xion; ///< time of first reionisation
+  REAL t_last_xion; ///< time of last reionisation
+
+  REAL rho_first_xion; ///< gas density at the time of first reionisation
 #endif
 };
 

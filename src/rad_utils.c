@@ -1909,6 +1909,7 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
   if( (xion>=THRESH_XION_MAP) && (curoct->cell[icell].t_first_xion==-1) ){ //THRESH_XION_MAP defined in param.h
     //curoct->cell[icell].z_first_xion=1./aexp-1.;
     curoct->cell[icell].t_first_xion=param->cosmo->tphy;
+    curoct->cell[icell].rho_first_xion=curoct->cell[icell].field.d;
   }
 
 	int is_unsplit;
@@ -1959,6 +1960,7 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
     curoct->cell[icell].t_first_xion=0;
     curoct->cell[icell].t_last_xion=0;
+    curoct->cell[icell].rho_first_xion=0;
 
 	  for(i=0;i<8;i++){
 	    for(igrp=0;igrp<NGRP;igrp++){
@@ -1971,6 +1973,7 @@ REAL RadSolver(int level,struct RUNPARAMS *param, struct OCT ** firstoct,  struc
 
       curoct->cell[icell].t_first_xion +=child->cell[i].t_first_xion*0.125;
       curoct->cell[icell].t_last_xion +=child->cell[i].t_last_xion*0.125;
+      curoct->cell[icell].rho_first_xion +=child->cell[i].rho_first_xion*0.125;
 
 #ifdef WCHEM
 	    //nh0+=(child->cell[i].rfield.xion*child->cell[i].rfield.nh)*0.125;
