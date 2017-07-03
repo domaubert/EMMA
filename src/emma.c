@@ -1461,7 +1461,7 @@ int main(int argc, char *argv[])
   if(cpu.rank==RANK_DISP) dumpHeader(&param,&cpu,argv[1]);
 
   // test if each cpu will have at least one oct in the minimum level of multigrid
-  int Lmin = 1+(int)(log(cpu.nproc)/(3*log(2.)));
+  int Lmin = 1+ceil(log(cpu.nproc)/(3*log(2.)));
 
 
   if( param.mgridlmin>0 && param.mgridlmin < Lmin ){
