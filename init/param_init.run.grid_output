@@ -48,3 +48,4 @@ field.xxHE		0	0	0	1e-9	1e9
 rfield.temp		1	1	1	1e-9	1e9
 t_first_xion    0	1	1	1e0	1e9
 t_last_xion     0	1	1	1e0	1e9
+rho_first_xion    0	1	1	1e0	1e9
