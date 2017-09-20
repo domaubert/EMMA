@@ -15,7 +15,7 @@
 struct PART * read_grafic_part(struct PART *part, struct CPUINFO *cpu, REAL *munit, REAL *ainit, int *npart, struct RUNPARAMS *param,int level)
 {
 
-  const int debug=1;
+  const int debug=0;
 
   FILE *fx = NULL;
   FILE *fy = NULL;
